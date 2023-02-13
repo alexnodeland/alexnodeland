@@ -2,15 +2,6 @@
 
 I'm Alex.
 
-My interests include:
-- mathematics
-- computing
-- devops and processes
-- human computer interaction
-- synthesizers
-
----
-
 With a diverse background, in arts, mathematics, engineering, and start-up development, I turn ideas into usable and applicable solutions, and propel them to the market effectively, and scalably.
 
 👨‍💻 - As an engineer, I excel at and enjoy analyzing and modeling systems and/or processes. 
@@ -21,3 +12,12 @@ With a diverse background, in arts, mathematics, engineering, and start-up devel
 
 
 I combine these aspects of my background to convey complex ideas simply. These approaches allow me to effectively bring products to market and create understandable solutions to complex problems.
+
+---
+
+My interests include:
+- mathematics
+- computing
+- devops and processes
+- human computer interaction
+- synthesizers
