@@ -16,8 +16,8 @@ I combine these aspects of my background to convey complex ideas simply. These a
 ---
 
 My interests include:
-- mathematics
-- computing
+- mathematics and scientific computing
 - devops and processes
 - human computer interaction
+- home automation
 - synthesizers
