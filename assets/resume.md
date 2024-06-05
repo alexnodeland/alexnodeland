@@ -26,7 +26,7 @@ Experienced engineer and mathematician with a strong background in high-performa
 - **Boosted system security and functionality** by building scalable AI pipelines with robust authentication.
 - **Optimized AI pipeline performance** by implementing monitoring systems.
 - **Enhanced API throughput and reduced latency** by architecting a high-performance, scalable API interface tailored for AI pipeline integrations.
-- **Optimized deployment workflows and enhanced system reliability** by adopting Infrastructure as Code (IaC) practices using Terraform and setting up a robust CI/CD pipeline with Jenkins.
+- **Optimized deployment workflows and enhanced system reliability** by adopting Infrastructure as Code (IaC) practices using AWS CloudFormation and setting up a robust CI/CD pipeline with GitHub Actions.
 - **Ensured seamless platform integration** by collaborating with external development teams.
 - **Streamlined development and coordination** by directing project management with GitHub's self-management system.
 - **Boosted system responsiveness** by optimizing database performance for higher scale and efficiency.
