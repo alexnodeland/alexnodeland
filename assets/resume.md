@@ -25,8 +25,8 @@ Experienced engineer and mathematician with a strong background in high-performa
 - **Improved database security and efficiency** by designing and implementing schema and backend infrastructure using Supabase Postgres.
 - **Boosted system security and functionality** by building scalable AI pipelines with robust authentication.
 - **Optimized AI pipeline performance** by implementing monitoring systems.
-- **Increased API retrieval efficiency** by engineering a scalable API interface for AI pipelines.
-- **Streamlined deployments and reliability** by implementing Infrastructure as Code (IaC) and establishing a CI/CD pipeline.
+- **Enhanced API throughput and reduced latency** by architecting a high-performance, scalable API interface tailored for AI pipeline integrations.
+- **Optimized deployment workflows and enhanced system reliability** by adopting Infrastructure as Code (IaC) practices using Terraform and setting up a robust CI/CD pipeline with Jenkins.
 - **Ensured seamless platform integration** by collaborating with external development teams.
 - **Streamlined development and coordination** by directing project management with GitHub's self-management system.
 - **Boosted system responsiveness** by optimizing database performance for higher scale and efficiency.
