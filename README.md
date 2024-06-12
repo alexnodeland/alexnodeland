@@ -21,3 +21,9 @@ My interests include:
 - human computer interaction
 - home automation
 - synthesizers
+
+Feel free to reach out to me at [alex@ournature.studio](mailto:alex@ournature.studio) or connect with me on [LinkedIn](https://linkedin.com/in/alexnodeland).
+
+Visit my website: [www.alexnodeland.com](https://www.alexnodeland.com)
+
+View my resume: [link](assets/resume.md)
