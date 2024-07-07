@@ -32,7 +32,7 @@ View my resume: [resume](assets/resume.md)
 
 ---
 
-For more about how I work see:
+For more about how I work, see:
 
 - [My AI Engineering Workspace](https://github.com/alexnodeland/ai-engineering-workspace)
 - [My notetaking workspace](https://github.com/alexnodeland/obsidian-vault-template)
