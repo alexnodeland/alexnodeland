@@ -28,4 +28,12 @@ Feel free to reach out to me at [alex@ournature.studio](mailto:alex@ournature.st
 
 Visit my website: [www.alexnodeland.com](https://www.alexnodeland.com)
 
-View my resume: [link](assets/resume.md)
+View my resume: [resume](assets/resume.md)
+
+---
+
+For more about how I work see:
+
+- [My AI Engineering Workspace](https://github.com/alexnodeland/ai-engineering-workspace)
+- [My notetaking workspace](https://github.com/alexnodeland/obsidian-vault-template)
+- [My RSS feeds](https://github.com/alexnodeland/rss)
