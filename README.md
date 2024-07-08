@@ -25,14 +25,14 @@ My interests include:
 
 ---
 
-Feel free to reach out to me at [alex@ournature.studio](mailto:alex@ournature.studio) or connect with me on [LinkedIn](https://linkedin.com/in/alexnodeland).
+Feel free to reach out to me via [email](mailto:alex@ournature.studio) or connect with me on [LinkedIn](https://linkedin.com/in/alexnodeland).
 
-View my [resume](assets/resume.md).
+Or, view my [resume](assets/resume.md), if you'd like. 
 
 ---
 
 For more about how I work, see:
 
-- [My AI Engineering Workspace](https://github.com/alexnodeland/ai-engineering-workspace)
+- [My AI engineering workspace](https://github.com/alexnodeland/ai-engineering-workspace)
 - [My notetaking workspace](https://github.com/alexnodeland/obsidian-vault-template)
 - [My RSS feeds](https://github.com/alexnodeland/rss)
