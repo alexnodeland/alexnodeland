@@ -2,26 +2,19 @@
 
 I'm Alex.
 
-With a diverse background, in arts, mathematics, engineering, and start-up development, I turn ideas into usable and applicable solutions, and propel them to the market effectively, and scalably.
+I bring together engineering, mathematics, and the arts to turn ideas into scalable, creative, and practical solutions.  
+I love analyzing systems, uncovering their governing rules, and sharing insights in ways that spark clarity.
 
-👨‍💻 - As an engineer, I excel at and enjoy analyzing and modeling systems and/or processes. 
-
-🧙‍♂️ - As a mathematician, I constantly search for rules which govern systems. 
-
-👨‍🎨 - As an artist, I share insights and solutions creatively and effectively. 
-
-
-I combine these aspects of my background to convey complex ideas simply. These approaches allow me to effectively bring products to market and create understandable solutions to complex problems.
+👨‍💻 Engineer — modeling systems and building scalable software  
+🧙‍♂️ Mathematician — exploring the rules that govern complexity  
+🎨 Artist — communicating ideas simply and creatively  
 
 ---
 
-My interests include:
-- language models, categories, and graphs
-- mathematical and scientific computing
-- devops and processes
-- human computer interaction
-- automation
-- synthesizers
+🔭 Currently exploring:  
+- Language models, categories, and graphs  
+- Human-computer interaction and automation  
+- Synthesizers and sound design  
 
 ---
 
