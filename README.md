@@ -19,5 +19,3 @@ I love analyzing systems, uncovering their governing rules, and sharing insights
 ---
 
 Feel free to reach out to me via [email](mailto:alex@ournature.studio) or connect with me on [LinkedIn](https://linkedin.com/in/alexnodeland).
-
-Or, view my [resume](assets/resume.md), if you'd like. 
