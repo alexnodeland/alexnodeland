@@ -4,7 +4,8 @@ A modern, responsive personal website built with Gatsby and TypeScript, showcasi
 
 ## 🚀 Features
 
-- **Modern Tech Stack**: Built with Gatsby 5, TypeScript, and SCSS
+- **Modern Tech Stack**: Built with Gatsby 5, TypeScript, SCSS, and MDX
+- **MDX Content**: Easy-to-edit content using Markdown with JSX components
 - **Responsive Design**: Mobile-first approach with clean, professional styling
 - **Fast Performance**: Static site generation with optimized loading
 - **SEO Optimized**: Proper meta tags and structured data
@@ -17,14 +18,20 @@ src/
 ├── components/          # Reusable React components
 │   ├── layout.tsx      # Main layout wrapper
 │   ├── layout.scss     # Layout styles
-│   └── seo.tsx         # SEO component
-├── pages/              # Gatsby pages
-│   ├── index.tsx       # Homepage
+│   ├── seo.tsx         # SEO component
+│   └── mdx/            # MDX-specific components
+│       ├── ExperienceItem.tsx
+│       ├── EducationItem.tsx
+│       ├── CTASection.tsx
+│       └── MDXProvider.tsx
+├── pages/              # Gatsby pages (MDX format)
+│   ├── index.mdx       # Homepage
+│   ├── cv.mdx          # CV/Resume page
+│   └── 404.tsx         # 404 error page
+├── styles/             # Stylesheets
+│   ├── global.scss     # Global CSS reset and base styles
 │   ├── index.scss      # Homepage styles
-│   ├── cv.tsx          # CV/Resume page
 │   └── cv.scss         # CV page styles
-├── styles/             # Global styles
-│   └── global.scss     # Global CSS reset and base styles
 └── images/             # Static images and assets
 ```
 
@@ -85,9 +92,10 @@ npm run build
 
 ### Updating Content
 
-- **Homepage**: Edit `src/pages/index.tsx` and `src/pages/index.scss`
-- **CV Page**: Edit `src/pages/cv.tsx` and `src/pages/cv.scss`
+- **Homepage**: Edit `src/pages/index.mdx` and `src/styles/index.scss`
+- **CV Page**: Edit `src/pages/cv.mdx` and `src/styles/cv.scss`
 - **Site Metadata**: Update `gatsby-config.js`
+- **MDX Components**: Add reusable components in `src/components/mdx/`
 
 ### Styling
 
@@ -112,6 +120,7 @@ The site is fully responsive with breakpoints for:
 - **Gatsby 5** - Static site generator
 - **TypeScript** - Type-safe JavaScript
 - **React 18** - UI library
+- **MDX** - Markdown with JSX components
 - **SCSS** - CSS preprocessor
 - **GitHub Actions** - CI/CD pipeline
 - **GitHub Pages** - Hosting

@@ -11,7 +11,7 @@ interface SEOProps {
 const SEO: React.FC<SEOProps> = ({ 
   title = 'Alex Nodeland', 
   description = 'Experienced engineer and mathematician with a strong background in high-performance computing, AI system design, and startup development.',
-  image = '/images/og-image.jpg',
+  image = '/images/icon.png',
   url = 'https://alexnodeland.com'
 }) => {
   const fullTitle = title === 'Alex Nodeland' ? title : `${title} | Alex Nodeland`
@@ -20,6 +20,8 @@ const SEO: React.FC<SEOProps> = ({
     <Helmet>
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
+      <link rel="icon" href="/images/icon.png" />
+      <link rel="apple-touch-icon" href="/images/icon.png" />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={image} />
