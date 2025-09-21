@@ -7,18 +7,15 @@
   text-align: center;
   margin-bottom: 4rem;
   padding: 2rem 0;
-}
-
-.hero-title {
-  font-size: 3rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  color: #333;
+  
+  h1 {
+    margin-bottom: 1.5rem;
+  }
 }
 
 .hero-subtitle {
   font-size: 1.25rem;
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.6;
   max-width: 600px;
   margin: 0 auto;
@@ -26,31 +23,28 @@
 
 .about {
   margin-bottom: 4rem;
-}
-
-.about-content {
+  
   p {
     margin-bottom: 1.5rem;
     line-height: 1.7;
-    color: #555;
   }
 }
 
 .consulting {
-  background: #f8f9fa;
+  background: linear-gradient(135deg, var(--bg-secondary), var(--bg-accent));
   padding: 3rem 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-xl);
   margin-bottom: 4rem;
   text-align: center;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
   
   h2 {
     margin-bottom: 1.5rem;
-    color: #333;
   }
   
   p {
     margin-bottom: 2rem;
-    color: #666;
     line-height: 1.6;
   }
 }
@@ -64,29 +58,33 @@
 
 .cta-button {
   display: inline-block;
-  padding: 0.75rem 2rem;
-  border-radius: 6px;
+  padding: 0.875rem 2rem;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   font-weight: 600;
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
   
   &.primary {
-    background: #333;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
     
     &:hover {
-      background: #555;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
     }
   }
   
   &.secondary {
     background: transparent;
-    color: #333;
-    border: 2px solid #333;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
     
     &:hover {
-      background: #333;
+      background: var(--primary-color);
       color: white;
+      transform: translateY(-2px);
     }
   }
 }
@@ -96,7 +94,6 @@
   
   h2 {
     margin-bottom: 2rem;
-    color: #333;
   }
 }
 
@@ -107,12 +104,19 @@
 }
 
 .expertise-item {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 6px;
+  background: var(--bg-secondary);
+  padding: 1.5rem 1rem;
+  border-radius: var(--radius-lg);
   text-align: center;
-  color: #555;
   font-weight: 500;
+  transition: all var(--transition-normal);
+  border: 1px solid var(--border-color);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    background: var(--bg-primary);
+  }
 }
 
 .side-projects {
@@ -120,11 +124,9 @@
   
   h2 {
     margin-bottom: 1.5rem;
-    color: #333;
   }
   
   p {
-    color: #666;
     line-height: 1.6;
   }
 }
@@ -132,7 +134,6 @@
 .press {
   h2 {
     margin-bottom: 2rem;
-    color: #333;
   }
 }
 
@@ -143,14 +144,16 @@
 }
 
 .press-link {
-  color: #666;
+  color: var(--text-secondary);
   text-decoration: none;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
-  transition: color 0.2s ease;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
   
   &:hover {
-    color: #333;
+    color: var(--primary-color);
+    padding-left: 0.5rem;
   }
   
   &:last-child {
@@ -159,7 +162,7 @@
 }
 
 @media (max-width: 768px) {
-  .hero-title {
+  .hero h1 {
     font-size: 2.5rem;
   }
   

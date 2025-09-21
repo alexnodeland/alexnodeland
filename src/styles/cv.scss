@@ -1,26 +1,25 @@
 .cv {
   max-width: 900px;
   margin: 0 auto;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .cv-header {
   text-align: center;
   margin-bottom: 3rem;
   padding-bottom: 2rem;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--border-color);
   
   h1 {
     font-size: 2.5rem;
     margin-bottom: 1rem;
-    color: #333;
   }
 }
 
 .cv-contact {
   p {
     margin: 0.5rem 0;
-    color: #666;
+    color: var(--text-secondary);
   }
 }
 
@@ -30,30 +29,37 @@
   h2 {
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
-    color: #333;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 2px solid var(--primary-color);
     padding-bottom: 0.5rem;
+    display: inline-block;
   }
   
   h3 {
     font-size: 1.3rem;
     margin-bottom: 0.5rem;
-    color: #444;
+    color: var(--text-primary);
   }
   
   p {
     margin-bottom: 1rem;
-    color: #555;
   }
 }
 
 .experience-item {
   margin-bottom: 2.5rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-normal);
+  
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
   
   &:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
   }
 }
 
@@ -69,13 +75,18 @@
     margin: 0;
     flex: 1;
     min-width: 200px;
+    color: var(--text-primary);
   }
 }
 
 .experience-duration {
-  color: #666;
-  font-weight: 500;
+  color: var(--text-muted);
+  font-weight: 600;
   white-space: nowrap;
+  background: var(--bg-accent);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
 }
 
 .experience-bullets {
@@ -84,17 +95,29 @@
   
   li {
     margin-bottom: 0.75rem;
-    color: #555;
+    position: relative;
+    
+    &::marker {
+      color: var(--primary-color);
+    }
   }
 }
 
 .education-item {
   margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-normal);
+  
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
   
   &:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
   }
   
   h3 {
@@ -105,7 +128,7 @@
     margin-bottom: 0.75rem;
     
     strong {
-      color: #333;
+      color: var(--text-primary);
     }
   }
   
@@ -114,7 +137,6 @@
     
     li {
       margin-bottom: 0.5rem;
-      color: #555;
     }
   }
 }
@@ -125,7 +147,11 @@
   
   li {
     margin-bottom: 0.5rem;
-    color: #555;
+    position: relative;
+    
+    &::marker {
+      color: var(--primary-color);
+    }
   }
 }
 
@@ -153,5 +179,10 @@
   
   .cv-section h3 {
     font-size: 1.2rem;
+  }
+  
+  .experience-item,
+  .education-item {
+    padding: 1rem;
   }
 }

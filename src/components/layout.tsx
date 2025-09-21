@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'gatsby'
 import MDXProvider from './mdx/MDXProvider'
+import ThemeToggle from './ThemeToggle'
 import './layout.scss'
 
 interface LayoutProps {
@@ -16,10 +17,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="nav-brand">
               <Link to="/" className="nav-link">Alex Nodeland</Link>
             </div>
-            <div className="nav-menu">
-              <Link to="/" className="nav-link">home</Link>
-              <Link to="/cv" className="nav-link">cv</Link>
-            </div>
+          <div className="nav-menu">
+            <Link to="/" className="nav-link">home</Link>
+            <Link to="/cv" className="nav-link">cv</Link>
+            <ThemeToggle />
+          </div>
           </nav>
         </header>
         <main className="main">

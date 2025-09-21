@@ -7,28 +7,29 @@
   h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
-    color: #333;
   }
   
   p {
     font-size: 1.2rem;
-    color: #666;
+    color: var(--text-secondary);
     margin-bottom: 2rem;
   }
 }
 
 .back-home {
   display: inline-block;
-  padding: 0.75rem 2rem;
-  background: #333;
+  padding: 0.875rem 2rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: white;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   font-weight: 600;
-  transition: background-color 0.2s ease;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
   
   &:hover {
-    background: #555;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
   }
 }
 
