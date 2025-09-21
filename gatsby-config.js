@@ -1,12 +1,14 @@
+const { siteConfig } = require('./src/config/site')
+
 /**
  * @type {import('gatsby').GatsbyConfig}
  */
 module.exports = {
   pathPrefix: `/alexnodeland`,
   siteMetadata: {
-    title: `Alex Nodeland`,
-    description: `Experienced engineer and mathematician with a strong background in high-performance computing, AI system design, and startup development.`,
-    author: `Alex Nodeland`,
+    title: siteConfig.siteName,
+    description: siteConfig.description,
+    author: siteConfig.author,
     siteUrl: `https://alexnodeland.github.io/alexnodeland`,
   },
   plugins: [

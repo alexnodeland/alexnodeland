@@ -1,5 +1,6 @@
 import React from 'react'
 import { Helmet } from 'react-helmet'
+import { siteConfig } from '../config/site'
 
 interface SEOProps {
   title?: string
@@ -9,12 +10,12 @@ interface SEOProps {
 }
 
 const SEO: React.FC<SEOProps> = ({ 
-  title = 'Alex Nodeland', 
-  description = 'Experienced engineer and mathematician with a strong background in high-performance computing, AI system design, and startup development.',
-  image = '/images/icon.png',
-  url = 'https://alexnodeland.com'
+  title = siteConfig.seo.defaultTitle, 
+  description = siteConfig.seo.defaultDescription,
+  image = siteConfig.seo.defaultImage,
+  url = siteConfig.siteUrl
 }) => {
-  const fullTitle = title === 'Alex Nodeland' ? title : `${title} | Alex Nodeland`
+  const fullTitle = title === siteConfig.siteName ? title : `${title} | ${siteConfig.siteName}`
   
   return (
     <Helmet>

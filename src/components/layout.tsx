@@ -2,6 +2,8 @@ import React from 'react'
 import { Link } from 'gatsby'
 import MDXProvider from './mdx/MDXProvider'
 import ThemeToggle from './ThemeToggle'
+import { siteConfig } from '../config/site'
+import { getAllSocialLinks } from '../config/helpers'
 import './layout.scss'
 
 interface LayoutProps {
@@ -15,11 +17,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <header className="header">
           <nav className="nav">
             <div className="nav-brand">
-              <Link to="/" className="nav-link">Alex Nodeland</Link>
+              <Link to="/" className="nav-link">{siteConfig.siteName}</Link>
             </div>
           <div className="nav-menu">
-            <Link to="/" className="nav-link">home</Link>
-            <Link to="/cv" className="nav-link">cv</Link>
+            {siteConfig.navigation.main.map((item) => (
+              <Link key={item.name} to={item.href} className="nav-link">
+                {item.name}
+              </Link>
+            ))}
             <ThemeToggle />
           </div>
           </nav>
@@ -30,17 +35,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <footer className="footer">
           <div className="footer-content">
             <div className="footer-links">
-              <a href="mailto:alex@ournature.studio" className="footer-link">
+              <a href={`mailto:${siteConfig.contact.email}`} className="footer-link">
                 <span className="icon">✉</span>
               </a>
-              <a href="https://linkedin.com/in/alexnodeland" className="footer-link" target="_blank" rel="noopener noreferrer">
-                <span className="icon">💼</span>
-              </a>
-              <a href="https://github.com/alexnodeland" className="footer-link" target="_blank" rel="noopener noreferrer">
-                <span className="icon">🐙</span>
-              </a>
+              {getAllSocialLinks().map(({ platform, url }) => {
+                const icons: Record<string, string> = {
+                  linkedin: '💼',
+                  github: '🐙',
+                  instagram: '📷',
+                  youtube: '📺',
+                }
+                return (
+                  <a key={platform} href={url} className="footer-link" target="_blank" rel="noopener noreferrer">
+                    <span className="icon">{icons[platform] || '🔗'}</span>
+                  </a>
+                )
+              })}
             </div>
-            <p className="footer-copyright">© 2024 all rights reserved, alexander m. nodeland</p>
+            <p className="footer-copyright">© 2024 all rights reserved, {siteConfig.author.toLowerCase()}</p>
           </div>
         </footer>
       </div>

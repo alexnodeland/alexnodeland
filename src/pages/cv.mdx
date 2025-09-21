@@ -5,18 +5,19 @@ description: "Complete resume and CV for Alex Nodeland"
 
 import Layout from '../components/layout'
 import SEO from '../components/seo'
+import { siteConfig } from '../config/site'
 import '../styles/cv.scss'
 
 <Layout>
   <SEO title="CV" />
   <div className="cv">
     <header className="cv-header">
-      <h1>Alex Nodeland</h1>
+      <h1>{siteConfig.siteName}</h1>
       <div className="cv-contact">
-        <p><strong>Location:</strong> Upstate, New York, USA</p>
-        <p><strong>Email:</strong> alex@ournature.studio</p>
-        <p><strong>LinkedIn:</strong> linkedin.com/in/alexnodeland</p>
-        <p><strong>Website:</strong> www.alexnodeland.com</p>
+        <p><strong>Location:</strong> {siteConfig.contact.location}</p>
+        <p><strong>Email:</strong> {siteConfig.contact.email}</p>
+        <p><strong>LinkedIn:</strong> {siteConfig.social.linkedin.replace('https://', '')}</p>
+        <p><strong>Website:</strong> {siteConfig.contact.website}</p>
       </div>
     </header>
 

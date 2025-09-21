@@ -5,6 +5,7 @@ description: "Experienced engineer and mathematician with a background in distri
 
 import Layout from '../components/layout'
 import SEO from '../components/seo'
+import { siteConfig } from '../config/site'
 import '../styles/index.scss'
 
 <Layout>
@@ -44,10 +45,10 @@ import '../styles/index.scss'
         scalable and efficient processes that don't get in the way and provide immediate value.
       </p>
       <div className="cta-buttons">
-        <a href="mailto:alex@ournature.studio" className="cta-button primary">
+        <a href={`mailto:${siteConfig.contact.email}`} className="cta-button primary">
           Get in Touch
         </a>
-        <a href="https://calendly.com/alexnodeland" className="cta-button secondary" target="_blank" rel="noopener noreferrer">
+        <a href={siteConfig.services.calendar} className="cta-button secondary" target="_blank" rel="noopener noreferrer">
           Schedule a Call
         </a>
       </div>
