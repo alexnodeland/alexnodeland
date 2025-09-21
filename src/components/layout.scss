@@ -30,6 +30,10 @@
   transition: all var(--transition-normal);
 }
 
+[data-theme="dark"] .header {
+  background: rgba(17, 24, 39, 0.95);
+}
+
 .nav {
   max-width: 1200px;
   margin: 0 auto;
