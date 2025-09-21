@@ -1,0 +1,91 @@
+import React from 'react'
+import Layout from '../components/layout'
+import SEO from '../components/seo'
+import './index.scss'
+
+const IndexPage: React.FC = () => {
+  return (
+    <Layout>
+      <SEO title="Home" />
+      <div className="home">
+        <section className="hero">
+          <h1 className="hero-title">Alex Nodeland</h1>
+          <p className="hero-subtitle">
+            Hi, I'm Alex, a freelance technical consultant with a background in distributed computing and creative technology.
+          </p>
+        </section>
+
+        <section className="about">
+          <div className="about-content">
+            <p>
+              I've always had an innate interest in technology. I remember building my first "guitar pedal" when I was around 10 years old, 
+              it was a rudimentary talk box (literally held together with duct tape), but it worked! That first experience with creative 
+              technology sparked my interest.
+            </p>
+            <p>
+              My subsequent deep dive into music technology lasted throughout my youth and university years, and ultimately lead me to the 
+              space of computational mathematics and distributed computing, specifically distributed-memory HPC. Also, having been exposed 
+              to startups at a very early age, joining one as my first job at 15 years old, I learned the importance of building scalable 
+              technical strategy, from processes to product. These paths of interest and discovery led me to where I am now.
+            </p>
+            <p>
+              Over the course of my career, I've worked with and founded several tech startups across supercomputing and music-technology, 
+              in technical and commercial roles, and as individual contributor and manager.
+            </p>
+          </div>
+        </section>
+
+        <section className="consulting">
+          <h2>Technical Consulting</h2>
+          <p>
+            As a technical strategy consultant, I aim to bring my wide-ranging experience to early stage startups who are looking to build 
+            scalable and efficient processes that don't get in the way and provide immediate value.
+          </p>
+          <div className="cta-buttons">
+            <a href="mailto:alex@ournature.studio" className="cta-button primary">
+              Reach Out
+            </a>
+            <a href="https://calendly.com/alexnodeland" className="cta-button secondary" target="_blank" rel="noopener noreferrer">
+              Book a Meeting
+            </a>
+          </div>
+        </section>
+
+        <section className="expertise">
+          <h2>Areas of Expertise</h2>
+          <div className="expertise-grid">
+            <div className="expertise-item">adoption of emerging technologies</div>
+            <div className="expertise-item">technical project management</div>
+            <div className="expertise-item">business modeling</div>
+            <div className="expertise-item">technical market analysis</div>
+            <div className="expertise-item">go-to-market strategy</div>
+            <div className="expertise-item">software development processes</div>
+          </div>
+        </section>
+
+        <section className="side-projects">
+          <h2>Side Projects</h2>
+          <p>
+            In my free time, I like to learn about a range of technologies across generative AI, creative computing, human-computer 
+            interaction, synthesizers, home automation, and hydroponics. I have a handful of personal projects that I'm working on and 
+            would like to release over time.
+          </p>
+        </section>
+
+        <section className="press">
+          <h2>In the Press</h2>
+          <div className="press-links">
+            <a href="#" className="press-link">Singapore Startup Hatches At-Scale HPC Dev Cloud</a>
+            <a href="#" className="press-link">Try Before You Buy? Test Driving a Supercomputer System</a>
+            <a href="#" className="press-link">Supercomputing Shouldn't Be Rocket Science</a>
+            <a href="#" className="press-link">Optimal Wavelet Bases For Audio Compression</a>
+            <a href="#" className="press-link">Alexander Nodeland: Supercomputers For Audio Research and Development</a>
+            <a href="#" className="press-link">The Future of Sound</a>
+          </div>
+        </section>
+      </div>
+    </Layout>
+  )
+}
+
+export default IndexPage
