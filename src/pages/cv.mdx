@@ -58,14 +58,20 @@ import '../styles/cv.scss'
     </div>
     
     <div id="resume-content">
-      <ExperienceSection experiences={resumeData.experience} />
+      <div id="experience-section">
+        <ExperienceSection experiences={resumeData.experience} />
+      </div>
       
-      <EducationSection education={resumeData.education} />
+      <div id="education-section">
+        <EducationSection education={resumeData.education} />
+      </div>
       
-      <SkillsSection skills={resumeData.skills} />
+      <div id="skills-section">
+        <SkillsSection skills={resumeData.skills} />
+      </div>
       
       {resumeData.certifications && resumeData.certifications.length > 0 && (
-        <section className="cv-section">
+        <section id="certifications-section" className="cv-section">
           <h2>certifications</h2>
           <ul className="certifications-list">
             {resumeData.certifications.map((cert, index) => (

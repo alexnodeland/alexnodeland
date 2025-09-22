@@ -684,14 +684,98 @@
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
   
-  h3 {
-    margin-bottom: 1rem;
-    color: var(--text-primary);
-    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.02em;
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-    animation: glow 2s ease-in-out infinite alternate;
+  .search-section {
+    margin-bottom: 2rem;
+    
+    .search-container {
+      margin-bottom: 1rem;
+      
+      .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 1rem;
+        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+        text-transform: lowercase;
+        transition: all var(--transition-fast);
+        
+        &:focus {
+          outline: none;
+          border-color: var(--accent-color);
+          box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
+          background: var(--bg-accent);
+        }
+        
+        &::placeholder {
+          color: var(--text-secondary);
+          text-transform: lowercase;
+        }
+      }
+    }
+    
+    .search-results {
+      background: var(--bg-primary);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: var(--shadow-md);
+      
+      .search-result-item {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        
+        &:last-child {
+          border-bottom: none;
+        }
+        
+        &:hover {
+          background: var(--bg-accent);
+          border-left: 3px solid var(--accent-color);
+        }
+        
+        .result-type {
+          font-size: 0.8rem;
+          font-weight: 500;
+          color: var(--accent-color);
+          font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+          text-transform: lowercase;
+          margin-bottom: 0.25rem;
+        }
+        
+        .result-title {
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          margin-bottom: 0.25rem;
+        }
+        
+        .result-company,
+        .result-institution {
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+          margin-bottom: 0.25rem;
+        }
+        
+        .result-description {
+          font-size: 0.85rem;
+          color: var(--text-muted);
+          line-height: 1.4;
+        }
+      }
+      
+      .no-results {
+        padding: 1rem;
+        text-align: center;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+    }
   }
   
   .export-actions {
