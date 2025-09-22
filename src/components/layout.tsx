@@ -35,19 +35,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <footer className="footer">
           <div className="footer-content">
             <div className="footer-links">
-              <a href={`mailto:${siteConfig.contact.email}`} className="footer-link">
-                <span className="icon">✉</span>
+              <a href={`mailto:${siteConfig.contact.email}`} className="footer-link" data-platform="email">
+                <span className="icon"></span>
               </a>
               {getAllSocialLinks().map(({ platform, url }) => {
-                const icons: Record<string, string> = {
-                  linkedin: '💼',
-                  github: '🐙',
-                  instagram: '📷',
-                  youtube: '📺',
-                }
                 return (
-                  <a key={platform} href={url} className="footer-link" target="_blank" rel="noopener noreferrer">
-                    <span className="icon">{icons[platform] || '🔗'}</span>
+                  <a key={platform} href={url} className="footer-link" data-platform={platform} target="_blank" rel="noopener noreferrer">
+                    <span className="icon"></span>
                   </a>
                 )
               })}
