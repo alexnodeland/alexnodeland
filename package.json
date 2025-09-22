@@ -11,6 +11,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:unit": "jest --testPathPattern=__tests__/unit",
+    "test:integration": "jest --testPathPattern=__tests__/integration",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test:coverage:full": "node scripts/test-coverage.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint src --ext .ts,.tsx,.js,.jsx --fix",
@@ -84,6 +90,10 @@
     "jest-environment-jsdom": "^29.7.0",
     "prettier": "^3.6.2",
     "sass": "^1.93.1",
-    "sass-true": "^9.0.0"
+    "sass-true": "^9.0.0",
+    "jest-canvas-mock": "^2.5.2",
+    "msw": "^2.0.0",
+    "playwright": "^1.40.0",
+    "@playwright/test": "^1.40.0"
   }
 }

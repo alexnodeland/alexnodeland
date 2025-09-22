@@ -2,7 +2,7 @@ const sass = require('sass');
 const path = require('path');
 
 describe('SCSS Compilation', () => {
-  const stylesDir = path.resolve(__dirname, '..');
+  const stylesDir = path.resolve(__dirname, '../../../styles');
 
   test('SCSS files exist and can be read', () => {
     const fs = require('fs');

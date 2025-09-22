@@ -5,19 +5,32 @@ export const useTheme = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>(THEMES.LIGHT);
 
   useEffect(() => {
-    // Check for saved theme preference or default to light
-    const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as
-      | 'light'
-      | 'dark'
-      | null;
-    const prefersDark = window.matchMedia(
-      '(prefers-color-scheme: dark)'
-    ).matches;
+    try {
+      // Check for saved theme preference or default to light
+      const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as
+        | 'light'
+        | 'dark'
+        | null;
+      const prefersDark = window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      ).matches;
 
-    const initialTheme =
-      savedTheme || (prefersDark ? THEMES.DARK : THEMES.LIGHT);
-    setTheme(initialTheme);
-    document.documentElement.setAttribute('data-theme', initialTheme);
+      // Validate saved theme
+      const validSavedTheme = savedTheme === THEMES.LIGHT || savedTheme === THEMES.DARK ? savedTheme : null;
+      
+      const initialTheme =
+        validSavedTheme || (prefersDark ? THEMES.DARK : THEMES.LIGHT);
+      setTheme(initialTheme);
+      document.documentElement.setAttribute('data-theme', initialTheme);
+    } catch (error) {
+      // Fallback to system preference or default
+      const prefersDark = window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      ).matches;
+      const initialTheme = prefersDark ? THEMES.DARK : THEMES.LIGHT;
+      setTheme(initialTheme);
+      document.documentElement.setAttribute('data-theme', initialTheme);
+    }
   }, []);
 
   const toggleTheme = () => {

@@ -38,6 +38,12 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 
+# Test artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Dependency directories
 jspm_packages/
 
