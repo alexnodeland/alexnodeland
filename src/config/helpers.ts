@@ -44,3 +44,17 @@ export const getAllSocialLinks = () => {
       handle: formatSocialHandle(platform as keyof typeof siteConfig.social),
     }))
 }
+
+// Get CTA button URL based on action type
+export const getCTAButtonURL = (action: 'email' | 'calendar' | 'url', customUrl?: string): string => {
+  switch (action) {
+    case 'email':
+      return `mailto:${siteConfig.contact.email}`
+    case 'calendar':
+      return siteConfig.services.calendar
+    case 'url':
+      return customUrl || '#'
+    default:
+      return '#'
+  }
+}

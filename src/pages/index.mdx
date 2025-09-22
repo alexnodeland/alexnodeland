@@ -6,108 +6,83 @@ description: "Experienced engineer and mathematician with a background in distri
 import Layout from '../components/layout'
 import SEO from '../components/seo'
 import { siteConfig } from '../config/site'
+import { homepageConfig } from '../config/homepage'
+import { getCTAButtonURL } from '../config/helpers'
 import '../styles/index.scss'
 
 <Layout>
   <SEO title="Home" />
   <div className="home">
     <section className="hero">
-      <h1>Alex Nodeland</h1>
+      <h1>{homepageConfig.hero.title}</h1>
       <p className="hero-subtitle">
-        Hi, I'm Alex, a freelance technical consultant with a background in distributed computing and creative technology.
+        {homepageConfig.hero.subtitle}
       </p>
     </section>
 
     <section className="about">
       <div className="about-content">
-        <p>
-          I've always had an innate interest in technology. I remember building my first "guitar pedal" when I was around 10 years old, 
-          it was a rudimentary talk box (literally held together with duct tape), but it worked! That first experience with creative 
-          technology sparked my interest.
-        </p>
-        <p>
-          My subsequent deep dive into music technology lasted throughout my youth and university years, and ultimately lead me to the 
-          space of computational mathematics and distributed computing, specifically distributed-memory HPC. Also, having been exposed 
-          to startups at a very early age, joining one as my first job at 15 years old, I learned the importance of building scalable 
-          technical strategy, from processes to product. These paths of interest and discovery led me to where I am now.
-        </p>
-        <p>
-          Over the course of my career, I've worked with and founded several tech startups across supercomputing and music-technology, 
-          in technical and commercial roles, and as individual contributor and manager.
-        </p>
+        {homepageConfig.about.paragraphs.map((paragraph, index) => (
+          <p key={index}>
+            {paragraph}
+          </p>
+        ))}
       </div>
     </section>
 
     <section className="consulting">
-      <h2>Technical Consulting</h2>
+      <h2>{homepageConfig.consulting.title}</h2>
       <p>
-        As a technical strategy consultant, I aim to bring my wide-ranging experience to early stage startups who are looking to build 
-        scalable and efficient processes that don't get in the way and provide immediate value.
+        {homepageConfig.consulting.description}
       </p>
       <div className="cta-buttons">
-        <a href={`mailto:${siteConfig.contact.email}`} className="cta-button primary">
-          Get in Touch
+        <a 
+          href={getCTAButtonURL(homepageConfig.consulting.ctaButtons.primary.action, homepageConfig.consulting.ctaButtons.primary.url)} 
+          className="cta-button primary"
+          target={homepageConfig.consulting.ctaButtons.primary.action === 'calendar' ? '_blank' : undefined}
+          rel={homepageConfig.consulting.ctaButtons.primary.action === 'calendar' ? 'noopener noreferrer' : undefined}
+        >
+          {homepageConfig.consulting.ctaButtons.primary.text}
         </a>
-        <a href={siteConfig.services.calendar} className="cta-button secondary" target="_blank" rel="noopener noreferrer">
-          Schedule a Call
+        <a 
+          href={getCTAButtonURL(homepageConfig.consulting.ctaButtons.secondary.action, homepageConfig.consulting.ctaButtons.secondary.url)} 
+          className="cta-button secondary" 
+          target={homepageConfig.consulting.ctaButtons.secondary.action === 'calendar' ? '_blank' : undefined}
+          rel={homepageConfig.consulting.ctaButtons.secondary.action === 'calendar' ? 'noopener noreferrer' : undefined}
+        >
+          {homepageConfig.consulting.ctaButtons.secondary.text}
         </a>
       </div>
     </section>
 
-          <section className="expertise">
-            <h2>Areas of Expertise</h2>
-            <div className="expertise-grid">
-              <div className="expertise-item">
-                <span className="expertise-icon">🚀</span>
-                <div className="expertise-title">Emerging Technologies</div>
-                <div className="expertise-description">Adoption and integration of cutting-edge AI and computing technologies</div>
-              </div>
-              <div className="expertise-item">
-                <span className="expertise-icon">⚙️</span>
-                <div className="expertise-title">Technical Project Management</div>
-                <div className="expertise-description">Leading cross-functional teams and managing complex technical initiatives</div>
-              </div>
-              <div className="expertise-item">
-                <span className="expertise-icon">📊</span>
-                <div className="expertise-title">Business Modeling</div>
-                <div className="expertise-description">Strategic planning and financial modeling for scalable growth</div>
-              </div>
-              <div className="expertise-item">
-                <span className="expertise-icon">🔍</span>
-                <div className="expertise-title">Market Analysis</div>
-                <div className="expertise-description">Technical market research and competitive intelligence</div>
-              </div>
-              <div className="expertise-item">
-                <span className="expertise-icon">🎯</span>
-                <div className="expertise-title">Go-to-Market Strategy</div>
-                <div className="expertise-description">Product launch strategies and market entry planning</div>
-              </div>
-              <div className="expertise-item">
-                <span className="expertise-icon">🛠️</span>
-                <div className="expertise-title">Development Processes</div>
-                <div className="expertise-description">Optimizing software development workflows and practices</div>
-              </div>
-            </div>
-          </section>
+    <section className="expertise">
+      <h2>{homepageConfig.expertise.title}</h2>
+      <div className="expertise-grid">
+        {homepageConfig.expertise.items.map((item, index) => (
+          <div key={index} className="expertise-item">
+            <span className="expertise-icon">{item.icon}</span>
+            <div className="expertise-title">{item.title}</div>
+            <div className="expertise-description">{item.description}</div>
+          </div>
+        ))}
+      </div>
+    </section>
 
     <section className="side-projects">
-      <h2>Side Projects</h2>
+      <h2>{homepageConfig.sideProjects.title}</h2>
       <p>
-        In my free time, I like to learn about a range of technologies across generative AI, creative computing, human-computer 
-        interaction, synthesizers, home automation, and hydroponics. I have a handful of personal projects that I'm working on and 
-        would like to release over time.
+        {homepageConfig.sideProjects.description}
       </p>
     </section>
 
     <section className="press">
-      <h2>In the Press</h2>
+      <h2>{homepageConfig.press.title}</h2>
       <div className="press-links">
-        <a href="#" className="press-link">Singapore Startup Hatches At-Scale HPC Dev Cloud</a>
-        <a href="#" className="press-link">Try Before You Buy? Test Driving a Supercomputer System</a>
-        <a href="#" className="press-link">Supercomputing Shouldn't Be Rocket Science</a>
-        <a href="#" className="press-link">Optimal Wavelet Bases For Audio Compression</a>
-        <a href="#" className="press-link">Alexander Nodeland: Supercomputers For Audio Research and Development</a>
-        <a href="#" className="press-link">The Future of Sound</a>
+        {homepageConfig.press.links.map((link, index) => (
+          <a key={index} href={link.url} className="press-link">
+            {link.text}
+          </a>
+        ))}
       </div>
     </section>
   </div>
