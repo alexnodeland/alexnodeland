@@ -81,7 +81,7 @@ export const resumeData: ResumeData = {
     title: 'Senior AI Engineer & Technical Consultant',
     email: 'alex@ournature.studio',
     location: 'Upstate, New York, USA',
-    website: 'www.alexnodeland.com',
+    website: 'alexnodeland.com',
     summary: 'Experienced engineer and mathematician with a strong background in high-performance computing, AI system design, and startup development. Proven track record in leading cross-functional teams and managing strategic business partnerships. Passionate about transforming complex ideas into user-friendly solutions, optimizing business processes, and driving innovation and growth.'
   },
 

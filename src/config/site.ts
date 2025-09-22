@@ -54,7 +54,7 @@ export const siteConfig: SiteConfig = {
   contact: {
     email: 'alex@ournature.studio',
     location: 'Upstate, New York, USA',
-    website: 'www.alexnodeland.com',
+    website: 'alexnodeland.com',
   },
   
   // Social media links
