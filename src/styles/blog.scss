@@ -12,10 +12,14 @@
   
   h1 {
     margin-bottom: 1rem;
-    font-family: 'Georgia', 'Times New Roman', 'Times', serif;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.02em;
     position: relative;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    animation: glow 2s ease-in-out infinite alternate;
     
-    // Add academic-style underline
+    // Add retro futuristic underline
     &::after {
       content: '';
       position: absolute;
@@ -26,6 +30,7 @@
       height: 3px;
       background: var(--accent-color);
       border-radius: 2px;
+      box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
     }
   }
   
@@ -183,6 +188,15 @@
   }
 }
 
+@keyframes glow {
+  from {
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+  }
+  to {
+    text-shadow: 0 0 30px rgba(0, 255, 136, 0.6), 0 0 40px rgba(0, 255, 136, 0.3);
+  }
+}
+
 .blog-content {
   margin-bottom: 4rem;
 }
@@ -251,6 +265,9 @@
 
 .post-title {
   margin-bottom: 1rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
   
   a {
     color: var(--text-primary);
@@ -309,7 +326,9 @@
     margin-top: 2rem;
     margin-bottom: 1rem;
     color: var(--text-primary);
-    font-family: 'Georgia', 'Times New Roman', 'Times', serif;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.02em;
     position: relative;
   }
   

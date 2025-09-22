@@ -35,62 +35,62 @@ export interface HomepageConfig {
 
 export const homepageConfig: HomepageConfig = {
   hero: {
-    title: "Alex Nodeland",
-    subtitle: "Hi, I'm Alex, a freelance technical consultant with a background in distributed computing and creative technology."
+    title: "alex nodeland",
+    subtitle: "ai engineering & devops specialist"
   },
   about: {
     paragraphs: [
-      "I'm a technical consultant with experience in distributed computing and creative technology. My background spans both technical and commercial roles across various industries.",
-      "I help early-stage startups build scalable technical strategies and processes that provide immediate value without getting in the way of growth.",
-      "My approach combines hands-on technical expertise with strategic thinking to solve complex problems and drive innovation."
+      "i build ai systems that actually work. from llm orchestration to distributed workflows, i solve complex engineering challenges with production-ready solutions.",
+      "ready to transform your ai initiatives into scalable, reliable systems? let's architect something powerful together.",
+      "specializing in python, aws, kubernetes, and the full ai engineering stack that powers modern intelligent applications."
     ]
   },
   consulting: {
-    title: "Technical Consulting",
-    description: "As a technical strategy consultant, I aim to bring my wide-ranging experience to early stage startups who are looking to build scalable and efficient processes that don't get in the way and provide immediate value.",
+    title: "let's build something",
+    description: "stop struggling with ai system complexity and scaling challenges. i help companies implement robust, production-ready ai infrastructure that delivers real business value.",
     ctaButtons: {
       primary: {
-        text: "Get in Touch",
+        text: "start building",
         action: "email"
       },
       secondary: {
-        text: "Schedule a Call",
+        text: "explore possibilities",
         action: "calendar"
       }
     }
   },
   expertise: {
-    title: "Areas of Expertise",
+    title: "core capabilities",
     items: [
       {
-        icon: "🚀",
-        title: "Emerging Technologies",
-        description: "Adoption and integration of cutting-edge AI and computing technologies"
+        icon: "🤖",
+        title: "ai system architecture",
+        description: "llm orchestration, rag systems, and autonomous ai agent workflows"
       },
       {
         icon: "⚙️",
-        title: "Technical Project Management",
-        description: "Leading cross-functional teams and managing complex technical initiatives"
+        title: "devops & infrastructure",
+        description: "aws, kubernetes, docker, and infrastructure as code"
       },
       {
         icon: "📊",
-        title: "Business Modeling",
-        description: "Strategic planning and financial modeling for scalable growth"
+        title: "data engineering",
+        description: "pipeline design, etl processes, and data lineage tracking"
       },
       {
-        icon: "🔍",
-        title: "Market Analysis",
-        description: "Technical market research and competitive intelligence"
+        icon: "🔧",
+        title: "mlops & monitoring",
+        description: "model deployment, monitoring, and continuous improvement systems"
       },
       {
-        icon: "🎯",
-        title: "Go-to-Market Strategy",
-        description: "Product launch strategies and market entry planning"
+        icon: "🚀",
+        title: "technical leadership",
+        description: "cross-functional teams, strategic planning, and technical consulting"
       },
       {
-        icon: "🛠️",
-        title: "Development Processes",
-        description: "Optimizing software development workflows and practices"
+        icon: "💡",
+        title: "ai product development",
+        description: "from mvp to production, building ai products that users love"
       }
     ]
   }

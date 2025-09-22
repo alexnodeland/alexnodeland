@@ -47,7 +47,7 @@ export const siteConfig: SiteConfig = {
   // Basic site info
   siteName: 'Alex Nodeland',
   siteUrl: 'https://alexnodeland.com',
-  description: 'Experienced engineer and mathematician with a strong background in high-performance computing, AI system design, and startup development.',
+  description: 'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.',
   author: 'Alex Nodeland',
   
   // Contact information
@@ -71,7 +71,7 @@ export const siteConfig: SiteConfig = {
   // SEO and meta
   seo: {
     defaultTitle: 'Alex Nodeland',
-    defaultDescription: 'Experienced engineer and mathematician with a strong background in high-performance computing, AI system design, and startup development.',
+    defaultDescription: 'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.',
     defaultImage: '/images/icon.png',
   },
   
