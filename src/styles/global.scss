@@ -44,13 +44,13 @@
   --secondary-color: #0088cc;      // Darker cyan
   --accent-color: #cc0066;         // Darker pink
   --accent-light: #cc8800;         // Darker orange
-  --text-primary: #0a0a0a;         // Black text
-  --text-secondary: #404040;       // Dark gray
-  --text-muted: #606060;           // Medium gray
-  --bg-primary: #ffffff;           // White background
-  --bg-secondary: #f8f8f8;         // Light gray
-  --bg-accent: #f0f0f0;            // Accent background
-  --border-color: #cccccc;         // Light border
+  --text-primary: #1a1a1a;         // Softer black text
+  --text-secondary: #4a4a4a;       // Softer dark gray
+  --text-muted: #6a6a6a;           // Softer medium gray
+  --bg-primary: #fafafa;           // Soft off-white background
+  --bg-secondary: #f0f0f0;         // Soft light gray
+  --bg-accent: #e8e8e8;            // Softer accent background
+  --border-color: #d0d0d0;         // Softer border
   --accent-border: #cc0066;        // Darker pink border
   
   // Retro elements (adjusted for light mode)
@@ -59,11 +59,11 @@
   --retro-green: #00cc6a;          // Darker green
   --retro-purple: #cc00cc;         // Darker magenta
   
-  // Enhanced shadows for dark mode
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  // Softer shadows for light mode
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.15), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
 * {
@@ -112,14 +112,14 @@ body {
 [data-theme="light"] body {
   background: var(--bg-primary);
   background-image: 
-    radial-gradient(circle at 20% 80%, rgba(0, 204, 106, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(0, 136, 204, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(204, 0, 102, 0.03) 0%, transparent 50%);
+    radial-gradient(circle at 20% 80%, rgba(0, 204, 106, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 136, 204, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(204, 0, 102, 0.05) 0%, transparent 50%);
   
   &::before {
     background-image: 
-      linear-gradient(rgba(0, 204, 106, 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 204, 106, 0.02) 1px, transparent 1px);
+      linear-gradient(rgba(0, 204, 106, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 204, 106, 0.03) 1px, transparent 1px);
   }
 }
 
