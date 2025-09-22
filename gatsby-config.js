@@ -1,4 +1,4 @@
-const { siteConfig } = require('./src/config/site.js')
+const { siteConfig } = require('./src/config/site.ts')
 
 /**
  * @type {import('gatsby').GatsbyConfig}
