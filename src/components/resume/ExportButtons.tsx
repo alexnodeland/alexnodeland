@@ -53,27 +53,27 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
 
   return (
     <div className={`export-buttons ${className}`}>
-      <h3>Export Resume</h3>
+      <h3>export resume</h3>
       <div className="export-actions">
         <button 
           onClick={handlePDFExport}
           disabled={isExporting}
           className="export-button pdf"
         >
-          {isExporting ? 'Generating...' : '📄 Download PDF'}
+          {isExporting ? 'generating...' : '📄 download pdf'}
         </button>
         <button 
           onClick={handleDOCXExport}
           disabled={isExporting}
           className="export-button docx"
         >
-          {isExporting ? 'Generating...' : '📝 Download DOCX'}
+          {isExporting ? 'generating...' : '📝 download docx'}
         </button>
         <button 
           onClick={handleMarkdownExport}
           className="export-button markdown"
         >
-          📝 Download Markdown
+          📝 download markdown
         </button>
       </div>
     </div>

@@ -17,9 +17,44 @@ import '../styles/cv.scss'
 <Layout>
   <SEO title="CV" />
   <div className="cv">
+    <header className="cv-page-header">
+      <h1>cv</h1>
+      <p>comprehensive overview of my professional experience, skills, and achievements</p>
+    </header>
+
+    <ExportButtons 
+      resumeData={resumeData} 
+      className="cv-export"
+    />
+    
+    <div className="cv-summary-callout">
+      <p>{resumeData.personal.summary}</p>
+    </div>
+    
+    <div className="cv-contact-info">
+      <div className="contact-grid">
+        <div className="contact-item">
+          <span className="contact-label">location</span>
+          <span className="contact-value">{resumeData.personal.location}</span>
+        </div>
+        <div className="contact-item">
+          <span className="contact-label">email</span>
+          <a href={`mailto:${resumeData.personal.email}`} className="contact-value">{resumeData.personal.email}</a>
+        </div>
+        <div className="contact-item">
+          <span className="contact-label">website</span>
+          <a href={`https://${resumeData.personal.website}`} target="_blank" rel="noopener noreferrer" className="contact-value">{resumeData.personal.website}</a>
+        </div>
+        {resumeData.personal.phone && (
+          <div className="contact-item">
+            <span className="contact-label">phone</span>
+            <a href={`tel:${resumeData.personal.phone}`} className="contact-value">{resumeData.personal.phone}</a>
+          </div>
+        )}
+      </div>
+    </div>
+    
     <div id="resume-content">
-      <ResumeHeader personal={resumeData.personal} />
-      
       <ExperienceSection experiences={resumeData.experience} />
       
       <EducationSection education={resumeData.education} />
@@ -28,7 +63,7 @@ import '../styles/cv.scss'
       
       {resumeData.certifications && resumeData.certifications.length > 0 && (
         <section className="cv-section">
-          <h2>Certifications</h2>
+          <h2>certifications</h2>
           <ul className="certifications-list">
             {resumeData.certifications.map((cert, index) => (
               <li key={index}>
@@ -40,10 +75,5 @@ import '../styles/cv.scss'
         </section>
       )}
     </div>
-    
-    <ExportButtons 
-      resumeData={resumeData} 
-      className="cv-export"
-    />
   </div>
 </Layout>

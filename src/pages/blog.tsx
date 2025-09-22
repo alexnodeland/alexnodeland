@@ -83,8 +83,8 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
       <SEO title="Blog" />
       <div className="blog-page">
         <header className="blog-header">
-          <h1>Blog</h1>
-          <p>Thoughts on technology, projects, and the occasional deep dive into interesting problems.</p>
+          <h1>blog</h1>
+          <p>thoughts on technology, projects, and the occasional deep dive into interesting problems.</p>
         </header>
 
         {/* Search and Filter Controls */}
@@ -92,7 +92,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
           <div className="search-container">
             <input
               type="text"
-              placeholder="Search posts..."
+              placeholder="search posts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -105,7 +105,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
                 className={`filter-btn ${selectedCategory === null ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(null)}
               >
-                All
+                all
               </button>
               {categories.map(category => (
                 <button
@@ -113,32 +113,31 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
                   className={`filter-btn ${selectedCategory === category ? 'active' : ''}`}
                   onClick={() => setSelectedCategory(category)}
                 >
-                  {category}
+                  {category.toLowerCase()}
                 </button>
               ))}
             </div>
             
             <div className="sort-container">
-              <label htmlFor="sort-select" className="sort-label">Sort by date:</label>
+              <label htmlFor="sort-select" className="sort-label">sort by date:</label>
               <select
                 id="sort-select"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
                 className="sort-select"
               >
-                <option value="desc">Newest first</option>
-                <option value="asc">Oldest first</option>
+                <option value="desc">newest first</option>
+                <option value="asc">oldest first</option>
               </select>
             </div>
             
-            {(searchTerm || selectedCategory || sortOrder !== 'desc') && (
-              <button
-                className="clear-filters-btn"
-                onClick={clearFilters}
-              >
-                Clear Filters
-              </button>
-            )}
+            <button
+              className={`clear-filters-btn ${(searchTerm || selectedCategory || sortOrder !== 'desc') ? 'active' : 'disabled'}`}
+              onClick={clearFilters}
+              disabled={!(searchTerm || selectedCategory || sortOrder !== 'desc')}
+            >
+              clear filters
+            </button>
           </div>
         </div>
 
@@ -147,8 +146,8 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
             <div className="no-posts">
               <p>
                 {allPosts.length === 0 
-                  ? "No blog posts yet. Check back soon!"
-                  : "No posts match your current filters. Try adjusting your search or category selection."
+                  ? "no blog posts yet. check back soon!"
+                  : "no posts match your current filters. try adjusting your search or category selection."
                 }
               </p>
             </div>
@@ -178,7 +177,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
                   )}
                   <p className="post-excerpt">{post.excerpt}</p>
                   <Link to={`/blog${post.fields.slug}`} className="read-more">
-                    Read more →
+                    read more →
                   </Link>
                 </article>
               ))}
