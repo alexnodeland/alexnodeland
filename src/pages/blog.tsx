@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { graphql, Link } from 'gatsby'
 import Layout from '../components/layout'
 import SEO from '../components/seo'
@@ -31,9 +31,42 @@ interface BlogPageProps {
 
 const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
   // Filter for blog posts only
-  const posts = data.allMdx.nodes.filter(
+  const allPosts = data.allMdx.nodes.filter(
     post => post.parent && post.parent.sourceInstanceName === 'blog'
   )
+
+  // State for search and filtering
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+
+  // Get unique categories
+  const categories = useMemo(() => {
+    const cats = allPosts
+      .map(post => post.frontmatter.category)
+      .filter(Boolean)
+      .filter((cat, index, arr) => arr.indexOf(cat) === index)
+    return cats
+  }, [allPosts])
+
+  // Filter posts based on search term and category
+  const filteredPosts = useMemo(() => {
+    return allPosts.filter(post => {
+      const matchesSearch = searchTerm === '' || 
+        post.frontmatter.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.frontmatter.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      const matchesCategory = selectedCategory === null || 
+        post.frontmatter.category === selectedCategory
+      
+      return matchesSearch && matchesCategory
+    })
+  }, [allPosts, searchTerm, selectedCategory])
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setSelectedCategory(null)
+  }
 
   return (
     <Layout>
@@ -44,14 +77,61 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
           <p>Thoughts on technology, projects, and the occasional deep dive into interesting problems.</p>
         </header>
 
+        {/* Search and Filter Controls */}
+        <div className="blog-controls">
+          <div className="search-container">
+            <input
+              type="text"
+              placeholder="Search posts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          
+          <div className="filter-container">
+            <div className="category-filters">
+              <button
+                className={`filter-btn ${selectedCategory === null ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(null)}
+              >
+                All
+              </button>
+              {categories.map(category => (
+                <button
+                  key={category}
+                  className={`filter-btn ${selectedCategory === category ? 'active' : ''}`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            
+            {(searchTerm || selectedCategory) && (
+              <button
+                className="clear-filters-btn"
+                onClick={clearFilters}
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="blog-content">
-          {posts.length === 0 ? (
+          {filteredPosts.length === 0 ? (
             <div className="no-posts">
-              <p>No blog posts yet. Check back soon!</p>
+              <p>
+                {allPosts.length === 0 
+                  ? "No blog posts yet. Check back soon!"
+                  : "No posts match your current filters. Try adjusting your search or category selection."
+                }
+              </p>
             </div>
           ) : (
             <div className="posts-list">
-              {posts.map((post) => (
+              {filteredPosts.map((post) => (
                 <article key={post.id} className="post-preview">
                   <div className="post-meta">
                     <time dateTime={post.frontmatter.date}>
