@@ -35,9 +35,10 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
     post => post.parent && post.parent.sourceInstanceName === 'blog'
   )
 
-  // State for search and filtering
+  // State for search, filtering, and sorting
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -48,9 +49,9 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
     return cats
   }, [allPosts])
 
-  // Filter posts based on search term and category
+  // Filter and sort posts based on search term, category, and sort order
   const filteredPosts = useMemo(() => {
-    return allPosts.filter(post => {
+    const filtered = allPosts.filter(post => {
       const matchesSearch = searchTerm === '' || 
         post.frontmatter.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         post.frontmatter.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,11 +62,20 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
       
       return matchesSearch && matchesCategory
     })
-  }, [allPosts, searchTerm, selectedCategory])
+
+    // Sort by date
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.frontmatter.date).getTime()
+      const dateB = new Date(b.frontmatter.date).getTime()
+      
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+    })
+  }, [allPosts, searchTerm, selectedCategory, sortOrder])
 
   const clearFilters = () => {
     setSearchTerm('')
     setSelectedCategory(null)
+    setSortOrder('desc')
   }
 
   return (
@@ -108,7 +118,20 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
               ))}
             </div>
             
-            {(searchTerm || selectedCategory) && (
+            <div className="sort-container">
+              <label htmlFor="sort-select" className="sort-label">Sort by date:</label>
+              <select
+                id="sort-select"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+                className="sort-select"
+              >
+                <option value="desc">Newest first</option>
+                <option value="asc">Oldest first</option>
+              </select>
+            </div>
+            
+            {(searchTerm || selectedCategory || sortOrder !== 'desc') && (
               <button
                 className="clear-filters-btn"
                 onClick={clearFilters}
