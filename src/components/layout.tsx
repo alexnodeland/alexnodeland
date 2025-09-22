@@ -52,7 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 )
               })}
             </div>
-            <p className="footer-copyright">© 2024 all rights reserved, {siteConfig.author.toLowerCase()}</p>
+            <p className="footer-copyright">© 2025 all rights reserved, {siteConfig.author.toLowerCase()}</p>
           </div>
         </footer>
       </div>

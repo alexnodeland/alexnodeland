@@ -76,9 +76,6 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
           📝 Download Markdown
         </button>
       </div>
-      <p className="export-note">
-        PDF and DOCX exports provide clean, professional formatting. Markdown export provides a plain text format.
-      </p>
     </div>
   )
 }
