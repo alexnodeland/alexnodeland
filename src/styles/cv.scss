@@ -43,77 +43,76 @@
   }
 }
 
-// CV Summary Callout
-.cv-summary-callout {
+// CV Overview and Contact Combined
+.cv-overview-contact {
   background: var(--bg-secondary);
   padding: 2rem;
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-color);
   margin-bottom: 2rem;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, 
-      var(--accent-color) 0%, 
-      var(--retro-blue) 25%, 
-      var(--retro-green) 50%, 
-      var(--retro-purple) 75%, 
-      var(--accent-color) 100%);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
-  
-  p {
-    margin: 0;
-    font-size: 1.1rem;
-    line-height: 1.7;
-    color: var(--text-secondary);
-    font-style: italic;
-  }
-}
-
-// CV Contact Info
-.cv-contact-info {
-  background: var(--bg-primary);
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
-  border: 2px solid var(--border-color);
-  margin-bottom: 2rem;
   box-shadow: var(--shadow-sm);
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  align-items: start;
   
-  .contact-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-  }
-  
-  .contact-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    
-    .contact-label {
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--text-muted);
+  .overview-section {
+    h3 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
       font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
       text-transform: lowercase;
+      letter-spacing: -0.01em;
     }
     
-    .contact-value {
+    p {
+      margin: 0;
       font-size: 1rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+  }
+  
+  .contact-section {
+    h3 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
       color: var(--text-primary);
-      text-decoration: none;
-      transition: color var(--transition-fast);
+      font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+      text-transform: lowercase;
+      letter-spacing: -0.01em;
+    }
+    
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+    
+    .contact-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
       
-      &:hover {
-        color: var(--primary-color);
+      .contact-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+        text-transform: lowercase;
+      }
+      
+      .contact-value {
+        font-size: 1rem;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: color var(--transition-fast);
+        
+        &:hover {
+          color: var(--primary-color);
+        }
       }
     }
   }
@@ -870,22 +869,14 @@
     }
   }
   
-  .cv-summary-callout {
+  .cv-overview-contact {
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
     
-    p {
-      font-size: 1rem;
-    }
-  }
-  
-  .cv-contact-info {
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-    
-    .contact-grid {
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
+    .overview-section p {
+      font-size: 0.95rem;
     }
   }
   

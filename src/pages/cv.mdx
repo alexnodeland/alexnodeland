@@ -27,30 +27,33 @@ import '../styles/cv.scss'
       className="cv-export"
     />
     
-    <div className="cv-summary-callout">
-      <p>{resumeData.personal.summary}</p>
-    </div>
-    
-    <div className="cv-contact-info">
-      <div className="contact-grid">
-        <div className="contact-item">
-          <span className="contact-label">location</span>
-          <span className="contact-value">{resumeData.personal.location}</span>
-        </div>
-        <div className="contact-item">
-          <span className="contact-label">email</span>
-          <a href={`mailto:${resumeData.personal.email}`} className="contact-value">{resumeData.personal.email}</a>
-        </div>
-        <div className="contact-item">
-          <span className="contact-label">website</span>
-          <a href={`https://${resumeData.personal.website}`} target="_blank" rel="noopener noreferrer" className="contact-value">{resumeData.personal.website}</a>
-        </div>
-        {resumeData.personal.phone && (
+    <div className="cv-overview-contact">
+      <div className="overview-section">
+        <h3>overview</h3>
+        <p>{resumeData.personal.summary}</p>
+      </div>
+      <div className="contact-section">
+        <h3>contact</h3>
+        <div className="contact-grid">
           <div className="contact-item">
-            <span className="contact-label">phone</span>
-            <a href={`tel:${resumeData.personal.phone}`} className="contact-value">{resumeData.personal.phone}</a>
+            <span className="contact-label">location</span>
+            <span className="contact-value">{resumeData.personal.location}</span>
           </div>
-        )}
+          <div className="contact-item">
+            <span className="contact-label">email</span>
+            <a href={`mailto:${resumeData.personal.email}`} className="contact-value">{resumeData.personal.email}</a>
+          </div>
+          <div className="contact-item">
+            <span className="contact-label">website</span>
+            <a href={`https://${resumeData.personal.website}`} target="_blank" rel="noopener noreferrer" className="contact-value">{resumeData.personal.website}</a>
+          </div>
+          {resumeData.personal.phone && (
+            <div className="contact-item">
+              <span className="contact-label">phone</span>
+              <a href={`tel:${resumeData.personal.phone}`} className="contact-value">{resumeData.personal.phone}</a>
+            </div>
+          )}
+        </div>
       </div>
     </div>
     
