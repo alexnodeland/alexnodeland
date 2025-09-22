@@ -3,12 +3,12 @@
   padding: 4rem 2rem;
   max-width: 600px;
   margin: 0 auto;
-  
+
   h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
   }
-  
+
   p {
     font-size: 1.2rem;
     color: var(--text-secondary);
@@ -19,14 +19,18 @@
 .back-home {
   display: inline-block;
   padding: 0.875rem 2rem;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--secondary-color)
+  );
   color: white;
   text-decoration: none;
   border-radius: var(--radius-lg);
   font-weight: 600;
   transition: all var(--transition-normal);
   box-shadow: var(--shadow-md);
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
@@ -36,11 +40,11 @@
 @media (max-width: 768px) {
   .not-found {
     padding: 2rem 1rem;
-    
+
     h1 {
       font-size: 2.5rem;
     }
-    
+
     p {
       font-size: 1.1rem;
     }

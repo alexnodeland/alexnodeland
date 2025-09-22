@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState } from 'react'
 import { exportResumeAsPDF, exportResumeAsMarkdown, downloadMarkdown, exportResumeAsDOCX } from '../../utils/exportResume'
 import { ResumeData } from '../../config/resume'
 
@@ -10,7 +10,7 @@ interface ExportButtonsProps {
 
 const ExportButtons: React.FC<ExportButtonsProps> = ({ 
   resumeData, 
-  resumeElementId, 
+  resumeElementId: _resumeElementId, 
   className = '' 
 }) => {
   const [isExporting, setIsExporting] = useState(false)
@@ -130,7 +130,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
   const handlePDFExport = async () => {
     setIsExporting(true)
     try {
-      console.log('PDF export button clicked')
+      // PDF export initiated
       await exportResumeAsPDF(resumeData, `${resumeData.personal.name.replace(/\s+/g, '_')}_Resume.pdf`)
     } catch (error) {
       console.error('PDF export failed:', error)
@@ -143,7 +143,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
   const handleDOCXExport = async () => {
     setIsExporting(true)
     try {
-      console.log('DOCX export button clicked')
+      // DOCX export initiated
       await exportResumeAsDOCX(resumeData, `${resumeData.personal.name.replace(/\s+/g, '_')}_Resume.docx`)
     } catch (error) {
       console.error('DOCX export failed:', error)
@@ -196,7 +196,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
         
         {showResults && searchResults.length === 0 && searchTerm && (
           <div className="search-results">
-            <div className="no-results">no results found for "{searchTerm}"</div>
+            <div className="no-results">no results found for &quot;{searchTerm}&quot;</div>
           </div>
         )}
       </div>

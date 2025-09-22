@@ -1,0 +1,162 @@
+// SCSS Mixins for consistent styling patterns
+
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all var(--transition-normal);
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+}
+
+@mixin button-primary {
+  @include button-base;
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: left 0.5s;
+  }
+
+  &:hover {
+    background: var(--retro-blue);
+    border-color: var(--retro-blue);
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 20px rgba(0, 136, 255, 0.4),
+      var(--shadow-md);
+
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@mixin button-secondary {
+  @include button-base;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0, 255, 136, 0.1),
+      transparent
+    );
+    transition: left 0.5s;
+  }
+
+  &:hover {
+    background: var(--bg-secondary);
+    border-color: var(--retro-green);
+    color: var(--retro-green);
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 20px rgba(0, 255, 136, 0.3),
+      var(--shadow-md);
+
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@mixin academic-underline {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: var(--accent-color);
+    border-radius: 2px;
+  }
+}
+
+@mixin card-hover {
+  transition: all var(--transition-normal);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent-color);
+  }
+}
+
+@mixin retro-glow {
+  text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@mixin retro-border {
+  border: 2px solid var(--accent-color);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+      90deg,
+      var(--accent-color) 0%,
+      var(--retro-blue) 25%,
+      var(--retro-green) 50%,
+      var(--retro-purple) 75%,
+      var(--accent-color) 100%
+    );
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+}

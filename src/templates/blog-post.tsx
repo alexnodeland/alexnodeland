@@ -1,15 +1,20 @@
-import React from 'react'
-import { graphql, Link } from 'gatsby'
-import Layout from '../components/layout'
-import SEO from '../components/seo'
-import '../styles/blog.scss'
+import React from 'react';
+import { graphql, Link } from 'gatsby';
+import Layout from '../components/layout';
+import SEO from '../components/seo';
+import '../styles/blog.scss';
 
-const BlogPost = ({ data, children }) => {
-  const post = data.mdx
+interface BlogPostProps {
+  data: any;
+  children: React.ReactNode;
+}
+
+const BlogPost: React.FC<BlogPostProps> = ({ data, children }) => {
+  const post = data.mdx;
 
   return (
     <Layout>
-      <SEO 
+      <SEO
         title={post.frontmatter.title}
         description={post.frontmatter.description}
       />
@@ -20,7 +25,7 @@ const BlogPost = ({ data, children }) => {
               {new Date(post.frontmatter.date).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
+                day: 'numeric',
               })}
             </time>
             {post.frontmatter.category && (
@@ -33,9 +38,7 @@ const BlogPost = ({ data, children }) => {
           )}
         </header>
 
-        <div className="post-content">
-          {children}
-        </div>
+        <div className="post-content">{children}</div>
 
         <footer className="post-footer">
           <Link to="/blog" className="back-to-blog">
@@ -44,8 +47,8 @@ const BlogPost = ({ data, children }) => {
         </footer>
       </div>
     </Layout>
-  )
-}
+  );
+};
 
 export const query = graphql`
   query BlogPostQuery($id: String!) {
@@ -62,6 +65,6 @@ export const query = graphql`
       }
     }
   }
-`
+`;
 
-export default BlogPost
+export default BlogPost;

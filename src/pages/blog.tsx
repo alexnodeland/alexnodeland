@@ -1,82 +1,63 @@
-import React, { useState, useMemo } from 'react'
-import { graphql, Link } from 'gatsby'
-import Layout from '../components/layout'
-import SEO from '../components/seo'
-import '../styles/blog.scss'
-
-interface BlogPost {
-  id: string
-  frontmatter: {
-    title: string
-    date: string
-    description?: string
-    category?: string
-  }
-  excerpt: string
-  fields: {
-    slug: string
-  }
-  parent: {
-    sourceInstanceName: string
-  }
-}
-
-interface BlogPageProps {
-  data: {
-    allMdx: {
-      nodes: BlogPost[]
-    }
-  }
-}
+import React, { useState, useMemo } from 'react';
+import { graphql, Link } from 'gatsby';
+import { Layout, SEO } from '../components';
+import { BlogPageProps } from '../types';
+import '../styles/blog.scss';
 
 const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
   // Filter for blog posts only
   const allPosts = data.allMdx.nodes.filter(
     post => post.parent && post.parent.sourceInstanceName === 'blog'
-  )
+  );
 
   // State for search, filtering, and sorting
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   // Get unique categories
   const categories = useMemo(() => {
     const cats = allPosts
       .map(post => post.frontmatter.category)
-      .filter(Boolean)
-      .filter((cat, index, arr) => arr.indexOf(cat) === index)
-    return cats
-  }, [allPosts])
+      .filter((cat): cat is string => Boolean(cat))
+      .filter((cat, index, arr) => arr.indexOf(cat) === index);
+    return cats;
+  }, [allPosts]);
 
   // Filter and sort posts based on search term, category, and sort order
   const filteredPosts = useMemo(() => {
     const filtered = allPosts.filter(post => {
-      const matchesSearch = searchTerm === '' || 
-        post.frontmatter.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.frontmatter.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
-      
-      const matchesCategory = selectedCategory === null || 
-        post.frontmatter.category === selectedCategory
-      
-      return matchesSearch && matchesCategory
-    })
+      const matchesSearch =
+        searchTerm === '' ||
+        post.frontmatter.title
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        post.frontmatter.description
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesCategory =
+        selectedCategory === null ||
+        post.frontmatter.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
 
     // Sort by date
     return filtered.sort((a, b) => {
-      const dateA = new Date(a.frontmatter.date).getTime()
-      const dateB = new Date(b.frontmatter.date).getTime()
-      
-      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
-    })
-  }, [allPosts, searchTerm, selectedCategory, sortOrder])
+      const dateA = new Date(a.frontmatter.date).getTime();
+      const dateB = new Date(b.frontmatter.date).getTime();
+
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+  }, [allPosts, searchTerm, selectedCategory, sortOrder]);
 
   const clearFilters = () => {
-    setSearchTerm('')
-    setSelectedCategory(null)
-    setSortOrder('desc')
-  }
+    setSearchTerm('');
+    setSelectedCategory(null);
+    setSortOrder('desc');
+  };
 
   return (
     <Layout>
@@ -84,7 +65,10 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
       <div className="blog-page">
         <header className="blog-header">
           <h1>blog</h1>
-          <p>thoughts on technology, projects, and the occasional deep dive into interesting problems.</p>
+          <p>
+            thoughts on technology, projects, and the occasional deep dive into
+            interesting problems.
+          </p>
         </header>
 
         {/* Search and Filter Controls */}
@@ -94,11 +78,11 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
               type="text"
               placeholder="search posts..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="search-input"
             />
           </div>
-          
+
           <div className="filter-container">
             <div className="category-filters">
               <button
@@ -117,24 +101,28 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
                 </button>
               ))}
             </div>
-            
+
             <div className="sort-container">
-              <label htmlFor="sort-select" className="sort-label">sort by date:</label>
+              <label htmlFor="sort-select" className="sort-label">
+                sort by date:
+              </label>
               <select
                 id="sort-select"
                 value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+                onChange={e => setSortOrder(e.target.value as 'desc' | 'asc')}
                 className="sort-select"
               >
                 <option value="desc">newest first</option>
                 <option value="asc">oldest first</option>
               </select>
             </div>
-            
+
             <button
-              className={`clear-filters-btn ${(searchTerm || selectedCategory || sortOrder !== 'desc') ? 'active' : 'disabled'}`}
+              className={`clear-filters-btn ${searchTerm || selectedCategory || sortOrder !== 'desc' ? 'active' : 'disabled'}`}
               onClick={clearFilters}
-              disabled={!(searchTerm || selectedCategory || sortOrder !== 'desc')}
+              disabled={
+                !(searchTerm || selectedCategory || sortOrder !== 'desc')
+              }
             >
               clear filters
             </button>
@@ -145,26 +133,30 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
           {filteredPosts.length === 0 ? (
             <div className="no-posts">
               <p>
-                {allPosts.length === 0 
-                  ? "no blog posts yet. check back soon!"
-                  : "no posts match your current filters. try adjusting your search or category selection."
-                }
+                {allPosts.length === 0
+                  ? 'no blog posts yet. check back soon!'
+                  : 'no posts match your current filters. try adjusting your search or category selection.'}
               </p>
             </div>
           ) : (
             <div className="posts-list">
-              {filteredPosts.map((post) => (
+              {filteredPosts.map(post => (
                 <article key={post.id} className="post-preview">
                   <div className="post-meta">
                     <time dateTime={post.frontmatter.date}>
-                      {new Date(post.frontmatter.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+                      {new Date(post.frontmatter.date).toLocaleDateString(
+                        'en-US',
+                        {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        }
+                      )}
                     </time>
                     {post.frontmatter.category && (
-                      <span className="post-category">{post.frontmatter.category}</span>
+                      <span className="post-category">
+                        {post.frontmatter.category}
+                      </span>
                     )}
                   </div>
                   <h2 className="post-title">
@@ -173,7 +165,9 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
                     </Link>
                   </h2>
                   {post.frontmatter.description && (
-                    <p className="post-description">{post.frontmatter.description}</p>
+                    <p className="post-description">
+                      {post.frontmatter.description}
+                    </p>
                   )}
                   <p className="post-excerpt">{post.excerpt}</p>
                   <Link to={`/blog${post.fields.slug}`} className="read-more">
@@ -186,14 +180,12 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
         </div>
       </div>
     </Layout>
-  )
-}
+  );
+};
 
 export const query = graphql`
   query BlogPageQuery {
-    allMdx(
-      sort: { frontmatter: { date: DESC } }
-    ) {
+    allMdx(sort: { frontmatter: { date: DESC } }) {
       nodes {
         id
         frontmatter {
@@ -214,6 +206,6 @@ export const query = graphql`
       }
     }
   }
-`
+`;
 
-export default BlogPage
+export default BlogPage;

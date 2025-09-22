@@ -1,3 +1,8 @@
+// Import variables and mixins
+@import 'variables';
+@import 'mixins';
+@import 'animations';
+
 .home {
   max-width: 800px;
   margin: 0 auto;
@@ -8,24 +13,15 @@
   margin-bottom: 4rem;
   padding: 3rem 0;
   position: relative;
-  
+
   h1 {
     margin-bottom: 2rem;
     position: relative;
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-    animation: glow 2s ease-in-out infinite alternate;
+    @include retro-glow;
   }
-  
 }
 
-@keyframes glow {
-  from {
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-  }
-  to {
-    text-shadow: 0 0 30px rgba(0, 255, 136, 0.6), 0 0 40px rgba(0, 255, 136, 0.3);
-  }
-}
+// Animations are now in animations.scss
 
 .hero-subtitle {
   font-size: 1.25rem;
@@ -36,15 +32,7 @@
   font-style: italic;
 }
 
-// Add rotate animation for playful elements
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+// Animations are now in animations.scss
 
 .about {
   margin-bottom: 4rem;
@@ -53,8 +41,7 @@
   border-radius: var(--radius-lg);
   border-left: 4px solid var(--accent-color);
   position: relative;
-  
-  
+
   p {
     margin-bottom: 1.5rem;
     line-height: 1.7;
@@ -71,26 +58,13 @@
   box-shadow: var(--shadow-md);
   border: 2px solid var(--accent-color);
   position: relative;
-  
-  
+
   h2 {
     margin-bottom: 1.5rem;
     position: relative;
-    
-    // Add academic-style underline
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -0.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 3px;
-      background: var(--accent-color);
-      border-radius: 2px;
-    }
+    @include academic-underline;
   }
-  
+
   p {
     margin-bottom: 2rem;
     line-height: 1.6;
@@ -107,97 +81,18 @@
 }
 
 .cta-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.875rem;
-  transition: all var(--transition-normal);
-  border: 2px solid transparent;
-  cursor: pointer;
-  position: relative;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
-  text-transform: lowercase;
-  letter-spacing: -0.01em;
-  
   &.primary {
-    background: var(--accent-color);
-    color: white;
-    border-color: var(--accent-color);
-    box-shadow: var(--shadow-sm);
-    position: relative;
-    overflow: hidden;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: left 0.5s;
-    }
-    
-    &:hover {
-      background: var(--retro-blue);
-      border-color: var(--retro-blue);
-      transform: translateY(-2px);
-      box-shadow: 0 0 20px rgba(0, 136, 255, 0.4), var(--shadow-md);
-      
-      &::before {
-        left: 100%;
-      }
-    }
-    
-    &:active {
-      transform: translateY(0);
-    }
+    @include button-primary;
   }
-  
+
   &.secondary {
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    border-color: var(--accent-color);
-    box-shadow: var(--shadow-sm);
-    position: relative;
-    overflow: hidden;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1), transparent);
-      transition: left 0.5s;
-    }
-    
-    &:hover {
-      background: var(--bg-secondary);
-      border-color: var(--retro-green);
-      color: var(--retro-green);
-      transform: translateY(-2px);
-      box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), var(--shadow-md);
-      
-      &::before {
-        left: 100%;
-      }
-    }
-    
-    &:active {
-      transform: translateY(0);
-    }
+    @include button-secondary;
   }
 }
 
 .expertise {
   margin-bottom: 4rem;
-  
+
   h2 {
     margin-bottom: 2rem;
   }
@@ -215,12 +110,11 @@
   border-radius: var(--radius-lg);
   text-align: center;
   font-weight: 500;
-  transition: all var(--transition-normal);
   border: 2px solid var(--border-color);
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 0 rgba(0, 255, 136, 0);
-  
+
   // Add academic-style top border
   &::before {
     content: '';
@@ -233,19 +127,18 @@
     transform: scaleX(0);
     transition: transform var(--transition-normal);
   }
-  
-  
+
+  @include card-hover;
+
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), var(--shadow-md);
     background: var(--bg-secondary);
     border-color: var(--accent-color);
-    
+
     &::before {
       transform: scaleX(1);
     }
   }
-  
+
   .expertise-icon {
     font-size: 2.5rem;
     margin-bottom: 1rem;
@@ -253,22 +146,24 @@
     opacity: 0.8;
     transition: all var(--transition-normal);
   }
-  
+
   &:hover .expertise-icon {
     opacity: 1;
     transform: scale(1.1);
   }
-  
+
   .expertise-title {
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
     color: var(--text-primary);
-    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
     text-transform: lowercase;
     letter-spacing: -0.01em;
   }
-  
+
   .expertise-description {
     font-size: 0.9rem;
     color: var(--text-secondary);
@@ -286,18 +181,17 @@
   border: 2px solid var(--border-color);
   transition: all var(--transition-normal);
   position: relative;
-  
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
     border-color: var(--accent-color);
   }
-  
+
   h2 {
     margin-bottom: 1.5rem;
     position: relative;
-    
+
     // Add academic-style underline
     &::after {
       content: '';
@@ -311,18 +205,18 @@
       border-radius: 2px;
     }
   }
-  
+
   p {
     line-height: 1.6;
     margin-bottom: 0;
     font-style: italic;
-    
+
     a {
       color: var(--accent-color);
       text-decoration: none;
       font-weight: 500;
       transition: all var(--transition-fast);
-      
+
       &:hover {
         color: var(--retro-blue);
         text-decoration: underline;
@@ -335,62 +229,62 @@
   .home {
     padding: 0 1rem;
   }
-  
+
   .hero {
     padding: 2rem 0;
     margin-bottom: 3rem;
-    
+
     h1 {
       font-size: 2.5rem;
       text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
     }
   }
-  
+
   .hero-subtitle {
     font-size: 1.1rem;
     padding: 0 1rem;
   }
-  
+
   .about {
     padding: 1.5rem;
     margin-bottom: 3rem;
   }
-  
+
   .consulting {
     padding: 2rem 1rem;
     margin-bottom: 3rem;
   }
-  
+
   .cta-buttons {
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
   }
-  
+
   .cta-button {
     width: 100%;
     max-width: 280px;
     padding: 0.875rem 1.5rem;
     font-size: 0.9rem;
   }
-  
+
   .expertise {
     margin-bottom: 3rem;
   }
-  
+
   .expertise-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .expertise-item {
     padding: 1.5rem 1rem;
-    
+
     &:hover {
       transform: translateY(-1px);
     }
   }
-  
+
   .blog-preview {
     padding: 2rem 1rem;
     margin-bottom: 3rem;
@@ -401,15 +295,15 @@
   .hero h1 {
     font-size: 2rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1rem;
   }
-  
+
   .expertise-item {
     padding: 1rem;
   }
-  
+
   .cta-button {
     padding: 0.75rem 1rem;
     font-size: 0.85rem;

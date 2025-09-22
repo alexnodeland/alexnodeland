@@ -1,5 +1,5 @@
 import React from 'react'
-import { ExperienceItem } from '../../config/resume'
+import { ExperienceItem } from '../../types'
 
 interface ExperienceSectionProps {
   experiences: ExperienceItem[]

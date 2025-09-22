@@ -1,5 +1,5 @@
 import React from 'react'
-import { EducationItem } from '../../config/resume'
+import { EducationItem } from '../../types'
 
 interface EducationSectionProps {
   education: EducationItem[]

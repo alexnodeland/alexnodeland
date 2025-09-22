@@ -1,3 +1,8 @@
+// Import variables and mixins
+@import 'variables';
+@import 'mixins';
+@import 'animations';
+
 .blog-page {
   max-width: 800px;
   margin: 0 auto;
@@ -8,32 +13,23 @@
   margin-bottom: 3rem;
   padding: 2rem 0;
   position: relative;
-  
-  
+
   h1 {
     margin-bottom: 1rem;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
     position: relative;
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-    animation: glow 2s ease-in-out infinite alternate;
-    
-    // Add retro futuristic underline
+    @include retro-glow;
+    @include academic-underline;
+
     &::after {
-      content: '';
-      position: absolute;
-      bottom: -0.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 60px;
-      height: 3px;
-      background: var(--accent-color);
-      border-radius: 2px;
       box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
     }
   }
-  
+
   p {
     color: var(--text-secondary);
     font-size: 1.1rem;
@@ -50,7 +46,7 @@
   border: 2px solid var(--border-color);
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
   position: relative;
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -58,18 +54,20 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, 
-      var(--accent-color) 0%, 
-      var(--retro-blue) 25%, 
-      var(--retro-green) 50%, 
-      var(--retro-purple) 75%, 
-      var(--accent-color) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--accent-color) 0%,
+      var(--retro-blue) 25%,
+      var(--retro-green) 50%,
+      var(--retro-purple) 75%,
+      var(--accent-color) 100%
+    );
     border-radius: var(--radius-md) var(--radius-md) 0 0;
   }
-  
+
   .search-container {
     margin-bottom: 1.5rem;
-    
+
     .search-input {
       width: 100%;
       padding: 0.75rem 1rem;
@@ -78,36 +76,38 @@
       background: var(--bg-primary);
       color: var(--text-primary);
       font-size: 1rem;
-      font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+      font-family:
+        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+        monospace;
       text-transform: lowercase;
       transition: all var(--transition-fast);
-      
+
       &:focus {
         outline: none;
         border-color: var(--accent-color);
         box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
         background: var(--bg-accent);
       }
-      
+
       &::placeholder {
         color: var(--text-secondary);
         text-transform: lowercase;
       }
     }
   }
-  
+
   .filter-container {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
     align-items: center;
     justify-content: space-between;
-    
+
     .category-filters {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
-      
+
       .filter-btn {
         padding: 0.5rem 1rem;
         border: 2px solid var(--border-color);
@@ -116,17 +116,19 @@
         color: var(--text-primary);
         font-size: 0.9rem;
         font-weight: 500;
-        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-family:
+          'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+          monospace;
         text-transform: lowercase;
         cursor: pointer;
         transition: all var(--transition-fast);
-        
+
         &:hover {
           border-color: var(--accent-color);
           background: var(--bg-accent);
           box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
         }
-        
+
         &.active {
           background: var(--accent-color);
           color: white;
@@ -135,21 +137,23 @@
         }
       }
     }
-    
+
     .sort-container {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      
+
       .sort-label {
         font-size: 0.9rem;
         font-weight: 500;
         color: var(--text-primary);
         white-space: nowrap;
-        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-family:
+          'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+          monospace;
         text-transform: lowercase;
       }
-      
+
       .sort-select {
         padding: 0.5rem 0.75rem;
         border: 2px solid var(--border-color);
@@ -157,23 +161,25 @@
         background: var(--bg-primary);
         color: var(--text-primary);
         font-size: 0.9rem;
-        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-family:
+          'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+          monospace;
         text-transform: lowercase;
         cursor: pointer;
         transition: all var(--transition-fast);
-        
+
         &:focus {
           outline: none;
           border-color: var(--accent-color);
           box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
           background: var(--bg-accent);
         }
-        
+
         &:hover {
           border-color: var(--accent-color);
           box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
         }
-        
+
         option {
           background: var(--bg-primary);
           color: var(--text-primary);
@@ -181,7 +187,7 @@
         }
       }
     }
-    
+
     .clear-filters-btn {
       padding: 0.5rem 1rem;
       border: 2px solid var(--text-secondary);
@@ -189,26 +195,28 @@
       background: transparent;
       color: var(--text-secondary);
       font-size: 0.9rem;
-      font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+      font-family:
+        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+        monospace;
       text-transform: lowercase;
       cursor: pointer;
       transition: all var(--transition-fast);
-      
+
       &.active {
         border-color: var(--accent-color);
         color: var(--accent-color);
-        
+
         &:hover {
           box-shadow: 0 0 10px rgba(255, 0, 128, 0.2);
         }
       }
-      
+
       &.disabled {
         opacity: 0.4;
         cursor: not-allowed;
         border-color: var(--text-muted);
         color: var(--text-muted);
-        
+
         &:hover {
           border-color: var(--text-muted);
           color: var(--text-muted);
@@ -219,35 +227,7 @@
   }
 }
 
-// Add missing animations
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.1);
-  }
-}
-
-@keyframes glow {
-  from {
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-  }
-  to {
-    text-shadow: 0 0 30px rgba(0, 255, 136, 0.6), 0 0 40px rgba(0, 255, 136, 0.3);
-  }
-}
+// Animations are now in animations.scss
 
 .blog-content {
   margin-bottom: 4rem;
@@ -270,9 +250,8 @@
   padding: 2rem;
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-color);
-  transition: all var(--transition-normal);
   position: relative;
-  
+
   // Add academic-style left border
   &::before {
     content: '';
@@ -284,13 +263,8 @@
     background: var(--accent-color);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
-  
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--accent-color);
-  }
+
+  @include card-hover;
 }
 
 .post-meta {
@@ -300,7 +274,7 @@
   margin-bottom: 1rem;
   font-size: 0.9rem;
   color: var(--text-secondary);
-  
+
   time {
     font-weight: 500;
   }
@@ -313,22 +287,26 @@
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 500;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
   text-transform: lowercase;
   box-shadow: 0 0 10px rgba(255, 0, 128, 0.3);
 }
 
 .post-title {
   margin-bottom: 1rem;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
   text-transform: lowercase;
   letter-spacing: -0.01em;
-  
+
   a {
     color: var(--text-primary);
     text-decoration: none;
     transition: color var(--transition-fast);
-    
+
     &:hover {
       color: var(--primary-color);
     }
@@ -352,10 +330,12 @@
   color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
   text-transform: lowercase;
   transition: all var(--transition-fast);
-  
+
   &:hover {
     color: var(--primary-dark);
     text-decoration: underline;
@@ -378,51 +358,57 @@
 .post-content {
   margin-bottom: 3rem;
   line-height: 1.7;
-  
+
   // MDX content styling
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     margin-top: 2rem;
     margin-bottom: 1rem;
     color: var(--text-primary);
-    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
     position: relative;
   }
-  
+
   h1 {
     font-size: 2rem;
     border-bottom: 3px solid var(--accent-color);
     padding-bottom: 0.5rem;
     display: inline-block;
   }
-  
+
   h2 {
     font-size: 1.75rem;
     border-bottom: 2px solid var(--accent-color);
     padding-bottom: 0.5rem;
     display: inline-block;
-    
   }
-  
+
   h3 {
     font-size: 1.5rem;
-    
   }
-  
+
   p {
     margin-bottom: 1.5rem;
   }
-  
-  ul, ol {
+
+  ul,
+  ol {
     margin-bottom: 1.5rem;
     padding-left: 2rem;
   }
-  
+
   li {
     margin-bottom: 0.5rem;
   }
-  
+
   blockquote {
     border-left: 4px solid var(--accent-color);
     padding-left: 1.5rem;
@@ -433,9 +419,8 @@
     padding: 1.5rem;
     border-radius: var(--radius-sm);
     position: relative;
-    
   }
-  
+
   code {
     background: var(--bg-accent);
     padding: 0.2rem 0.4rem;
@@ -445,7 +430,7 @@
     color: var(--accent-color);
     border: 1px solid var(--border-color);
   }
-  
+
   pre {
     background: var(--bg-accent);
     padding: 1.5rem;
@@ -454,8 +439,7 @@
     margin: 2rem 0;
     border: 2px solid var(--accent-color);
     position: relative;
-    
-    
+
     code {
       background: none;
       padding: 0;
@@ -463,26 +447,26 @@
       border: none;
     }
   }
-  
+
   a {
     color: var(--accent-color);
     text-decoration: none;
     font-weight: 500;
     transition: all var(--transition-fast);
-    
+
     &:hover {
       color: var(--retro-blue);
       text-decoration: underline;
     }
   }
-  
+
   img {
     max-width: 100%;
     height: auto;
     border-radius: var(--radius-md);
     margin: 2rem 0;
   }
-  
+
   hr {
     border: none;
     height: 1px;
@@ -501,7 +485,7 @@
   text-decoration: none;
   font-weight: 500;
   transition: all var(--transition-fast);
-  
+
   &:hover {
     color: var(--primary-dark);
     text-decoration: underline;
@@ -513,26 +497,26 @@
   .blog-post-page {
     padding: 0 1rem;
   }
-  
+
   .post-preview {
     padding: 1.5rem;
   }
-  
+
   .post-meta {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .post-content {
     h1 {
       font-size: 1.75rem;
     }
-    
+
     h2 {
       font-size: 1.5rem;
     }
-    
+
     h3 {
       font-size: 1.25rem;
     }

@@ -1,0 +1,74 @@
+// CSS Custom Properties (Variables)
+:root {
+  // Retro futuristic color palette
+  --primary-color: #00ff88; // Neon green (cyberpunk)
+  --primary-dark: #00cc6a; // Darker neon green
+  --secondary-color: #00d4ff; // Cyan blue
+  --accent-color: #ff0080; // Hot pink accent
+  --accent-light: #ffaa00; // Orange highlight
+  --text-primary: #ffffff; // White text
+  --text-secondary: #b0b0b0; // Light gray
+  --text-muted: #808080; // Medium gray
+  --bg-primary: #0a0a0a; // Deep black
+  --bg-secondary: #1a1a1a; // Dark gray
+  --bg-accent: #2a2a2a; // Accent background
+  --border-color: #333333; // Dark border
+  --accent-border: #ff0080; // Pink accent border
+
+  // Retro elements
+  --retro-yellow: #ffff00; // Bright yellow
+  --retro-blue: #0080ff; // Electric blue
+  --retro-green: #00ff88; // Neon green
+  --retro-purple: #ff00ff; // Magenta
+
+  // Shadows (more subtle for academic feel)
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow-md:
+    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+
+  // Border radius (more conservative)
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  // Transitions
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+}
+
+[data-theme='light'] {
+  --primary-color: #00cc6a; // Darker green for light mode
+  --primary-dark: #00aa55; // Even darker green
+  --secondary-color: #0088cc; // Darker cyan
+  --accent-color: #cc0066; // Darker pink
+  --accent-light: #cc8800; // Darker orange
+  --text-primary: #1a1a1a; // Softer black text
+  --text-secondary: #4a4a4a; // Softer dark gray
+  --text-muted: #6a6a6a; // Softer medium gray
+  --bg-primary: #fafafa; // Soft off-white background
+  --bg-secondary: #f0f0f0; // Soft light gray
+  --bg-accent: #e8e8e8; // Softer accent background
+  --border-color: #d0d0d0; // Softer border
+  --accent-border: #cc0066; // Darker pink border
+
+  // Retro elements (adjusted for light mode)
+  --retro-yellow: #ccaa00; // Darker yellow
+  --retro-blue: #0066cc; // Darker blue
+  --retro-green: #00cc6a; // Darker green
+  --retro-purple: #cc00cc; // Darker magenta
+
+  // Softer shadows for light mode
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow-md:
+    0 4px 6px -1px rgb(0 0 0 / 0.15), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}

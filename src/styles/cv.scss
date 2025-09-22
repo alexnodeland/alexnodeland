@@ -10,16 +10,18 @@
   margin-bottom: 3rem;
   padding: 2rem 0;
   position: relative;
-  
+
   h1 {
     margin-bottom: 1rem;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
     position: relative;
     text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
-    
+
     // Add retro futuristic underline
     &::after {
       content: '';
@@ -34,7 +36,7 @@
       box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
     }
   }
-  
+
   p {
     color: var(--text-secondary);
     font-size: 1.1rem;
@@ -55,17 +57,19 @@
   grid-template-columns: 2fr 1fr;
   gap: 2rem;
   align-items: start;
-  
+
   .overview-section {
     h3 {
       font-size: 1.2rem;
       margin-bottom: 1rem;
       color: var(--text-primary);
-      font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+      font-family:
+        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+        monospace;
       text-transform: lowercase;
       letter-spacing: -0.01em;
     }
-    
+
     p {
       margin: 0;
       font-size: 1rem;
@@ -74,42 +78,46 @@
       font-style: italic;
     }
   }
-  
+
   .contact-section {
     h3 {
       font-size: 1.2rem;
       margin-bottom: 1rem;
       color: var(--text-primary);
-      font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+      font-family:
+        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+        monospace;
       text-transform: lowercase;
       letter-spacing: -0.01em;
     }
-    
+
     .contact-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 0.75rem;
     }
-    
+
     .contact-item {
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
-      
+
       .contact-label {
         font-size: 0.9rem;
         font-weight: 500;
         color: var(--text-muted);
-        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-family:
+          'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+          monospace;
         text-transform: lowercase;
       }
-      
+
       .contact-value {
         font-size: 1rem;
         color: var(--text-primary);
         text-decoration: none;
         transition: color var(--transition-fast);
-        
+
         &:hover {
           color: var(--primary-color);
         }
@@ -132,18 +140,19 @@
   padding-bottom: 2rem;
   border-bottom: 3px solid var(--accent-color);
   position: relative;
-  
-  
+
   h1 {
     font-size: 2.5rem;
     margin-bottom: 1rem;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
     position: relative;
     text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
-    
+
     // Add retro futuristic underline
     &::after {
       content: '';
@@ -169,31 +178,33 @@
 
 .cv-section {
   margin-bottom: 3rem;
-  
+
   h2 {
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
     border-bottom: 3px solid var(--accent-color);
     padding-bottom: 0.5rem;
     display: inline-block;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
     position: relative;
-    
   }
-  
+
   h3 {
     font-size: 1.3rem;
     margin-bottom: 0.5rem;
     color: var(--text-primary);
-    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
     text-transform: lowercase;
     letter-spacing: -0.01em;
     position: relative;
-    
   }
-  
+
   p {
     margin-bottom: 1rem;
     text-align: justify;
@@ -208,7 +219,7 @@
   border: 2px solid var(--border-color);
   transition: all var(--transition-normal);
   position: relative;
-  
+
   // Add academic-style left border
   &::before {
     content: '';
@@ -220,14 +231,13 @@
     background: var(--accent-color);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
-  
-  
+
   &:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
     border-color: var(--accent-color);
   }
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -240,7 +250,7 @@
   margin-bottom: 1rem;
   flex-wrap: wrap;
   gap: 0.5rem;
-  
+
   h3 {
     margin: 0;
     flex: 1;
@@ -262,11 +272,11 @@
 .experience-bullets {
   margin: 0;
   padding-left: 1.5rem;
-  
+
   li {
     margin-bottom: 0.75rem;
     position: relative;
-    
+
     &::marker {
       color: var(--primary-color);
     }
@@ -280,31 +290,31 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
-  
+
   &:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
   }
-  
+
   &:last-child {
     margin-bottom: 0;
   }
-  
+
   h3 {
     margin-bottom: 0.5rem;
   }
-  
+
   p {
     margin-bottom: 0.75rem;
-    
+
     strong {
       color: var(--text-primary);
     }
   }
-  
+
   ul {
     margin: 0.75rem 0 0 1.5rem;
-    
+
     li {
       margin-bottom: 0.5rem;
     }
@@ -314,11 +324,11 @@
 .certifications-list {
   margin: 0;
   padding-left: 1.5rem;
-  
+
   li {
     margin-bottom: 0.5rem;
     position: relative;
-    
+
     &::marker {
       color: var(--primary-color);
     }
@@ -329,28 +339,28 @@
   .cv-header h1 {
     font-size: 2rem;
   }
-  
+
   .experience-header {
     flex-direction: column;
     align-items: flex-start;
-    
+
     h3 {
       margin-bottom: 0.5rem;
     }
   }
-  
+
   .experience-duration {
     white-space: normal;
   }
-  
+
   .cv-section h2 {
     font-size: 1.5rem;
   }
-  
+
   .cv-section h3 {
     font-size: 1.2rem;
   }
-  
+
   .experience-item,
   .education-item {
     padding: 1rem;
@@ -363,44 +373,44 @@
   margin-bottom: 3rem;
   padding-bottom: 2rem;
   border-bottom: 2px solid var(--border-color);
-  
+
   h1 {
     font-size: 2.5rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .resume-title {
     font-size: 1.25rem;
     color: var(--text-secondary);
     margin-bottom: 1.5rem;
     font-weight: 500;
   }
-  
+
   .resume-contact {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 0.5rem;
     margin-bottom: 1.5rem;
-    
+
     .contact-item {
       font-size: 0.9rem;
-      
+
       a {
         color: var(--primary-color);
         text-decoration: none;
-        
+
         &:hover {
           text-decoration: underline;
         }
       }
     }
   }
-  
+
   .resume-summary {
     text-align: left;
     max-width: 800px;
     margin: 0 auto;
-    
+
     p {
       font-size: 1rem;
       line-height: 1.6;
@@ -412,7 +422,7 @@
 // Experience Section Component
 .experience-section {
   margin-bottom: 3rem;
-  
+
   h2 {
     font-size: 1.8rem;
     margin-bottom: 2rem;
@@ -420,7 +430,7 @@
     padding-bottom: 0.5rem;
     display: inline-block;
   }
-  
+
   .experience-item {
     margin-bottom: 2.5rem;
     padding: 1.5rem;
@@ -428,17 +438,17 @@
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     transition: all var(--transition-normal);
-    
+
     &:hover {
       box-shadow: var(--shadow-md);
       transform: translateY(-1px);
     }
-    
+
     &:last-child {
       margin-bottom: 0;
     }
   }
-  
+
   .experience-header {
     display: flex;
     justify-content: space-between;
@@ -446,7 +456,7 @@
     margin-bottom: 0.5rem;
     flex-wrap: wrap;
     gap: 0.5rem;
-    
+
     h3 {
       margin: 0;
       flex: 1;
@@ -455,7 +465,7 @@
       font-size: 1.2rem;
     }
   }
-  
+
   .experience-duration {
     color: var(--text-muted);
     font-weight: 600;
@@ -465,33 +475,33 @@
     border-radius: var(--radius-sm);
     font-size: 0.9rem;
   }
-  
+
   .experience-location {
     color: var(--text-secondary);
     font-style: italic;
     margin-bottom: 1rem;
   }
-  
+
   .experience-description {
     margin-bottom: 1rem;
     color: var(--text-secondary);
     font-style: italic;
   }
-  
+
   .experience-achievements {
     margin: 0;
     padding-left: 1.5rem;
-    
+
     li {
       margin-bottom: 0.75rem;
       position: relative;
-      
+
       &::marker {
         color: var(--primary-color);
       }
     }
   }
-  
+
   .experience-skills {
     margin-top: 1rem;
     padding-top: 1rem;
@@ -504,7 +514,7 @@
 // Education Section Component
 .education-section {
   margin-bottom: 3rem;
-  
+
   h2 {
     font-size: 1.8rem;
     margin-bottom: 2rem;
@@ -512,7 +522,7 @@
     padding-bottom: 0.5rem;
     display: inline-block;
   }
-  
+
   .education-item {
     margin-bottom: 2rem;
     padding: 1.5rem;
@@ -520,17 +530,17 @@
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     transition: all var(--transition-normal);
-    
+
     &:hover {
       box-shadow: var(--shadow-md);
       transform: translateY(-1px);
     }
-    
+
     &:last-child {
       margin-bottom: 0;
     }
   }
-  
+
   .education-header {
     display: flex;
     justify-content: space-between;
@@ -538,7 +548,7 @@
     margin-bottom: 0.5rem;
     flex-wrap: wrap;
     gap: 0.5rem;
-    
+
     h3 {
       margin: 0;
       flex: 1;
@@ -547,7 +557,7 @@
       font-size: 1.2rem;
     }
   }
-  
+
   .education-duration {
     color: var(--text-muted);
     font-weight: 600;
@@ -557,38 +567,38 @@
     border-radius: var(--radius-sm);
     font-size: 0.9rem;
   }
-  
+
   .education-institution {
     color: var(--text-secondary);
     margin-bottom: 0.5rem;
   }
-  
+
   .education-gpa {
     color: var(--text-secondary);
     font-weight: 500;
     margin-bottom: 1rem;
   }
-  
+
   .education-description {
     margin-bottom: 1rem;
     color: var(--text-secondary);
     font-style: italic;
   }
-  
+
   .education-coursework {
     margin-bottom: 1rem;
     font-size: 0.9rem;
     color: var(--text-secondary);
   }
-  
+
   .education-achievements {
     margin: 0;
     padding-left: 1.5rem;
-    
+
     li {
       margin-bottom: 0.5rem;
       position: relative;
-      
+
       &::marker {
         color: var(--primary-color);
       }
@@ -599,7 +609,7 @@
 // Skills Section Component
 .skills-section {
   margin-bottom: 3rem;
-  
+
   h2 {
     font-size: 1.8rem;
     margin-bottom: 2rem;
@@ -607,13 +617,13 @@
     padding-bottom: 0.5rem;
     display: inline-block;
   }
-  
+
   .skills-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
   }
-  
+
   .skill-category {
     h3 {
       font-size: 1.2rem;
@@ -621,35 +631,35 @@
       color: var(--text-primary);
     }
   }
-  
+
   .skill-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-  
+
   .skill-tag {
     padding: 0.5rem 1rem;
     border-radius: var(--radius-md);
     font-size: 0.875rem;
     font-weight: 500;
     transition: all var(--transition-normal);
-    
+
     &.technical {
       background: var(--primary-color);
       color: white;
     }
-    
+
     &.soft {
       background: var(--secondary-color);
       color: white;
     }
-    
+
     &.language {
       background: var(--accent-color);
       color: white;
     }
-    
+
     &:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-md);
@@ -667,7 +677,7 @@
   margin-bottom: 2rem;
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
   position: relative;
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -675,21 +685,23 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, 
-      var(--accent-color) 0%, 
-      var(--retro-blue) 25%, 
-      var(--retro-green) 50%, 
-      var(--retro-purple) 75%, 
-      var(--accent-color) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--accent-color) 0%,
+      var(--retro-blue) 25%,
+      var(--retro-green) 50%,
+      var(--retro-purple) 75%,
+      var(--accent-color) 100%
+    );
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
-  
+
   .search-section {
     margin-bottom: 2rem;
-    
+
     .search-container {
       margin-bottom: 1rem;
-      
+
       .search-input {
         width: 100%;
         padding: 0.75rem 1rem;
@@ -698,24 +710,26 @@
         background: var(--bg-primary);
         color: var(--text-primary);
         font-size: 1rem;
-        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-family:
+          'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+          monospace;
         text-transform: lowercase;
         transition: all var(--transition-fast);
-        
+
         &:focus {
           outline: none;
           border-color: var(--accent-color);
           box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
           background: var(--bg-accent);
         }
-        
+
         &::placeholder {
           color: var(--text-secondary);
           text-transform: lowercase;
         }
       }
     }
-    
+
     .search-results {
       background: var(--bg-primary);
       border: 2px solid var(--border-color);
@@ -723,52 +737,54 @@
       max-height: 300px;
       overflow-y: auto;
       box-shadow: var(--shadow-md);
-      
+
       .search-result-item {
         padding: 1rem;
         border-bottom: 1px solid var(--border-color);
         cursor: pointer;
         transition: all var(--transition-fast);
-        
+
         &:last-child {
           border-bottom: none;
         }
-        
+
         &:hover {
           background: var(--bg-accent);
           border-left: 3px solid var(--accent-color);
         }
-        
+
         .result-type {
           font-size: 0.8rem;
           font-weight: 500;
           color: var(--accent-color);
-          font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+          font-family:
+            'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+            monospace;
           text-transform: lowercase;
           margin-bottom: 0.25rem;
         }
-        
+
         .result-title {
           font-size: 1rem;
           font-weight: 600;
           color: var(--text-primary);
           margin-bottom: 0.25rem;
         }
-        
+
         .result-company,
         .result-institution {
           font-size: 0.9rem;
           color: var(--text-secondary);
           margin-bottom: 0.25rem;
         }
-        
+
         .result-description {
           font-size: 0.85rem;
           color: var(--text-muted);
           line-height: 1.4;
         }
       }
-      
+
       .no-results {
         padding: 1rem;
         text-align: center;
@@ -777,7 +793,7 @@
       }
     }
   }
-  
+
   .export-actions {
     display: flex;
     gap: 1rem;
@@ -785,13 +801,15 @@
     margin-bottom: 1rem;
     flex-wrap: wrap;
   }
-  
+
   .export-button {
     padding: 0.75rem 1.5rem;
     border: 2px solid transparent;
     border-radius: var(--radius-md);
     font-weight: 500;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
     text-transform: lowercase;
     letter-spacing: -0.01em;
     cursor: pointer;
@@ -801,7 +819,7 @@
     gap: 0.5rem;
     position: relative;
     overflow: hidden;
-    
+
     &::before {
       content: '';
       position: absolute;
@@ -809,116 +827,131 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
       transition: left 0.5s;
     }
-    
+
     &:disabled {
       opacity: 0.6;
       cursor: not-allowed;
-      
+
       &::before {
         display: none;
       }
     }
-    
+
     &.pdf {
       background: var(--primary-color);
       color: white;
       border-color: var(--primary-color);
-      
+
       &:hover:not(:disabled) {
         background: var(--primary-dark);
         border-color: var(--primary-dark);
         transform: translateY(-2px);
-        box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), var(--shadow-md);
-        
+        box-shadow:
+          0 0 20px rgba(0, 255, 136, 0.4),
+          var(--shadow-md);
+
         &::before {
           left: 100%;
         }
       }
     }
-    
+
     &.docx {
       background: var(--secondary-color);
       color: white;
       border-color: var(--secondary-color);
-      
+
       &:hover:not(:disabled) {
         background: var(--accent-color);
         border-color: var(--accent-color);
         transform: translateY(-2px);
-        box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), var(--shadow-md);
-        
+        box-shadow:
+          0 0 20px rgba(0, 212, 255, 0.4),
+          var(--shadow-md);
+
         &::before {
           left: 100%;
         }
       }
     }
-    
+
     &.markdown {
       background: var(--bg-primary);
       color: var(--text-primary);
       border-color: var(--border-color);
-      
+
       &:hover:not(:disabled) {
         background: var(--bg-accent);
         border-color: var(--primary-color);
         transform: translateY(-2px);
-        box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), var(--shadow-md);
-        
+        box-shadow:
+          0 0 20px rgba(0, 255, 136, 0.3),
+          var(--shadow-md);
+
         &::before {
-          background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1), transparent);
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(0, 255, 136, 0.1),
+            transparent
+          );
           left: 100%;
         }
       }
     }
-    
   }
-  
+
   .export-note {
     font-size: 0.875rem;
     color: var(--text-muted);
     margin: 0;
   }
-  
+
   .latex-instructions {
     background: var(--bg-accent);
     padding: 1.5rem;
     border-radius: var(--radius-md);
     margin-top: 1rem;
     text-align: left;
-    
+
     h4 {
       margin: 0 0 1rem 0;
       color: var(--text-primary);
       font-size: 1.1rem;
     }
-    
+
     ol {
       margin: 0 0 1rem 0;
       padding-left: 1.5rem;
-      
+
       li {
         margin-bottom: 0.5rem;
         color: var(--text-secondary);
-        
+
         ul {
           margin: 0.5rem 0 0 1rem;
-          
+
           li {
             margin-bottom: 0.25rem;
           }
         }
       }
     }
-    
+
     p {
       margin: 0;
       color: var(--text-secondary);
       font-size: 0.9rem;
     }
-    
+
     code {
       background: var(--bg-primary);
       padding: 0.2rem 0.4rem;
@@ -927,11 +960,11 @@
       font-size: 0.85rem;
       color: var(--primary-color);
     }
-    
+
     a {
       color: var(--primary-color);
       text-decoration: none;
-      
+
       &:hover {
         text-decoration: underline;
       }
@@ -943,74 +976,74 @@
   .cv-page-header {
     padding: 1.5rem 0;
     margin-bottom: 2rem;
-    
+
     h1 {
       font-size: 2rem;
     }
-    
+
     p {
       font-size: 1rem;
     }
   }
-  
+
   .cv-overview-contact {
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     grid-template-columns: 1fr;
     gap: 1.5rem;
-    
+
     .overview-section p {
       font-size: 0.95rem;
     }
   }
-  
+
   #resume-content {
     padding: 1rem;
   }
-  
+
   .resume-header {
     h1 {
       font-size: 2rem;
     }
-    
+
     .resume-contact {
       grid-template-columns: 1fr;
     }
   }
-  
+
   .experience-header,
   .education-header {
     flex-direction: column;
     align-items: flex-start;
-    
+
     h3 {
       margin-bottom: 0.5rem;
     }
   }
-  
+
   .experience-duration,
   .education-duration {
     white-space: normal;
   }
-  
+
   .skills-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .export-actions {
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
   }
-  
+
   .export-button {
     width: 100%;
     max-width: 250px;
   }
-  
+
   .latex-instructions {
     padding: 1rem;
-    
+
     ol {
       padding-left: 1rem;
     }
@@ -1023,14 +1056,16 @@
     text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
   }
   to {
-    text-shadow: 0 0 30px rgba(0, 255, 136, 0.6), 0 0 40px rgba(0, 255, 136, 0.3);
+    text-shadow:
+      0 0 30px rgba(0, 255, 136, 0.6),
+      0 0 40px rgba(0, 255, 136, 0.3);
   }
 }
 
 // LaTeX Preview Component
 .latex-preview {
   margin-top: 1rem;
-  
+
   .preview-button {
     background: var(--accent-color);
     color: white;
@@ -1040,38 +1075,38 @@
     cursor: pointer;
     font-weight: 500;
     transition: all var(--transition-normal);
-    
+
     &:hover {
       background: #0891b2;
       transform: translateY(-1px);
     }
   }
-  
+
   .latex-source-container {
     margin-top: 1rem;
     background: var(--bg-accent);
     border-radius: var(--radius-md);
     overflow: hidden;
   }
-  
+
   .latex-source-header {
     background: var(--bg-secondary);
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
-    
+
     h4 {
       margin: 0 0 0.5rem 0;
       color: var(--text-primary);
       font-size: 1.1rem;
     }
-    
+
     p {
       margin: 0;
       color: var(--text-secondary);
       font-size: 0.9rem;
     }
   }
-  
+
   .latex-source {
     background: #1e1e1e;
     color: #d4d4d4;
@@ -1083,7 +1118,7 @@
     line-height: 1.4;
     max-height: 400px;
     overflow-y: auto;
-    
+
     code {
       background: none;
       padding: 0;

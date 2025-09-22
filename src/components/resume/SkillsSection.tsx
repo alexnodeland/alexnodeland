@@ -1,5 +1,5 @@
 import React from 'react'
-import { ResumeData } from '../../config/resume'
+import { ResumeData } from '../../types'
 
 interface SkillsSectionProps {
   skills: ResumeData['skills']

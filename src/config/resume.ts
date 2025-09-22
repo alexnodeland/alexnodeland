@@ -47,7 +47,7 @@ export interface ResumeData {
     website: string;
     summary: string;
   };
-  
+
   experience: ExperienceItem[];
   education: EducationItem[];
   certifications: CertificationItem[];
@@ -57,7 +57,7 @@ export interface ResumeData {
     soft: string[];
     languages?: string[];
   };
-  
+
   // Optional sections
   publications?: Array<{
     title: string;
@@ -66,7 +66,7 @@ export interface ResumeData {
     year: string;
     url?: string;
   }>;
-  
+
   awards?: Array<{
     name: string;
     issuer: string;
@@ -82,7 +82,8 @@ export const resumeData: ResumeData = {
     email: 'alex@ournature.studio',
     location: 'Upstate, New York, USA',
     website: 'alexnodeland.com',
-    summary: 'Experienced engineer and mathematician with a strong background in high-performance computing, AI system design, and startup development. Proven track record in leading cross-functional teams and managing strategic business partnerships. Passionate about transforming complex ideas into user-friendly solutions, optimizing business processes, and driving innovation and growth.'
+    summary:
+      'Experienced engineer and mathematician with a strong background in high-performance computing, AI system design, and startup development. Proven track record in leading cross-functional teams and managing strategic business partnerships. Passionate about transforming complex ideas into user-friendly solutions, optimizing business processes, and driving innovation and growth.',
   },
 
   experience: [
@@ -98,9 +99,17 @@ export const resumeData: ResumeData = {
         'Built self-improving AI systems through virtuous feedback loops that automatically capture user feedback, expand evaluation datasets, and power few-shot examples downstream',
         'Developed tabular insight generator agents using Jinja templating that maintain complete data lineage and provenance tracking, ensuring full auditability for enterprise compliance requirements',
         'Enhanced the semantic data model with ontological abstractions and higher-order business concepts, enabling automated root cause analysis and data discovery',
-        'Engineered a fault-tolerant distributed worker architecture on AWS (ECS/SNS/SQS) with dead letter queue management and zero-downtime deployments'
+        'Engineered a fault-tolerant distributed worker architecture on AWS (ECS/SNS/SQS) with dead letter queue management and zero-downtime deployments',
       ],
-      skills: ['Python', 'AWS', 'Docker', 'Kubernetes', 'Machine Learning', 'LLMs', 'Data Engineering']
+      skills: [
+        'Python',
+        'AWS',
+        'Docker',
+        'Kubernetes',
+        'Machine Learning',
+        'LLMs',
+        'Data Engineering',
+      ],
     },
     {
       title: 'Head of AI',
@@ -109,7 +118,7 @@ export const resumeData: ResumeData = {
       duration: '2023 - 2024',
       achievements: [
         'Pioneered the AI engineering department, developing fully functional AI systems from conceptual models',
-        'Developed and fully implemented RAG-based LLM systems, enhancing the product\'s capabilities in generating dynamic responses based on retrieved data',
+        "Developed and fully implemented RAG-based LLM systems, enhancing the product's capabilities in generating dynamic responses based on retrieved data",
         'Enhanced data model clarity by developing ontological models',
         'Improved database security and efficiency by designing and implementing schema and backend infrastructure using Supabase Postgres',
         'Boosted system security and functionality by building scalable AI pipelines with robust authentication',
@@ -117,10 +126,18 @@ export const resumeData: ResumeData = {
         'Enhanced API throughput and reduced latency by architecting a high-performance, scalable API interface tailored for AI pipeline integrations',
         'Optimized deployment workflows and enhanced system reliability by adopting Infrastructure as Code (IaC) practices using AWS CloudFormation and setting up a robust CI/CD pipeline with GitHub Actions',
         'Ensured seamless platform integration by collaborating with external development teams',
-        'Streamlined development and coordination by directing project management with GitHub\'s self-management system',
-        'Boosted system responsiveness by optimizing database performance for higher scale and efficiency'
+        "Streamlined development and coordination by directing project management with GitHub's self-management system",
+        'Boosted system responsiveness by optimizing database performance for higher scale and efficiency',
       ],
-      skills: ['Python', 'PostgreSQL', 'Supabase', 'AWS', 'RAG', 'LLMs', 'Infrastructure as Code']
+      skills: [
+        'Python',
+        'PostgreSQL',
+        'Supabase',
+        'AWS',
+        'RAG',
+        'LLMs',
+        'Infrastructure as Code',
+      ],
     },
     {
       title: 'Technical Strategy Consultant',
@@ -135,9 +152,14 @@ export const resumeData: ResumeData = {
         'Reduced costs and increased efficiency by facilitating transitions to AI-integrated systems',
         'Advanced business processes by engaging in AI research and development',
         'Identified AI solution opportunities through comprehensive market analysis',
-        'Supported startups in technology selection and strategic decision-making'
+        'Supported startups in technology selection and strategic decision-making',
       ],
-      skills: ['Strategic Planning', 'AI Consulting', 'Technology Assessment', 'Business Development']
+      skills: [
+        'Strategic Planning',
+        'AI Consulting',
+        'Technology Assessment',
+        'Business Development',
+      ],
     },
     {
       title: 'Tech Lead',
@@ -154,9 +176,18 @@ export const resumeData: ResumeData = {
         'Managed GCP infrastructure, implementing Kubernetes & Istio and monitoring with Grafana & Prometheus',
         'Revamped CI/CD process with Jenkins and Cypress, ensuring software quality',
         'Introduced agile practices (Scrum) to streamline operations and increase productivity',
-        'Improved efficiency by implementing workflow automation and building a custom data ingestion pipeline'
+        'Improved efficiency by implementing workflow automation and building a custom data ingestion pipeline',
       ],
-      skills: ['Python', 'GCP', 'Kubernetes', 'Docker', 'Jenkins', 'Cypress', 'Agile', 'Team Leadership']
+      skills: [
+        'Python',
+        'GCP',
+        'Kubernetes',
+        'Docker',
+        'Jenkins',
+        'Cypress',
+        'Agile',
+        'Team Leadership',
+      ],
     },
     {
       title: 'CEO & Co-Founder',
@@ -176,9 +207,15 @@ export const resumeData: ResumeData = {
         'Secured beneficial terms by negotiating contracts and agreements with partners and suppliers',
         'Mitigated business risks by implementing risk management strategies',
         'Maintained transparency by steering investor relations and board communications',
-        'Challenged traditional norms by leveraging technical background to drive innovative solutions'
+        'Challenged traditional norms by leveraging technical background to drive innovative solutions',
       ],
-      skills: ['Leadership', 'Business Strategy', 'Fundraising', 'Product Management', 'Team Building']
+      skills: [
+        'Leadership',
+        'Business Strategy',
+        'Fundraising',
+        'Product Management',
+        'Team Building',
+      ],
     },
     {
       title: 'Founder in Residence',
@@ -194,9 +231,14 @@ export const resumeData: ResumeData = {
         'Initiated a successful venture by co-founding Archanan',
         'Secured seed capital by leading fundraising efforts',
         'Broadened network and resources by forming strategic partnerships',
-        'Strengthened market positioning through business development initiatives'
+        'Strengthened market positioning through business development initiatives',
       ],
-      skills: ['Entrepreneurship', 'Market Research', 'Financial Modeling', 'Business Development']
+      skills: [
+        'Entrepreneurship',
+        'Market Research',
+        'Financial Modeling',
+        'Business Development',
+      ],
     },
     {
       title: 'CTO, Chief Mathematician',
@@ -213,9 +255,15 @@ export const resumeData: ResumeData = {
         'Advanced technological capabilities by directing algorithm development for complex problems',
         'Ensured software quality by establishing strict QA standards',
         'Minimized bugs through efficient code review practices',
-        'Enhanced client service offerings by cultivating strong client relationships'
+        'Enhanced client service offerings by cultivating strong client relationships',
       ],
-      skills: ['Mathematics', 'Software Development', 'Team Leadership', 'Algorithm Design', 'Cloud Computing']
+      skills: [
+        'Mathematics',
+        'Software Development',
+        'Team Leadership',
+        'Algorithm Design',
+        'Cloud Computing',
+      ],
     },
     {
       title: 'Artist in Residence',
@@ -228,9 +276,15 @@ export const resumeData: ResumeData = {
         'Generated creative content using academic research',
         'Demystified complex concepts through collaboration with music technology industry professionals',
         'Inspired creativity by leading seminars on the intersection of music and mathematics',
-        'Facilitated collaborative opportunities by networking with industry professionals'
+        'Facilitated collaborative opportunities by networking with industry professionals',
       ],
-      skills: ['Audio Engineering', 'Circuit Design', 'Music Technology', 'Research', 'Creative Technology']
+      skills: [
+        'Audio Engineering',
+        'Circuit Design',
+        'Music Technology',
+        'Research',
+        'Creative Technology',
+      ],
     },
     {
       title: 'Researcher',
@@ -242,9 +296,15 @@ export const resumeData: ResumeData = {
         'Contributed to advancements in audio technology by conducting in-depth research on optimal wavelet bases for audio compression',
         'Provided insights into spectrum trends by performing real-time signal analysis',
         'Ensured up-to-date practices by liaising with other research teams',
-        'Maintained reliable data sources by organizing and maintaining project documentation'
+        'Maintained reliable data sources by organizing and maintaining project documentation',
       ],
-      skills: ['Research', 'Signal Processing', 'Supercomputing', 'Data Analysis', 'Academic Writing']
+      skills: [
+        'Research',
+        'Signal Processing',
+        'Supercomputing',
+        'Data Analysis',
+        'Academic Writing',
+      ],
     },
     {
       title: 'Assistant Product Engineer',
@@ -257,9 +317,14 @@ export const resumeData: ResumeData = {
         'Simplified customer usage by authoring technical documentation and user manuals',
         'Improved product quality by optimizing processes to reduce software bugs',
         'Integrated customer feedback into product development',
-        'Ensured software quality by implementing rigorous testing protocols'
+        'Ensured software quality by implementing rigorous testing protocols',
       ],
-      skills: ['Firmware Development', 'Embedded Systems', 'Technical Writing', 'Product Development']
+      skills: [
+        'Firmware Development',
+        'Embedded Systems',
+        'Technical Writing',
+        'Product Development',
+      ],
     },
     {
       title: 'Technician',
@@ -273,10 +338,15 @@ export const resumeData: ResumeData = {
         'Maintained high service standards by leading technical customer service efforts',
         'Optimized production processes through continuous improvement initiatives',
         'Ensured quality standards by providing training to new staff',
-        'Contributed to customer service excellence by handling returns and repairs'
+        'Contributed to customer service excellence by handling returns and repairs',
       ],
-      skills: ['Hardware Assembly', 'Quality Control', 'Customer Service', 'Technical Support']
-    }
+      skills: [
+        'Hardware Assembly',
+        'Quality Control',
+        'Customer Service',
+        'Technical Support',
+      ],
+    },
   ],
 
   education: [
@@ -285,22 +355,23 @@ export const resumeData: ResumeData = {
       institution: 'Stony Brook University',
       location: 'Stony Brook, NY',
       duration: '2016 - (Incomplete)',
-      description: 'Engaged in preliminary research but transitioned to entrepreneurial roles prior to advancing to candidacy.',
+      description:
+        'Engaged in preliminary research but transitioned to entrepreneurial roles prior to advancing to candidacy.',
       relevantCoursework: [
         'Numerical Analysis',
-        'Numerical Partial Differential Equations', 
+        'Numerical Partial Differential Equations',
         'Numerical Linear Algebra',
         'Data Analysis',
         'Applied Real Analysis',
         'Applied Complex Analysis',
-        'Parallel Computing'
+        'Parallel Computing',
       ],
       achievements: [
-        'Applied research experience at the Center of Excellence in Wireless Information Technology (CEWIT) and SUNY Research Foundation, focusing on audio compression and signal analysis'
-      ]
+        'Applied research experience at the Center of Excellence in Wireless Information Technology (CEWIT) and SUNY Research Foundation, focusing on audio compression and signal analysis',
+      ],
     },
     {
-      degree: 'Bachelor\'s Degree (BS), Applied Mathematics and Statistics',
+      degree: "Bachelor's Degree (BS), Applied Mathematics and Statistics",
       institution: 'Stony Brook University',
       location: 'Stony Brook, NY',
       duration: '2013 - 2015',
@@ -314,42 +385,65 @@ export const resumeData: ResumeData = {
         'Survey of Probability and Statistics',
         'Research Practices in Biomedical Engineering',
         'Modern Physics',
-        'Molecular and Organic Chemistry'
+        'Molecular and Organic Chemistry',
       ],
-      achievements: [
-        'Member of the University Scholars Program'
-      ]
-    }
+      achievements: ['Member of the University Scholars Program'],
+    },
   ],
 
   certifications: [
     {
       name: 'AWS Business Professional',
       issuer: 'Amazon Web Services',
-      date: '2018'
+      date: '2018',
     },
     {
       name: 'AWS TCO and Cloud Economics',
-      issuer: 'Amazon Web Services', 
-      date: '2018'
+      issuer: 'Amazon Web Services',
+      date: '2018',
     },
     {
       name: 'Responsible Conduct of Research in Engineering',
       issuer: 'CITI Program',
-      date: '2017'
-    }
+      date: '2017',
+    },
   ],
 
   skills: {
     technical: [
-      'Python', 'JavaScript/TypeScript', 'React', 'Node.js', 'AWS', 'GCP', 'Docker', 'Kubernetes',
-      'PostgreSQL', 'Machine Learning', 'LLMs', 'RAG Systems', 'Data Engineering', 'API Development',
-      'Infrastructure as Code', 'CI/CD', 'Agile/Scrum', 'Git', 'Linux', 'Mathematics', 'Signal Processing'
+      'Python',
+      'JavaScript/TypeScript',
+      'React',
+      'Node.js',
+      'AWS',
+      'GCP',
+      'Docker',
+      'Kubernetes',
+      'PostgreSQL',
+      'Machine Learning',
+      'LLMs',
+      'RAG Systems',
+      'Data Engineering',
+      'API Development',
+      'Infrastructure as Code',
+      'CI/CD',
+      'Agile/Scrum',
+      'Git',
+      'Linux',
+      'Mathematics',
+      'Signal Processing',
     ],
     soft: [
-      'Technical Leadership', 'Team Management', 'Strategic Planning', 'Business Development',
-      'Client Relations', 'Mentoring', 'Public Speaking', 'Problem Solving', 'Innovation'
+      'Technical Leadership',
+      'Team Management',
+      'Strategic Planning',
+      'Business Development',
+      'Client Relations',
+      'Mentoring',
+      'Public Speaking',
+      'Problem Solving',
+      'Innovation',
     ],
-    languages: ['English (Native)']
-  }
+    languages: ['English (Native)'],
+  },
 };

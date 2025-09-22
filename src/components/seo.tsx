@@ -1,22 +1,23 @@
-import React from 'react'
-import { Helmet } from 'react-helmet'
-import { siteConfig } from '../config/site'
+import React from 'react';
+import { Helmet } from 'react-helmet';
+import { siteConfig } from '../config';
 
 interface SEOProps {
-  title?: string
-  description?: string
-  image?: string
-  url?: string
+  title?: string;
+  description?: string;
+  image?: string;
+  url?: string;
 }
 
-const SEO: React.FC<SEOProps> = ({ 
-  title = siteConfig.seo.defaultTitle, 
+const SEO: React.FC<SEOProps> = ({
+  title = siteConfig.seo.defaultTitle,
   description = siteConfig.seo.defaultDescription,
   image = siteConfig.seo.defaultImage,
-  url = siteConfig.siteUrl
+  url = siteConfig.siteUrl,
 }) => {
-  const fullTitle = title === siteConfig.siteName ? title : `${title} | ${siteConfig.siteName}`
-  
+  const fullTitle =
+    title === siteConfig.siteName ? title : `${title} | ${siteConfig.siteName}`;
+
   return (
     <Helmet>
       <title>{fullTitle}</title>
@@ -33,7 +34,7 @@ const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
     </Helmet>
-  )
-}
+  );
+};
 
-export default SEO
+export default SEO;
