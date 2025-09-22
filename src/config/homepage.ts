@@ -31,17 +31,6 @@ export interface HomepageConfig {
       description: string;
     }>;
   };
-  sideProjects: {
-    title: string;
-    description: string;
-  };
-  press: {
-    title: string;
-    links: Array<{
-      text: string;
-      url: string;
-    }>;
-  };
 }
 
 export const homepageConfig: HomepageConfig = {
@@ -51,9 +40,9 @@ export const homepageConfig: HomepageConfig = {
   },
   about: {
     paragraphs: [
-      "I've always had an innate interest in technology. I remember building my first \"guitar pedal\" when I was around 10 years old, it was a rudimentary talk box (literally held together with duct tape), but it worked! That first experience with creative technology sparked my interest.",
-      "My subsequent deep dive into music technology lasted throughout my youth and university years, and ultimately lead me to the space of computational mathematics and distributed computing, specifically distributed-memory HPC. Also, having been exposed to startups at a very early age, joining one as my first job at 15 years old, I learned the importance of building scalable technical strategy, from processes to product. These paths of interest and discovery led me to where I am now.",
-      "Over the course of my career, I've worked with and founded several tech startups across supercomputing and music-technology, in technical and commercial roles, and as individual contributor and manager."
+      "I'm a technical consultant with experience in distributed computing and creative technology. My background spans both technical and commercial roles across various industries.",
+      "I help early-stage startups build scalable technical strategies and processes that provide immediate value without getting in the way of growth.",
+      "My approach combines hands-on technical expertise with strategic thinking to solve complex problems and drive innovation."
     ]
   },
   consulting: {
@@ -102,39 +91,6 @@ export const homepageConfig: HomepageConfig = {
         icon: "🛠️",
         title: "Development Processes",
         description: "Optimizing software development workflows and practices"
-      }
-    ]
-  },
-  sideProjects: {
-    title: "Side Projects",
-    description: "In my free time, I like to learn about a range of technologies across generative AI, creative computing, human-computer interaction, synthesizers, home automation, and hydroponics. I have a handful of personal projects that I'm working on and would like to release over time."
-  },
-  press: {
-    title: "In the Press",
-    links: [
-      {
-        text: "Singapore Startup Hatches At-Scale HPC Dev Cloud",
-        url: "#"
-      },
-      {
-        text: "Try Before You Buy? Test Driving a Supercomputer System",
-        url: "#"
-      },
-      {
-        text: "Supercomputing Shouldn't Be Rocket Science",
-        url: "#"
-      },
-      {
-        text: "Optimal Wavelet Bases For Audio Compression",
-        url: "#"
-      },
-      {
-        text: "Alexander Nodeland: Supercomputers For Audio Research and Development",
-        url: "#"
-      },
-      {
-        text: "The Future of Sound",
-        url: "#"
       }
     ]
   }

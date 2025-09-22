@@ -68,22 +68,12 @@ import '../styles/index.scss'
       </div>
     </section>
 
-    <section className="side-projects">
-      <h2>{homepageConfig.sideProjects.title}</h2>
+    <section className="blog-preview">
+      <h2>Latest Thoughts</h2>
       <p>
-        {homepageConfig.sideProjects.description}
+        I occasionally write about technology, projects, and interesting problems I encounter. 
+        Check out my <a href="/blog">blog</a> for the latest posts.
       </p>
-    </section>
-
-    <section className="press">
-      <h2>{homepageConfig.press.title}</h2>
-      <div className="press-links">
-        {homepageConfig.press.links.map((link, index) => (
-          <a key={index} href={link.url} className="press-link">
-            {link.text}
-          </a>
-        ))}
-      </div>
     </section>
   </div>
 </Layout>
