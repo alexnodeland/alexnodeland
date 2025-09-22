@@ -24,9 +24,9 @@ const ThemeToggle: React.FC = () => {
     <button 
       onClick={toggleTheme} 
       className="theme-toggle"
+      data-theme={theme}
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
-      {theme === 'light' ? '🌙' : '☀️'}
     </button>
   )
 }
