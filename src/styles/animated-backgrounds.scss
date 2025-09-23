@@ -1,0 +1,593 @@
+// Animated backgrounds styles using design system variables
+
+// Background controls container (bottom-left)
+.background-controls {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+
+  // Combined toolbar
+  .background-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    position: relative; // anchor tooltips to full width
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-lg);
+    transition: all var(--transition-normal);
+    
+    &:hover {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+    }
+
+    .toolbar-top {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+
+    .background-name {
+      color: var(--primary-color);
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .description-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      min-width: 0;
+
+      .background-description {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        opacity: 0.8;
+        max-width: 28ch; // fixed character width
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .info-bubble {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: default;
+        user-select: none;
+      }
+
+      .description-tooltip {
+        display: none;
+        position: absolute;
+        left: 0;
+        bottom: calc(100% + 10px);
+        width: 100%;
+        max-width: none;
+        padding: 0.75rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        color: var(--text-primary);
+        white-space: normal;
+        z-index: 1002;
+        pointer-events: none;
+      }
+
+      &:hover .description-tooltip {
+        display: block;
+      }
+    }
+
+    .toolbar-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+
+      .nav-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+    }
+
+    .settings-toggle-button {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      width: 2rem;
+      height: 2rem;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background: rgba(0, 255, 136, 0.05);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+
+      &[data-active="true"] {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background: rgba(0, 255, 136, 0.1);
+      }
+    }
+  }
+
+  // Toolbar switcher buttons
+  .switch-button {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      width: 2rem;
+      height: 2rem;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      transition: all var(--transition-fast);
+      font-family: inherit;
+
+      &:hover {
+        border-color: var(--secondary-color);
+        color: var(--secondary-color);
+        background: rgba(0, 212, 255, 0.05);
+        transform: scale(1.05);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+
+      &.switch-previous {
+        font-size: 1.2em;
+      }
+
+      &.switch-next {
+        font-size: 1.2em;
+      }
+    }
+
+    .background-counter {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      min-width: 2.5rem;
+      text-align: center;
+      font-family: inherit;
+    }
+  }
+
+  .keyboard-hint {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-align: center;
+    opacity: 0.6;
+    font-family: inherit;
+    
+    kbd {
+      background: var(--bg-accent);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.125rem 0.25rem;
+      margin: 0 0.125rem;
+      font-size: 0.625rem;
+      font-family: inherit;
+    }
+  }
+
+
+// Settings panel
+.settings-panel {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  width: 20rem;
+  max-height: calc(100vh - 4rem);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  z-index: 1002; // Above controls
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  box-shadow: var(--shadow-xl);
+  
+  // Animate in from bottom
+  animation: slideUpIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  
+  .settings-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      font-family: inherit;
+    }
+
+    .close-button {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 1rem;
+      cursor: pointer;
+      width: 2rem;
+      height: 2rem;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+      font-family: inherit;
+
+      &:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+        background: rgba(255, 0, 128, 0.05);
+      }
+
+      &:before {
+        content: '×';
+        font-size: 1.2em;
+      }
+    }
+  }
+
+  .settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    
+    // Custom scrollbar using design system
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: var(--bg-accent);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: var(--radius-sm);
+
+      &:hover {
+        background: var(--primary-color);
+      }
+    }
+  }
+
+  .settings-category {
+    border-bottom: 1px solid var(--border-color);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .category-header {
+      width: 100%;
+      padding: 0.75rem 1rem; // tighter header
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8125rem; // slightly smaller
+      font-weight: 500;
+      transition: all var(--transition-fast);
+      font-family: inherit;
+
+      &:hover {
+        background: var(--bg-accent);
+      }
+
+      &.open {
+        background: var(--bg-accent);
+        color: var(--primary-color);
+        border-left: 2px solid var(--primary-color);
+      }
+
+      .category-toggle {
+        font-size: 0.75rem;
+        transition: transform var(--transition-normal);
+        color: var(--text-secondary);
+
+        &:before {
+          content: '▼';
+        }
+      }
+
+      &.open .category-toggle {
+        transform: rotate(-180deg);
+        color: var(--primary-color);
+      }
+    }
+
+    .category-content {
+      padding: 0.5rem 1rem 1rem 1rem; // add top padding for first element spacing
+      animation: slideDown var(--transition-normal) ease;
+    }
+  }
+
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .setting-label {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      min-width: 7rem;
+      cursor: default;
+      font-family: inherit;
+    }
+
+    .setting-input {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 9rem;
+
+      .slider {
+        flex: 1;
+        height: 2px;
+        background: var(--border-color);
+        border-radius: var(--radius-sm);
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+
+        &::-webkit-slider-thumb {
+          appearance: none;
+          width: 1rem;
+          height: 1rem;
+          background: var(--primary-color);
+          border-radius: 50%;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+          box-shadow: 0 0 0 2px var(--bg-secondary);
+
+          &:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+          }
+        }
+
+        &::-moz-range-thumb {
+          width: 1rem;
+          height: 1rem;
+          background: var(--primary-color);
+          border-radius: 50%;
+          border: 2px solid var(--bg-secondary);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+
+          &:hover {
+            transform: scale(1.2);
+          }
+        }
+      }
+
+      .number-input {
+        width: 4rem;
+        padding: 0.375rem 0.5rem;
+        background: var(--bg-accent);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        font-size: 0.75rem;
+        font-family: inherit;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.2);
+        }
+      }
+
+      .color-input {
+        width: 2.5rem;
+        height: 2rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: none;
+        cursor: pointer;
+        overflow: hidden;
+
+        &:hover {
+          border-color: var(--primary-color);
+        }
+
+        &::-webkit-color-swatch-wrapper {
+          padding: 2px;
+          border-radius: var(--radius-sm);
+        }
+
+        &::-webkit-color-swatch {
+          border: none;
+          border-radius: var(--radius-sm);
+        }
+      }
+
+      .select-input {
+        min-width: 7rem;
+        padding: 0.375rem 0.5rem;
+        background: var(--bg-accent);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        font-size: 0.75rem;
+        font-family: inherit;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.2);
+        }
+
+        option {
+          background: var(--bg-secondary);
+          color: var(--text-primary);
+        }
+      }
+
+      .setting-value,
+      .color-value {
+        font-size: 0.625rem;
+        color: var(--text-muted);
+        min-width: 3rem;
+        text-align: right;
+        font-family: inherit;
+      }
+    }
+  }
+
+  .settings-panel-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+
+    .reset-button {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg-accent);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-family: inherit;
+
+      &:hover {
+        background: var(--accent-color);
+        border-color: var(--accent-color);
+        color: white;
+        box-shadow: 0 0 12px rgba(255, 0, 128, 0.2);
+      }
+
+      &:active {
+        transform: scale(0.98);
+      }
+    }
+  }
+
+}
+
+// Animations
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUpIn {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive design - no special handling needed for larger screens since it's already positioned correctly
+
+@media (max-width: 768px) {
+  .background-controls {
+    bottom: 1rem;
+    left: 1rem;
+    
+    .background-info {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      
+      .background-description {
+        display: none; // Hide on mobile for space
+      }
+    }
+    
+    .background-switcher {
+      padding: 0.375rem 0.5rem;
+      
+      .switch-button {
+        width: 1.75rem;
+        height: 1.75rem;
+        font-size: 0.625rem;
+      }
+    }
+    
+    .keyboard-hint {
+      display: none; // Hide keyboard hints on mobile
+    }
+  }
+  
+  .settings-panel {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    width: auto;
+    max-height: calc(100vh - 2rem);
+    
+    // On mobile, ensure it covers the controls
+    z-index: 1003;
+  }
+}
