@@ -1,6 +1,7 @@
 import { AnimatedBackgroundConfig, BackgroundSettings, SettingsSchema } from '../../types/animated-backgrounds';
 import PDEStencilBackground from './PDEStencilBackground';
 import SimpleWaveBackground from './SimpleWaveBackground';
+import GraphTopologyBackground from './GraphTopologyBackground';
 
 // Default settings for PDE Stencil background
 export const pdeStencilDefaultSettings: BackgroundSettings = {
@@ -270,10 +271,123 @@ export const simpleWaveConfig: AnimatedBackgroundConfig = {
   )
 };
 
+// Graph Topology background defaults and schema
+export const graphTopologyDefaultSettings: BackgroundSettings = {
+  ...pdeStencilDefaultSettings,
+  // Core graph settings
+  opacity: 0.9,
+  totalNodes: 32,
+  clusterCount: 3,
+  requestedNodes: 8,
+  animationSpeed: 1.0,
+  scale: 1.0,
+  nodeBaseSize: 0.02,
+  edgeThickness: 2.0,
+  // Legacy settings (kept for compatibility)
+  globalTimeMultiplier: 1.0,
+  waveSpeed1: 6.0,
+  waveSpeed2: 6.0,
+  diagonalWaveSpeed: 6.0,
+  flowAnimationSpeed: 4.0,
+  mouseWaveSpeed: 15.0,
+  waveAmplitude: pdeStencilDefaultSettings.waveAmplitude
+};
+
+export const graphTopologySettingsSchema: SettingsSchema[] = [
+  // Core graph topology settings
+  {
+    key: 'totalNodes',
+    label: 'Total Nodes in Network',
+    type: 'slider',
+    min: 16,
+    max: 64,
+    step: 4,
+    category: 'Graph Topology'
+  },
+  {
+    key: 'clusterCount',
+    label: 'Number of Clusters',
+    type: 'slider',
+    min: 2,
+    max: 6,
+    step: 1,
+    category: 'Graph Topology'
+  },
+  {
+    key: 'requestedNodes',
+    label: 'Requested Subgraph Size',
+    type: 'slider',
+    min: 3,
+    max: 16,
+    step: 1,
+    category: 'Graph Topology'
+  },
+  
+  // Animation and visual settings
+  {
+    key: 'animationSpeed',
+    label: 'Animation Speed',
+    type: 'slider',
+    min: 0.2,
+    max: 3.0,
+    step: 0.1,
+    category: 'Animation'
+  },
+  {
+    key: 'scale',
+    label: 'Graph Scale',
+    type: 'slider',
+    min: 0.5,
+    max: 2.0,
+    step: 0.1,
+    category: 'Visual'
+  },
+  {
+    key: 'nodeBaseSize',
+    label: 'Node Size',
+    type: 'slider',
+    min: 0.01,
+    max: 0.05,
+    step: 0.002,
+    category: 'Visual'
+  },
+  {
+    key: 'edgeThickness',
+    label: 'Edge Thickness',
+    type: 'slider',
+    min: 0.5,
+    max: 5.0,
+    step: 0.25,
+    category: 'Visual'
+  },
+  {
+    key: 'opacity',
+    label: 'Background Opacity',
+    type: 'slider',
+    min: 0.1,
+    max: 1.0,
+    step: 0.05,
+    category: 'Visual'
+  },
+  
+  // Color settings (reuse existing)
+  ...pdeStencilSettingsSchema.filter(s => s.key.toString().startsWith('colors.'))
+];
+
+export const graphTopologyConfig: AnimatedBackgroundConfig = {
+  id: 'graph-topology',
+  name: 'Supercomputer Graph Topology',
+  description: 'Random-walk search for high-conductivity n-node subgraphs on a network interconnect; edge length encodes latency.',
+  component: GraphTopologyBackground,
+  defaultSettings: graphTopologyDefaultSettings,
+  settingsSchema: graphTopologySettingsSchema
+};
+
 // Registry of all available animated backgrounds
 export const backgroundRegistry: AnimatedBackgroundConfig[] = [
   pdeStencilConfig,
-  simpleWaveConfig
+  simpleWaveConfig,
+  graphTopologyConfig
   // Add new background configurations here
 ];
 

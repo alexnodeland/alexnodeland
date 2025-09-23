@@ -4,4 +4,5 @@ export { default as SimpleWaveBackground } from './SimpleWaveBackground';
 export { default as BackgroundManager } from './BackgroundManager';
 export { default as BackgroundControls } from './BackgroundControls';
 export { default as SettingsPanel } from './SettingsPanel';
+export { default as GraphTopologyBackground } from './GraphTopologyBackground';
 export * from './backgroundRegistry';

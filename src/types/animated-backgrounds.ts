@@ -32,6 +32,14 @@ export interface BackgroundSettings {
   stencilLineWidth: number;
   diagonalStencilWeight: number;
   computeActivityIntensity: number;
+  
+  // Graph topology properties (optional)
+  totalNodes?: number;
+  clusterCount?: number;
+  requestedNodes?: number;
+  animationSpeed?: number;
+  scale?: number;
+  edgeThickness?: number;
 }
 
 export interface AnimatedBackgroundConfig {
