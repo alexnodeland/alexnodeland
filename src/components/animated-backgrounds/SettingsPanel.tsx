@@ -193,6 +193,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="background-description">
             {currentBackgroundDescription}
           </div>
+          
+          {currentBackgroundId === 'spectrogram-oscilloscope' && (
+            <div className="special-hotkeys">
+              <div className="special-hotkeys-title">Special Controls</div>
+              <div className="special-hotkey-item">
+                <kbd>P</kbd> play sound
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
@@ -224,15 +233,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       </div>
       
       <div className="settings-panel-footer">
-        {currentBackgroundId === 'spectrogram-oscilloscope' && (
-          <div className="special-hotkeys">
-            <div className="special-hotkeys-title">Special Controls</div>
-            <div className="special-hotkey-item">
-              <kbd>P</kbd> play sound
-            </div>
-          </div>
-        )}
-        
         <button 
           onClick={() => onSettingsChange(settings)} 
           className="reset-button"
