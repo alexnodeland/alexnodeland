@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { BackgroundSettings, SettingsSchema } from '../../types/animated-backgrounds';
 
 interface SettingsPanelProps {
@@ -29,23 +29,53 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onNextBackground,
   isClosing
 }) => {
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    Visual: true,
-    Animation: false,
-    Waves: false,
-    Colors: false,
-    Stencil: false,
-    'VCO 1': false,
-    'VCO 2': false,
-    Mixer: false,
-    'Delay/Echo': false,
-    Filter: false,
-    Distortion: false,
-    'Ring Mod': false,
-    Noise: false,
-    Reverb: false,
-    'Graph Topology': false
-  });
+  // Define which categories are considered standard across all backgrounds
+  const STANDARD_CATEGORIES = useMemo(() => new Set<string>(['Visual', 'Colors']), []);
+
+  // Group settings by category
+  const settingsByCategory = useMemo(() => {
+    return settingsSchema.reduce((acc, setting) => {
+      const category = setting.category || 'Other';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(setting);
+      return acc;
+    }, {} as Record<string, SettingsSchema[]>);
+  }, [settingsSchema]);
+
+  // Partition categories into custom (top) and standard (bottom)
+  const { customCategories, standardCategories } = useMemo(() => {
+    const allCategoryNames = Object.keys(settingsByCategory);
+    const custom: string[] = [];
+    const standard: string[] = [];
+    for (const name of allCategoryNames) {
+      if (STANDARD_CATEGORIES.has(name)) {
+        standard.push(name);
+      } else {
+        custom.push(name);
+      }
+    }
+    // Preserve stable order as discovered in schema
+    return { customCategories: custom, standardCategories: standard };
+  }, [settingsByCategory, STANDARD_CATEGORIES]);
+
+  // Track open/closed per-category; default: custom open, standard closed
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+
+  // Initialize/merge open state when schema changes (e.g., switching backgrounds)
+  useEffect(() => {
+    setOpenCategories(prev => {
+      const next: Record<string, boolean> = { ...prev };
+      for (const name of customCategories) {
+        if (next[name] === undefined) next[name] = true;
+      }
+      for (const name of standardCategories) {
+        if (next[name] === undefined) next[name] = false;
+      }
+      return next;
+    });
+  }, [customCategories, standardCategories]);
 
   // Helper function to get nested property value
   const getNestedValue = (obj: any, path: string): any => {
@@ -101,15 +131,58 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }));
   };
 
-  // Group settings by category
-  const settingsByCategory = settingsSchema.reduce((acc, setting) => {
-    const category = setting.category || 'Other';
-    if (!acc[category]) {
-      acc[category] = [];
+  // Collapse/expand helpers (VS Code-style controls)
+  const collapseAllCustom = () => {
+    setOpenCategories(prev => {
+      const updated = { ...prev };
+      customCategories.forEach(c => { updated[c] = false; });
+      return updated;
+    });
+  };
+
+  const expandAllCustom = () => {
+    setOpenCategories(prev => {
+      const updated = { ...prev };
+      customCategories.forEach(c => { updated[c] = true; });
+      return updated;
+    });
+  };
+
+  const collapseAllStandard = () => {
+    setOpenCategories(prev => {
+      const updated = { ...prev };
+      standardCategories.forEach(c => { updated[c] = false; });
+      return updated;
+    });
+  };
+
+  const expandAllStandard = () => {
+    setOpenCategories(prev => {
+      const updated = { ...prev };
+      standardCategories.forEach(c => { updated[c] = true; });
+      return updated;
+    });
+  };
+
+  // Section computed states: if any open => show down chevron; if none open => right chevron
+  const customAnyOpen = useMemo(() => customCategories.some(c => !!openCategories[c]), [customCategories, openCategories]);
+  const standardAnyOpen = useMemo(() => standardCategories.some(c => !!openCategories[c]), [standardCategories, openCategories]);
+
+  const toggleCustomSection = () => {
+    if (customAnyOpen) {
+      collapseAllCustom();
+    } else {
+      expandAllCustom();
     }
-    acc[category].push(setting);
-    return acc;
-  }, {} as Record<string, SettingsSchema[]>);
+  };
+
+  const toggleStandardSection = () => {
+    if (standardAnyOpen) {
+      collapseAllStandard();
+    } else {
+      expandAllStandard();
+    }
+  };
 
   // Render setting input based on type
   const renderSettingInput = (setting: SettingsSchema) => {
@@ -205,31 +278,94 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
       </div>
       
-      <div className="settings-content">
-        {Object.entries(settingsByCategory).map(([category, categorySettings]) => (
-          <div key={category} className="settings-category">
-            <button
-              className={`category-header ${openCategories[category] ? 'open' : ''}`}
-              onClick={() => toggleCategory(category)}
-            >
-              <span>{category?.toLowerCase?.() || ''}</span>
-              <span className="category-toggle" />
-            </button>
-            
-            {openCategories[category] && (
-              <div className="category-content">
-                {categorySettings.map(setting => (
-                  <div key={setting.key} className="setting-row">
-                    <label className="setting-label">
-                      {setting.label?.toLowerCase?.() || ''}
-                    </label>
-                    {renderSettingInput(setting)}
-                  </div>
-                ))}
-              </div>
-            )}
+      <div className="settings-content" style={{ display: 'flex', flexDirection: 'column', gap: 8, height: '100%' }}>
+        {/* Custom categories (top, fixed) */}
+        <div className="settings-section settings-section-custom">
+          <div className="section-header">
+            <div className="section-left">
+              <button
+                className="section-action"
+                onClick={toggleCustomSection}
+                aria-label={customAnyOpen ? 'Collapse all custom' : 'Expand all custom'}
+                title={customAnyOpen ? 'Collapse all' : 'Expand all'}
+              >{customAnyOpen ? '▾' : '▸'}</button>
+              <div className="section-title">custom settings</div>
+            </div>
           </div>
-        ))}
+          {customCategories.map(category => {
+            const categorySettings = settingsByCategory[category] || [];
+            return (
+              <div key={category} className="settings-category">
+                <button
+                  className={`category-header ${openCategories[category] ? 'open' : ''}`}
+                  onClick={() => toggleCategory(category)}
+                  aria-expanded={!!openCategories[category]}
+                >
+                  <span className="category-left">
+                    <span className="category-toggle" aria-hidden="true" />
+                    <span className="category-title">{category?.toLowerCase?.() || ''}</span>
+                  </span>
+                </button>
+                {openCategories[category] && (
+                  <div className="category-content">
+                    {categorySettings.map(setting => (
+                      <div key={setting.key} className="setting-row">
+                        <label className="setting-label">
+                          {setting.label?.toLowerCase?.() || ''}
+                        </label>
+                        {renderSettingInput(setting)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Standard categories (bottom-justified) */}
+        <div className="settings-section settings-section-standard" style={{ marginTop: 'auto' }}>
+          <div className="section-header">
+            <div className="section-left">
+              <button
+                className="section-action"
+                onClick={toggleStandardSection}
+                aria-label={standardAnyOpen ? 'Collapse all standard' : 'Expand all standard'}
+                title={standardAnyOpen ? 'Collapse all' : 'Expand all'}
+              >{standardAnyOpen ? '▾' : '▸'}</button>
+              <div className="section-title">standard settings</div>
+            </div>
+          </div>
+          {standardCategories.map(category => {
+            const categorySettings = settingsByCategory[category] || [];
+            return (
+              <div key={category} className="settings-category">
+                <button
+                  className={`category-header ${openCategories[category] ? 'open' : ''}`}
+                  onClick={() => toggleCategory(category)}
+                  aria-expanded={!!openCategories[category]}
+                >
+                  <span className="category-left">
+                    <span className="category-toggle" aria-hidden="true" />
+                    <span className="category-title">{category?.toLowerCase?.() || ''}</span>
+                  </span>
+                </button>
+                {openCategories[category] && (
+                  <div className="category-content">
+                    {categorySettings.map(setting => (
+                      <div key={setting.key} className="setting-row">
+                        <label className="setting-label">
+                          {setting.label?.toLowerCase?.() || ''}
+                        </label>
+                        {renderSettingInput(setting)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
       
       <div className="settings-panel-footer">

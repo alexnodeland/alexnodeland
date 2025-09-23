@@ -255,7 +255,6 @@
       text-align: left;
       cursor: pointer;
       display: flex;
-      justify-content: space-between;
       align-items: center;
       font-size: 0.8125rem; // slightly smaller
       font-weight: 500;
@@ -272,18 +271,34 @@
         border-left: 2px solid var(--primary-color);
       }
 
+      .category-left {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .category-title {
+        text-transform: none;
+      }
+
       .category-toggle {
-        font-size: 0.75rem;
-        transition: transform var(--transition-normal);
+        width: 1rem;
+        height: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         color: var(--text-secondary);
+        transition: transform var(--transition-normal), color var(--transition-normal);
 
         &:before {
-          content: '▼';
+          content: '▸'; // right-pointing triangle (carrot)
+          font-size: 0.75rem;
+          line-height: 1;
         }
       }
 
       &.open .category-toggle {
-        transform: rotate(-180deg);
+        transform: rotate(90deg); // down
         color: var(--primary-color);
       }
     }
@@ -520,6 +535,53 @@
     }
   }
 
+}
+
+// Section headers and action icons (collapse/expand all)
+.settings-sidebar .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem; // match category-header for aligned left indent
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.settings-sidebar .section-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-sidebar .section-title {
+  font-size: 0.8125rem; // match category header text size
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: lowercase;
+  font-weight: 500; // match category header weight
+}
+
+.settings-sidebar .section-action {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0;
+  width: 1rem; // match category-toggle width
+  height: 1rem; // match category-toggle height
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  font-size: 0.75rem; // match category-toggle size
+  line-height: 1;
+
+  &:hover {
+    color: var(--primary-color);
+    background: var(--bg-accent);
+  }
 }
 
 // Light theme settings sidebar
