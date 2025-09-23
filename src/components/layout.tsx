@@ -14,8 +14,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <MDXProvider>
       <BackgroundManager />
-      <div className="layout">
-        <header className="header">
+      <div className="fixed-header-container">
+        <div className="rainbow-border-fixed"></div>
+        <header className="header-fixed">
           <nav className="nav">
             <div className="nav-brand">
               <Link to="/" className="nav-link">
@@ -32,6 +33,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </nav>
         </header>
+      </div>
+      <div className="layout">
         <main className="main">{children}</main>
         <footer className="footer">
           <div className="footer-content">

@@ -1,35 +1,63 @@
+// Fixed header container that holds both rainbow border and header
+.fixed-header-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  pointer-events: none; // Allow clicks to pass through empty areas
+}
+
+// Fixed rainbow border at the top
+.rainbow-border-fixed {
+  height: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-color) 0%,
+    var(--retro-blue) 25%,
+    var(--retro-green) 50%,
+    var(--retro-purple) 75%,
+    var(--accent-color) 100%
+  );
+  box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+  animation: borderGlow 3s ease-in-out infinite alternate;
+  margin: 1rem 1rem 0 1rem;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  pointer-events: auto; // Re-enable pointer events for the border
+}
+
 .layout {
-  min-height: 100vh;
+  min-height: calc(100vh - 2rem - 6px); // Viewport minus buffers and rainbow height
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(3px);
   border-radius: var(--radius-lg);
-  margin: 1rem;
+  position: fixed;
+  top: calc(1rem + 6px); // Start below rainbow; header overlays transparently
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
   box-shadow: var(--shadow-lg);
-  overflow: hidden;
-  position: relative;
+  overflow: auto; // Allow scrolling within the panel
   border: 2px solid var(--border-color);
-
-  // Retro futuristic top border
+  
+  // Add a subtle top border that complements the fixed header
   &::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 6px;
+    height: 1px;
     background: linear-gradient(
       90deg,
-      var(--accent-color) 0%,
-      var(--retro-blue) 25%,
-      var(--retro-green) 50%,
-      var(--retro-purple) 75%,
-      var(--accent-color) 100%
+      transparent 0%,
+      var(--accent-color) 25%,
+      var(--accent-color) 75%,
+      transparent 100%
     );
-    z-index: 10;
-    box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-    animation: borderGlow 3s ease-in-out infinite alternate;
+    opacity: 0.5;
   }
 }
 
@@ -39,34 +67,35 @@
 }
 
 [data-theme='light'] .footer {
-  background: rgba(255, 255, 255, 0.15);
+  background: transparent;
 }
 
 [data-theme='light'] .theme-toggle {
   background: rgba(255, 255, 255, 0.2);
 }
 
+[data-theme='light'] .header-fixed {
+  background: rgba(255, 255, 255, 0.15);
+  border-bottom-color: var(--accent-color);
+}
+
 [data-theme='light'] .footer-link {
-  background: rgba(255, 255, 255, 0.2);
+  background: transparent;
 }
 
 // Animations are now in animations.scss
 
-.header {
+.header-fixed {
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5px);
   border-bottom: 2px solid var(--accent-color);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  transition: all var(--transition-normal);
+  margin: 0 1rem;
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+  transition: all var(--transition-normal);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  pointer-events: auto; // Re-enable pointer events for the header
 }
 
-[data-theme='light'] .header {
-  background: rgba(255, 255, 255, 0.15);
-  border-bottom-color: var(--accent-color);
-}
 
 .nav {
   max-width: 1200px;
@@ -220,34 +249,15 @@
   flex: 1;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 2rem;
+  padding: 4.5rem 2rem 3rem 2rem; // Extra top space for titles under fixed header
   width: 100%;
   position: relative;
 }
 
 .footer {
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 3px solid var(--accent-color);
+  background: transparent; // Match layout tint exactly
   margin-top: auto;
   position: relative;
-
-  // Add academic-style top border
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      var(--text-muted) 25%,
-      var(--text-muted) 50%,
-      var(--text-muted) 75%,
-      transparent 100%
-    );
-  }
 }
 
 // Add twinkle animation for playful elements
@@ -283,7 +293,7 @@
   justify-content: center;
   width: 2.75rem;
   height: 2.75rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: transparent; // Remove tinted background
   color: var(--text-primary);
   text-decoration: none;
   border-radius: var(--radius-md);
@@ -362,8 +372,19 @@
 }
 
 @media (max-width: 768px) {
+  .rainbow-border-fixed {
+    margin: 0.5rem 0.5rem 0 0.5rem;
+  }
+
+  .header-fixed {
+    margin: 0 0.5rem;
+  }
+
   .layout {
-    margin: 0.5rem;
+    top: calc(0.5rem + 6px); // Panel starts below rainbow; header overlays
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
     border-radius: var(--radius-lg);
   }
 
@@ -385,7 +406,7 @@
   }
 
   .main {
-    padding: 2rem 1.5rem;
+    padding: 3rem 1.5rem 2rem 1.5rem; // Increase top padding on tablet
   }
 
   .footer-content {
@@ -403,8 +424,19 @@
 }
 
 @media (max-width: 480px) {
+  .rainbow-border-fixed {
+    margin: 0.25rem 0.25rem 0 0.25rem;
+  }
+
+  .header-fixed {
+    margin: 0 0.25rem;
+  }
+
   .layout {
-    margin: 0.25rem;
+    top: calc(0.25rem + 6px); // Panel starts below rainbow; header overlays
+    left: 0.25rem;
+    right: 0.25rem;
+    bottom: 0.25rem;
   }
 
   .nav {
@@ -421,7 +453,7 @@
   }
 
   .main {
-    padding: 1.5rem 1rem;
+    padding: 2.25rem 1rem 1.5rem 1rem; // Increase top padding on small mobile
   }
 
   .footer-content {
