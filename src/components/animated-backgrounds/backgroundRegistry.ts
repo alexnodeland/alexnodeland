@@ -388,7 +388,7 @@ export const graphTopologyConfig: AnimatedBackgroundConfig = {
 export const spectrogramOscilloscopeDefaultSettings: BackgroundSettings = {
   // Global settings
   opacity: 0.9,
-  globalTimeMultiplier: 0.5, // Slower default for more hypnotic effect
+  globalTimeMultiplier: 0.1, // Slower default for more hypnotic effect
   
   // VCO 1 Parameters - Rich harmonic content
   vco1Frequency: 110.0, // A2 - low fundamental
@@ -465,7 +465,7 @@ export const spectrogramOscilloscopeDefaultSettings: BackgroundSettings = {
     hottest: [1.0, 1.0, 0.2],
     gridOverlay: [0.2, 0.3, 0.4],
     mouseWave: [0.8, 0.9, 1.0]
-  },
+  } as BackgroundSettings['colors'],
   
   // Legacy settings (for compatibility)
   gridSize: 0.08,
@@ -814,7 +814,7 @@ export const spectrogramOscilloscopeSettingsSchema: SettingsSchema[] = [
     min: 0.01, // Allow very slow speeds for ambient effects
     max: 5.0,  // And faster speeds for energetic visualizations
     step: 0.01,
-    category: 'Visual'
+    category: 'Animation'
   },
   {
     key: 'waveformBrightness',
@@ -868,7 +868,7 @@ export const spectrogramOscilloscopeSettingsSchema: SettingsSchema[] = [
     min: 0.001,
     max: 1.0,
     step: 0.001,
-    category: 'Visual'
+    category: 'Animation'
   },
   {
     key: 'fftWindowSize',

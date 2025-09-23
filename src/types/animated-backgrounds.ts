@@ -1,3 +1,12 @@
+export type BackgroundColors = {
+  cold: [number, number, number];      // RGB values 0-1
+  neutral: [number, number, number];
+  hot: [number, number, number];
+  hottest: [number, number, number];
+  gridOverlay: [number, number, number];
+  mouseWave: [number, number, number];
+} & Record<string, [number, number, number]>;
+
 export interface BackgroundSettings {
   // Visual appearance
   gridSize: number;
@@ -19,14 +28,7 @@ export interface BackgroundSettings {
   mouseInfluenceStrength: number;
   
   // Colors
-  colors: {
-    cold: [number, number, number];      // RGB values 0-1
-    neutral: [number, number, number];
-    hot: [number, number, number];
-    hottest: [number, number, number];
-    gridOverlay: [number, number, number];
-    mouseWave: [number, number, number];
-  };
+  colors: BackgroundColors;
   
   // Grid and stencil properties
   stencilLineWidth: number;
@@ -40,6 +42,49 @@ export interface BackgroundSettings {
   animationSpeed?: number;
   scale?: number;
   edgeThickness?: number;
+
+  // Spectrogram/Oscillator visualization properties (optional)
+  vco1Frequency?: number;
+  vco1Amplitude?: number;
+  vco1WaveformType?: number;
+  vco1Phase?: number;
+  vco1FMAmount?: number;
+  vco1FMFrequency?: number;
+  vco2Frequency?: number;
+  vco2Amplitude?: number;
+  vco2WaveformType?: number;
+  vco2Phase?: number;
+  vco2FMAmount?: number;
+  vco2FMFrequency?: number;
+  mixRatio?: number;
+  detune?: number;
+  delayTime?: number;
+  delayFeedback?: number;
+  delayMix?: number;
+  filterType?: number;
+  filterCutoff?: number;
+  filterResonance?: number;
+  filterLFOAmount?: number;
+  filterLFOSpeed?: number;
+  distortionAmount?: number;
+  distortionType?: number;
+  ringModFrequency?: number;
+  ringModAmount?: number;
+  noiseAmount?: number;
+  noiseType?: number;
+  reverbAmount?: number;
+  reverbDecay?: number;
+  reverbPredelay?: number;
+  waveformBrightness?: number;
+  spectrogramBrightness?: number;
+  waveformThickness?: number;
+  spectrogramSmoothing?: number;
+  frequencyScale?: number;
+  timeScale?: number;
+  fftWindowSize?: number;
+  useLogScale?: number;
+  minLogFreq?: number;
+  maxLogFreq?: number;
 }
 
 export interface AnimatedBackgroundConfig {

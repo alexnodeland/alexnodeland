@@ -30,7 +30,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   isClosing
 }) => {
   // Define which categories are considered standard across all backgrounds
-  const STANDARD_CATEGORIES = useMemo(() => new Set<string>(['Visual', 'Colors']), []);
+  const STANDARD_CATEGORY_ORDER = useMemo(() => ['Visual', 'Animation', 'Colors'], []);
+  const STANDARD_CATEGORIES = useMemo(() => new Set<string>(STANDARD_CATEGORY_ORDER), [STANDARD_CATEGORY_ORDER]);
 
   // Group settings by category
   const settingsByCategory = useMemo(() => {
@@ -56,9 +57,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         custom.push(name);
       }
     }
-    // Preserve stable order as discovered in schema
-    return { customCategories: custom, standardCategories: standard };
-  }, [settingsByCategory, STANDARD_CATEGORIES]);
+    // Sort standard categories using fixed order
+    const standardSorted = [...standard].sort((a, b) => {
+      return STANDARD_CATEGORY_ORDER.indexOf(a) - STANDARD_CATEGORY_ORDER.indexOf(b);
+    });
+    return { customCategories: custom, standardCategories: standardSorted };
+  }, [settingsByCategory, STANDARD_CATEGORIES, STANDARD_CATEGORY_ORDER]);
 
   // Track open/closed per-category; default: custom open, standard closed
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
