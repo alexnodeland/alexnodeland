@@ -2,6 +2,12 @@ import React from 'react';
 import { Layout, SEO } from '../components';
 import { siteConfig, homepageConfig, getCTAButtonURL } from '../config';
 import '../styles/index.scss';
+import systemsIcon from '../images/systems.png';
+import gearIcon from '../images/gear.png';
+import reportIcon from '../images/report.png';
+import observabilityIcon from '../images/observability.png';
+import strategyIcon from '../images/strategy.png';
+import developmentIcon from '../images/development.png';
 
 const IndexPage: React.FC = () => {
   return (
@@ -53,13 +59,26 @@ const IndexPage: React.FC = () => {
         <section className="expertise">
           <h2>{homepageConfig.expertise.title}</h2>
           <div className="expertise-grid">
-            {homepageConfig.expertise.items.map((item, index) => (
-              <div key={index} className="expertise-item">
-                <span className="expertise-icon">{item.icon}</span>
-                <div className="expertise-title">{item.title}</div>
-                <div className="expertise-description">{item.description}</div>
-              </div>
-            ))}
+            {homepageConfig.expertise.items.map((item, index) => {
+              const expertiseImages = [
+                systemsIcon,        // ai system architecture
+                gearIcon,           // devops & infrastructure
+                reportIcon,         // data engineering
+                observabilityIcon,  // mlops & monitoring
+                strategyIcon,       // technical leadership
+                developmentIcon,    // ai product development
+              ];
+              const iconSrc = expertiseImages[index] ?? developmentIcon;
+              return (
+                <div key={index} className="expertise-item">
+                  <span className="expertise-icon">
+                    <img src={iconSrc} alt={item.title} />
+                  </span>
+                  <div className="expertise-title">{item.title}</div>
+                  <div className="expertise-description">{item.description}</div>
+                </div>
+              );
+            })}
           </div>
         </section>
 

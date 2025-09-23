@@ -145,12 +145,23 @@
     display: block;
     opacity: 0.8;
     transition: all var(--transition-normal);
+      
+      img {
+        width: 64px;
+        height: 64px;
+        object-fit: contain;
+        display: inline-block;
+        filter: none;
+        transition: transform var(--transition-normal), opacity var(--transition-normal), filter var(--transition-normal);
+      }
   }
 
   &:hover .expertise-icon {
     opacity: 1;
     transform: scale(1.1);
   }
+
+// Dark mode image inversion for expertise icons (black line PNGs -> white lines)
 
   .expertise-title {
     font-size: 1.1rem;

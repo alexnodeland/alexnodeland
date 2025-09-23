@@ -208,6 +208,11 @@ img {
   outline-offset: 2px;
 }
 
+/* Dark mode image inversion for expertise icons */
+[data-theme='dark'] .expertise-icon img {
+  filter: invert(1) !important;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 0 0.5rem;
