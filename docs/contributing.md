@@ -277,9 +277,9 @@ const colors = ['red', 'green', 'blue'] as const;
 }
 ```
 
-### MDX
+### MD
 
-```mdx
+```md
 ---
 title: "Page Title"
 description: "Page description"

@@ -19,7 +19,7 @@ export interface BlogPost {
 
 export interface BlogPageProps {
   data: {
-    allMdx: {
+    allMarkdownRemark: {
       nodes: BlogPost[];
     };
   };
@@ -27,6 +27,8 @@ export interface BlogPageProps {
 
 export interface BlogPostProps {
   data: {
-    mdx: BlogPost;
+    markdownRemark: BlogPost & {
+      html: string;
+    };
   };
 }

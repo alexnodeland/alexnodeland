@@ -6,11 +6,10 @@ import '../styles/blog.scss';
 
 interface BlogPostProps {
   data: any;
-  children: React.ReactNode;
 }
 
-const BlogPost: React.FC<BlogPostProps> = ({ data, children }) => {
-  const post = data.mdx;
+const BlogPost: React.FC<BlogPostProps> = ({ data }) => {
+  const post = data.markdownRemark;
 
   return (
     <Layout>
@@ -38,7 +37,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, children }) => {
           )}
         </header>
 
-        <div className="post-content">{children}</div>
+        <div className="post-content" dangerouslySetInnerHTML={{ __html: post.html }} />
 
         <footer className="post-footer">
           <Link to="/blog" className="back-to-blog">
@@ -52,8 +51,9 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, children }) => {
 
 export const query = graphql`
   query BlogPostQuery($id: String!) {
-    mdx(id: { eq: $id }) {
+    markdownRemark(id: { eq: $id }) {
       id
+      html
       frontmatter {
         title
         date

@@ -347,6 +347,7 @@
 .blog-post-page {
   max-width: 800px;
   margin: 0 auto;
+  padding-top: 3.5rem; // Extra top space to match blog page under fixed header
 }
 
 .post-header {
@@ -496,9 +497,13 @@
   .blog-header {
     padding: 2.5rem 0 1.5rem; // Maintain proportional spacing on tablet/mobile
   }
-  .blog-page,
-  .blog-post-page {
+  .blog-page {
     padding: 0 1rem;
+  }
+  .blog-post-page {
+    padding-top: 2.5rem; // Maintain proportional spacing on tablet/mobile
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
   .post-preview {

@@ -6,7 +6,7 @@ import '../styles/blog.scss';
 
 const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
   // Filter for blog posts only
-  const allPosts = data.allMdx.nodes.filter(
+  const allPosts = data.allMarkdownRemark.nodes.filter(
     post => post.parent && post.parent.sourceInstanceName === 'blog'
   );
 
@@ -185,7 +185,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
 
 export const query = graphql`
   query BlogPageQuery {
-    allMdx(sort: { frontmatter: { date: DESC } }) {
+    allMarkdownRemark(sort: { frontmatter: { date: DESC } }) {
       nodes {
         id
         frontmatter {

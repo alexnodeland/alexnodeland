@@ -7,7 +7,7 @@ A modern, responsive portfolio website built with Gatsby, React, TypeScript, and
 - **Modern Tech Stack**: Gatsby, React, TypeScript, SCSS
 - **Responsive Design**: Mobile-first approach with retro-futuristic aesthetics
 - **Theme Support**: Dark/light mode with system preference detection
-- **Blog System**: MDX-powered blog with search and filtering
+- **Blog System**: MD-powered blog with search and filtering
 - **Interactive CV**: Exportable resume with modern styling
 - **Performance Optimized**: Fast loading with optimized images and code splitting
 - **SEO Ready**: Meta tags, structured data, and social sharing
@@ -93,7 +93,7 @@ Key configuration files:
 
 ## 📝 Content Management
 
-- **Blog Posts**: Written in MDX format in `src/content/blog/`
+- **Blog Posts**: Written in MD format in `src/content/blog/`
 - **Resume Data**: Managed in `src/config/resume.ts`
 - **Homepage Content**: Configured in `src/config/homepage.ts`
 

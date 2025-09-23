@@ -14,7 +14,6 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/setupTests.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
-    '!src/pages/**/*.mdx',
     '!src/content/**/*',
   ],
   coverageDirectory: 'coverage',

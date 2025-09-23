@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'gatsby';
-import MDXProvider from './mdx/MDXProvider';
 import ThemeToggle from './ThemeToggle';
 import { BackgroundManager } from './animated-backgrounds';
 import { siteConfig, getAllSocialLinks } from '../config';
@@ -12,7 +11,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <MDXProvider>
+    <>
       <BackgroundManager />
       <div className="fixed-header-container">
         <div className="rainbow-border-fixed"></div>
@@ -67,7 +66,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </footer>
       </div>
-    </MDXProvider>
+    </>
   );
 };
 

@@ -5,7 +5,7 @@ exports.createSchemaCustomization = ({ actions }) => {
   const { createTypes } = actions
   
   const typeDefs = `
-    type MdxFrontmatter {
+    type MarkdownRemarkFrontmatter {
       title: String
       date: Date @dateformat
       description: String
@@ -19,8 +19,8 @@ exports.createSchemaCustomization = ({ actions }) => {
 exports.onCreateNode = ({ node, actions, getNode }) => {
   const { createNodeField } = actions
   
-  // Create slug field for MDX nodes
-  if (node.internal.type === 'Mdx') {
+  // Create slug field for Markdown nodes
+  if (node.internal.type === 'MarkdownRemark') {
     const value = createFilePath({ node, getNode })
     createNodeField({
       name: 'slug',
@@ -33,10 +33,10 @@ exports.onCreateNode = ({ node, actions, getNode }) => {
 exports.createPages = async ({ graphql, actions, reporter }) => {
   const { createPage } = actions
 
-  // Query for all MDX nodes
+  // Query for all Markdown nodes
   const result = await graphql(`
     query {
-      allMdx {
+      allMarkdownRemark {
         nodes {
           id
           fields {
@@ -47,20 +47,17 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
               sourceInstanceName
             }
           }
-          internal {
-            contentFilePath
-          }
         }
       }
     }
   `)
 
   if (result.errors) {
-    reporter.panicOnBuild('Error loading MDX result', result.errors)
+    reporter.panicOnBuild('Error loading MarkdownRemark result', result.errors)
   }
 
   // Filter for blog posts and create pages
-  const posts = result.data.allMdx.nodes.filter(
+  const posts = result.data.allMarkdownRemark.nodes.filter(
     node => node.parent && node.parent.sourceInstanceName === 'blog'
   )
 
@@ -69,7 +66,7 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
   posts.forEach((node) => {
     createPage({
       path: `/blog${node.fields.slug}`,
-      component: `${blogPostTemplate}?__contentFilePath=${node.internal.contentFilePath}`,
+      component: blogPostTemplate,
       context: {
         id: node.id,
       },
