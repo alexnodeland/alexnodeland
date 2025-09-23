@@ -297,10 +297,10 @@
 
   .setting-row {
     display: grid;
-    grid-template-columns: 8rem 1fr;
+    grid-template-columns: minmax(auto, 12rem) 1fr;
     align-items: center;
     margin-bottom: 1rem;
-    gap: 1rem;
+    gap: 1.5rem;
 
     &:last-child {
       margin-bottom: 0;
@@ -312,9 +312,9 @@
       color: var(--text-secondary);
       cursor: default;
       font-family: inherit;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.3;
+      word-wrap: break-word;
+      hyphens: auto;
     }
 
     .setting-input {
