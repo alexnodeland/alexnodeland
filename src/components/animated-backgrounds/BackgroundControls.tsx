@@ -72,7 +72,7 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
           title="Click to open settings (S)"
         >
           <div className="toolbar-header">
-            <div className="background-name">{currentBackgroundName}</div>
+            <div className="background-name">{currentBackgroundName?.toLowerCase?.() || ''}</div>
           </div>
 
       </div>

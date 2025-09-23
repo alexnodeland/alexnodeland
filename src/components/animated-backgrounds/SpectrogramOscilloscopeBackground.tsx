@@ -1014,7 +1014,7 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
             background: 'rgba(0, 255, 127, 1)',
             boxShadow: '0 0 10px rgba(0, 255, 127, 0.8)'
           }} />
-          <span>♪ AUDIO PLAYING</span>
+          <span>♪ audio playing</span>
         </div>
       )}
     </>

@@ -170,7 +170,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             >
               {setting.options?.map(option => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {option.label?.toLowerCase?.() || ''}
                 </option>
               ))}
             </select>
@@ -187,16 +187,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <div className="sidebar-header">
         <div className="background-header">
           <div className="background-controls-header">
-            <div className="background-name">{currentBackgroundName}</div>
+            <div className="background-name">{currentBackgroundName?.toLowerCase?.() || ''}</div>
             <button onClick={onClose} className="close-button" aria-label="Close settings" />
           </div>
           <div className="background-description">
-            {currentBackgroundDescription}
+            {currentBackgroundDescription?.toLowerCase?.() || ''}
           </div>
           
           {currentBackgroundId === 'spectrogram-oscilloscope' && (
             <div className="special-hotkeys">
-              <div className="special-hotkeys-title">Special Controls</div>
+              <div className="special-hotkeys-title">special controls</div>
               <div className="special-hotkey-item">
                 <kbd>P</kbd> play sound
               </div>
@@ -212,7 +212,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               className={`category-header ${openCategories[category] ? 'open' : ''}`}
               onClick={() => toggleCategory(category)}
             >
-              <span>{category}</span>
+              <span>{category?.toLowerCase?.() || ''}</span>
               <span className="category-toggle" />
             </button>
             
@@ -221,7 +221,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 {categorySettings.map(setting => (
                   <div key={setting.key} className="setting-row">
                     <label className="setting-label">
-                      {setting.label}
+                      {setting.label?.toLowerCase?.() || ''}
                     </label>
                     {renderSettingInput(setting)}
                   </div>
