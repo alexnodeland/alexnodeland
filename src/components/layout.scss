@@ -2,7 +2,8 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(3px);
   border-radius: var(--radius-lg);
   margin: 1rem;
   box-shadow: var(--shadow-lg);
@@ -32,11 +33,28 @@
   }
 }
 
+// Light theme layout
+[data-theme='light'] .layout {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='light'] .footer {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme='light'] .theme-toggle {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='light'] .footer-link {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 // Animations are now in animations.scss
 
 .header {
-  background: var(--bg-primary);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
   border-bottom: 2px solid var(--accent-color);
   position: sticky;
   top: 0;
@@ -46,7 +64,7 @@
 }
 
 [data-theme='light'] .header {
-  background: var(--bg-primary);
+  background: rgba(255, 255, 255, 0.15);
   border-bottom-color: var(--accent-color);
 }
 
@@ -100,7 +118,7 @@
 }
 
 .theme-toggle {
-  background: var(--bg-primary);
+  background: rgba(0, 0, 0, 0.2);
   border: none;
   border-radius: var(--radius-md);
   padding: 0.5rem;
@@ -208,7 +226,7 @@
 }
 
 .footer {
-  background: var(--bg-primary);
+  background: rgba(0, 0, 0, 0.2);
   border-top: 3px solid var(--accent-color);
   margin-top: auto;
   position: relative;
@@ -265,7 +283,7 @@
   justify-content: center;
   width: 2.75rem;
   height: 2.75rem;
-  background: var(--bg-primary);
+  background: rgba(0, 0, 0, 0.2);
   color: var(--text-primary);
   text-decoration: none;
   border-radius: var(--radius-md);

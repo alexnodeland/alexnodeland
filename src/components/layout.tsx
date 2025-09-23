@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'gatsby';
 import MDXProvider from './mdx/MDXProvider';
 import ThemeToggle from './ThemeToggle';
+import AnimatedBackground from './AnimatedBackground';
 import { siteConfig, getAllSocialLinks } from '../config';
 import './layout.scss';
 
@@ -12,6 +13,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <MDXProvider>
+      <AnimatedBackground />
       <div className="layout">
         <header className="header">
           <nav className="nav">

@@ -2,6 +2,7 @@
 export { default as Layout } from './layout';
 export { default as SEO } from './seo';
 export { default as ThemeToggle } from './ThemeToggle';
+export { default as AnimatedBackground } from './AnimatedBackground';
 
 // Resume components
 export { default as ResumeHeader } from './resume/ResumeHeader';

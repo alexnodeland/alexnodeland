@@ -25,17 +25,17 @@ body {
   background-image:
     radial-gradient(
       circle at 20% 80%,
-      rgba(0, 255, 136, 0.1) 0%,
+      rgba(0, 255, 136, 0.02) 0%,
       transparent 50%
     ),
     radial-gradient(
       circle at 80% 20%,
-      rgba(0, 212, 255, 0.1) 0%,
+      rgba(0, 212, 255, 0.02) 0%,
       transparent 50%
     ),
     radial-gradient(
       circle at 40% 40%,
-      rgba(255, 0, 128, 0.05) 0%,
+      rgba(255, 0, 128, 0.01) 0%,
       transparent 50%
     );
   background-attachment: fixed;
@@ -43,7 +43,7 @@ body {
   transition: background var(--transition-slow);
   position: relative;
 
-  // Add retro grid texture
+  // Reduce opacity of grid texture to let Three.js background shine through
   &::before {
     content: '';
     position: fixed;
@@ -52,8 +52,8 @@ body {
     right: 0;
     bottom: 0;
     background-image:
-      linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(0, 255, 136, 0.01) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 136, 0.01) 1px, transparent 1px);
     background-size: 20px 20px;
     pointer-events: none;
     z-index: -1;
@@ -65,24 +65,24 @@ body {
   background-image:
     radial-gradient(
       circle at 20% 80%,
-      rgba(0, 204, 106, 0.08) 0%,
+      rgba(0, 204, 106, 0.02) 0%,
       transparent 50%
     ),
     radial-gradient(
       circle at 80% 20%,
-      rgba(0, 136, 204, 0.08) 0%,
+      rgba(0, 136, 204, 0.02) 0%,
       transparent 50%
     ),
     radial-gradient(
       circle at 40% 40%,
-      rgba(204, 0, 102, 0.05) 0%,
+      rgba(204, 0, 102, 0.01) 0%,
       transparent 50%
     );
 
   &::before {
     background-image:
-      linear-gradient(rgba(0, 204, 106, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 204, 106, 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(0, 204, 106, 0.01) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 204, 106, 0.01) 1px, transparent 1px);
   }
 }
 
