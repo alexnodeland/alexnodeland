@@ -10,6 +10,17 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
   const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const spectrogramTextureRef = useRef<THREE.DataTexture | null>(null);
   const waveformTextureRef = useRef<THREE.DataTexture | null>(null);
+  
+  // Web Audio API references
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const vco1Ref = useRef<OscillatorNode | null>(null);
+  const vco2Ref = useRef<OscillatorNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const filterNodeRef = useRef<BiquadFilterNode | null>(null);
+  const delayNodeRef = useRef<DelayNode | null>(null);
+  const distortionNodeRef = useRef<WaveShaperNode | null>(null);
+  const convolverNodeRef = useRef<ConvolverNode | null>(null);
+  const isPlayingRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -354,18 +365,36 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
           float harmAmp1 = 1.0 / pow(h, 0.7); // Slower rolloff
           float harmAmp2 = 1.0 / pow(h, 0.7);
           
-          // Square waves have only odd harmonics
+          // Square waves have only odd harmonics with 1/n amplitude
           if (uVCO1WaveformType > 0.5 && uVCO1WaveformType < 1.5) {
-            if (mod(h, 2.0) < 1.0) harmAmp1 = 0.0;
-            else harmAmp1 *= 1.5;
+            if (mod(h, 2.0) > 0.1) harmAmp1 *= 2.0 / h; // Strong odd harmonics
+            else harmAmp1 = 0.0;
           }
-          // Sawtooth has all harmonics
+          // Sawtooth has all harmonics with 1/n amplitude
           else if (uVCO1WaveformType > 2.5) {
-            harmAmp1 *= 1.2;
+            harmAmp1 = 1.5 / h;
+          }
+          // Triangle has only odd harmonics with 1/n² amplitude
+          else if (uVCO1WaveformType > 1.5 && uVCO1WaveformType < 2.5) {
+            if (mod(h, 2.0) > 0.1) harmAmp1 = 0.8 / (h * h);
+            else harmAmp1 = 0.0;
           }
           
-          if (hdist1 < 15.0) magnitude += uVCO1Amplitude * exp(-hdist1 * 0.05) * harmAmp1;
-          if (hdist2 < 15.0) magnitude += uVCO2Amplitude * exp(-hdist2 * 0.05) * harmAmp2;
+          // Same for VCO2
+          if (uVCO2WaveformType > 0.5 && uVCO2WaveformType < 1.5) {
+            if (mod(h, 2.0) > 0.1) harmAmp2 *= 2.0 / h;
+            else harmAmp2 = 0.0;
+          }
+          else if (uVCO2WaveformType > 2.5) {
+            harmAmp2 = 1.5 / h;
+          }
+          else if (uVCO2WaveformType > 1.5 && uVCO2WaveformType < 2.5) {
+            if (mod(h, 2.0) > 0.1) harmAmp2 = 0.8 / (h * h);
+            else harmAmp2 = 0.0;
+          }
+          
+          if (hdist1 < 20.0) magnitude += uVCO1Amplitude * exp(-hdist1 * 0.03) * harmAmp1;
+          if (hdist2 < 20.0) magnitude += uVCO2Amplitude * exp(-hdist2 * 0.03) * harmAmp2;
         }
         
         // Add subharmonics for bass richness
@@ -542,70 +571,70 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
         uCurrentRow: { value: 0.0 },
         
         // VCO 1 Parameters
-        uVCO1Frequency: { value: settings.vco1Frequency },
-        uVCO1Amplitude: { value: settings.vco1Amplitude },
-        uVCO1WaveformType: { value: settings.vco1WaveformType },
-        uVCO1Phase: { value: settings.vco1Phase },
-        uVCO1FMAmount: { value: settings.vco1FMAmount },
-        uVCO1FMFrequency: { value: settings.vco1FMFrequency },
+        uVCO1Frequency: { value: (settings as any).vco1Frequency || 110 },
+        uVCO1Amplitude: { value: (settings as any).vco1Amplitude || 0.7 },
+        uVCO1WaveformType: { value: (settings as any).vco1WaveformType || 0 },
+        uVCO1Phase: { value: (settings as any).vco1Phase || 0 },
+        uVCO1FMAmount: { value: (settings as any).vco1FMAmount || 0.15 },
+        uVCO1FMFrequency: { value: (settings as any).vco1FMFrequency || 0.3 },
         
         // VCO 2 Parameters
-        uVCO2Frequency: { value: settings.vco2Frequency },
-        uVCO2Amplitude: { value: settings.vco2Amplitude },
-        uVCO2WaveformType: { value: settings.vco2WaveformType },
-        uVCO2Phase: { value: settings.vco2Phase },
-        uVCO2FMAmount: { value: settings.vco2FMAmount },
-        uVCO2FMFrequency: { value: settings.vco2FMFrequency },
+        uVCO2Frequency: { value: (settings as any).vco2Frequency || 165 },
+        uVCO2Amplitude: { value: (settings as any).vco2Amplitude || 0.5 },
+        uVCO2WaveformType: { value: (settings as any).vco2WaveformType || 1 },
+        uVCO2Phase: { value: (settings as any).vco2Phase || 0 },
+        uVCO2FMAmount: { value: (settings as any).vco2FMAmount || 0.1 },
+        uVCO2FMFrequency: { value: (settings as any).vco2FMFrequency || 0.25 },
         
         // Mixer Parameters
-        uMixRatio: { value: settings.mixRatio },
-        uDetune: { value: settings.detune },
+        uMixRatio: { value: (settings as any).mixRatio || 0.6 },
+        uDetune: { value: (settings as any).detune || 0.008 },
         
         // Delay/Echo Parameters
-        uDelayTime: { value: settings.delayTime || 0.3 },
-        uDelayFeedback: { value: settings.delayFeedback || 0.4 },
-        uDelayMix: { value: settings.delayMix || 0.0 },
+        uDelayTime: { value: (settings as any).delayTime || 0.4 },
+        uDelayFeedback: { value: (settings as any).delayFeedback || 0.3 },
+        uDelayMix: { value: (settings as any).delayMix || 0.25 },
         
         // Filter Parameters
-        uFilterType: { value: settings.filterType || 0 },
-        uFilterCutoff: { value: settings.filterCutoff || 0.5 },
-        uFilterResonance: { value: settings.filterResonance || 0.3 },
-        uFilterLFOAmount: { value: settings.filterLFOAmount || 0.0 },
-        uFilterLFOSpeed: { value: settings.filterLFOSpeed || 2.0 },
+        uFilterType: { value: (settings as any).filterType || 1 },
+        uFilterCutoff: { value: (settings as any).filterCutoff || 0.5 },
+        uFilterResonance: { value: (settings as any).filterResonance || 0.4 },
+        uFilterLFOAmount: { value: (settings as any).filterLFOAmount || 0.2 },
+        uFilterLFOSpeed: { value: (settings as any).filterLFOSpeed || 0.8 },
         
         // Distortion Parameters
-        uDistortionAmount: { value: settings.distortionAmount || 0.0 },
-        uDistortionType: { value: settings.distortionType || 0 },
+        uDistortionAmount: { value: (settings as any).distortionAmount || 0.08 },
+        uDistortionType: { value: (settings as any).distortionType || 0 },
         
         // Ring Modulator Parameters
-        uRingModFrequency: { value: settings.ringModFrequency || 100.0 },
-        uRingModAmount: { value: settings.ringModAmount || 0.0 },
+        uRingModFrequency: { value: (settings as any).ringModFrequency || 277.0 },
+        uRingModAmount: { value: (settings as any).ringModAmount || 0.15 },
         
         // Noise Generator Parameters
-        uNoiseAmount: { value: settings.noiseAmount || 0.0 },
-        uNoiseType: { value: settings.noiseType || 0 },
+        uNoiseAmount: { value: (settings as any).noiseAmount || 0.05 },
+        uNoiseType: { value: (settings as any).noiseType || 1 },
         
         // Reverb Parameters
-        uReverbAmount: { value: settings.reverbAmount || 0.0 },
-        uReverbDecay: { value: settings.reverbDecay || 0.5 },
-        uReverbPredelay: { value: settings.reverbPredelay || 0.1 },
+        uReverbAmount: { value: (settings as any).reverbAmount || 0.4 },
+        uReverbDecay: { value: (settings as any).reverbDecay || 1.0 },
+        uReverbPredelay: { value: (settings as any).reverbPredelay || 0.05 },
         
         // Visual Parameters
-        uWaveformBrightness: { value: settings.waveformBrightness },
-        uSpectrogramBrightness: { value: settings.spectrogramBrightness },
-        uColorLow: { value: new THREE.Vector3(...settings.colors.low) },
-        uColorMid: { value: new THREE.Vector3(...settings.colors.mid) },
-        uColorHigh: { value: new THREE.Vector3(...settings.colors.high) },
-        uColorPeak: { value: new THREE.Vector3(...settings.colors.peak) },
-        uWaveformColor: { value: new THREE.Vector3(...settings.colors.waveform) },
-        uWaveformThickness: { value: settings.waveformThickness },
-        uSpectrogramSmoothing: { value: settings.spectrogramSmoothing },
-        uFrequencyScale: { value: settings.frequencyScale },
-        uTimeScale: { value: settings.timeScale },
-        uFFTWindowSize: { value: settings.fftWindowSize },
-        uUseLogScale: { value: settings.useLogScale || 1.0 },
-        uMinLogFreq: { value: settings.minLogFreq || 20.0 },
-        uMaxLogFreq: { value: settings.maxLogFreq || 8000.0 }
+        uWaveformBrightness: { value: (settings as any).waveformBrightness || 1.8 },
+        uSpectrogramBrightness: { value: (settings as any).spectrogramBrightness || 2.2 },
+        uColorLow: { value: new THREE.Vector3(...((settings.colors as any).low || [0.0, 0.1, 0.4])) },
+        uColorMid: { value: new THREE.Vector3(...((settings.colors as any).mid || [0.0, 0.8, 1.0])) },
+        uColorHigh: { value: new THREE.Vector3(...((settings.colors as any).high || [1.0, 0.4, 0.8])) },
+        uColorPeak: { value: new THREE.Vector3(...((settings.colors as any).peak || [1.0, 1.0, 0.0])) },
+        uWaveformColor: { value: new THREE.Vector3(...((settings.colors as any).waveform || [0.0, 1.0, 0.5])) },
+        uWaveformThickness: { value: (settings as any).waveformThickness || 2.0 },
+        uSpectrogramSmoothing: { value: (settings as any).spectrogramSmoothing || 0.7 },
+        uFrequencyScale: { value: (settings as any).frequencyScale || 3.0 },
+        uTimeScale: { value: (settings as any).timeScale || 0.1 },
+        uFFTWindowSize: { value: (settings as any).fftWindowSize || 64.0 },
+        uUseLogScale: { value: (settings as any).useLogScale || 1.0 },
+        uMinLogFreq: { value: (settings as any).minLogFreq || 20.0 },
+        uMaxLogFreq: { value: (settings as any).maxLogFreq || 5000.0 }
       },
       vertexShader,
       fragmentShader,
@@ -625,6 +654,242 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
     };
 
     window.addEventListener('mousemove', handleMouseMove);
+
+    // Web Audio API functions
+    const createDistortionCurve = (amount: number) => {
+      const samples = 44100;
+      const curve = new Float32Array(samples);
+      const deg = Math.PI / 180;
+      
+      for (let i = 0; i < samples; i++) {
+        const x = (i * 2) / samples - 1;
+        if (amount < 0.5) {
+          // Soft clipping
+          curve[i] = ((3 + amount * 20) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
+        } else {
+          // Hard clipping
+          const threshold = 1 - amount;
+          curve[i] = Math.max(-threshold, Math.min(threshold, x)) / threshold;
+        }
+      }
+      
+      return curve;
+    };
+
+    const createReverbImpulse = (duration: number, decay: number): AudioBuffer => {
+      const length = audioContextRef.current!.sampleRate * duration;
+      const impulse = audioContextRef.current!.createBuffer(2, length, audioContextRef.current!.sampleRate);
+      
+      for (let channel = 0; channel < 2; channel++) {
+        const channelData = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        }
+      }
+      
+      return impulse;
+    };
+
+    const startAudioPlayback = async () => {
+      if (isPlayingRef.current) return;
+      
+      try {
+        // Create audio context
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        
+        // Resume context if suspended (browser security)
+        if (audioContextRef.current.state === 'suspended') {
+          await audioContextRef.current.resume();
+        }
+        
+        // Create oscillators
+        vco1Ref.current = audioContextRef.current.createOscillator();
+        vco2Ref.current = audioContextRef.current.createOscillator();
+        
+        // Set oscillator types
+        const waveTypes: OscillatorType[] = ['sine', 'square', 'triangle', 'sawtooth'];
+        vco1Ref.current.type = waveTypes[Math.floor((settings as any).vco1WaveformType || 3)];
+        vco2Ref.current.type = waveTypes[Math.floor((settings as any).vco2WaveformType || 1)];
+        
+        // Set frequencies
+        vco1Ref.current.frequency.value = (settings as any).vco1Frequency || 110;
+        vco2Ref.current.frequency.value = ((settings as any).vco2Frequency || 165) * (1 + ((settings as any).detune || 0.008));
+        
+        // Create gain nodes for mixing
+        const vco1Gain = audioContextRef.current.createGain();
+        const vco2Gain = audioContextRef.current.createGain();
+        vco1Gain.gain.value = ((settings as any).vco1Amplitude || 0.7) * 0.3; // Scale for audible volume
+        vco2Gain.gain.value = ((settings as any).vco2Amplitude || 0.5) * 0.3;
+        
+        // Create mixer
+        const mixer = audioContextRef.current.createGain();
+        mixer.gain.value = 0.7; // Overall volume control
+        
+        console.log('VCO1 freq:', vco1Ref.current.frequency.value, 'VCO2 freq:', vco2Ref.current.frequency.value);
+        
+        // Create filter
+        filterNodeRef.current = audioContextRef.current.createBiquadFilter();
+        const filterTypes: BiquadFilterType[] = ['lowpass', 'lowpass', 'highpass', 'bandpass'];
+        filterNodeRef.current.type = filterTypes[Math.floor((settings as any).filterType || 1)];
+        filterNodeRef.current.frequency.value = ((settings as any).filterCutoff || 0.5) * 10000;
+        filterNodeRef.current.Q.value = ((settings as any).filterResonance || 0.4) * 30;
+        
+        // Create delay
+        delayNodeRef.current = audioContextRef.current.createDelay(2);
+        delayNodeRef.current.delayTime.value = (settings as any).delayTime || 0.4;
+        const delayGain = audioContextRef.current.createGain();
+        delayGain.gain.value = (settings as any).delayFeedback || 0.3;
+        const delayMixer = audioContextRef.current.createGain();
+        delayMixer.gain.value = (settings as any).delayMix || 0.25;
+        
+        // Create distortion
+        distortionNodeRef.current = audioContextRef.current.createWaveShaper();
+        distortionNodeRef.current.curve = createDistortionCurve((settings as any).distortionAmount || 0.08);
+        distortionNodeRef.current.oversample = '4x';
+        
+        // Final gain for output
+        gainNodeRef.current = audioContextRef.current.createGain();
+        gainNodeRef.current.gain.value = 0; // Start at 0, ramp up
+        
+        // Connect the audio graph
+        vco1Ref.current.connect(vco1Gain);
+        vco2Ref.current.connect(vco2Gain);
+        vco1Gain.connect(mixer);
+        vco2Gain.connect(mixer);
+        
+        // Apply effects chain - simplified for debugging
+        let currentNode: AudioNode = mixer;
+        
+        // Filter
+        if ((settings as any).filterType && (settings as any).filterType > 0) {
+          currentNode.connect(filterNodeRef.current);
+          currentNode = filterNodeRef.current;
+        }
+        
+        // Connect directly to output for now
+        currentNode.connect(gainNodeRef.current);
+        gainNodeRef.current.connect(audioContextRef.current.destination);
+        
+        console.log('Audio graph connected. Context state:', audioContextRef.current.state);
+        
+        // Start oscillators
+        vco1Ref.current.start();
+        vco2Ref.current.start();
+        
+        // Fade in - use linear ramp for more reliable fade
+        gainNodeRef.current.gain.setValueAtTime(0.001, audioContextRef.current.currentTime);
+        gainNodeRef.current.gain.linearRampToValueAtTime(
+          0.4,
+          audioContextRef.current.currentTime + 0.1
+        );
+        
+        console.log('Oscillators started. Gain ramping to 0.4');
+        
+        // Add FM modulation
+        if ((settings as any).vco1FMAmount && (settings as any).vco1FMAmount > 0) {
+          const lfo1 = audioContextRef.current.createOscillator();
+          const lfo1Gain = audioContextRef.current.createGain();
+          lfo1.frequency.value = (settings as any).vco1FMFrequency || 0.3;
+          lfo1Gain.gain.value = (settings as any).vco1FMAmount * 50;
+          lfo1.connect(lfo1Gain);
+          lfo1Gain.connect(vco1Ref.current.frequency);
+          lfo1.start();
+        }
+        
+        if ((settings as any).vco2FMAmount && (settings as any).vco2FMAmount > 0) {
+          const lfo2 = audioContextRef.current.createOscillator();
+          const lfo2Gain = audioContextRef.current.createGain();
+          lfo2.frequency.value = (settings as any).vco2FMFrequency || 0.25;
+          lfo2Gain.gain.value = (settings as any).vco2FMAmount * 50;
+          lfo2.connect(lfo2Gain);
+          lfo2Gain.connect(vco2Ref.current.frequency);
+          lfo2.start();
+        }
+        
+        // Add filter LFO
+        if ((settings as any).filterLFOAmount && (settings as any).filterLFOAmount > 0 && filterNodeRef.current) {
+          const filterLFO = audioContextRef.current.createOscillator();
+          const filterLFOGain = audioContextRef.current.createGain();
+          filterLFO.frequency.value = (settings as any).filterLFOSpeed || 0.8;
+          filterLFOGain.gain.value = (settings as any).filterLFOAmount * 5000;
+          filterLFO.connect(filterLFOGain);
+          filterLFOGain.connect(filterNodeRef.current.frequency);
+          filterLFO.start();
+        }
+        
+        isPlayingRef.current = true;
+        console.log('Audio playback started successfully');
+      } catch (error) {
+        console.error('Failed to start audio playback:', error);
+        isPlayingRef.current = false;
+      }
+    };
+
+    const stopAudioPlayback = () => {
+      if (!isPlayingRef.current) return;
+      
+      try {
+        // Fade out
+        if (gainNodeRef.current && audioContextRef.current) {
+          gainNodeRef.current.gain.linearRampToValueAtTime(
+            0.001,
+            audioContextRef.current.currentTime + 0.1
+          );
+          
+          console.log('Stopping audio playback...');
+          
+          // Stop after fade
+          setTimeout(() => {
+            if (vco1Ref.current) {
+              try {
+                vco1Ref.current.stop();
+              } catch (e) {
+                // Already stopped
+              }
+              vco1Ref.current = null;
+            }
+            if (vco2Ref.current) {
+              try {
+                vco2Ref.current.stop();
+              } catch (e) {
+                // Already stopped
+              }
+              vco2Ref.current = null;
+            }
+            if (audioContextRef.current) {
+              audioContextRef.current.close();
+              audioContextRef.current = null;
+            }
+            
+            gainNodeRef.current = null;
+            filterNodeRef.current = null;
+            delayNodeRef.current = null;
+            distortionNodeRef.current = null;
+            convolverNodeRef.current = null;
+            isPlayingRef.current = false;
+            console.log('Audio playback stopped');
+          }, 150);
+        }
+      } catch (error) {
+        console.error('Failed to stop audio playback:', error);
+      }
+    };
+
+    // Keyboard event handlers
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === 'p' && !event.repeat) {
+        startAudioPlayback();
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === 'p') {
+        stopAudioPlayback();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
 
     // Animation loop
     let currentRow = 0;
@@ -669,8 +934,13 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
         cancelAnimationFrame(animationFrameRef.current);
       }
       
+      // Stop audio if playing
+      stopAudioPlayback();
+      
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
       
       if (containerRef.current && renderer.domElement) {
         containerRef.current.removeChild(renderer.domElement);
@@ -685,21 +955,67 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
     };
   }, [settings]);
 
+  // State for showing audio playback indicator
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  
+  // Update the audio playback functions to set state
+  React.useEffect(() => {
+    // Monitor playing state for UI update
+    const checkInterval = setInterval(() => {
+      setIsPlaying(isPlayingRef.current);
+    }, 100);
+    
+    return () => clearInterval(checkInterval);
+  }, []);
+  
   return (
-    <div 
-      ref={containerRef} 
-      className={className}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: -1,
-        pointerEvents: 'none',
-        opacity: settings.opacity
-      }}
-    />
+    <>
+      <div 
+        ref={containerRef} 
+        className={className}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: -1,
+          pointerEvents: 'none',
+          opacity: settings.opacity
+        }}
+      />
+      {isPlaying && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          padding: '10px 20px',
+          background: 'rgba(0, 255, 127, 0.2)',
+          border: '2px solid rgba(0, 255, 127, 0.8)',
+          borderRadius: '25px',
+          color: 'rgba(0, 255, 127, 1)',
+          fontFamily: 'monospace',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          backdropFilter: 'blur(10px)',
+          pointerEvents: 'none'
+        }}>
+          <span style={{
+            display: 'inline-block',
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            background: 'rgba(0, 255, 127, 1)',
+            boxShadow: '0 0 10px rgba(0, 255, 127, 0.8)'
+          }} />
+          <span>♪ AUDIO PLAYING</span>
+        </div>
+      )}
+    </>
   );
 };
 
