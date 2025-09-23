@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { BackgroundManagerState, BackgroundSettings } from '../../types/animated-backgrounds';
 import { backgroundRegistry, getBackgroundById } from './backgroundRegistry';
 import BackgroundControls from './BackgroundControls';
 import SettingsPanel from './SettingsPanel';
 import { useSettingsPanel } from '../../contexts/SettingsPanelContext';
+import { siteConfig } from '../../config';
 
 interface BackgroundManagerProps {
   className?: string;
@@ -44,27 +45,29 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
 
   // Switch to next background
   const switchToNextBackground = useCallback(() => {
-    const currentIndex = backgroundRegistry.findIndex(bg => bg.id === state.currentBackgroundId);
-    const nextIndex = (currentIndex + 1) % backgroundRegistry.length;
-    const nextBackgroundId = backgroundRegistry[nextIndex].id;
-
-    setState(prev => ({
-      ...prev,
-      currentBackgroundId: nextBackgroundId
-    }));
-  }, [state.currentBackgroundId]);
+    setState(prev => {
+      const currentIndex = backgroundRegistry.findIndex(bg => bg.id === prev.currentBackgroundId);
+      const nextIndex = (currentIndex + 1) % backgroundRegistry.length;
+      const nextBackgroundId = backgroundRegistry[nextIndex].id;
+      return {
+        ...prev,
+        currentBackgroundId: nextBackgroundId
+      };
+    });
+  }, []);
 
   // Switch to previous background
   const switchToPreviousBackground = useCallback(() => {
-    const currentIndex = backgroundRegistry.findIndex(bg => bg.id === state.currentBackgroundId);
-    const previousIndex = currentIndex <= 0 ? backgroundRegistry.length - 1 : currentIndex - 1;
-    const previousBackgroundId = backgroundRegistry[previousIndex].id;
-
-    setState(prev => ({
-      ...prev,
-      currentBackgroundId: previousBackgroundId
-    }));
-  }, [state.currentBackgroundId]);
+    setState(prev => {
+      const currentIndex = backgroundRegistry.findIndex(bg => bg.id === prev.currentBackgroundId);
+      const previousIndex = currentIndex <= 0 ? backgroundRegistry.length - 1 : currentIndex - 1;
+      const previousBackgroundId = backgroundRegistry[previousIndex].id;
+      return {
+        ...prev,
+        currentBackgroundId: previousBackgroundId
+      };
+    });
+  }, []);
 
   // Close settings panel with animation
   const closeSettingsPanel = useCallback(() => {
@@ -199,6 +202,66 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     }
   }, []);
 
+  // ===== Background cycling with fade to black overlay =====
+  const playDurationMs = siteConfig.animatedBackgrounds?.playDurationMs ?? 12000;
+  const fadeDurationMs = siteConfig.animatedBackgrounds?.fadeDurationMs ?? 1200;
+  const cycleEnabled = siteConfig.animatedBackgrounds?.cycleEnabled ?? true;
+
+  const [overlayOpacity, setOverlayOpacity] = useState<number>(1);
+  const fadeInTimeoutRef = useRef<number | null>(null);
+  const playTimeoutRef = useRef<number | null>(null);
+  const fadeOutTimeoutRef = useRef<number | null>(null);
+
+  const clearTimers = useCallback(() => {
+    if (fadeInTimeoutRef.current !== null) {
+      window.clearTimeout(fadeInTimeoutRef.current);
+      fadeInTimeoutRef.current = null;
+    }
+    if (playTimeoutRef.current !== null) {
+      window.clearTimeout(playTimeoutRef.current);
+      playTimeoutRef.current = null;
+    }
+    if (fadeOutTimeoutRef.current !== null) {
+      window.clearTimeout(fadeOutTimeoutRef.current);
+      fadeOutTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cycleEnabled) {
+      setOverlayOpacity(0);
+      clearTimers();
+      return;
+    }
+
+    let cancelled = false;
+
+    const startCycle = () => {
+      if (cancelled) return;
+      setOverlayOpacity(1);
+      fadeInTimeoutRef.current = window.setTimeout(() => {
+        if (cancelled) return;
+        setOverlayOpacity(0);
+        playTimeoutRef.current = window.setTimeout(() => {
+          if (cancelled) return;
+          setOverlayOpacity(1);
+          fadeOutTimeoutRef.current = window.setTimeout(() => {
+            if (cancelled) return;
+            switchToNextBackground();
+            startCycle();
+          }, fadeDurationMs);
+        }, playDurationMs + fadeDurationMs);
+      }, 20);
+    };
+
+    startCycle();
+
+    return () => {
+      cancelled = true;
+      clearTimers();
+    };
+  }, [cycleEnabled, playDurationMs, fadeDurationMs, clearTimers, switchToNextBackground]);
+
   // Render current background
   const renderCurrentBackground = () => {
     if (!currentBackground || !currentSettings) {
@@ -217,6 +280,20 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   return (
     <>
       {renderCurrentBackground()}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: -1,
+          pointerEvents: 'none',
+          backgroundColor: '#000',
+          opacity: overlayOpacity,
+          transition: cycleEnabled ? `opacity ${fadeDurationMs}ms ease-in-out` : 'none'
+        }}
+      />
       
       {/* Background Controls */}
       <BackgroundControls

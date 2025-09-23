@@ -41,6 +41,16 @@ export interface SiteConfig {
       href: string;
     }>;
   };
+
+  // Animated background behavior
+  animatedBackgrounds?: {
+    // Total visible play time per background in ms (excludes fades)
+    playDurationMs: number;
+    // Fade duration in ms for both in and out
+    fadeDurationMs: number;
+    // Whether cycling is enabled
+    cycleEnabled: boolean;
+  };
 }
 
 export const siteConfig: SiteConfig = {
@@ -83,5 +93,11 @@ export const siteConfig: SiteConfig = {
       { name: 'blog', href: '/blog' },
       { name: 'cv', href: '/cv' },
     ],
+  },
+  // Animated background defaults
+  animatedBackgrounds: {
+    playDurationMs: 12000,
+    fadeDurationMs: 1200,
+    cycleEnabled: true,
   },
 };

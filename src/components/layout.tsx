@@ -1,9 +1,8 @@
 import React from 'react';
 import { Link } from 'gatsby';
 import ThemeToggle from './ThemeToggle';
-import { BackgroundManager } from './animated-backgrounds';
 import { siteConfig, getAllSocialLinks } from '../config';
-import { SettingsPanelProvider, useSettingsPanel } from '../contexts/SettingsPanelContext';
+import { useSettingsPanel } from '../contexts/SettingsPanelContext';
 import './layout.scss';
 
 interface LayoutProps {
@@ -29,7 +28,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <>
-      <BackgroundManager />
       <div className={headerContainerClasses}>
         <div className="rainbow-border-fixed"></div>
         <header className="header-fixed">
@@ -87,13 +85,4 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
   );
 };
 
-// Main Layout component wrapped with context provider
-const Layout: React.FC<LayoutProps> = ({ children }) => {
-  return (
-    <SettingsPanelProvider>
-      <LayoutInner>{children}</LayoutInner>
-    </SettingsPanelProvider>
-  );
-};
-
-export default Layout;
+export default LayoutInner;
