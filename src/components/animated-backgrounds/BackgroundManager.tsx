@@ -3,6 +3,7 @@ import { BackgroundManagerState, BackgroundSettings } from '../../types/animated
 import { backgroundRegistry, getBackgroundById } from './backgroundRegistry';
 import BackgroundControls from './BackgroundControls';
 import SettingsPanel from './SettingsPanel';
+import { useSettingsPanel } from '../../contexts/SettingsPanelContext';
 
 interface BackgroundManagerProps {
   className?: string;
@@ -13,6 +14,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   className,
   initialBackgroundId = 'pde-stencil'
 }) => {
+  // Use settings panel context
+  const { setSettingsPanelOpen, setClosingSettingsPanel } = useSettingsPanel();
+
   // Initialize state with default settings for all backgrounds
   const [state, setState] = useState<BackgroundManagerState>(() => {
     const initialSettings: Record<string, BackgroundSettings> = {};
@@ -69,15 +73,22 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
       closingSettingsPanel: true
     }));
     
-    // After animation completes, hide the panel
+    // Start closing animation - keep panel "open" state until animation finishes
+    setClosingSettingsPanel(true);
+    
+    // After animation completes, fully close everything
     setTimeout(() => {
       setState(prev => ({
         ...prev,
         showSettingsPanel: false,
         closingSettingsPanel: false
       }));
+      
+      // Update context - panel is now fully closed
+      setSettingsPanelOpen(false);
+      setClosingSettingsPanel(false);
     }, 300);
-  }, []);
+  }, [setSettingsPanelOpen, setClosingSettingsPanel]);
 
   // Toggle settings panel
   const toggleSettingsPanel = useCallback(() => {
@@ -91,8 +102,12 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
         showSettingsPanel: true,
         closingSettingsPanel: false
       }));
+      
+      // Update context to trigger layout changes
+      setSettingsPanelOpen(true);
+      setClosingSettingsPanel(false);
     }
-  }, [state.showSettingsPanel, closeSettingsPanel]);
+  }, [state.showSettingsPanel, closeSettingsPanel, setSettingsPanelOpen, setClosingSettingsPanel]);
 
   // Update settings for current background
   const updateCurrentSettings = useCallback((newSettings: BackgroundSettings) => {

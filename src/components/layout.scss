@@ -6,6 +6,24 @@
   right: 0;
   z-index: 1000;
   pointer-events: none; // Allow clicks to pass through empty areas
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  // Shifted state when settings panel is open - resize and reposition
+  &.settings-panel-open {
+    left: 24rem;
+    right: 0;
+    width: auto;
+    transform: translateX(0);
+  }
+  
+  // During closing animation, animate back to original position
+  &.settings-panel-closing {
+    left: 0;
+    right: 0;
+    width: auto;
+    transform: translateX(0);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 // Fixed rainbow border at the top
@@ -41,6 +59,24 @@
   box-shadow: var(--shadow-lg);
   overflow: auto; // Allow scrolling within the panel
   border: 2px solid var(--border-color);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  // Shifted state when settings panel is open - resize and reposition
+  &.settings-panel-open {
+    left: calc(24rem + 1rem);
+    right: 1rem;
+    width: auto;
+    transform: translateX(0);
+  }
+  
+  // During closing animation, animate back to original position
+  &.settings-panel-closing {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    transform: translateX(0);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
   
   // Add a subtle top border that complements the fixed header
   &::before {
@@ -81,6 +117,28 @@
 
 [data-theme='light'] .footer-link {
   background: transparent;
+}
+
+// Responsive design for settings panel sliding behavior
+@media (max-width: 768px) {
+  // On mobile, dim content when settings panel is open (panel takes full width)
+  .fixed-header-container.settings-panel-open,
+  .fixed-header-container.settings-panel-closing {
+    left: 0;
+    right: 0;
+    width: auto;
+    transform: translateX(0); 
+    opacity: 0.3; // Dim instead of resize
+  }
+  
+  .layout.settings-panel-open,
+  .layout.settings-panel-closing {
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    transform: translateX(0); 
+    opacity: 0.3; // Dim instead of resize
+  }
 }
 
 // Animations are now in animations.scss

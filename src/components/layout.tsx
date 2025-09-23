@@ -3,17 +3,34 @@ import { Link } from 'gatsby';
 import ThemeToggle from './ThemeToggle';
 import { BackgroundManager } from './animated-backgrounds';
 import { siteConfig, getAllSocialLinks } from '../config';
+import { SettingsPanelProvider, useSettingsPanel } from '../contexts/SettingsPanelContext';
 import './layout.scss';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+// Inner Layout component that uses the settings panel context
+const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
+  const { isSettingsPanelOpen, isClosingSettingsPanel } = useSettingsPanel();
+  
+  // Determine CSS classes based on settings panel state
+  const headerContainerClasses = [
+    'fixed-header-container',
+    isSettingsPanelOpen && 'settings-panel-open',
+    isClosingSettingsPanel && 'settings-panel-closing'
+  ].filter(Boolean).join(' ');
+  
+  const layoutClasses = [
+    'layout',
+    isSettingsPanelOpen && 'settings-panel-open',
+    isClosingSettingsPanel && 'settings-panel-closing'
+  ].filter(Boolean).join(' ');
+
   return (
     <>
       <BackgroundManager />
-      <div className="fixed-header-container">
+      <div className={headerContainerClasses}>
         <div className="rainbow-border-fixed"></div>
         <header className="header-fixed">
           <nav className="nav">
@@ -33,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </nav>
         </header>
       </div>
-      <div className="layout">
+      <div className={layoutClasses}>
         <main className="main">{children}</main>
         <footer className="footer">
           <div className="footer-content">
@@ -67,6 +84,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </footer>
       </div>
     </>
+  );
+};
+
+// Main Layout component wrapped with context provider
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  return (
+    <SettingsPanelProvider>
+      <LayoutInner>{children}</LayoutInner>
+    </SettingsPanelProvider>
   );
 };
 
