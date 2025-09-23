@@ -30,8 +30,8 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     
     const renderer = new THREE.WebGLRenderer({ alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
     
     containerRef.current.appendChild(renderer.domElement);
     
@@ -564,8 +564,8 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
     const material = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0.0 },
-        uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-        uMouse: { value: new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2) },
+        uResolution: { value: new THREE.Vector2(renderer.domElement.width, renderer.domElement.height) },
+        uMouse: { value: new THREE.Vector2(renderer.domElement.width / 2, renderer.domElement.height / 2) },
         uSpectrogramTexture: { value: spectrogramTexture },
         uWaveformTexture: { value: waveformTexture },
         uCurrentRow: { value: 0.0 },
@@ -649,8 +649,9 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
 
     // Mouse tracking
     const handleMouseMove = (event: MouseEvent) => {
-      mouseRef.current.x = event.clientX;
-      mouseRef.current.y = event.clientY;
+      const pixelRatio = renderer.getPixelRatio();
+      mouseRef.current.x = event.clientX * pixelRatio;
+      mouseRef.current.y = event.clientY * pixelRatio;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -921,8 +922,9 @@ const SpectrogramOscilloscopeBackground: React.FC<AnimatedBackgroundProps> = ({ 
     // Handle window resize
     const handleResize = () => {
       if (renderer && material.uniforms.uResolution) {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
-        material.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+        material.uniforms.uResolution.value.set(renderer.domElement.width, renderer.domElement.height);
       }
     };
 
