@@ -19,7 +19,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     Animation: false,
     Waves: false,
     Colors: false,
-    Stencil: false
+    Stencil: false,
+    'VCO 1': false,
+    'VCO 2': false,
+    Mixer: false,
+    'Delay/Echo': false,
+    Filter: false,
+    Distortion: false,
+    'Ring Mod': false,
+    Noise: false,
+    Reverb: false,
+    'Graph Topology': false
   });
 
   // Helper function to get nested property value
