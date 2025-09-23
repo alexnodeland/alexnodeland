@@ -23,7 +23,8 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     return {
       currentBackgroundId: initialBackgroundId,
       settings: initialSettings,
-      showSettingsPanel: false
+      showSettingsPanel: false,
+      closingSettingsPanel: false
     };
   });
 
@@ -61,21 +62,37 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     }));
   }, [state.currentBackgroundId]);
 
-  // Toggle settings panel
-  const toggleSettingsPanel = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      showSettingsPanel: !prev.showSettingsPanel
-    }));
-  }, []);
-
-  // Close settings panel
+  // Close settings panel with animation
   const closeSettingsPanel = useCallback(() => {
     setState(prev => ({
       ...prev,
-      showSettingsPanel: false
+      closingSettingsPanel: true
     }));
+    
+    // After animation completes, hide the panel
+    setTimeout(() => {
+      setState(prev => ({
+        ...prev,
+        showSettingsPanel: false,
+        closingSettingsPanel: false
+      }));
+    }, 300);
   }, []);
+
+  // Toggle settings panel
+  const toggleSettingsPanel = useCallback(() => {
+    if (state.showSettingsPanel) {
+      // If closing, use the close animation
+      closeSettingsPanel();
+    } else {
+      // If opening, show immediately
+      setState(prev => ({
+        ...prev,
+        showSettingsPanel: true,
+        closingSettingsPanel: false
+      }));
+    }
+  }, [state.showSettingsPanel, closeSettingsPanel]);
 
   // Update settings for current background
   const updateCurrentSettings = useCallback((newSettings: BackgroundSettings) => {
@@ -190,7 +207,8 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
       <BackgroundControls
         currentBackgroundId={state.currentBackgroundId}
         currentBackgroundName={currentBackground?.name || 'Unknown'}
-        showSettingsPanel={state.showSettingsPanel}
+        showSettingsPanel={state.showSettingsPanel || state.closingSettingsPanel}
+        closingSettingsPanel={state.closingSettingsPanel}
         onPreviousBackground={switchToPreviousBackground}
         onNextBackground={switchToNextBackground}
         onToggleSettings={toggleSettingsPanel}

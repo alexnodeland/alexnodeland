@@ -71,4 +71,5 @@ export interface BackgroundManagerState {
   currentBackgroundId: string;
   settings: Record<string, BackgroundSettings>;
   showSettingsPanel: boolean;
+  closingSettingsPanel: boolean;
 }

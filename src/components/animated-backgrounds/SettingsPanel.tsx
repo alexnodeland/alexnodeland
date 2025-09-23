@@ -6,13 +6,28 @@ interface SettingsPanelProps {
   settingsSchema: SettingsSchema[];
   onSettingsChange: (newSettings: BackgroundSettings) => void;
   onClose: () => void;
+  // Background info for sidebar header
+  currentBackgroundId: string;
+  currentBackgroundName: string;
+  currentBackgroundDescription: string;
+  totalBackgrounds: number;
+  onPreviousBackground: () => void;
+  onNextBackground: () => void;
+  isClosing: boolean;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
   settings,
   settingsSchema,
   onSettingsChange,
-  onClose
+  onClose,
+  currentBackgroundId,
+  currentBackgroundName,
+  currentBackgroundDescription,
+  totalBackgrounds,
+  onPreviousBackground,
+  onNextBackground,
+  isClosing
 }) => {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     Visual: true,
@@ -168,10 +183,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   return (
-    <div className="settings-panel">
-      <div className="settings-panel-header">
-        <h3>Background Settings</h3>
-        <button onClick={onClose} className="close-button" aria-label="Close settings" />
+    <div className={`settings-sidebar ${isClosing ? 'closing' : ''}`}>
+      <div className="sidebar-header">
+        <div className="background-header">
+          <div className="background-controls-header">
+            <div className="background-name">{currentBackgroundName}</div>
+            <button onClick={onClose} className="close-button" aria-label="Close settings" />
+          </div>
+          <div className="background-description">
+            {currentBackgroundDescription}
+          </div>
+        </div>
       </div>
       
       <div className="settings-content">
@@ -202,12 +224,25 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       </div>
       
       <div className="settings-panel-footer">
+        {currentBackgroundId === 'spectrogram-oscilloscope' && (
+          <div className="special-hotkeys">
+            <div className="special-hotkeys-title">Special Controls</div>
+            <div className="special-hotkey-item">
+              <kbd>P</kbd> play sound
+            </div>
+          </div>
+        )}
+        
         <button 
           onClick={() => onSettingsChange(settings)} 
           className="reset-button"
         >
           reset to defaults
         </button>
+        
+        <div className="sidebar-keyboard-hints">
+          <kbd>←</kbd><kbd>→</kbd> switch • <kbd>S</kbd> settings • <kbd>Esc</kbd> close
+        </div>
       </div>
     </div>
   );
