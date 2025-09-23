@@ -211,6 +211,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   const fadeInTimeoutRef = useRef<number | null>(null);
   const playTimeoutRef = useRef<number | null>(null);
   const fadeOutTimeoutRef = useRef<number | null>(null);
+  const resumeFromVisibleRef = useRef<boolean>(false);
 
   const clearTimers = useCallback(() => {
     if (fadeInTimeoutRef.current !== null) {
@@ -228,7 +229,8 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!cycleEnabled) {
+    // Disable cycling when panel is open or closing
+    if (!cycleEnabled || state.showSettingsPanel || state.closingSettingsPanel) {
       setOverlayOpacity(0);
       clearTimers();
       return;
@@ -238,6 +240,24 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
 
     const startCycle = () => {
       if (cancelled) return;
+
+      if (resumeFromVisibleRef.current) {
+        // Panel just closed: keep visible, wait the play duration, then fade out to next
+        resumeFromVisibleRef.current = false;
+        setOverlayOpacity(0);
+        playTimeoutRef.current = window.setTimeout(() => {
+          if (cancelled) return;
+          setOverlayOpacity(1);
+          fadeOutTimeoutRef.current = window.setTimeout(() => {
+            if (cancelled) return;
+            switchToNextBackground();
+            startCycle();
+          }, fadeDurationMs);
+        }, playDurationMs);
+        return;
+      }
+
+      // Normal cycle: fade up from black, play, fade to black, switch
       setOverlayOpacity(1);
       fadeInTimeoutRef.current = window.setTimeout(() => {
         if (cancelled) return;
@@ -260,7 +280,23 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
       cancelled = true;
       clearTimers();
     };
-  }, [cycleEnabled, playDurationMs, fadeDurationMs, clearTimers, switchToNextBackground]);
+  }, [
+    cycleEnabled,
+    playDurationMs,
+    fadeDurationMs,
+    clearTimers,
+    switchToNextBackground,
+    state.showSettingsPanel,
+    state.closingSettingsPanel
+  ]);
+
+  // When the settings panel fully closes, resume cycle from visible phase
+  useEffect(() => {
+    if (!state.showSettingsPanel && !state.closingSettingsPanel) {
+      // Mark to resume from visible on next cycle effect run
+      resumeFromVisibleRef.current = true;
+    }
+  }, [state.showSettingsPanel, state.closingSettingsPanel]);
 
   // Render current background
   const renderCurrentBackground = () => {
