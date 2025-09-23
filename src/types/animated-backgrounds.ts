@@ -85,6 +85,32 @@ export interface BackgroundSettings {
   useLogScale?: number;
   minLogFreq?: number;
   maxLogFreq?: number;
+
+  // Shortest-Path Lab (graph pathfinding) properties (optional)
+  spTotalNodes?: number;
+  spEdgeDensity?: number; // 0-1 probability for edges
+  spHeuristicWeight?: number; // 0 = Dijkstra, 1 = A*, >1 = weighted A*
+  spAllowDiagonals?: number; // boolean-like 0/1 for grid heuristic variants
+  spAnimationSpeed?: number; // steps per second
+  spStartNode?: number;
+  spGoalNode?: number;
+
+  // Shortest-Path Lab visuals
+  spBaseEdgeAlpha?: number;
+  spBaseEdgeThickness?: number;
+  spActionEdgeThickness?: number;
+  spDotSize?: number;
+  spDotGlow?: number;
+  spTraversalSpeed?: number; // edge-lengths per second
+
+  // Shortest-Path Lab curved edges and bloom (optional)
+  spCurvedEdges?: number; // 0/1 toggle
+  spCurveAmount?: number; // curvature multiplier
+  spCurveSegments?: number; // segments per curve
+  spGlowBloom?: number; // 0/1 toggle
+  spGlowStrength?: number;
+  spGlowRadius?: number;
+  spGlowThreshold?: number;
 }
 
 export interface AnimatedBackgroundConfig {

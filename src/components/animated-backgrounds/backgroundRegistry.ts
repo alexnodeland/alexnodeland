@@ -3,6 +3,7 @@ import PDEStencilBackground from './PDEStencilBackground';
 import SimpleWaveBackground from './SimpleWaveBackground';
 import GraphTopologyBackground from './GraphTopologyBackground';
 import SpectrogramOscilloscopeBackground from './SpectrogramOscilloscopeBackground';
+import ShortestPathLabBackground from './ShortestPathLabBackground';
 
 // Default settings for PDE Stencil background
 export const pdeStencilDefaultSettings: BackgroundSettings = {
@@ -377,8 +378,8 @@ export const graphTopologySettingsSchema: SettingsSchema[] = [
 
 export const graphTopologyConfig: AnimatedBackgroundConfig = {
   id: 'graph-topology',
-  name: 'Supercomputer Graph Topology',
-  description: 'Random-walk search for high-conductivity n-node subgraphs on a network interconnect; edge length encodes latency.',
+  name: 'High-Conductivity Subgraphs (Random Walk)',
+  description: 'Random-walk search for high-conductivity n-node subgraphs on a network interconnect; edge length (loosely) encodes latency.',
   component: GraphTopologyBackground,
   defaultSettings: graphTopologyDefaultSettings,
   settingsSchema: graphTopologySettingsSchema
@@ -944,7 +945,7 @@ export const spectrogramOscilloscopeSettingsSchema: SettingsSchema[] = [
 // Spectrogram Oscilloscope background configuration
 export const spectrogramOscilloscopeConfig: AnimatedBackgroundConfig = {
   id: 'spectrogram-oscilloscope',
-  name: 'Spectrogram Oscilloscope',
+  name: 'Oscilloscope // Spectrogram',
   description: 'Rich audio synthesis visualization with dual oscillators, effects chain, and real-time frequency analysis. Features logarithmic spectrum display with harmonics.',
   component: SpectrogramOscilloscopeBackground,
   defaultSettings: spectrogramOscilloscopeDefaultSettings,
@@ -1146,7 +1147,71 @@ export const backgroundRegistry: AnimatedBackgroundConfig[] = [
   pdeStencilConfig,
   simpleWaveConfig,
   graphTopologyConfig,
-  spectrogramOscilloscopeConfig
+  spectrogramOscilloscopeConfig,
+  {
+    id: 'shortest-path-lab',
+    name: 'Shortest Path (Dijkstra/A*)',
+    description: 'Interactive shortest-path exploration on a random geometric graph. Heuristic weight w: w=0 → Dijkstra (no heuristic), w=1 → standard A*, w>1 → weighted A* (greedy bias, faster but may be inadmissible).',
+    component: ShortestPathLabBackground,
+    defaultSettings: {
+      gridSize: 0.08,
+      nodeBaseSize: 0.02,
+      nodeSizeMultiplier: 0.03,
+      opacity: 0.9,
+      globalTimeMultiplier: 1.0,
+      waveSpeed1: 6.0,
+      waveSpeed2: 6.0,
+      diagonalWaveSpeed: 6.0,
+      flowAnimationSpeed: 4.0,
+      mouseWaveSpeed: 10.0,
+      waveAmplitude: 0.4,
+      mouseInfluenceRadius: 2.0,
+      mouseInfluenceStrength: 0.3,
+      colors: {
+        cold: [0.0, 0.2, 0.8],
+        neutral: [0.1, 0.8, 0.1],
+        hot: [1.0, 0.3, 0.0],
+        hottest: [1.0, 1.0, 0.2],
+        gridOverlay: [0.2, 0.3, 0.4],
+        mouseWave: [0.8, 0.9, 1.0]
+      },
+      stencilLineWidth: 0.003,
+      diagonalStencilWeight: 0.25,
+      computeActivityIntensity: 0.4,
+      spTotalNodes: 28,
+      spEdgeDensity: 0.15,
+      spHeuristicWeight: 1.0,
+      spAllowDiagonals: 0,
+      spAnimationSpeed: 4.0,
+      spStartNode: 0,
+      spGoalNode: 27
+    },
+    settingsSchema: [
+      { key: 'opacity', label: 'Background Opacity', type: 'slider', min: 0.1, max: 1.0, step: 0.05, category: 'Visual' },
+      { key: 'nodeBaseSize', label: 'Node Size', type: 'slider', min: 0.01, max: 0.05, step: 0.002, category: 'Visual' },
+      { key: 'edgeThickness', label: 'Edge Thickness (legacy)', type: 'slider', min: 0.5, max: 5.0, step: 0.25, category: 'Visual' },
+      { key: 'spBaseEdgeAlpha', label: 'Base Edge Alpha', type: 'slider', min: 0.05, max: 0.8, step: 0.05, category: 'Visual' },
+      { key: 'spBaseEdgeThickness', label: 'Base Edge Thickness', type: 'slider', min: 0.5, max: 4.0, step: 0.25, category: 'Visual' },
+      { key: 'spActionEdgeThickness', label: 'Action Edge Thickness', type: 'slider', min: 1.0, max: 8.0, step: 0.25, category: 'Visual' },
+      { key: 'spDotSize', label: 'Traversal Dot Size', type: 'slider', min: 4, max: 24, step: 1, category: 'Visual' },
+      { key: 'spDotGlow', label: 'Traversal Dot Glow', type: 'slider', min: 0.0, max: 1.0, step: 0.05, category: 'Visual' },
+      { key: 'spCurvedEdges', label: 'Curved Edges (0/1)', type: 'slider', min: 0, max: 1, step: 1, category: 'Visual' },
+      { key: 'spCurveAmount', label: 'Curve Amount', type: 'slider', min: 0.0, max: 0.8, step: 0.05, category: 'Visual' },
+      { key: 'spCurveSegments', label: 'Curve Segments', type: 'slider', min: 8, max: 64, step: 1, category: 'Visual' },
+
+      { key: 'spTotalNodes', label: 'Total Nodes', type: 'slider', min: 10, max: 80, step: 2, category: 'Graph' },
+      { key: 'spEdgeDensity', label: 'Edge Density', type: 'slider', min: 0.05, max: 0.6, step: 0.01, category: 'Graph' },
+      { key: 'spAnimationSpeed', label: 'Steps / Second', type: 'slider', min: 0.5, max: 12.0, step: 0.5, category: 'Animation' },
+      { key: 'spTraversalSpeed', label: 'Traversal Speed (edges/sec)', type: 'slider', min: 0.2, max: 10.0, step: 0.2, category: 'Animation' },
+      { key: 'spGlowBloom', label: 'Glow Bloom (0/1)', type: 'slider', min: 0, max: 1, step: 1, category: 'Animation' },
+      { key: 'spGlowStrength', label: 'Glow Strength', type: 'slider', min: 0.0, max: 3.0, step: 0.05, category: 'Animation' },
+      { key: 'spGlowRadius', label: 'Glow Radius', type: 'slider', min: 0.0, max: 1.0, step: 0.01, category: 'Animation' },
+      { key: 'spGlowThreshold', label: 'Glow Threshold', type: 'slider', min: 0.0, max: 1.0, step: 0.01, category: 'Animation' },
+      { key: 'spHeuristicWeight', label: 'Heuristic weight w (0=Dijkstra, 1=A*, >1 greedy)', type: 'slider', min: 0.0, max: 3.0, step: 0.05, category: 'Algorithm' },
+      { key: 'spStartNode', label: 'Start Node', type: 'slider', min: 0, max: 79, step: 1, category: 'Algorithm' },
+      { key: 'spGoalNode', label: 'Goal Node', type: 'slider', min: 0, max: 79, step: 1, category: 'Algorithm' }
+    ]
+  }
   // Add new background configurations here
 ];
 

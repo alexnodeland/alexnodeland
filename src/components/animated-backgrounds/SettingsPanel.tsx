@@ -194,20 +194,34 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
     switch (setting.type) {
       case 'slider':
-        return (
-          <div className="setting-input">
-            <input
-              type="range"
-              min={setting.min}
-              max={setting.max}
-              step={setting.step}
-              value={value}
-              onChange={(e) => handleSettingChange(setting.key, parseFloat(e.target.value))}
-              className="slider"
-            />
-            <span className="setting-value">{value?.toFixed(3)}</span>
-          </div>
-        );
+        // Dynamic bounds for settings that depend on other settings
+        {
+          let dynamicMin = setting.min;
+          let dynamicMax = setting.max;
+          if (setting.key === 'spStartNode' || setting.key === 'spGoalNode') {
+            const total = (settings as any).spTotalNodes ?? 0;
+            dynamicMin = 0;
+            dynamicMax = Math.max(0, (typeof total === 'number' ? total : 0) - 1);
+          }
+          const clampedValue = Math.max(
+            dynamicMin ?? Number.NEGATIVE_INFINITY,
+            Math.min(dynamicMax ?? Number.POSITIVE_INFINITY, value ?? 0)
+          );
+          return (
+            <div className="setting-input">
+              <input
+                type="range"
+                min={dynamicMin}
+                max={dynamicMax}
+                step={setting.step}
+                value={clampedValue}
+                onChange={(e) => handleSettingChange(setting.key, parseFloat(e.target.value))}
+                className="slider"
+              />
+              <span className="setting-value">{clampedValue?.toFixed?.(3)}</span>
+            </div>
+          );
+        }
 
       case 'number':
         return (
