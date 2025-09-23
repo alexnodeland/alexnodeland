@@ -18,7 +18,8 @@ const PDEStencilBackground: React.FC<AnimatedBackgroundProps> = ({ className, se
     
     const renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const dpr = Math.min(window.devicePixelRatio, 2);
+    renderer.setPixelRatio(dpr);
     
     containerRef.current.appendChild(renderer.domElement);
     
@@ -252,7 +253,8 @@ const PDEStencilBackground: React.FC<AnimatedBackgroundProps> = ({ className, se
     const material = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0.0 },
-        uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        // Match drawing buffer size (device pixels) to align with gl_FragCoord
+        uResolution: { value: new THREE.Vector2(renderer.domElement.width, renderer.domElement.height) },
         uMouse: { value: new THREE.Vector2(0.0, 0.0) },
         
         // Configurable parameters from settings
@@ -291,9 +293,10 @@ const PDEStencilBackground: React.FC<AnimatedBackgroundProps> = ({ className, se
 
     // Mouse tracking
     const handleMouseMove = (event: MouseEvent) => {
-      // Use raw screen coordinates for better shader interaction
-      mouseRef.current.x = event.clientX;
-      mouseRef.current.y = event.clientY;
+      // Scale mouse to device pixels to match gl_FragCoord space
+      const ratio = renderer.getPixelRatio();
+      mouseRef.current.x = event.clientX * ratio;
+      mouseRef.current.y = event.clientY * ratio;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -320,7 +323,8 @@ const PDEStencilBackground: React.FC<AnimatedBackgroundProps> = ({ className, se
     const handleResize = () => {
       if (renderer && material.uniforms.uResolution) {
         renderer.setSize(window.innerWidth, window.innerHeight);
-        material.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        material.uniforms.uResolution.value.set(renderer.domElement.width, renderer.domElement.height);
       }
     };
 
