@@ -1,9 +1,14 @@
-const { siteConfig } = require('./src/config/site.ts');
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { siteConfig } from './src/config/site.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * @type {import('gatsby').GatsbyConfig}
  */
-module.exports = {
+const config = {
   pathPrefix: `/alexnodeland`,
   siteMetadata: {
     title: siteConfig.siteName,
@@ -57,3 +62,5 @@ module.exports = {
     },
   ],
 };
+
+export default config;
