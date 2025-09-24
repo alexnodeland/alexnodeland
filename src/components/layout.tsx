@@ -1,8 +1,8 @@
 import { Link } from 'gatsby';
 import React from 'react';
 import { getAllSocialLinks, siteConfig } from '../config';
-import { useSettingsPanel } from '../contexts/SettingsPanelContext';
 import '../styles/layout.scss';
+import { useSettingsPanel } from './SettingsPanelContext';
 import ThemeToggle from './ThemeToggle';
 
 interface LayoutProps {

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import { CVData } from '../../config/cv';
 import {
-  exportCVAsPDF,
-  exportCVAsMarkdown,
   downloadMarkdown,
   exportCVAsDOCX,
-} from '../../utils/export';
-import { CVData } from '../../config/cv';
+  exportCVAsMarkdown,
+  exportCVAsPDF,
+} from '../../lib/utils/export';
 
 interface CVExportButtonsProps {
   resumeData: CVData;

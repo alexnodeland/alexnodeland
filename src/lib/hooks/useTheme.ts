@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { THEMES, STORAGE_KEYS } from '../constants';
+import { useEffect, useState } from 'react';
+import { STORAGE_KEYS, THEMES } from '../../config';
 
 export const useTheme = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>(THEMES.LIGHT);
@@ -16,8 +16,11 @@ export const useTheme = () => {
       ).matches;
 
       // Validate saved theme
-      const validSavedTheme = savedTheme === THEMES.LIGHT || savedTheme === THEMES.DARK ? savedTheme : null;
-      
+      const validSavedTheme =
+        savedTheme === THEMES.LIGHT || savedTheme === THEMES.DARK
+          ? savedTheme
+          : null;
+
       const initialTheme =
         validSavedTheme || (prefersDark ? THEMES.DARK : THEMES.LIGHT);
       setTheme(initialTheme);

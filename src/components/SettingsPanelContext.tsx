@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useState } from 'react';
 
 interface SettingsPanelContextType {
   isSettingsPanelOpen: boolean;
@@ -7,13 +7,17 @@ interface SettingsPanelContextType {
   setClosingSettingsPanel: (isClosing: boolean) => void;
 }
 
-const SettingsPanelContext = createContext<SettingsPanelContextType | undefined>(undefined);
+const SettingsPanelContext = createContext<
+  SettingsPanelContextType | undefined
+>(undefined);
 
 interface SettingsPanelProviderProps {
   children: ReactNode;
 }
 
-export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({ children }) => {
+export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
+  children,
+}) => {
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isClosingSettingsPanel, setIsClosingSettingsPanel] = useState(false);
 
@@ -42,7 +46,9 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({ ch
 export const useSettingsPanel = () => {
   const context = useContext(SettingsPanelContext);
   if (context === undefined) {
-    throw new Error('useSettingsPanel must be used within a SettingsPanelProvider');
+    throw new Error(
+      'useSettingsPanel must be used within a SettingsPanelProvider'
+    );
   }
   return context;
 };

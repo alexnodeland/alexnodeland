@@ -13,7 +13,7 @@ import BackgroundControls from './BackgroundControls';
 import { backgroundRegistry, getBackgroundById } from './index';
 // import SettingsPanel from './SettingsPanel';
 import { siteConfig } from '../../config';
-import { useSettingsPanel } from '../../contexts/SettingsPanelContext';
+import { useSettingsPanel } from '../SettingsPanelContext';
 
 interface BackgroundManagerProps {
   className?: string;

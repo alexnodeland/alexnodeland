@@ -1,11 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CVExportButtons from '../../../components/cv/CVExportButtons';
+import * as exportUtils from '../../../lib/utils/export';
 import { CVData } from '../../../types/cv';
-import * as exportUtils from '../../../utils/export';
 
 // Mock the export utilities
-jest.mock('../../../utils/export');
+jest.mock('../../../lib/utils/export');
 const mockExportUtils = exportUtils as jest.Mocked<typeof exportUtils>;
 
 // Mock document.getElementById and scrollIntoView

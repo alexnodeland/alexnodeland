@@ -38,13 +38,13 @@ jest.mock('html2canvas', () => ({
   }),
 }));
 
-import { CVData } from '../../../types/cv';
 import {
   downloadMarkdown,
   exportCVAsDOCX,
   exportCVAsMarkdown,
   exportCVAsPDF,
-} from '../../../utils/export';
+} from '../../../lib/utils/export';
+import { CVData } from '../../../types/cv';
 
 // Get the mocked modules
 const mockJsPDF = require('jspdf').default;

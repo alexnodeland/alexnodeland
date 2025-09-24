@@ -1,11 +1,11 @@
 import React from 'react';
-import { backgroundRegistry } from './index';
-import SettingsPanel from './SettingsPanel';
 import {
   BackgroundSettings,
   SettingsSchema,
 } from '../../types/animated-backgrounds';
-import { useSettingsPanel } from '../../contexts/SettingsPanelContext';
+import { useSettingsPanel } from '../SettingsPanelContext';
+import { backgroundRegistry } from './index';
+import SettingsPanel from './SettingsPanel';
 
 interface BackgroundControlsProps {
   currentBackgroundId: string;
