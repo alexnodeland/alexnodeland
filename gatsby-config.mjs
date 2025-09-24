@@ -1,9 +1,9 @@
-const { siteConfig } = require('./src/config/site.ts');
+import { siteConfig } from './src/config/site.ts';
 
 /**
  * @type {import('gatsby').GatsbyConfig}
  */
-module.exports = {
+const config = {
   pathPrefix: `/alexnodeland`,
   siteMetadata: {
     title: siteConfig.siteName,
@@ -57,3 +57,5 @@ module.exports = {
     },
   ],
 };
+
+export default config;
