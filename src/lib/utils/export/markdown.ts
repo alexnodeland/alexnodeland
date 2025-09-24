@@ -1,4 +1,9 @@
-import { CVData } from '../../config/cv';
+import {
+  CertificationItem,
+  CVData,
+  EducationItem,
+  ExperienceItem,
+} from '../../../config/cv';
 
 // Export resume as Markdown
 export const exportCVAsMarkdown = (cvData: CVData): string => {
@@ -16,14 +21,14 @@ export const exportCVAsMarkdown = (cvData: CVData): string => {
 
   // Experience
   markdown += `## Experience\n\n`;
-  cvData.experience.forEach(exp => {
+  cvData.experience.forEach((exp: ExperienceItem) => {
     markdown += `### ${exp.title}, ${exp.company}\n`;
     markdown += `**${exp.location}** | ${exp.duration}\n\n`;
     if (exp.description) {
       markdown += `${exp.description}\n\n`;
     }
     markdown += `**Key Achievements:**\n`;
-    exp.achievements.forEach(achievement => {
+    exp.achievements.forEach((achievement: string) => {
       markdown += `- ${achievement}\n`;
     });
     if (exp.skills && exp.skills.length > 0) {
@@ -34,7 +39,7 @@ export const exportCVAsMarkdown = (cvData: CVData): string => {
 
   // Education
   markdown += `## Education\n\n`;
-  cvData.education.forEach(edu => {
+  cvData.education.forEach((edu: EducationItem) => {
     markdown += `### ${edu.degree}\n`;
     markdown += `**${edu.institution}**, ${edu.location} | ${edu.duration}\n\n`;
     if (edu.gpa) {
@@ -48,7 +53,7 @@ export const exportCVAsMarkdown = (cvData: CVData): string => {
     }
     if (edu.achievements && edu.achievements.length > 0) {
       markdown += `**Achievements:**\n`;
-      edu.achievements.forEach(achievement => {
+      edu.achievements.forEach((achievement: string) => {
         markdown += `- ${achievement}\n`;
       });
       markdown += `\n`;
@@ -58,7 +63,7 @@ export const exportCVAsMarkdown = (cvData: CVData): string => {
   // Certifications
   if (cvData.certifications && cvData.certifications.length > 0) {
     markdown += `## Certifications\n\n`;
-    cvData.certifications.forEach(cert => {
+    cvData.certifications.forEach((cert: CertificationItem) => {
       markdown += `- **${cert.name}**, ${cert.issuer} (${cert.date})\n`;
     });
     markdown += `\n`;

@@ -1,6 +1,11 @@
 import { AlignmentType, Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
-import { CVData } from '../../config/cv';
+import {
+  CertificationItem,
+  CVData,
+  EducationItem,
+  ExperienceItem,
+} from '../../../config/cv';
 
 // Export CV as DOCX
 export const exportCVAsDOCX = async (
@@ -98,7 +103,7 @@ export const exportCVAsDOCX = async (
               ],
               spacing: { before: 400, after: 200 },
             }),
-            ...cvData.experience.flatMap(exp => [
+            ...cvData.experience.flatMap((exp: ExperienceItem) => [
               new Paragraph({
                 children: [
                   new TextRun({
@@ -120,7 +125,7 @@ export const exportCVAsDOCX = async (
                 spacing: { after: 200 },
               }),
               ...exp.achievements.map(
-                achievement =>
+                (achievement: string) =>
                   new Paragraph({
                     children: [
                       new TextRun({
@@ -158,7 +163,7 @@ export const exportCVAsDOCX = async (
               ],
               spacing: { before: 400, after: 200 },
             }),
-            ...cvData.education.flatMap(edu => [
+            ...cvData.education.flatMap((edu: EducationItem) => [
               new Paragraph({
                 children: [
                   new TextRun({
@@ -220,7 +225,7 @@ export const exportCVAsDOCX = async (
                 : []),
               ...(edu.achievements && edu.achievements.length > 0
                 ? edu.achievements.map(
-                    achievement =>
+                    (achievement: string) =>
                       new Paragraph({
                         children: [
                           new TextRun({
@@ -291,7 +296,7 @@ export const exportCVAsDOCX = async (
                     spacing: { before: 400, after: 200 },
                   }),
                   ...cvData.certifications.map(
-                    cert =>
+                    (cert: CertificationItem) =>
                       new Paragraph({
                         children: [
                           new TextRun({

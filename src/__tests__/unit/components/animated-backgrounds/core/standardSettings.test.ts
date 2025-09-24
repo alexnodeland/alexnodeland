@@ -19,7 +19,7 @@ describe('standardSettings helpers', () => {
       {
         key: 'custom.setting',
         label: 'Custom Setting',
-        type: 'slider',
+        type: 'slider' as const,
         min: 0,
         max: 10,
         step: 1,

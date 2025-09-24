@@ -1,5 +1,10 @@
 import jsPDF from 'jspdf';
-import { CVData } from '../../config/cv';
+import {
+  CertificationItem,
+  CVData,
+  EducationItem,
+  ExperienceItem,
+} from '../../../config/cv';
 
 // Export CV as PDF (clean markdown-style rendering)
 export const exportCVAsPDF = async (
@@ -78,12 +83,12 @@ export const exportCVAsPDF = async (
 
     // Experience
     addSectionHeader('EXPERIENCE');
-    cvData.experience.forEach(exp => {
+    cvData.experience.forEach((exp: ExperienceItem) => {
       addSubsection(`${exp.title}, ${exp.company}`);
       addText(`${exp.location} | ${exp.duration}`, 10, false, true);
       yPosition += 2;
 
-      exp.achievements.forEach(achievement => {
+      exp.achievements.forEach((achievement: string) => {
         addText(`• ${achievement}`, 10);
       });
 
@@ -95,7 +100,7 @@ export const exportCVAsPDF = async (
 
     // Education
     addSectionHeader('EDUCATION');
-    cvData.education.forEach(edu => {
+    cvData.education.forEach((edu: EducationItem) => {
       addSubsection(edu.degree);
       addText(
         `${edu.institution}, ${edu.location} | ${edu.duration}`,
@@ -118,7 +123,7 @@ export const exportCVAsPDF = async (
       }
 
       if (edu.achievements && edu.achievements.length > 0) {
-        edu.achievements.forEach(achievement => {
+        edu.achievements.forEach((achievement: string) => {
           addText(`• ${achievement}`, 10);
         });
       }
@@ -136,7 +141,7 @@ export const exportCVAsPDF = async (
     // Certifications
     if (cvData.certifications && cvData.certifications.length > 0) {
       addSectionHeader('CERTIFICATIONS');
-      cvData.certifications.forEach(cert => {
+      cvData.certifications.forEach((cert: CertificationItem) => {
         addText(`• ${cert.name}, ${cert.issuer} (${cert.date})`, 10);
       });
     }
