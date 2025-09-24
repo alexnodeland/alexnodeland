@@ -41,9 +41,9 @@
 .blog-controls {
   margin-bottom: 3rem;
   padding: 2rem;
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   border-radius: var(--radius-md);
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
   position: relative;
 
@@ -53,16 +53,22 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 3px;
     background: linear-gradient(
       90deg,
-      var(--accent-color) 0%,
-      var(--retro-blue) 25%,
-      var(--retro-green) 50%,
-      var(--retro-purple) 75%,
-      var(--accent-color) 100%
+      var(--accent-pink) 0%,
+      var(--accent-blue) 25%,
+      var(--primary-color) 50%,
+      var(--accent-purple) 75%,
+      var(--accent-pink) 100%
     );
     border-radius: var(--radius-md) var(--radius-md) 0 0;
+    animation: gradient-shift 3s ease-in-out infinite;
+  }
+  
+  @keyframes gradient-shift {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
   }
 
   .search-container {
@@ -84,9 +90,9 @@
 
       &:focus {
         outline: none;
-        border-color: var(--accent-color);
+        border-color: var(--accent-pink);
         box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
-        background: var(--bg-accent);
+        background: var(--bg-hover);
       }
 
       &::placeholder {
@@ -124,15 +130,15 @@
         transition: all var(--transition-fast);
 
         &:hover {
-          border-color: var(--accent-color);
-          background: var(--bg-accent);
-          box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+          border-color: var(--accent-pink);
+          background: var(--bg-hover);
+          box-shadow: 0 0 10px rgba(255, 0, 128, 0.2);
         }
 
         &.active {
-          background: var(--accent-color);
+          background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
           color: white;
-          border-color: var(--accent-color);
+          border-color: transparent;
           box-shadow: 0 0 15px rgba(255, 0, 128, 0.4);
         }
       }
@@ -170,9 +176,9 @@
 
         &:focus {
           outline: none;
-          border-color: var(--accent-color);
+          border-color: var(--accent-pink);
           box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
-          background: var(--bg-accent);
+          background: var(--bg-hover);
         }
 
         &:hover {
@@ -203,8 +209,8 @@
       transition: all var(--transition-fast);
 
       &.active {
-        border-color: var(--accent-color);
-        color: var(--accent-color);
+        border-color: var(--accent-pink);
+        color: var(--accent-pink);
 
         &:hover {
           box-shadow: 0 0 10px rgba(255, 0, 128, 0.2);
@@ -246,25 +252,35 @@
 }
 
 .post-preview {
-  background: var(--bg-primary);
+  background: var(--bg-card);
   padding: 2rem;
   border-radius: var(--radius-lg);
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   position: relative;
+  transition: all var(--transition-normal);
 
-  // Add academic-style left border
+  // Add gradient left border
   &::before {
     content: '';
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 4px;
-    background: var(--accent-color);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    width: 3px;
+    background: linear-gradient(
+      180deg,
+      var(--accent-blue) 0%,
+      var(--accent-cyan) 100%
+    );
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   }
 
-  @include card-hover;
+  &:hover {
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+    border-color: var(--border-active);
+  }
 }
 
 .post-meta {
@@ -281,7 +297,7 @@
 }
 
 .post-category {
-  background: var(--accent-color);
+  background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -380,14 +396,14 @@
 
   h1 {
     font-size: 2rem;
-    border-bottom: 3px solid var(--accent-color);
+    border-bottom: 2px solid var(--accent-pink);
     padding-bottom: 0.5rem;
     display: inline-block;
   }
 
   h2 {
     font-size: 1.75rem;
-    border-bottom: 2px solid var(--accent-color);
+    border-bottom: 2px solid var(--primary-color);
     padding-bottom: 0.5rem;
     display: inline-block;
   }
@@ -411,35 +427,51 @@
   }
 
   blockquote {
-    border-left: 4px solid var(--accent-color);
+    border-left: 3px solid var(--accent-cyan);
     padding-left: 1.5rem;
     margin: 2rem 0;
     font-style: italic;
     color: var(--text-secondary);
-    background: var(--bg-secondary);
+    background: var(--bg-card);
     padding: 1.5rem;
     border-radius: var(--radius-sm);
     position: relative;
   }
 
   code {
-    background: var(--bg-accent);
+    background: var(--bg-hover);
     padding: 0.2rem 0.4rem;
     border-radius: var(--radius-sm);
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 0.9rem;
-    color: var(--accent-color);
+    color: var(--accent-cyan);
     border: 1px solid var(--border-color);
   }
 
   pre {
-    background: var(--bg-accent);
+    background: var(--bg-card);
     padding: 1.5rem;
     border-radius: var(--radius-md);
     overflow-x: auto;
     margin: 2rem 0;
-    border: 2px solid var(--accent-color);
+    border: 1px solid var(--border-active);
     position: relative;
+    
+    // Add gradient top accent
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(
+        90deg,
+        var(--accent-cyan) 0%,
+        var(--primary-color) 50%,
+        var(--accent-blue) 100%
+      );
+    }
 
     code {
       background: none;
@@ -450,14 +482,15 @@
   }
 
   a {
-    color: var(--accent-color);
+    color: var(--accent-blue);
     text-decoration: none;
     font-weight: 500;
     transition: all var(--transition-fast);
 
     &:hover {
-      color: var(--retro-blue);
+      color: var(--accent-cyan);
       text-decoration: underline;
+      text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
     }
   }
 

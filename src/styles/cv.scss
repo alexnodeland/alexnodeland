@@ -47,16 +47,36 @@
 
 // CV Overview and Contact Combined
 .cv-overview-contact {
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   padding: 2rem;
   border-radius: var(--radius-lg);
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.05);
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 2rem;
   align-items: start;
+  position: relative;
+  
+  // Add subtle gradient border on hover
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--accent-pink) 0%,
+      var(--accent-cyan) 33%,
+      var(--primary-color) 66%,
+      var(--accent-pink) 100%
+    );
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    opacity: 0.5;
+  }
 
   .overview-section {
     h3 {
@@ -127,11 +147,17 @@
 }
 
 #resume-content {
-  background: var(--bg-primary);
-  padding: 2rem;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  // Remove container styling - sections will have their own
   margin-bottom: 2rem;
+  
+  // Add spacing between major sections
+  > div {
+    margin-bottom: 3rem;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
 }
 
 .cv-header {
@@ -177,12 +203,29 @@
 }
 
 .cv-section {
-  margin-bottom: 3rem;
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  position: relative;
+  
+  // Add accent top border
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-pink);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
 
   h2 {
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
-    border-bottom: 3px solid var(--accent-color);
+    border-bottom: 2px solid var(--accent-pink);
     padding-bottom: 0.5rem;
     display: inline-block;
     font-family:
@@ -212,30 +255,31 @@
 }
 
 .experience-item {
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
   padding: 1.5rem;
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  border: 2px solid var(--border-color);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
   position: relative;
 
-  // Add academic-style left border
+  // Add colorful left accent border
   &::before {
     content: '';
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 4px;
-    background: var(--accent-color);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    width: 3px;
+    background: var(--accent-cyan);
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   }
 
   &:hover {
-    box-shadow: var(--shadow-md);
+    background: var(--bg-card);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
     transform: translateY(-1px);
-    border-color: var(--accent-color);
+    border-color: var(--border-active);
   }
 
   &:last-child {
@@ -260,13 +304,14 @@
 }
 
 .experience-duration {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-weight: 600;
   white-space: nowrap;
-  background: var(--bg-accent);
+  background: var(--bg-primary);
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
+  border: 1px solid var(--border-color);
 }
 
 .experience-bullets {
@@ -286,14 +331,29 @@
 .education-item {
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
+  position: relative;
+  
+  // Add colorful left accent border
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--primary-color);
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  }
 
   &:hover {
-    box-shadow: var(--shadow-md);
+    background: var(--bg-card);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
     transform: translateY(-1px);
+    border-color: var(--border-active);
   }
 
   &:last-child {
@@ -370,9 +430,31 @@
 // Resume Header Component
 .resume-header {
   text-align: center;
-  margin-bottom: 3rem;
-  padding-bottom: 2rem;
-  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  position: relative;
+  
+  // Add gradient top accent
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--accent-pink) 0%,
+      var(--accent-cyan) 25%,
+      var(--primary-color) 50%,
+      var(--accent-blue) 75%,
+      var(--accent-pink) 100%
+    );
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
 
   h1 {
     font-size: 2.5rem;
@@ -421,27 +503,64 @@
 
 // Experience Section Component
 .experience-section {
-  margin-bottom: 3rem;
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  position: relative;
+  
+  // Add cyan accent top
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-cyan);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
 
   h2 {
     font-size: 1.8rem;
     margin-bottom: 2rem;
-    border-bottom: 2px solid var(--primary-color);
+    border-bottom: 2px solid var(--accent-cyan);
     padding-bottom: 0.5rem;
     display: inline-block;
   }
 
   .experience-item {
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
     padding: 1.5rem;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-lg);
+    background: var(--bg-hover);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     transition: all var(--transition-normal);
+    position: relative;
+    
+    // Subtle left accent
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent-cyan);
+      opacity: 0.5;
+      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    }
 
     &:hover {
-      box-shadow: var(--shadow-md);
+      background: var(--bg-card);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
       transform: translateY(-1px);
+      border-color: var(--border-active);
+      
+      &::before {
+        opacity: 1;
+      }
     }
 
     &:last-child {
@@ -467,13 +586,14 @@
   }
 
   .experience-duration {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-weight: 600;
     white-space: nowrap;
-    background: var(--bg-accent);
+    background: var(--bg-primary);
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-sm);
     font-size: 0.9rem;
+    border: 1px solid var(--border-color);
   }
 
   .experience-location {
@@ -513,7 +633,24 @@
 
 // Education Section Component
 .education-section {
-  margin-bottom: 3rem;
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  position: relative;
+  
+  // Add green accent top
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary-color);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
 
   h2 {
     font-size: 1.8rem;
@@ -526,14 +663,34 @@
   .education-item {
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-lg);
+    background: var(--bg-hover);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     transition: all var(--transition-normal);
+    position: relative;
+    
+    // Subtle left accent
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--primary-color);
+      opacity: 0.5;
+      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    }
 
     &:hover {
-      box-shadow: var(--shadow-md);
+      background: var(--bg-card);
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
       transform: translateY(-1px);
+      border-color: var(--border-active);
+      
+      &::before {
+        opacity: 1;
+      }
     }
 
     &:last-child {
@@ -559,13 +716,14 @@
   }
 
   .education-duration {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-weight: 600;
     white-space: nowrap;
-    background: var(--bg-accent);
+    background: var(--bg-primary);
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-sm);
     font-size: 0.9rem;
+    border: 1px solid var(--border-color);
   }
 
   .education-institution {
@@ -608,12 +766,29 @@
 
 // Skills Section Component
 .skills-section {
-  margin-bottom: 3rem;
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  position: relative;
+  
+  // Add purple accent top
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-purple);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
 
   h2 {
     font-size: 1.8rem;
     margin-bottom: 2rem;
-    border-bottom: 2px solid var(--primary-color);
+    border-bottom: 2px solid var(--accent-purple);
     padding-bottom: 0.5rem;
     display: inline-block;
   }
@@ -646,18 +821,21 @@
     transition: all var(--transition-normal);
 
     &.technical {
-      background: var(--primary-color);
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
       color: white;
+      border: 1px solid transparent;
     }
 
     &.soft {
-      background: var(--secondary-color);
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-cyan));
       color: white;
+      border: 1px solid transparent;
     }
 
     &.language {
-      background: var(--accent-color);
+      background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
       color: white;
+      border: 1px solid transparent;
     }
 
     &:hover {
@@ -669,10 +847,10 @@
 
 // Export Buttons
 .cv-export {
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   padding: 2rem;
   border-radius: var(--radius-lg);
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   text-align: center;
   margin-bottom: 2rem;
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
@@ -684,16 +862,22 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 3px;
     background: linear-gradient(
       90deg,
-      var(--accent-color) 0%,
-      var(--retro-blue) 25%,
-      var(--retro-green) 50%,
-      var(--retro-purple) 75%,
-      var(--accent-color) 100%
+      var(--accent-pink) 0%,
+      var(--accent-blue) 25%,
+      var(--primary-color) 50%,
+      var(--accent-purple) 75%,
+      var(--accent-pink) 100%
     );
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    animation: gradient-shift 3s ease-in-out infinite;
+  }
+  
+  @keyframes gradient-shift {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
   }
 
   .search-section {
