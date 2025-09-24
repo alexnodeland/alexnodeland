@@ -1,7 +1,9 @@
+import React from 'react';
+
 export type BackgroundColors = {
-  alive: [number, number, number];      // RGB values 0-1 - for cellular automaton alive cells
-  neutral: [number, number, number];   // neutral/empty cells
-  active: [number, number, number];    // active/evolving cells
+  alive: [number, number, number]; // RGB values 0-1 - for cellular automaton alive cells
+  neutral: [number, number, number]; // neutral/empty cells
+  active: [number, number, number]; // active/evolving cells
   highActivity: [number, number, number]; // high activity cells
   gridOverlay: [number, number, number];
 } & Record<string, [number, number, number]>;
@@ -12,25 +14,25 @@ export interface BackgroundSettings {
   cellBaseSize: number;
   cellSizeMultiplier: number;
   opacity: number;
-  
+
   // Animation speeds
   globalTimeMultiplier: number;
   evolutionSpeed1: number;
   evolutionSpeed2: number;
   diagonalEvolutionSpeed: number;
   updateAnimationSpeed: number;
-  
+
   // Evolution properties
   waveAmplitude: number;
-  
+
   // Colors
   colors: BackgroundColors;
-  
+
   // Cellular automaton properties
   connectionLineWidth: number;
   diagonalConnectionWeight: number;
   activityIntensity: number;
-  
+
   // Graph topology properties (optional)
   totalNodes?: number;
   clusterCount?: number;

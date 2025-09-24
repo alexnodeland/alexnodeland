@@ -1,11 +1,17 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
 import Layout from '../../components/layout';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from '../../lib/hooks/useTheme';
 
 // Mock the config
 jest.mock('../../config', () => ({
+  THEMES: {
+    LIGHT: 'light',
+    DARK: 'dark',
+  },
+  STORAGE_KEYS: {
+    THEME: 'theme',
+  },
   siteConfig: {
     siteName: 'Test Site',
     navigation: {
@@ -24,12 +30,15 @@ jest.mock('../../config', () => ({
   ]),
 }));
 
-// Mock the MDXProvider component
-jest.mock('../../components/mdx/MDXProvider', () => {
-  return function MockMDXProvider({ children }: { children: React.ReactNode }) {
-    return <div data-testid="mdx-provider">{children}</div>;
-  };
-});
+// Mock the SettingsPanel hook
+jest.mock('../../components/SettingsPanelContext', () => ({
+  useSettingsPanel: () => ({
+    isSettingsPanelOpen: false,
+    isClosingSettingsPanel: false,
+    setSettingsPanelOpen: jest.fn(),
+    setClosingSettingsPanel: jest.fn(),
+  }),
+}));
 
 describe.skip('Theme System Integration', () => {
   const TestComponent = () => {

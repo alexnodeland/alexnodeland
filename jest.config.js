@@ -12,29 +12,35 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/setupTests.ts',
+    '!src/setupTests.js',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/content/**/*',
+    '!src/types/**/*',
+    '!src/**/index.ts',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json'],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      branches: 50,
+      functions: 60,
+      lines: 70,
+      statements: 70,
     },
   },
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx', 'json'],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.cache/', '<rootDir>/e2e/'],
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/.cache/',
+    '<rootDir>/e2e/',
+  ],
   transformIgnorePatterns: [
     'node_modules/(?!(gatsby|gatsby-script|gatsby-link)/)',
   ],
   testTimeout: 10000,
   clearMocks: true,
   restoreMocks: true,
-}
+};

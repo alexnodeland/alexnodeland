@@ -832,7 +832,7 @@ const GraphTopologyBackground: React.FC<
       window.removeEventListener('resize', handleResize);
       // Cleanup
       edgeSegments.forEach(l => {
-        l.geometry.dispose();
+        l.geometry?.dispose?.();
       });
       nodeGeometry.dispose();
       (points.material as THREE.Material).dispose();

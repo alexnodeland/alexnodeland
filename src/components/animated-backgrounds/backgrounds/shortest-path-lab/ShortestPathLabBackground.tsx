@@ -539,6 +539,8 @@ const ShortestPathLabBackground: React.FC<
       edgeLines.forEach(l => l.geometry.dispose());
       nodeGeometry.dispose();
       (nodeMaterial as THREE.Material).dispose();
+      dotGeometry.dispose();
+      (dotMaterial as THREE.Material).dispose();
       renderer.dispose();
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);

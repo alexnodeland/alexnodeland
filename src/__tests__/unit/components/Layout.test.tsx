@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import React from 'react';
 import Layout from '../../../components/layout';
 import { getAllSocialLinks } from '../../../config';
 
@@ -34,14 +33,17 @@ jest.mock('../../../components/ThemeToggle', () => {
   };
 });
 
-// Mock the MDXProvider component
-jest.mock('../../../components/mdx/MDXProvider', () => {
-  return function MockMDXProvider({ children }: { children: React.ReactNode }) {
-    return <div data-testid="mdx-provider">{children}</div>;
-  };
-});
+// Mock the SettingsPanel hook
+jest.mock('../../../components/SettingsPanelContext', () => ({
+  useSettingsPanel: () => ({
+    isSettingsPanelOpen: false,
+    isClosingSettingsPanel: false,
+    setSettingsPanelOpen: jest.fn(),
+    setClosingSettingsPanel: jest.fn(),
+  }),
+}));
 
-describe.skip('Layout Component', () => {
+describe('Layout Component', () => {
   const mockChildren = <div data-testid="test-children">Test Content</div>;
 
   beforeEach(() => {
@@ -96,7 +98,10 @@ describe.skip('Layout Component', () => {
   it('should render email link in footer', () => {
     render(<Layout>{mockChildren}</Layout>);
 
-    const emailLink = screen.getByRole('link', { name: '' });
+    const emailLink = document.querySelector(
+      'a.footer-link[data-platform="email"]'
+    ) as HTMLAnchorElement;
+    expect(emailLink).not.toBeNull();
     expect(emailLink).toHaveAttribute('href', 'mailto:test@example.com');
     expect(emailLink).toHaveAttribute('data-platform', 'email');
   });
@@ -172,15 +177,9 @@ describe.skip('Layout Component', () => {
   it('should have correct CSS classes', () => {
     render(<Layout>{mockChildren}</Layout>);
 
-    expect(screen.getByRole('banner')).toHaveClass('header');
+    expect(screen.getByRole('banner')).toHaveClass('header-fixed');
     expect(screen.getByRole('main')).toHaveClass('main');
     expect(screen.getByRole('contentinfo')).toHaveClass('footer');
-  });
-
-  it('should render MDXProvider wrapper', () => {
-    render(<Layout>{mockChildren}</Layout>);
-
-    expect(screen.getByTestId('mdx-provider')).toBeInTheDocument();
   });
 
   it('should handle empty children', () => {
