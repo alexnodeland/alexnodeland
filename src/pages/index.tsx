@@ -1,55 +1,78 @@
 import React from 'react';
 import { Layout, SEO } from '../components';
-import { siteConfig, homepageConfig, getCTAButtonURL } from '../config';
-import '../styles/index.scss';
-import systemsIcon from '../images/systems.png';
-import gearIcon from '../images/gear.png';
-import reportIcon from '../images/report.png';
-import observabilityIcon from '../images/observability.png';
-import strategyIcon from '../images/strategy.png';
+import { getCTAButtonURL, homepageConfig } from '../config';
 import developmentIcon from '../images/development.png';
+import gearIcon from '../images/gear.png';
+import observabilityIcon from '../images/observability.png';
+import reportIcon from '../images/report.png';
+import strategyIcon from '../images/strategy.png';
+import systemsIcon from '../images/systems.png';
+import '../styles/index.scss';
 
 const IndexPage: React.FC = () => {
   return (
     <Layout>
-      <SEO title="Home" description="Experienced engineer and mathematician with a background in distributed computing and creative technology" />
+      <SEO
+        title="home"
+        description="Experienced engineer and mathematician with a background in distributed computing and creative technology"
+      />
       <div className="home">
         <section className="hero">
           <h1>{homepageConfig.hero.title}</h1>
-          <p className="hero-subtitle">
-            {homepageConfig.hero.subtitle}
-          </p>
+          <p className="hero-subtitle">{homepageConfig.hero.subtitle}</p>
         </section>
 
         <section className="about">
           <div className="about-content">
             {homepageConfig.about.paragraphs.map((paragraph, index) => (
-              <p key={index}>
-                {paragraph}
-              </p>
+              <p key={index}>{paragraph}</p>
             ))}
           </div>
         </section>
 
         <section className="consulting">
           <h2>{homepageConfig.consulting.title}</h2>
-          <p>
-            {homepageConfig.consulting.description}
-          </p>
+          <p>{homepageConfig.consulting.description}</p>
           <div className="cta-buttons">
-            <a 
-              href={getCTAButtonURL(homepageConfig.consulting.ctaButtons.primary.action, homepageConfig.consulting.ctaButtons.primary.url)} 
+            <a
+              href={getCTAButtonURL(
+                homepageConfig.consulting.ctaButtons.primary.action,
+                homepageConfig.consulting.ctaButtons.primary.url
+              )}
               className="cta-button primary"
-              target={homepageConfig.consulting.ctaButtons.primary.action === 'calendar' ? '_blank' : undefined}
-              rel={homepageConfig.consulting.ctaButtons.primary.action === 'calendar' ? 'noopener noreferrer' : undefined}
+              target={
+                homepageConfig.consulting.ctaButtons.primary.action ===
+                'calendar'
+                  ? '_blank'
+                  : undefined
+              }
+              rel={
+                homepageConfig.consulting.ctaButtons.primary.action ===
+                'calendar'
+                  ? 'noopener noreferrer'
+                  : undefined
+              }
             >
               {homepageConfig.consulting.ctaButtons.primary.text}
             </a>
-            <a 
-              href={getCTAButtonURL(homepageConfig.consulting.ctaButtons.secondary.action, homepageConfig.consulting.ctaButtons.secondary.url)} 
-              className="cta-button secondary" 
-              target={homepageConfig.consulting.ctaButtons.secondary.action === 'calendar' ? '_blank' : undefined}
-              rel={homepageConfig.consulting.ctaButtons.secondary.action === 'calendar' ? 'noopener noreferrer' : undefined}
+            <a
+              href={getCTAButtonURL(
+                homepageConfig.consulting.ctaButtons.secondary.action,
+                homepageConfig.consulting.ctaButtons.secondary.url
+              )}
+              className="cta-button secondary"
+              target={
+                homepageConfig.consulting.ctaButtons.secondary.action ===
+                'calendar'
+                  ? '_blank'
+                  : undefined
+              }
+              rel={
+                homepageConfig.consulting.ctaButtons.secondary.action ===
+                'calendar'
+                  ? 'noopener noreferrer'
+                  : undefined
+              }
             >
               {homepageConfig.consulting.ctaButtons.secondary.text}
             </a>
@@ -61,12 +84,12 @@ const IndexPage: React.FC = () => {
           <div className="expertise-grid">
             {homepageConfig.expertise.items.map((item, index) => {
               const expertiseImages = [
-                systemsIcon,        // ai system architecture
-                gearIcon,           // devops & infrastructure
-                reportIcon,         // data engineering
-                observabilityIcon,  // mlops & monitoring
-                strategyIcon,       // technical leadership
-                developmentIcon,    // ai product development
+                systemsIcon, // ai system architecture
+                gearIcon, // devops & infrastructure
+                reportIcon, // data engineering
+                observabilityIcon, // mlops & monitoring
+                strategyIcon, // technical leadership
+                developmentIcon, // ai product development
               ];
               const iconSrc = expertiseImages[index] ?? developmentIcon;
               return (
@@ -75,7 +98,9 @@ const IndexPage: React.FC = () => {
                     <img src={iconSrc} alt={item.title} />
                   </span>
                   <div className="expertise-title">{item.title}</div>
-                  <div className="expertise-description">{item.description}</div>
+                  <div className="expertise-description">
+                    {item.description}
+                  </div>
                 </div>
               );
             })}
@@ -85,8 +110,10 @@ const IndexPage: React.FC = () => {
         <section className="blog-preview">
           <h2>insights & experiments</h2>
           <p>
-            exploring the cutting edge of ai engineering, devops automation, and system architecture. 
-            dive into my <a href="/blog">latest insights</a> on building production ai systems.
+            exploring the cutting edge of ai engineering, devops automation, and
+            system architecture. dive into my{' '}
+            <a href="/blog">latest insights</a> on building production ai
+            systems.
           </p>
         </section>
       </div>

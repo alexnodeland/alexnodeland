@@ -1,5 +1,8 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { BackgroundSettings, SettingsSchema } from '../../types/animated-backgrounds';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  BackgroundSettings,
+  SettingsSchema,
+} from '../../types/animated-backgrounds';
 
 interface SettingsPanelProps {
   settings: BackgroundSettings;
@@ -24,25 +27,37 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   currentBackgroundId,
   currentBackgroundName,
   currentBackgroundDescription,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   totalBackgrounds,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onPreviousBackground,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onNextBackground,
-  isClosing
+  isClosing,
 }) => {
   // Define which categories are considered standard across all backgrounds
-  const STANDARD_CATEGORY_ORDER = useMemo(() => ['Visual', 'Animation', 'Colors'], []);
-  const STANDARD_CATEGORIES = useMemo(() => new Set<string>(STANDARD_CATEGORY_ORDER), [STANDARD_CATEGORY_ORDER]);
+  const STANDARD_CATEGORY_ORDER = useMemo(
+    () => ['Visual', 'Animation', 'Colors'],
+    []
+  );
+  const STANDARD_CATEGORIES = useMemo(
+    () => new Set<string>(STANDARD_CATEGORY_ORDER),
+    [STANDARD_CATEGORY_ORDER]
+  );
 
   // Group settings by category
   const settingsByCategory = useMemo(() => {
-    return settingsSchema.reduce((acc, setting) => {
-      const category = setting.category || 'Other';
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(setting);
-      return acc;
-    }, {} as Record<string, SettingsSchema[]>);
+    return settingsSchema.reduce(
+      (acc, setting) => {
+        const category = setting.category || 'Other';
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(setting);
+        return acc;
+      },
+      {} as Record<string, SettingsSchema[]>
+    );
   }, [settingsSchema]);
 
   // Partition categories into custom (top) and standard (bottom)
@@ -59,13 +74,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
     // Sort standard categories using fixed order
     const standardSorted = [...standard].sort((a, b) => {
-      return STANDARD_CATEGORY_ORDER.indexOf(a) - STANDARD_CATEGORY_ORDER.indexOf(b);
+      return (
+        STANDARD_CATEGORY_ORDER.indexOf(a) - STANDARD_CATEGORY_ORDER.indexOf(b)
+      );
     });
     return { customCategories: custom, standardCategories: standardSorted };
   }, [settingsByCategory, STANDARD_CATEGORIES, STANDARD_CATEGORY_ORDER]);
 
   // Track open/closed per-category; default: custom open, standard closed
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
+    {}
+  );
 
   // Initialize/merge open state when schema changes (e.g., switching backgrounds)
   useEffect(() => {
@@ -91,26 +110,32 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     const keys = path.split('.');
     const result = { ...obj };
     let current = result;
-    
+
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i];
       current[key] = { ...current[key] };
       current = current[key];
     }
-    
+
     current[keys[keys.length - 1]] = value;
     return result;
   };
 
   // Handle setting change
-  const handleSettingChange = useCallback((key: string, value: any) => {
-    const newSettings = setNestedValue(settings, key, value);
-    onSettingsChange(newSettings);
-  }, [settings, onSettingsChange]);
+  const handleSettingChange = useCallback(
+    (key: string, value: any) => {
+      const newSettings = setNestedValue(settings, key, value);
+      onSettingsChange(newSettings);
+    },
+    [settings, onSettingsChange]
+  );
 
   // Convert RGB array to hex color
   const rgbToHex = (rgb: [number, number, number]): string => {
-    const toHex = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0');
+    const toHex = (n: number) =>
+      Math.round(n * 255)
+        .toString(16)
+        .padStart(2, '0');
     return `#${toHex(rgb[0])}${toHex(rgb[1])}${toHex(rgb[2])}`;
   };
 
@@ -121,7 +146,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       return [
         parseInt(result[1], 16) / 255,
         parseInt(result[2], 16) / 255,
-        parseInt(result[3], 16) / 255
+        parseInt(result[3], 16) / 255,
       ];
     }
     return [0, 0, 0];
@@ -131,7 +156,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const toggleCategory = (category: string) => {
     setOpenCategories(prev => ({
       ...prev,
-      [category]: !prev[category]
+      [category]: !prev[category],
     }));
   };
 
@@ -139,7 +164,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const collapseAllCustom = () => {
     setOpenCategories(prev => {
       const updated = { ...prev };
-      customCategories.forEach(c => { updated[c] = false; });
+      customCategories.forEach(c => {
+        updated[c] = false;
+      });
       return updated;
     });
   };
@@ -147,7 +174,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const expandAllCustom = () => {
     setOpenCategories(prev => {
       const updated = { ...prev };
-      customCategories.forEach(c => { updated[c] = true; });
+      customCategories.forEach(c => {
+        updated[c] = true;
+      });
       return updated;
     });
   };
@@ -155,7 +184,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const collapseAllStandard = () => {
     setOpenCategories(prev => {
       const updated = { ...prev };
-      standardCategories.forEach(c => { updated[c] = false; });
+      standardCategories.forEach(c => {
+        updated[c] = false;
+      });
       return updated;
     });
   };
@@ -163,14 +194,22 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const expandAllStandard = () => {
     setOpenCategories(prev => {
       const updated = { ...prev };
-      standardCategories.forEach(c => { updated[c] = true; });
+      standardCategories.forEach(c => {
+        updated[c] = true;
+      });
       return updated;
     });
   };
 
   // Section computed states: if any open => show down chevron; if none open => right chevron
-  const customAnyOpen = useMemo(() => customCategories.some(c => !!openCategories[c]), [customCategories, openCategories]);
-  const standardAnyOpen = useMemo(() => standardCategories.some(c => !!openCategories[c]), [standardCategories, openCategories]);
+  const customAnyOpen = useMemo(
+    () => customCategories.some(c => !!openCategories[c]),
+    [customCategories, openCategories]
+  );
+  const standardAnyOpen = useMemo(
+    () => standardCategories.some(c => !!openCategories[c]),
+    [standardCategories, openCategories]
+  );
 
   const toggleCustomSection = () => {
     if (customAnyOpen) {
@@ -193,35 +232,36 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     const value = getNestedValue(settings, setting.key);
 
     switch (setting.type) {
-      case 'slider':
+      case 'slider': {
         // Dynamic bounds for settings that depend on other settings
-        {
-          let dynamicMin = setting.min;
-          let dynamicMax = setting.max;
-          if (setting.key === 'spStartNode' || setting.key === 'spGoalNode') {
-            const total = (settings as any).spTotalNodes ?? 0;
-            dynamicMin = 0;
-            dynamicMax = Math.max(0, (typeof total === 'number' ? total : 0) - 1);
-          }
-          const clampedValue = Math.max(
-            dynamicMin ?? Number.NEGATIVE_INFINITY,
-            Math.min(dynamicMax ?? Number.POSITIVE_INFINITY, value ?? 0)
-          );
-          return (
-            <div className="setting-input">
-              <input
-                type="range"
-                min={dynamicMin}
-                max={dynamicMax}
-                step={setting.step}
-                value={clampedValue}
-                onChange={(e) => handleSettingChange(setting.key, parseFloat(e.target.value))}
-                className="slider"
-              />
-              <span className="setting-value">{clampedValue?.toFixed?.(3)}</span>
-            </div>
-          );
+        let dynamicMin = setting.min;
+        let dynamicMax = setting.max;
+        if (setting.key === 'spStartNode' || setting.key === 'spGoalNode') {
+          const total = (settings as any).spTotalNodes ?? 0;
+          dynamicMin = 0;
+          dynamicMax = Math.max(0, (typeof total === 'number' ? total : 0) - 1);
         }
+        const clampedValue = Math.max(
+          dynamicMin ?? Number.NEGATIVE_INFINITY,
+          Math.min(dynamicMax ?? Number.POSITIVE_INFINITY, value ?? 0)
+        );
+        return (
+          <div className="setting-input">
+            <input
+              type="range"
+              min={dynamicMin}
+              max={dynamicMax}
+              step={setting.step}
+              value={clampedValue}
+              onChange={e =>
+                handleSettingChange(setting.key, parseFloat(e.target.value))
+              }
+              className="slider"
+            />
+            <span className="setting-value">{clampedValue?.toFixed?.(3)}</span>
+          </div>
+        );
+      }
 
       case 'number':
         return (
@@ -232,7 +272,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               max={setting.max}
               step={setting.step}
               value={value}
-              onChange={(e) => handleSettingChange(setting.key, parseFloat(e.target.value))}
+              onChange={e =>
+                handleSettingChange(setting.key, parseFloat(e.target.value))
+              }
               className="number-input"
             />
           </div>
@@ -244,7 +286,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <input
               type="color"
               value={rgbToHex(value)}
-              onChange={(e) => handleSettingChange(setting.key, hexToRgb(e.target.value))}
+              onChange={e =>
+                handleSettingChange(setting.key, hexToRgb(e.target.value))
+              }
               className="color-input"
             />
             <span className="color-value">{rgbToHex(value)}</span>
@@ -256,7 +300,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="setting-input">
             <select
               value={value}
-              onChange={(e) => handleSettingChange(setting.key, e.target.value)}
+              onChange={e => handleSettingChange(setting.key, e.target.value)}
               className="select-input"
             >
               {setting.options?.map(option => (
@@ -278,13 +322,19 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <div className="sidebar-header">
         <div className="background-header">
           <div className="background-controls-header">
-            <div className="background-name">{currentBackgroundName?.toLowerCase?.() || ''}</div>
-            <button onClick={onClose} className="close-button" aria-label="Close settings" />
+            <div className="background-name">
+              {currentBackgroundName?.toLowerCase?.() || ''}
+            </div>
+            <button
+              onClick={onClose}
+              className="close-button"
+              aria-label="Close settings"
+            />
           </div>
           <div className="background-description">
             {currentBackgroundDescription?.toLowerCase?.() || ''}
           </div>
-          
+
           {currentBackgroundId === 'spectrogram-oscilloscope' && (
             <div className="special-hotkeys">
               <div className="special-hotkeys-title">special controls</div>
@@ -295,8 +345,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           )}
         </div>
       </div>
-      
-      <div className="settings-content" style={{ display: 'flex', flexDirection: 'column', gap: 8, height: '100%' }}>
+
+      <div
+        className="settings-content"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          height: '100%',
+        }}
+      >
         {/* Custom categories (top, fixed) */}
         <div className="settings-section settings-section-custom">
           <div className="section-header">
@@ -304,9 +362,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <button
                 className="section-action"
                 onClick={toggleCustomSection}
-                aria-label={customAnyOpen ? 'Collapse all custom' : 'Expand all custom'}
+                aria-label={
+                  customAnyOpen ? 'Collapse all custom' : 'Expand all custom'
+                }
                 title={customAnyOpen ? 'Collapse all' : 'Expand all'}
-              >{customAnyOpen ? '▾' : '▸'}</button>
+              >
+                {customAnyOpen ? '▾' : '▸'}
+              </button>
               <div className="section-title">custom settings</div>
             </div>
           </div>
@@ -321,7 +383,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 >
                   <span className="category-left">
                     <span className="category-toggle" aria-hidden="true" />
-                    <span className="category-title">{category?.toLowerCase?.() || ''}</span>
+                    <span className="category-title">
+                      {category?.toLowerCase?.() || ''}
+                    </span>
                   </span>
                 </button>
                 {openCategories[category] && (
@@ -342,15 +406,24 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
 
         {/* Standard categories (bottom-justified) */}
-        <div className="settings-section settings-section-standard" style={{ marginTop: 'auto' }}>
+        <div
+          className="settings-section settings-section-standard"
+          style={{ marginTop: 'auto' }}
+        >
           <div className="section-header">
             <div className="section-left">
               <button
                 className="section-action"
                 onClick={toggleStandardSection}
-                aria-label={standardAnyOpen ? 'Collapse all standard' : 'Expand all standard'}
+                aria-label={
+                  standardAnyOpen
+                    ? 'Collapse all standard'
+                    : 'Expand all standard'
+                }
                 title={standardAnyOpen ? 'Collapse all' : 'Expand all'}
-              >{standardAnyOpen ? '▾' : '▸'}</button>
+              >
+                {standardAnyOpen ? '▾' : '▸'}
+              </button>
               <div className="section-title">standard settings</div>
             </div>
           </div>
@@ -365,7 +438,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 >
                   <span className="category-left">
                     <span className="category-toggle" aria-hidden="true" />
-                    <span className="category-title">{category?.toLowerCase?.() || ''}</span>
+                    <span className="category-title">
+                      {category?.toLowerCase?.() || ''}
+                    </span>
                   </span>
                 </button>
                 {openCategories[category] && (
@@ -385,17 +460,18 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           })}
         </div>
       </div>
-      
+
       <div className="settings-panel-footer">
-        <button 
-          onClick={() => onSettingsChange(settings)} 
+        <button
+          onClick={() => onSettingsChange(settings)}
           className="reset-button"
         >
           reset to defaults
         </button>
-        
+
         <div className="sidebar-keyboard-hints">
-          <kbd>←</kbd><kbd>→</kbd> switch • <kbd>S</kbd> settings • <kbd>Esc</kbd> close
+          <kbd>←</kbd>
+          <kbd>→</kbd> switch • <kbd>S</kbd> settings • <kbd>Esc</kbd> close
         </div>
       </div>
     </div>

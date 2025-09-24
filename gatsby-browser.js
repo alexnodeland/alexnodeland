@@ -1,8 +1,8 @@
-import './src/styles/global.scss'
+import './src/styles/global.scss';
 
-import React from 'react'
-import { SettingsPanelProvider } from './src/contexts/SettingsPanelContext'
-import { BackgroundManager } from './src/components/animated-backgrounds'
+import React from 'react';
+import { SettingsPanelProvider } from './src/components/SettingsPanelContext';
+import { BackgroundManager } from './src/components/animated-backgrounds';
 
 export const wrapRootElement = ({ element }) => {
   return (
@@ -10,5 +10,5 @@ export const wrapRootElement = ({ element }) => {
       <BackgroundManager />
       {element}
     </SettingsPanelProvider>
-  )
-}
+  );
+};

@@ -132,32 +132,118 @@ Object.defineProperty(URL, 'revokeObjectURL', {
   value: jest.fn(),
 });
 
-// Mock document.createElement for download links
-const originalCreateElement = document.createElement;
-document.createElement = jest.fn((tagName) => {
-  if (tagName === 'a') {
-    const mockLink = {
-      href: '',
-      download: '',
-      click: jest.fn(),
-      style: {},
-      setAttribute: jest.fn(),
-      getAttribute: jest.fn(),
-      appendChild: jest.fn(),
-      removeChild: jest.fn(),
-      firstChild: null,
-      textContent: '',
-      nodeType: 1, // ELEMENT_NODE
-      parentNode: null,
-      childNodes: [],
-      ownerDocument: document,
-    };
-    // Make it behave like a real DOM element
-    Object.setPrototypeOf(mockLink, HTMLElement.prototype);
-    return mockLink;
+// Keep default document.createElement behavior; anchor elements must be real Nodes
+
+const createCanvasElement = () => {
+  if (typeof document !== 'undefined' && document.createElement) {
+    return document.createElement('canvas');
   }
-  return originalCreateElement.call(document, tagName);
-});
+  return {
+    nodeType: 1,
+    width: 300,
+    height: 150,
+    getContext: jest.fn(),
+    style: {},
+  };
+};
+
+// Mock Three.js
+jest.mock('three', () => ({
+  Scene: jest.fn(() => {
+    const objects = [];
+    return {
+      add: jest.fn(obj => objects.push(obj)),
+      remove: jest.fn(obj => {
+        const idx = objects.indexOf(obj);
+        if (idx !== -1) objects.splice(idx, 1);
+      }),
+      objects,
+    };
+  }),
+  PerspectiveCamera: jest.fn(() => ({
+    position: { set: jest.fn() },
+    lookAt: jest.fn(),
+  })),
+  OrthographicCamera: jest.fn(() => ({
+    position: { set: jest.fn() },
+    lookAt: jest.fn(),
+  })),
+  WebGLRenderer: jest.fn(() => ({
+    setSize: jest.fn(),
+    render: jest.fn(),
+    domElement: createCanvasElement(),
+    setPixelRatio: jest.fn(),
+    dispose: jest.fn(),
+  })),
+  Color: jest.fn(() => ({ setRGB: jest.fn() })),
+  Vector3: jest.fn(() => ({ set: jest.fn(), toArray: jest.fn() })),
+  Vector2: jest.fn(() => ({ set: jest.fn() })),
+  BufferGeometry: jest.fn(() => {
+    const attributes = new Map();
+    return {
+      setAttribute: jest.fn((name, attr) => attributes.set(name, attr)),
+      getAttribute: jest.fn(name => attributes.get(name)),
+      dispose: jest.fn(),
+    };
+  }),
+  BufferAttribute: jest.fn(() => ({
+    setXYZ: jest.fn(),
+    setXY: jest.fn(),
+    needsUpdate: false,
+  })),
+  LineDashedMaterial: jest.fn(),
+  LineBasicMaterial: jest.fn(() => ({
+    color: { setRGB: jest.fn() },
+    opacity: 1,
+    linewidth: 1,
+    transparent: true,
+    dispose: jest.fn(),
+  })),
+  Line: jest.fn((geometry, material) => ({
+    geometry,
+    material,
+    userData: {},
+    computeLineDistances: jest.fn(),
+  })),
+  PointsMaterial: jest.fn(() => ({
+    size: 1,
+    transparent: true,
+    opacity: 1,
+    vertexColors: true,
+    dispose: jest.fn(),
+  })),
+  Points: jest.fn((geometry, material) => ({
+    geometry,
+    material,
+  })),
+  MeshBasicMaterial: jest.fn(() => ({ dispose: jest.fn() })),
+  Mesh: jest.fn((geometry, material) => ({
+    geometry,
+    material,
+    position: { set: jest.fn() },
+    scale: { setScalar: jest.fn() },
+  })),
+  ShaderMaterial: jest.fn(config => ({ ...config, dispose: jest.fn() })),
+  PlaneGeometry: jest.fn(() => ({ dispose: jest.fn() })),
+  SphereGeometry: jest.fn(() => ({ dispose: jest.fn() })),
+  DataTexture: jest.fn(() => ({ needsUpdate: false, dispose: jest.fn() })),
+  AdditiveBlending: 1,
+}));
+
+// Mock three/examples postprocessing modules
+jest.mock('three/examples/jsm/postprocessing/EffectComposer.js', () => ({
+  EffectComposer: jest.fn(() => ({
+    addPass: jest.fn(),
+    setSize: jest.fn(),
+    render: jest.fn(),
+  })),
+}));
+jest.mock('three/examples/jsm/postprocessing/RenderPass.js', () => ({
+  RenderPass: jest.fn(),
+}));
+jest.mock('three/examples/jsm/postprocessing/UnrealBloomPass.js', () => ({
+  UnrealBloomPass: jest.fn(),
+}));
 
 // Mock console methods to reduce noise in tests
 global.console = {

@@ -1,5 +1,5 @@
-import React from 'react';
 import { graphql, Link } from 'gatsby';
+import React from 'react';
 import Layout from '../components/layout';
 import SEO from '../components/seo';
 import '../styles/blog.scss';
@@ -37,7 +37,10 @@ const BlogPost: React.FC<BlogPostProps> = ({ data }) => {
           )}
         </header>
 
-        <div className="post-content" dangerouslySetInnerHTML={{ __html: post.html }} />
+        <div
+          className="post-content"
+          dangerouslySetInnerHTML={{ __html: post.html }}
+        />
 
         <footer className="post-footer">
           <Link to="/blog" className="back-to-blog">

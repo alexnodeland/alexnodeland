@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../hooks';
+import { useTheme } from '../lib/hooks';
 
 const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useTheme();

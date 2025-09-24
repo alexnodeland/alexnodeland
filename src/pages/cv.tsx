@@ -1,79 +1,101 @@
 import React from 'react';
-import { 
-  Layout, 
-  SEO, 
-  ResumeHeader, 
-  ExperienceSection, 
-  EducationSection, 
-  SkillsSection, 
-  ExportButtons 
+import {
+  EducationSection,
+  ExperienceSection,
+  ExportButtons,
+  Layout,
+  SEO,
+  SkillsSection,
 } from '../components';
-import { siteConfig, resumeData } from '../config';
+import { cvData } from '../config';
 import '../styles/cv.scss';
 
 const CVPage: React.FC = () => {
   return (
     <Layout>
-      <SEO title="CV - Alex Nodeland" description="Complete resume and CV for Alex Nodeland" />
+      <SEO title="cv" description="Complete resume and CV for Alex Nodeland" />
       <div className="cv">
         <header className="cv-page-header">
           <h1>cv</h1>
-          <p>comprehensive overview of my professional experience, skills, and achievements</p>
+          <p>
+            comprehensive overview of my professional experience, skills, and
+            achievements
+          </p>
         </header>
 
-        <ExportButtons 
-          resumeData={resumeData} 
+        <ExportButtons
+          resumeData={cvData}
+          resumeElementId="resume-content"
           className="cv-export"
         />
-        
+
         <div className="cv-overview-contact">
           <div className="overview-section">
             <h3>overview</h3>
-            <p>{resumeData.personal.summary}</p>
+            <p>{cvData.personal.summary}</p>
           </div>
           <div className="contact-section">
             <h3>contact</h3>
             <div className="contact-grid">
               <div className="contact-item">
                 <span className="contact-label">location</span>
-                <span className="contact-value">{resumeData.personal.location}</span>
+                <span className="contact-value">
+                  {cvData.personal.location}
+                </span>
               </div>
               <div className="contact-item">
                 <span className="contact-label">email</span>
-                <a href={`mailto:${resumeData.personal.email}`} className="contact-value">{resumeData.personal.email}</a>
+                <a
+                  href={`mailto:${cvData.personal.email}`}
+                  className="contact-value"
+                >
+                  {cvData.personal.email}
+                </a>
               </div>
               <div className="contact-item">
                 <span className="contact-label">website</span>
-                <a href={`https://${resumeData.personal.website}`} target="_blank" rel="noopener noreferrer" className="contact-value">{resumeData.personal.website}</a>
+                <a
+                  href={`https://${cvData.personal.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="contact-value"
+                >
+                  {cvData.personal.website}
+                </a>
               </div>
-              {resumeData.personal.phone && (
+              {cvData.personal.phone && (
                 <div className="contact-item">
                   <span className="contact-label">phone</span>
-                  <a href={`tel:${resumeData.personal.phone}`} className="contact-value">{resumeData.personal.phone}</a>
+                  <a
+                    href={`tel:${cvData.personal.phone}`}
+                    className="contact-value"
+                  >
+                    {cvData.personal.phone}
+                  </a>
                 </div>
               )}
             </div>
           </div>
         </div>
-        
+
         <div id="resume-content">
           <div id="experience-section">
-            <ExperienceSection experiences={resumeData.experience} />
+            <ExperienceSection experiences={cvData.experience} />
           </div>
-          
+
           <div id="education-section">
-            <EducationSection education={resumeData.education} />
+            <EducationSection education={cvData.education} />
           </div>
-          
+
           <div id="skills-section">
-            <SkillsSection skills={resumeData.skills} />
+            <SkillsSection skills={cvData.skills} />
           </div>
-          
-          {resumeData.certifications && resumeData.certifications.length > 0 && (
+
+          {cvData.certifications && cvData.certifications.length > 0 && (
             <section id="certifications-section" className="cv-section">
               <h2>certifications</h2>
               <ul className="certifications-list">
-                {resumeData.certifications.map((cert, index) => (
+                {cvData.certifications.map((cert, index) => (
                   <li key={index}>
                     <strong>{cert.name}</strong>, {cert.issuer}, {cert.date}
                     {cert.credentialId && ` (${cert.credentialId})`}

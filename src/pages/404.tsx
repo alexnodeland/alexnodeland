@@ -1,13 +1,13 @@
+import { Link } from 'gatsby';
 import React from 'react';
 import Layout from '../components/layout';
 import SEO from '../components/seo';
-import { Link } from 'gatsby';
-import './404.scss';
+import '../styles/404.scss';
 
 const NotFoundPage: React.FC = () => {
   return (
     <Layout>
-      <SEO title="404: Not Found" />
+      <SEO title="404" />
       <div className="not-found">
         <h1>404: Not Found</h1>
         <p>Sorry, the page you&apos;re looking for doesn&apos;t exist.</p>

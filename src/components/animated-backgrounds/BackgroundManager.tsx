@@ -1,10 +1,19 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { BackgroundManagerState, BackgroundSettings } from '../../types/animated-backgrounds';
-import { backgroundRegistry, getBackgroundById } from './backgroundRegistry';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  BackgroundManagerState,
+  BackgroundSettings,
+} from '../../types/animated-backgrounds';
 import BackgroundControls from './BackgroundControls';
-import SettingsPanel from './SettingsPanel';
-import { useSettingsPanel } from '../../contexts/SettingsPanelContext';
+import { backgroundRegistry, getBackgroundById } from './index';
+// import SettingsPanel from './SettingsPanel';
 import { siteConfig } from '../../config';
+import { useSettingsPanel } from '../SettingsPanelContext';
 
 interface BackgroundManagerProps {
   className?: string;
@@ -13,7 +22,7 @@ interface BackgroundManagerProps {
 
 const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   className,
-  initialBackgroundId = 'cellular-automaton'
+  initialBackgroundId = 'cellular-automaton',
 }) => {
   // Use settings panel context
   const { setSettingsPanelOpen, setClosingSettingsPanel } = useSettingsPanel();
@@ -29,7 +38,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
       currentBackgroundId: initialBackgroundId,
       settings: initialSettings,
       showSettingsPanel: false,
-      closingSettingsPanel: false
+      closingSettingsPanel: false,
     };
   });
 
@@ -46,12 +55,14 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   // Switch to next background
   const switchToNextBackground = useCallback(() => {
     setState(prev => {
-      const currentIndex = backgroundRegistry.findIndex(bg => bg.id === prev.currentBackgroundId);
+      const currentIndex = backgroundRegistry.findIndex(
+        bg => bg.id === prev.currentBackgroundId
+      );
       const nextIndex = (currentIndex + 1) % backgroundRegistry.length;
       const nextBackgroundId = backgroundRegistry[nextIndex].id;
       return {
         ...prev,
-        currentBackgroundId: nextBackgroundId
+        currentBackgroundId: nextBackgroundId,
       };
     });
   }, []);
@@ -59,12 +70,15 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   // Switch to previous background
   const switchToPreviousBackground = useCallback(() => {
     setState(prev => {
-      const currentIndex = backgroundRegistry.findIndex(bg => bg.id === prev.currentBackgroundId);
-      const previousIndex = currentIndex <= 0 ? backgroundRegistry.length - 1 : currentIndex - 1;
+      const currentIndex = backgroundRegistry.findIndex(
+        bg => bg.id === prev.currentBackgroundId
+      );
+      const previousIndex =
+        currentIndex <= 0 ? backgroundRegistry.length - 1 : currentIndex - 1;
       const previousBackgroundId = backgroundRegistry[previousIndex].id;
       return {
         ...prev,
-        currentBackgroundId: previousBackgroundId
+        currentBackgroundId: previousBackgroundId,
       };
     });
   }, []);
@@ -73,20 +87,20 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   const closeSettingsPanel = useCallback(() => {
     setState(prev => ({
       ...prev,
-      closingSettingsPanel: true
+      closingSettingsPanel: true,
     }));
-    
+
     // Start closing animation - keep panel "open" state until animation finishes
     setClosingSettingsPanel(true);
-    
+
     // After animation completes, fully close everything
     setTimeout(() => {
       setState(prev => ({
         ...prev,
         showSettingsPanel: false,
-        closingSettingsPanel: false
+        closingSettingsPanel: false,
       }));
-      
+
       // Update context - panel is now fully closed
       setSettingsPanelOpen(false);
       setClosingSettingsPanel(false);
@@ -103,67 +117,81 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
       setState(prev => ({
         ...prev,
         showSettingsPanel: true,
-        closingSettingsPanel: false
+        closingSettingsPanel: false,
       }));
-      
+
       // Update context to trigger layout changes
       setSettingsPanelOpen(true);
       setClosingSettingsPanel(false);
     }
-  }, [state.showSettingsPanel, closeSettingsPanel, setSettingsPanelOpen, setClosingSettingsPanel]);
+  }, [
+    state.showSettingsPanel,
+    closeSettingsPanel,
+    setSettingsPanelOpen,
+    setClosingSettingsPanel,
+  ]);
 
   // Update settings for current background
-  const updateCurrentSettings = useCallback((newSettings: BackgroundSettings) => {
-    setState(prev => ({
-      ...prev,
-      settings: {
-        ...prev.settings,
-        [state.currentBackgroundId]: newSettings
-      }
-    }));
-  }, [state.currentBackgroundId]);
+  const updateCurrentSettings = useCallback(
+    (newSettings: BackgroundSettings) => {
+      setState(prev => ({
+        ...prev,
+        settings: {
+          ...prev.settings,
+          [state.currentBackgroundId]: newSettings,
+        },
+      }));
+    },
+    [state.currentBackgroundId]
+  );
 
   // Reset current background to default settings
-  const resetToDefaults = useCallback(() => {
-    if (currentBackground) {
-      updateCurrentSettings({ ...currentBackground.defaultSettings });
-    }
-  }, [currentBackground, updateCurrentSettings]);
+  // const resetToDefaults = useCallback(() => {
+  //   if (currentBackground) {
+  //     updateCurrentSettings({ ...currentBackground.defaultSettings });
+  //   }
+  // }, [currentBackground, updateCurrentSettings]);
 
   // Keyboard event handler
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    // Only handle key events if not focused on an input element
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-      return;
-    }
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      // Only handle key events if not focused on an input element
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
 
-    switch (event.code) {
-      case 'ArrowLeft':
-        event.preventDefault();
-        switchToPreviousBackground();
-        break;
-      case 'ArrowRight':
-        event.preventDefault();
-        switchToNextBackground();
-        break;
-      case 'KeyS':
-        event.preventDefault();
-        toggleSettingsPanel();
-        break;
-      case 'Escape':
-        if (state.showSettingsPanel) {
+      switch (event.code) {
+        case 'ArrowLeft':
           event.preventDefault();
-          closeSettingsPanel();
-        }
-        break;
-    }
-  }, [
-    switchToNextBackground,
-    switchToPreviousBackground,
-    toggleSettingsPanel,
-    closeSettingsPanel,
-    state.showSettingsPanel
-  ]);
+          switchToPreviousBackground();
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          switchToNextBackground();
+          break;
+        case 'KeyS':
+          event.preventDefault();
+          toggleSettingsPanel();
+          break;
+        case 'Escape':
+          if (state.showSettingsPanel) {
+            event.preventDefault();
+            closeSettingsPanel();
+          }
+          break;
+      }
+    },
+    [
+      switchToNextBackground,
+      switchToPreviousBackground,
+      toggleSettingsPanel,
+      closeSettingsPanel,
+      state.showSettingsPanel,
+    ]
+  );
 
   // Add keyboard event listeners
   useEffect(() => {
@@ -178,7 +206,10 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     try {
       localStorage.setItem('animatedBackgroundSettings', JSON.stringify(state));
     } catch (error) {
-      console.warn('Failed to save background settings to localStorage:', error);
+      console.warn(
+        'Failed to save background settings to localStorage:',
+        error
+      );
     }
   }, [state]);
 
@@ -193,17 +224,21 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
           setState(prev => ({
             ...prev,
             ...parsedState,
-            showSettingsPanel: false // Never restore panel open state
+            showSettingsPanel: false, // Never restore panel open state
           }));
         }
       }
     } catch (error) {
-      console.warn('Failed to load background settings from localStorage:', error);
+      console.warn(
+        'Failed to load background settings from localStorage:',
+        error
+      );
     }
   }, []);
 
   // ===== Background cycling with fade to black overlay =====
-  const playDurationMs = siteConfig.animatedBackgrounds?.playDurationMs ?? 12000;
+  const playDurationMs =
+    siteConfig.animatedBackgrounds?.playDurationMs ?? 12000;
   const fadeDurationMs = siteConfig.animatedBackgrounds?.fadeDurationMs ?? 1200;
   const cycleEnabled = siteConfig.animatedBackgrounds?.cycleEnabled ?? true;
 
@@ -230,7 +265,11 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
 
   useEffect(() => {
     // Disable cycling when panel is open or closing
-    if (!cycleEnabled || state.showSettingsPanel || state.closingSettingsPanel) {
+    if (
+      !cycleEnabled ||
+      state.showSettingsPanel ||
+      state.closingSettingsPanel
+    ) {
       setOverlayOpacity(0);
       clearTimers();
       return;
@@ -287,7 +326,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     clearTimers,
     switchToNextBackground,
     state.showSettingsPanel,
-    state.closingSettingsPanel
+    state.closingSettingsPanel,
   ]);
 
   // When the settings panel fully closes, resume cycle from visible phase
@@ -306,10 +345,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
 
     const BackgroundComponent = currentBackground.component;
     return (
-      <BackgroundComponent
-        className={className}
-        settings={currentSettings}
-      />
+      <BackgroundComponent className={className} settings={currentSettings} />
     );
   };
 
@@ -327,15 +363,19 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
           pointerEvents: 'none',
           backgroundColor: '#000',
           opacity: overlayOpacity,
-          transition: cycleEnabled ? `opacity ${fadeDurationMs}ms ease-in-out` : 'none'
+          transition: cycleEnabled
+            ? `opacity ${fadeDurationMs}ms ease-in-out`
+            : 'none',
         }}
       />
-      
+
       {/* Background Controls */}
       <BackgroundControls
         currentBackgroundId={state.currentBackgroundId}
         currentBackgroundName={currentBackground?.name || 'Unknown'}
-        showSettingsPanel={state.showSettingsPanel || state.closingSettingsPanel}
+        showSettingsPanel={
+          state.showSettingsPanel || state.closingSettingsPanel
+        }
         closingSettingsPanel={state.closingSettingsPanel}
         onPreviousBackground={switchToPreviousBackground}
         onNextBackground={switchToNextBackground}
