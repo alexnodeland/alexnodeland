@@ -61,7 +61,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
 
   return (
     <Layout>
-      <SEO title="Blog" />
+      <SEO title="blog" />
       <div className="blog-page">
         <header className="blog-header">
           <h1>blog</h1>

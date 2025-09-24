@@ -55,7 +55,7 @@ export interface SiteConfig {
 
 export const siteConfig: SiteConfig = {
   // Basic site info
-  siteName: 'Alex Nodeland',
+  siteName: 'alex nodeland',
   siteUrl: 'https://alexnodeland.com',
   description:
     'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.',

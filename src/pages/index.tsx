@@ -12,7 +12,7 @@ import developmentIcon from '../images/development.png';
 const IndexPage: React.FC = () => {
   return (
     <Layout>
-      <SEO title="Home" description="Experienced engineer and mathematician with a background in distributed computing and creative technology" />
+      <SEO title="home" description="Experienced engineer and mathematician with a background in distributed computing and creative technology" />
       <div className="home">
         <section className="hero">
           <h1>{homepageConfig.hero.title}</h1>

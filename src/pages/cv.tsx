@@ -14,7 +14,7 @@ import '../styles/cv.scss';
 const CVPage: React.FC = () => {
   return (
     <Layout>
-      <SEO title="CV - Alex Nodeland" description="Complete resume and CV for Alex Nodeland" />
+      <SEO title="cv" description="Complete resume and CV for Alex Nodeland" />
       <div className="cv">
         <header className="cv-page-header">
           <h1>cv</h1>
