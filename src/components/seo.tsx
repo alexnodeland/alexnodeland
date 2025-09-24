@@ -10,13 +10,14 @@ interface SEOProps {
 }
 
 const SEO: React.FC<SEOProps> = ({
-  title = siteConfig.seo.defaultTitle,
-  description = siteConfig.seo.defaultDescription,
-  image = siteConfig.seo.defaultImage,
-  url = siteConfig.siteUrl,
+  title = siteConfig?.seo?.defaultTitle || 'Alex Nodeland',
+  description = siteConfig?.seo?.defaultDescription || '',
+  image = siteConfig?.seo?.defaultImage || '/images/icon.png',
+  url = siteConfig?.siteUrl || '',
 }) => {
+  const siteName = siteConfig?.siteName || 'Alex Nodeland';
   const fullTitle =
-    title === siteConfig.siteName ? title : `${title} | ${siteConfig.siteName}`;
+    title === siteName ? title : `${title} | ${siteName}`;
 
   return (
     <Helmet>

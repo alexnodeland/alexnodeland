@@ -203,9 +203,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   }, []);
 
   // ===== Background cycling with fade to black overlay =====
-  const playDurationMs = siteConfig.animatedBackgrounds?.playDurationMs ?? 12000;
-  const fadeDurationMs = siteConfig.animatedBackgrounds?.fadeDurationMs ?? 1200;
-  const cycleEnabled = siteConfig.animatedBackgrounds?.cycleEnabled ?? true;
+  const playDurationMs = siteConfig?.animatedBackgrounds?.playDurationMs ?? 12000;
+  const fadeDurationMs = siteConfig?.animatedBackgrounds?.fadeDurationMs ?? 1200;
+  const cycleEnabled = siteConfig?.animatedBackgrounds?.cycleEnabled ?? true;
 
   const [overlayOpacity, setOverlayOpacity] = useState<number>(1);
   const fadeInTimeoutRef = useRef<number | null>(null);

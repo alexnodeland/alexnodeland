@@ -34,11 +34,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
           <nav className="nav">
             <div className="nav-brand">
               <Link to="/" className="nav-link">
-                {siteConfig.siteName}
+                {siteConfig?.siteName || 'Alex Nodeland'}
               </Link>
             </div>
             <div className="nav-menu">
-              {siteConfig.navigation.main.map(item => (
+              {(siteConfig?.navigation?.main || []).map(item => (
                 <Link key={item.name} to={item.href} className="nav-link">
                   {item.name}
                 </Link>
@@ -54,7 +54,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
           <div className="footer-content">
             <div className="footer-links">
               <a
-                href={`mailto:${siteConfig.contact.email}`}
+                href={`mailto:${siteConfig?.contact?.email || 'alex@ournature.studio'}`}
                 className="footer-link"
                 data-platform="email"
               >
@@ -76,7 +76,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
               })}
             </div>
             <p className="footer-copyright">
-              © 2025 all rights reserved, {siteConfig.author.toLowerCase()}
+              © 2025 all rights reserved, {(siteConfig?.author || 'Alex Nodeland').toLowerCase()}
             </p>
           </div>
         </footer>
