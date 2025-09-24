@@ -7,7 +7,7 @@
   z-index: 1000;
   pointer-events: none; // Allow clicks to pass through empty areas
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  
+
   // Shifted state when settings panel is open - resize and reposition
   &.settings-panel-open {
     left: 28rem;
@@ -15,7 +15,7 @@
     width: auto;
     transform: translateX(0);
   }
-  
+
   // During closing animation, animate back to original position
   &.settings-panel-closing {
     left: 0;
@@ -45,7 +45,9 @@
 }
 
 .layout {
-  min-height: calc(100vh - 2rem - 6px); // Viewport minus buffers and rainbow height
+  min-height: calc(
+    100vh - 2rem - 6px
+  ); // Viewport minus buffers and rainbow height
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.1);
@@ -60,7 +62,7 @@
   overflow: auto; // Allow scrolling within the panel
   border: 2px solid var(--border-color);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  
+
   // Shifted state when settings panel is open - resize and reposition
   &.settings-panel-open {
     left: calc(28rem + 1rem);
@@ -68,7 +70,7 @@
     width: auto;
     transform: translateX(0);
   }
-  
+
   // During closing animation, animate back to original position
   &.settings-panel-closing {
     left: 1rem;
@@ -77,7 +79,7 @@
     transform: translateX(0);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  
+
   // Add a subtle top border that complements the fixed header
   &::before {
     content: '';
@@ -99,43 +101,43 @@
 
 // Light theme layout - keep dark panel for background visibility
 [data-theme='light'] .layout {
-  background: rgba(0, 0, 0, 0.1);  // Keep dark like dark mode
+  background: rgba(0, 0, 0, 0.1); // Keep dark like dark mode
   backdrop-filter: blur(3px);
   box-shadow: var(--shadow-lg);
-  border: 2px solid rgba(255, 255, 255, 0.1);  // Subtle light border
+  border: 2px solid rgba(255, 255, 255, 0.1); // Subtle light border
 }
 
 [data-theme='light'] .footer {
   background: transparent;
-  border-top: none;  // No border for clean look
+  border-top: none; // No border for clean look
 }
 
 [data-theme='light'] .theme-toggle {
-  background: transparent;  // Fully transparent
-  border: none;  // No border
-  color: white;  // White icon on dark background
-  
+  background: transparent; // Fully transparent
+  border: none; // No border
+  color: white; // White icon on dark background
+
   &:hover {
-    background: rgba(255, 255, 255, 0.1);  // Subtle hover effect
+    background: rgba(255, 255, 255, 0.1); // Subtle hover effect
     box-shadow: 0 0 15px rgba(33, 150, 243, 0.3);
     transform: scale(1.05);
   }
 }
 
 [data-theme='light'] .header-fixed {
-  background: rgba(0, 0, 0, 0.1);  // Keep dark like dark mode
+  background: rgba(0, 0, 0, 0.1); // Keep dark like dark mode
   backdrop-filter: blur(5px);
   border-bottom: 2px solid var(--accent-pink);
   box-shadow: 0 0 20px rgba(233, 30, 99, 0.2);
 }
 
 [data-theme='light'] .footer-link {
-  background: transparent;  // Fully transparent
-  border: none;  // No border
-  color: white;  // White icons on dark background
-  
+  background: transparent; // Fully transparent
+  border: none; // No border
+  color: white; // White icons on dark background
+
   &:hover {
-    background: rgba(255, 255, 255, 0.1);  // Subtle hover effect
+    background: rgba(255, 255, 255, 0.1); // Subtle hover effect
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
     transform: scale(1.05);
   }
@@ -149,16 +151,16 @@
     left: 0;
     right: 0;
     width: auto;
-    transform: translateX(0); 
+    transform: translateX(0);
     opacity: 0.3; // Dim instead of resize
   }
-  
+
   .layout.settings-panel-open,
   .layout.settings-panel-closing {
     left: 0.5rem;
     right: 0.5rem;
     width: auto;
-    transform: translateX(0); 
+    transform: translateX(0);
     opacity: 0.3; // Dim instead of resize
   }
 }
@@ -175,7 +177,6 @@
   border-radius: 0 0 var(--radius-md) var(--radius-md);
   pointer-events: auto; // Re-enable pointer events for the header
 }
-
 
 .nav {
   max-width: 1200px;
@@ -221,8 +222,8 @@
 }
 
 [data-theme='light'] .nav-brand {
-  color: white;  // White text on dark background
-  
+  color: white; // White text on dark background
+
   &:hover {
     color: var(--accent-pink);
   }
@@ -334,8 +335,8 @@
 }
 
 [data-theme='light'] .nav-link {
-  color: white;  // White text on dark background
-  
+  color: white; // White text on dark background
+
   &:hover {
     color: var(--accent-pink);
     background: rgba(233, 30, 99, 0.15);
@@ -461,7 +462,7 @@
 [data-theme='light'] .footer-link .icon {
   filter: invert(1);
   opacity: 0.9;
-  
+
   &:hover {
     opacity: 1;
   }
@@ -479,7 +480,7 @@
 }
 
 [data-theme='light'] .footer-copyright {
-  color: rgba(255, 255, 255, 0.6);  // Light text on dark background
+  color: rgba(255, 255, 255, 0.6); // Light text on dark background
 }
 
 @media (max-width: 768px) {

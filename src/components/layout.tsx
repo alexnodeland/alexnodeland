@@ -1,9 +1,9 @@
-import React from 'react';
 import { Link } from 'gatsby';
-import ThemeToggle from './ThemeToggle';
-import { siteConfig, getAllSocialLinks } from '../config';
+import React from 'react';
+import { getAllSocialLinks, siteConfig } from '../config';
 import { useSettingsPanel } from '../contexts/SettingsPanelContext';
-import './layout.scss';
+import '../styles/layout.scss';
+import ThemeToggle from './ThemeToggle';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,19 +12,23 @@ interface LayoutProps {
 // Inner Layout component that uses the settings panel context
 const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
   const { isSettingsPanelOpen, isClosingSettingsPanel } = useSettingsPanel();
-  
+
   // Determine CSS classes based on settings panel state
   const headerContainerClasses = [
     'fixed-header-container',
     isSettingsPanelOpen && 'settings-panel-open',
-    isClosingSettingsPanel && 'settings-panel-closing'
-  ].filter(Boolean).join(' ');
-  
+    isClosingSettingsPanel && 'settings-panel-closing',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   const layoutClasses = [
     'layout',
     isSettingsPanelOpen && 'settings-panel-open',
-    isClosingSettingsPanel && 'settings-panel-closing'
-  ].filter(Boolean).join(' ');
+    isClosingSettingsPanel && 'settings-panel-closing',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <>

@@ -1,8 +1,8 @@
+import { Link } from 'gatsby';
 import React from 'react';
 import Layout from '../components/layout';
 import SEO from '../components/seo';
-import { Link } from 'gatsby';
-import './404.scss';
+import '../styles/404.scss';
 
 const NotFoundPage: React.FC = () => {
   return (
