@@ -1,0 +1,1513 @@
+.cv {
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+// CV Page Header (similar to blog page)
+.cv-page-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 3.5rem 0 2rem; // Extra top space to match homepage under fixed header
+  position: relative;
+
+  h1 {
+    margin-bottom: 1rem;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.02em;
+    position: relative;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    animation: glow 2s ease-in-out infinite alternate;
+
+    // Add retro futuristic underline
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -0.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+    }
+  }
+
+  p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    font-style: italic;
+  }
+}
+
+// CV Overview and Contact Combined
+.cv-overview-contact {
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.05);
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  align-items: start;
+  position: relative;
+  
+  // Add subtle gradient border on hover
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--accent-pink) 0%,
+      var(--accent-cyan) 33%,
+      var(--primary-color) 66%,
+      var(--accent-pink) 100%
+    );
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    opacity: 0.5;
+  }
+
+  .overview-section {
+    h3 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+      font-family:
+        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+        monospace;
+      text-transform: lowercase;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+  }
+
+  .contact-section {
+    h3 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+      font-family:
+        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+        monospace;
+      text-transform: lowercase;
+      letter-spacing: -0.01em;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .contact-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      .contact-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        font-family:
+          'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+          monospace;
+        text-transform: lowercase;
+      }
+
+      .contact-value {
+        font-size: 1rem;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: color var(--transition-fast);
+
+        &:hover {
+          color: var(--primary-color);
+        }
+      }
+    }
+  }
+}
+
+#resume-content {
+  // Remove container styling - sections will have their own
+  margin-bottom: 2rem;
+  
+  // Add spacing between major sections
+  > div {
+    margin-bottom: 3rem;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.cv-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 3px solid var(--accent-color);
+  position: relative;
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.02em;
+    position: relative;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    animation: glow 2s ease-in-out infinite alternate;
+
+    // Add retro futuristic underline
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -0.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+    }
+  }
+}
+
+.cv-contact {
+  p {
+    margin: 0.5rem 0;
+    color: var(--text-secondary);
+  }
+}
+
+.cv-section {
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  position: relative;
+  
+  // Add accent top border
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-pink);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--accent-pink);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.02em;
+    position: relative;
+  }
+
+  h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
+    position: relative;
+  }
+
+  p {
+    margin-bottom: 1rem;
+    text-align: justify;
+  }
+}
+
+.experience-item {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-normal);
+  position: relative;
+
+  // Add colorful left accent border
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent-cyan);
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  }
+
+  &:hover {
+    background: var(--bg-card);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
+    transform: translateY(-1px);
+    border-color: var(--border-active);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.experience-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  h3 {
+    margin: 0;
+    flex: 1;
+    min-width: 200px;
+    color: var(--text-primary);
+  }
+}
+
+.experience-duration {
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--bg-primary);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+}
+
+.experience-bullets {
+  margin: 0;
+  padding-left: 1.5rem;
+
+  li {
+    margin-bottom: 0.75rem;
+    position: relative;
+
+    &::marker {
+      color: var(--primary-color);
+    }
+  }
+}
+
+.education-item {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-normal);
+  position: relative;
+  
+  // Add colorful left accent border
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--primary-color);
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  }
+
+  &:hover {
+    background: var(--bg-card);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+    transform: translateY(-1px);
+    border-color: var(--border-active);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h3 {
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    margin-bottom: 0.75rem;
+
+    strong {
+      color: var(--text-primary);
+    }
+  }
+
+  ul {
+    margin: 0.75rem 0 0 1.5rem;
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+  }
+}
+
+.certifications-list {
+  margin: 0;
+  padding-left: 1.5rem;
+
+  li {
+    margin-bottom: 0.5rem;
+    position: relative;
+
+    &::marker {
+      color: var(--primary-color);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .cv-header h1 {
+    font-size: 2rem;
+  }
+
+  .experience-header {
+    flex-direction: column;
+    align-items: flex-start;
+
+    h3 {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .experience-duration {
+    white-space: normal;
+  }
+
+  .cv-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .cv-section h3 {
+    font-size: 1.2rem;
+  }
+
+  .experience-item,
+  .education-item {
+    padding: 1rem;
+  }
+}
+
+// Resume Header Component
+.resume-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  position: relative;
+  
+  // Add gradient top accent
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--accent-pink) 0%,
+      var(--accent-cyan) 25%,
+      var(--primary-color) 50%,
+      var(--accent-blue) 75%,
+      var(--accent-pink) 100%
+    );
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .resume-title {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+  }
+
+  .resume-contact {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+
+    .contact-item {
+      font-size: 0.9rem;
+
+      a {
+        color: var(--primary-color);
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+
+  .resume-summary {
+    text-align: left;
+    max-width: 800px;
+    margin: 0 auto;
+
+    p {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+  }
+}
+
+// Experience Section Component
+.experience-section {
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  position: relative;
+  
+  // Add cyan accent top
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-cyan);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--accent-cyan);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+  }
+
+  .experience-item {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-hover);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-normal);
+    position: relative;
+    
+    // Subtle left accent
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent-cyan);
+      opacity: 0.5;
+      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    }
+
+    &:hover {
+      background: var(--bg-card);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
+      transform: translateY(-1px);
+      border-color: var(--border-active);
+      
+      &::before {
+        opacity: 1;
+      }
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .experience-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    h3 {
+      margin: 0;
+      flex: 1;
+      min-width: 200px;
+      color: var(--text-primary);
+      font-size: 1.2rem;
+    }
+  }
+
+  .experience-duration {
+    color: var(--text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+    background: var(--bg-primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+  }
+
+  .experience-location {
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-bottom: 1rem;
+  }
+
+  .experience-description {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .experience-achievements {
+    margin: 0;
+    padding-left: 1.5rem;
+
+    li {
+      margin-bottom: 0.75rem;
+      position: relative;
+
+      &::marker {
+        color: var(--primary-color);
+      }
+    }
+  }
+
+  .experience-skills {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+}
+
+// Education Section Component
+.education-section {
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  position: relative;
+  
+  // Add green accent top
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary-color);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+  }
+
+  .education-item {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-hover);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-normal);
+    position: relative;
+    
+    // Subtle left accent
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--primary-color);
+      opacity: 0.5;
+      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    }
+
+    &:hover {
+      background: var(--bg-card);
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+      transform: translateY(-1px);
+      border-color: var(--border-active);
+      
+      &::before {
+        opacity: 1;
+      }
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .education-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    h3 {
+      margin: 0;
+      flex: 1;
+      min-width: 200px;
+      color: var(--text-primary);
+      font-size: 1.2rem;
+    }
+  }
+
+  .education-duration {
+    color: var(--text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+    background: var(--bg-primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+  }
+
+  .education-institution {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  .education-gpa {
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .education-description {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .education-coursework {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .education-achievements {
+    margin: 0;
+    padding-left: 1.5rem;
+
+    li {
+      margin-bottom: 0.5rem;
+      position: relative;
+
+      &::marker {
+        color: var(--primary-color);
+      }
+    }
+  }
+}
+
+// Skills Section Component
+.skills-section {
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  position: relative;
+  
+  // Add purple accent top
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-purple);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--accent-purple);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+  }
+
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  .skill-category {
+    h3 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+  }
+
+  .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .skill-tag {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all var(--transition-normal);
+
+    &.technical {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      color: white;
+      border: 1px solid transparent;
+    }
+
+    &.soft {
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-cyan));
+      color: white;
+      border: 1px solid transparent;
+    }
+
+    &.language {
+      background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+      color: white;
+      border: 1px solid transparent;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+  }
+}
+
+// Export Buttons
+.cv-export {
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      var(--accent-pink) 0%,
+      var(--accent-blue) 25%,
+      var(--primary-color) 50%,
+      var(--accent-purple) 75%,
+      var(--accent-pink) 100%
+    );
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    animation: gradient-shift 3s ease-in-out infinite;
+  }
+  
+  @keyframes gradient-shift {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+
+  .search-section {
+    margin-bottom: 2rem;
+
+    .search-container {
+      margin-bottom: 1rem;
+
+      .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 1rem;
+        font-family:
+          'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+          monospace;
+        text-transform: lowercase;
+        transition: all var(--transition-fast);
+
+        &:focus {
+          outline: none;
+          border-color: var(--accent-color);
+          box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
+          background: var(--bg-accent);
+        }
+
+        &::placeholder {
+          color: var(--text-secondary);
+          text-transform: lowercase;
+        }
+      }
+    }
+
+    .search-results {
+      background: var(--bg-primary);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: var(--shadow-md);
+
+      .search-result-item {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:hover {
+          background: var(--bg-accent);
+          border-left: 3px solid var(--accent-color);
+        }
+
+        .result-type {
+          font-size: 0.8rem;
+          font-weight: 500;
+          color: var(--accent-color);
+          font-family:
+            'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+            monospace;
+          text-transform: lowercase;
+          margin-bottom: 0.25rem;
+        }
+
+        .result-title {
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          margin-bottom: 0.25rem;
+        }
+
+        .result-company,
+        .result-institution {
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+          margin-bottom: 0.25rem;
+        }
+
+        .result-description {
+          font-size: 0.85rem;
+          color: var(--text-muted);
+          line-height: 1.4;
+        }
+      }
+
+      .no-results {
+        padding: 1rem;
+        text-align: center;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+    }
+  }
+
+  .export-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .export-button {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+      transition: left 0.5s;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+
+      &::before {
+        display: none;
+      }
+    }
+
+    &.pdf {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+
+      &:hover:not(:disabled) {
+        background: var(--primary-dark);
+        border-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow:
+          0 0 20px rgba(0, 255, 136, 0.4),
+          var(--shadow-md);
+
+        &::before {
+          left: 100%;
+        }
+      }
+    }
+
+    &.docx {
+      background: var(--secondary-color);
+      color: white;
+      border-color: var(--secondary-color);
+
+      &:hover:not(:disabled) {
+        background: var(--accent-color);
+        border-color: var(--accent-color);
+        transform: translateY(-2px);
+        box-shadow:
+          0 0 20px rgba(0, 212, 255, 0.4),
+          var(--shadow-md);
+
+        &::before {
+          left: 100%;
+        }
+      }
+    }
+
+    &.markdown {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+
+      &:hover:not(:disabled) {
+        background: var(--bg-accent);
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow:
+          0 0 20px rgba(0, 255, 136, 0.3),
+          var(--shadow-md);
+
+        &::before {
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(0, 255, 136, 0.1),
+            transparent
+          );
+          left: 100%;
+        }
+      }
+    }
+  }
+
+  .export-note {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .latex-instructions {
+    background: var(--bg-accent);
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    margin-top: 1rem;
+    text-align: left;
+
+    h4 {
+      margin: 0 0 1rem 0;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+    }
+
+    ol {
+      margin: 0 0 1rem 0;
+      padding-left: 1.5rem;
+
+      li {
+        margin-bottom: 0.5rem;
+        color: var(--text-secondary);
+
+        ul {
+          margin: 0.5rem 0 0 1rem;
+
+          li {
+            margin-bottom: 0.25rem;
+          }
+        }
+      }
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    code {
+      background: var(--bg-primary);
+      padding: 0.2rem 0.4rem;
+      border-radius: var(--radius-sm);
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--primary-color);
+    }
+
+    a {
+      color: var(--primary-color);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .cv-page-header {
+    padding: 2.5rem 0 1.5rem; // Maintain proportional spacing on tablet/mobile
+    margin-bottom: 2rem;
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    p {
+      font-size: 1rem;
+    }
+  }
+
+  .cv-overview-contact {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+
+    .overview-section p {
+      font-size: 0.95rem;
+    }
+  }
+
+  #resume-content {
+    padding: 1rem;
+  }
+
+  .resume-header {
+    h1 {
+      font-size: 2rem;
+    }
+
+    .resume-contact {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .experience-header,
+  .education-header {
+    flex-direction: column;
+    align-items: flex-start;
+
+    h3 {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .experience-duration,
+  .education-duration {
+    white-space: normal;
+  }
+
+  .skills-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .export-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .export-button {
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .latex-instructions {
+    padding: 1rem;
+
+    ol {
+      padding-left: 1rem;
+    }
+  }
+}
+
+// Add glow animation for export buttons
+@keyframes glow {
+  from {
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+  }
+  to {
+    text-shadow:
+      0 0 30px rgba(0, 255, 136, 0.6),
+      0 0 40px rgba(0, 255, 136, 0.3);
+  }
+}
+
+// LaTeX Preview Component
+.latex-preview {
+  margin-top: 1rem;
+
+  .preview-button {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all var(--transition-normal);
+
+    &:hover {
+      background: #0891b2;
+      transform: translateY(-1px);
+    }
+  }
+
+  .latex-source-container {
+    margin-top: 1rem;
+    background: var(--bg-accent);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .latex-source-header {
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+
+    h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+  }
+
+  .latex-source {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1rem;
+    margin: 0;
+    overflow-x: auto;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    max-height: 400px;
+    overflow-y: auto;
+
+    code {
+      background: none;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+    }
+  }
+}
+
+// Light mode specific enhancements
+[data-theme='light'] {
+  // CV header - text on dark background
+  .cv-page-header {
+    h1 {
+      color: white;
+      text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+      
+      &::after {
+        background: var(--accent-color);
+        box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+      }
+    }
+    
+    p {
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+  
+  .cv-overview-contact {
+    background: var(--bg-card);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    
+    .contact-value {
+      &:hover {
+        color: var(--accent-blue);
+      }
+    }
+  }
+  
+  .cv-section {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    
+    &::before {
+      background: var(--accent-pink);
+    }
+    
+    h2 {
+      border-bottom-color: var(--accent-pink);
+    }
+  }
+  
+  .experience-item,
+  .education-item {
+    background: var(--bg-hover);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    
+    &:hover {
+      background: var(--bg-card);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+  }
+  
+  .experience-duration,
+  .education-duration {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+  }
+  
+  .resume-header {
+    background: var(--bg-card);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  }
+  
+  .experience-section {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    
+    .experience-item {
+      background: var(--bg-hover);
+      
+      &:hover {
+        background: var(--bg-card);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+    }
+    
+    .experience-duration {
+      background: var(--bg-card);
+    }
+  }
+  
+  .education-section {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    
+    .education-item {
+      background: var(--bg-hover);
+      
+      &:hover {
+        background: var(--bg-card);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+    }
+    
+    .education-duration {
+      background: var(--bg-card);
+    }
+  }
+  
+  .skills-section {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    
+    .skill-tag {
+      &.technical {
+        background: var(--accent-cyan);
+        color: white;
+        box-shadow: 0 2px 6px rgba(0, 172, 193, 0.3);
+      }
+      
+      &.soft {
+        background: var(--primary-color);
+        color: white;
+        box-shadow: 0 2px 6px rgba(0, 168, 84, 0.3);
+      }
+      
+      &.language {
+        background: var(--accent-pink);
+        color: white;
+        box-shadow: 0 2px 6px rgba(233, 30, 99, 0.3);
+      }
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+  
+  .cv-export {
+    background: var(--bg-card);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    
+    .search-input {
+      background: var(--bg-primary);
+      
+      &:focus {
+        background: var(--bg-card);
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 15px rgba(33, 150, 243, 0.2);
+      }
+    }
+    
+    .search-results {
+      background: var(--bg-card);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      
+      .search-result-item {
+        &:hover {
+          background: var(--bg-hover);
+          border-left-color: var(--accent-blue);
+        }
+      }
+    }
+    
+    .export-button {
+      &.pdf {
+        background: var(--primary-color);
+        
+        &:hover:not(:disabled) {
+          background: var(--primary-dark);
+          box-shadow: 0 4px 12px rgba(0, 168, 84, 0.3);
+        }
+      }
+      
+      &.docx {
+        background: var(--accent-cyan);
+        
+        &:hover:not(:disabled) {
+          background: var(--accent-blue);
+          box-shadow: 0 4px 12px rgba(0, 172, 193, 0.3);
+        }
+      }
+      
+      &.markdown {
+        background: var(--bg-card);
+        border: 2px solid var(--border-color);
+        
+        &:hover:not(:disabled) {
+          background: var(--bg-hover);
+          border-color: var(--accent-blue);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+      }
+    }
+    
+    .latex-instructions {
+      background: var(--bg-hover);
+      
+      code {
+        background: var(--bg-card);
+        color: var(--accent-blue);
+        border: 1px solid var(--border-color);
+      }
+    }
+  }
+}

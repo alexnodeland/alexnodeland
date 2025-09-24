@@ -1,0 +1,516 @@
+// Import variables and mixins
+@import 'variables';
+@import 'mixins';
+@import 'animations';
+
+.home {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 4rem;
+  padding: 3rem 0;
+  position: relative;
+
+  h1 {
+    margin-bottom: 2rem;
+    position: relative;
+    @include retro-glow;
+  }
+}
+
+// Animations are now in animations.scss
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+  font-style: italic;
+}
+
+// Animations are now in animations.scss
+
+.about {
+  margin-bottom: 4rem;
+  padding: 2rem;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  position: relative;
+  
+  // Add gradient left accent
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(
+      180deg,
+      var(--accent-pink) 0%,
+      var(--primary-color) 50%,
+      var(--accent-cyan) 100%
+    );
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  }
+
+  p {
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+    text-align: justify;
+  }
+}
+
+.consulting {
+  background: var(--bg-card);
+  padding: 3rem 2rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 4rem;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(255, 0, 128, 0.1);
+  border: 1px solid var(--border-color);
+  position: relative;
+  
+  // Add animated gradient border
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--accent-pink) 0%,
+      var(--accent-cyan) 33%,
+      var(--accent-blue) 66%,
+      var(--accent-pink) 100%
+    );
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  h2 {
+    margin-bottom: 1.5rem;
+    position: relative;
+    @include academic-underline;
+  }
+
+  p {
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cta-button {
+  &.primary {
+    @include button-primary;
+  }
+
+  &.secondary {
+    @include button-secondary;
+  }
+}
+
+.expertise {
+  margin-bottom: 4rem;
+
+  h2 {
+    margin-bottom: 2rem;
+  }
+}
+
+.expertise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.expertise-item {
+  background: var(--bg-card);
+  padding: 2rem 1.5rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+
+  // Add gradient top accent that changes per item
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-cyan);
+    transform: scaleX(0);
+    transition: transform var(--transition-normal);
+  }
+  
+  // Different accent colors for each expertise
+  &:nth-child(1)::before { background: var(--accent-cyan); }
+  &:nth-child(2)::before { background: var(--accent-blue); }
+  &:nth-child(3)::before { background: var(--primary-color); }
+  &:nth-child(4)::before { background: var(--accent-pink); }
+  &:nth-child(5)::before { background: var(--accent-purple); }
+  &:nth-child(6)::before { background: var(--accent-yellow); }
+
+  &:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-active);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+
+    &::before {
+      transform: scaleX(1);
+    }
+  }
+
+  .expertise-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+    opacity: 0.8;
+    transition: all var(--transition-normal);
+      
+      img {
+        width: 64px;
+        height: 64px;
+        object-fit: contain;
+        display: inline-block;
+        filter: none;
+        transition: transform var(--transition-normal), opacity var(--transition-normal), filter var(--transition-normal);
+      }
+  }
+
+  &:hover .expertise-icon {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+// Dark mode image inversion for expertise icons (black line PNGs -> white lines)
+
+  .expertise-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
+  }
+
+  .expertise-description {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-style: italic;
+  }
+}
+
+.blog-preview {
+  background: var(--bg-card);
+  padding: 2.5rem 2rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 4rem;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-normal);
+  position: relative;
+  
+  // Add purple accent top
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-purple);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  &:hover {
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.1);
+    border-color: var(--border-active);
+  }
+
+  h2 {
+    margin-bottom: 1.5rem;
+    position: relative;
+
+    // Add academic-style underline
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -0.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 2px;
+    }
+  }
+
+  p {
+    line-height: 1.6;
+    margin-bottom: 0;
+    font-style: italic;
+
+    a {
+      color: var(--accent-pink);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        color: var(--accent-blue);
+        text-decoration: underline;
+        text-shadow: 0 0 10px rgba(0, 128, 255, 0.5);
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .home {
+    padding: 0 1rem;
+  }
+
+  .hero {
+    padding: 2rem 0;
+    margin-bottom: 3rem;
+
+    h1 {
+      font-size: 2.5rem;
+      text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+    }
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+    padding: 0 1rem;
+  }
+
+  .about {
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .consulting {
+    padding: 2rem 1rem;
+    margin-bottom: 3rem;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .cta-button {
+    width: 100%;
+    max-width: 280px;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .expertise {
+    margin-bottom: 3rem;
+  }
+
+  .expertise-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .expertise-item {
+    padding: 1.5rem 1rem;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  .blog-preview {
+    padding: 2rem 1rem;
+    margin-bottom: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .expertise-item {
+    padding: 1rem;
+  }
+
+  .cta-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+// Light mode specific enhancements
+[data-theme='light'] {
+  // Hero section - text on dark background
+  .hero {
+    h1 {
+      color: white;  // White text on dark background
+      text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+      
+      &::after {
+        background: var(--accent-pink);
+        box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+      }
+    }
+    
+    .hero-subtitle {
+      color: rgba(255, 255, 255, 0.8);  // Light gray on dark background
+    }
+  }
+  
+  // Section titles not in cards - on dark background
+  h2:not(.consulting h2):not(.about h2):not(.blog-preview h2) {
+    color: white;
+  }
+  
+  .about {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    
+    &::before {
+      background: linear-gradient(
+        180deg,
+        var(--accent-pink) 0%,
+        var(--accent-blue) 50%,
+        var(--accent-cyan) 100%
+      );
+    }
+    
+    // Text inside white card uses dark colors
+    h2, h3 {
+      color: var(--text-primary);
+    }
+    
+    p {
+      color: var(--text-secondary);
+    }
+  }
+  
+  .consulting {
+    background: var(--bg-card);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    
+    &::before {
+      background: linear-gradient(
+        90deg,
+        var(--accent-pink) 0%,
+        var(--accent-cyan) 25%,
+        var(--accent-blue) 50%,
+        var(--accent-purple) 75%,
+        var(--accent-pink) 100%
+      );
+    }
+    
+    // Text inside white card uses dark colors
+    h2 {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent-pink);
+    }
+    
+    p {
+      color: var(--text-secondary);
+    }
+  }
+  
+  // Expertise section title on dark background
+  .expertise h2 {
+    color: white;
+    border-bottom-color: var(--accent-pink);
+  }
+  
+  .expertise-item {
+    background: var(--bg-card);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
+    
+    &:hover {
+      background: var(--bg-hover);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border-color: var(--accent-blue);
+    }
+    
+    .expertise-icon img {
+      opacity: 0.8;
+    }
+    
+    &:hover .expertise-icon img {
+      opacity: 1;
+    }
+    
+    // Text inside white cards
+    .expertise-title {
+      color: var(--text-primary);
+    }
+    
+    .expertise-description {
+      color: var(--text-secondary);
+    }
+  }
+  
+  .blog-preview {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    
+    &:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      border-color: var(--accent-purple);
+    }
+    
+    // Text inside white card
+    h2 {
+      color: var(--text-primary);
+    }
+    
+    p {
+      color: var(--text-secondary);
+      
+      a {
+        color: var(--accent-blue);
+        
+        &:hover {
+          color: var(--accent-pink);
+          text-shadow: 0 0 8px rgba(233, 30, 99, 0.3);
+        }
+      }
+    }
+  }
+}

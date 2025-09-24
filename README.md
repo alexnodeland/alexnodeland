@@ -12,6 +12,7 @@ I love analyzing systems, uncovering their governing rules, and sharing insights
 ---
 
 🔭 Currently exploring:  
+
 - Language models, categories, and graphs  
 - Human-computer interaction and automation  
 - Synthesizers and sound design  
