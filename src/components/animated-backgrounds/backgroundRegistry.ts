@@ -1,53 +1,49 @@
 import { AnimatedBackgroundConfig, BackgroundSettings, SettingsSchema } from '../../types/animated-backgrounds';
-import PDEStencilBackground from './PDEStencilBackground';
+import CellularAutomatonBackground from './CellularAutomatonBackground';
 import SimpleWaveBackground from './SimpleWaveBackground';
 import GraphTopologyBackground from './GraphTopologyBackground';
 import SpectrogramOscilloscopeBackground from './SpectrogramOscilloscopeBackground';
 import ShortestPathLabBackground from './ShortestPathLabBackground';
 
-// Default settings for PDE Stencil background
-export const pdeStencilDefaultSettings: BackgroundSettings = {
-  // Visual appearance
-  gridSize: 0.08,
-  nodeBaseSize: 0.02,
-  nodeSizeMultiplier: 0.03,
-  opacity: 0.85,
+// Default settings for Cellular Automaton background
+export const cellularAutomatonDefaultSettings: BackgroundSettings = {
+  // Visual appearance - Zoomed out for better overview
+  cellSize: 0.006,                 // Much smaller cells for more detail
+  cellBaseSize: 0.03,             // Smaller base cell size
+  cellSizeMultiplier: 0.08,       // Moderate size variation
+  opacity: 0.75,                  // Less overpowering
   
-  // Animation speeds
-  globalTimeMultiplier: 1.0,
-  waveSpeed1: 4.0,
-  waveSpeed2: 5.0,
-  diagonalWaveSpeed: 6.0,
-  flowAnimationSpeed: 8.0,
-  mouseWaveSpeed: 10.0,
+  // Animation speeds - Much slower for observable growth dynamics
+  globalTimeMultiplier: 0.4,      // Very slow global time
+  evolutionSpeed1: 1.2,           // Slow primary evolution
+  evolutionSpeed2: 1.8,           // Slow secondary evolution  
+  diagonalEvolutionSpeed: 2.5,    // Slow diagonal propagation
+  updateAnimationSpeed: 2.0,      // Slow state updates
   
-  // Wave properties
-  waveAmplitude: 0.4,
-  mouseInfluenceRadius: 2.0,
-  mouseInfluenceStrength: 0.3,
+  // Evolution properties - More concentrated patterns
+  waveAmplitude: 1.2,             // Higher amplitude for stronger patterns
   
-  // Colors (RGB values 0-1)
+  // Colors (RGB values 0-1) - More organic, less harsh
   colors: {
-    cold: [0.0, 0.2, 0.8],        // Blue for negative
-    neutral: [0.1, 0.8, 0.1],     // Green for zero
-    hot: [1.0, 0.3, 0.0],         // Red/orange for positive
-    hottest: [1.0, 1.0, 0.2],     // Yellow for high positive
-    gridOverlay: [0.2, 0.3, 0.4], // Grid lines
-    mouseWave: [0.8, 0.9, 1.0]    // Mouse wave effect
+    alive: [0.1, 0.8, 0.3],        // Forest green for alive cells
+    neutral: [0.15, 0.15, 0.2],    // Dark blue-gray for empty space
+    active: [0.9, 0.4, 0.1],       // Warm orange for active cells
+    highActivity: [1.0, 0.7, 0.2], // Golden yellow for high activity
+    gridOverlay: [0.25, 0.3, 0.35] // Subtle grid lines
   },
   
-  // Grid and stencil properties
-  stencilLineWidth: 0.003,
-  diagonalStencilWeight: 0.25,
-  computeActivityIntensity: 0.4
+  // Cellular automaton properties - Enhanced for concentrated growth
+  connectionLineWidth: 0.012,     // Thicker connections for visibility
+  diagonalConnectionWeight: 0.6,  // Strong diagonal connections for communities
+  activityIntensity: 1.4          // High intensity for dramatic growth zones
 };
 
-// Settings schema for PDE Stencil background
-export const pdeStencilSettingsSchema: SettingsSchema[] = [
+// Settings schema for Cellular Automaton background
+export const cellularAutomatonSettingsSchema: SettingsSchema[] = [
   // Visual appearance category
   {
-    key: 'gridSize',
-    label: 'Grid Size',
+    key: 'cellSize',
+    label: 'Cell Size',
     type: 'slider',
     min: 0.02,
     max: 0.15,
@@ -55,8 +51,8 @@ export const pdeStencilSettingsSchema: SettingsSchema[] = [
     category: 'Visual'
   },
   {
-    key: 'nodeBaseSize',
-    label: 'Node Base Size',
+    key: 'cellBaseSize',
+    label: 'Cell Base Size',
     type: 'slider',
     min: 0.01,
     max: 0.05,
@@ -64,8 +60,8 @@ export const pdeStencilSettingsSchema: SettingsSchema[] = [
     category: 'Visual'
   },
   {
-    key: 'nodeSizeMultiplier',
-    label: 'Node Size Response',
+    key: 'cellSizeMultiplier',
+    label: 'Cell Size Response',
     type: 'slider',
     min: 0.01,
     max: 0.08,
@@ -93,8 +89,8 @@ export const pdeStencilSettingsSchema: SettingsSchema[] = [
     category: 'Animation'
   },
   {
-    key: 'waveSpeed1',
-    label: 'Primary Wave Speed',
+    key: 'evolutionSpeed1',
+    label: 'Primary Evolution Speed',
     type: 'slider',
     min: 1.0,
     max: 10.0,
@@ -102,8 +98,8 @@ export const pdeStencilSettingsSchema: SettingsSchema[] = [
     category: 'Animation'
   },
   {
-    key: 'waveSpeed2',
-    label: 'Secondary Wave Speed',
+    key: 'evolutionSpeed2',
+    label: 'Secondary Evolution Speed',
     type: 'slider',
     min: 1.0,
     max: 10.0,
@@ -111,8 +107,8 @@ export const pdeStencilSettingsSchema: SettingsSchema[] = [
     category: 'Animation'
   },
   {
-    key: 'diagonalWaveSpeed',
-    label: 'Diagonal Wave Speed',
+    key: 'diagonalEvolutionSpeed',
+    label: 'Diagonal Evolution Speed',
     type: 'slider',
     min: 1.0,
     max: 12.0,
@@ -120,75 +116,48 @@ export const pdeStencilSettingsSchema: SettingsSchema[] = [
     category: 'Animation'
   },
   {
-    key: 'flowAnimationSpeed',
-    label: 'Flow Animation Speed',
+    key: 'updateAnimationSpeed',
+    label: 'Update Animation Speed',
     type: 'slider',
     min: 2.0,
     max: 15.0,
     step: 0.5,
     category: 'Animation'
   },
-  {
-    key: 'mouseWaveSpeed',
-    label: 'Mouse Wave Speed',
-    type: 'slider',
-    min: 3.0,
-    max: 20.0,
-    step: 1.0,
-    category: 'Animation'
-  },
   
-  // Wave properties category
+  // Evolution properties category
   {
     key: 'waveAmplitude',
-    label: 'Wave Amplitude',
+    label: 'Evolution Amplitude',
     type: 'slider',
     min: 0.1,
     max: 1.0,
     step: 0.05,
-    category: 'Waves'
-  },
-  {
-    key: 'mouseInfluenceRadius',
-    label: 'Mouse Influence Radius',
-    type: 'slider',
-    min: 0.5,
-    max: 5.0,
-    step: 0.1,
-    category: 'Waves'
-  },
-  {
-    key: 'mouseInfluenceStrength',
-    label: 'Mouse Influence Strength',
-    type: 'slider',
-    min: 0.0,
-    max: 1.0,
-    step: 0.05,
-    category: 'Waves'
+    category: 'Evolution'
   },
   
   // Colors category
   {
-    key: 'colors.cold',
-    label: 'Cold Color (Blue)',
+    key: 'colors.alive',
+    label: 'Alive Cell Color',
     type: 'color',
     category: 'Colors'
   },
   {
     key: 'colors.neutral',
-    label: 'Neutral Color (Green)',
+    label: 'Neutral Cell Color',
     type: 'color',
     category: 'Colors'
   },
   {
-    key: 'colors.hot',
-    label: 'Hot Color (Orange)',
+    key: 'colors.active',
+    label: 'Active Cell Color',
     type: 'color',
     category: 'Colors'
   },
   {
-    key: 'colors.hottest',
-    label: 'Hottest Color (Yellow)',
+    key: 'colors.highActivity',
+    label: 'High Activity Color',
     type: 'color',
     category: 'Colors'
   },
@@ -198,51 +167,45 @@ export const pdeStencilSettingsSchema: SettingsSchema[] = [
     type: 'color',
     category: 'Colors'
   },
-  {
-    key: 'colors.mouseWave',
-    label: 'Mouse Wave Color',
-    type: 'color',
-    category: 'Colors'
-  },
   
-  // Stencil properties category
+  // Cellular automaton properties category
   {
-    key: 'stencilLineWidth',
-    label: 'Stencil Line Width',
+    key: 'connectionLineWidth',
+    label: 'Connection Line Width',
     type: 'slider',
     min: 0.001,
     max: 0.01,
     step: 0.0005,
-    category: 'Stencil'
+    category: 'Automaton'
   },
   {
-    key: 'diagonalStencilWeight',
-    label: 'Diagonal Stencil Weight',
+    key: 'diagonalConnectionWeight',
+    label: 'Diagonal Connection Weight',
     type: 'slider',
     min: 0.1,
     max: 0.8,
     step: 0.05,
-    category: 'Stencil'
+    category: 'Automaton'
   },
   {
-    key: 'computeActivityIntensity',
-    label: 'Compute Activity Intensity',
+    key: 'activityIntensity',
+    label: 'Activity Intensity',
     type: 'slider',
     min: 0.0,
     max: 1.0,
     step: 0.05,
-    category: 'Stencil'
+    category: 'Automaton'
   }
 ];
 
-// PDE Stencil background configuration
-export const pdeStencilConfig: AnimatedBackgroundConfig = {
-  id: 'pde-stencil',
-  name: 'PDE Stencil Propagation',
-  description: 'A computational visualization showing partial differential equation solving using finite difference stencils with wave propagation.',
-  component: PDEStencilBackground,
-  defaultSettings: pdeStencilDefaultSettings,
-  settingsSchema: pdeStencilSettingsSchema
+// Cellular Automaton background configuration
+export const cellularAutomatonConfig: AnimatedBackgroundConfig = {
+  id: 'cellular-automaton',
+  name: 'Cellular Automaton',
+  description: 'An evolving cellular automaton showing emergent patterns, life-like behaviors, and state propagation across a computational grid.',
+  component: CellularAutomatonBackground,
+  defaultSettings: cellularAutomatonDefaultSettings,
+  settingsSchema: cellularAutomatonSettingsSchema
 };
 
 // Simple Wave background configuration (example of easy extensibility)
@@ -252,21 +215,20 @@ export const simpleWaveConfig: AnimatedBackgroundConfig = {
   description: 'A simple animated background with colorful sine wave patterns.',
   component: SimpleWaveBackground,
   defaultSettings: {
-    ...pdeStencilDefaultSettings,
+    ...cellularAutomatonDefaultSettings,
     // Customize some settings for this background
     opacity: 0.6,
     globalTimeMultiplier: 2.0,
     waveAmplitude: 0.8,
     colors: {
-      cold: [0.2, 0.1, 0.8],      // Deep blue
-      neutral: [0.8, 0.2, 0.8],   // Magenta
-      hot: [1.0, 0.6, 0.1],       // Orange
-      hottest: [1.0, 1.0, 0.8],   // Light yellow
-      gridOverlay: [0.3, 0.3, 0.3],
-      mouseWave: [1.0, 1.0, 1.0]
+      alive: [0.2, 0.1, 0.8],        // Deep blue
+      neutral: [0.8, 0.2, 0.8],      // Magenta
+      active: [1.0, 0.6, 0.1],       // Orange
+      highActivity: [1.0, 1.0, 0.8], // Light yellow
+      gridOverlay: [0.3, 0.3, 0.3]
     }
   },
-  settingsSchema: pdeStencilSettingsSchema.filter(setting => 
+  settingsSchema: cellularAutomatonSettingsSchema.filter(setting => 
     // Only include relevant settings for the simple wave background
     ['opacity', 'globalTimeMultiplier', 'waveAmplitude', 'waveSpeed1', 'waveSpeed2'].includes(setting.key) ||
     setting.key.startsWith('colors.')
@@ -275,7 +237,7 @@ export const simpleWaveConfig: AnimatedBackgroundConfig = {
 
 // Graph Topology background defaults and schema
 export const graphTopologyDefaultSettings: BackgroundSettings = {
-  ...pdeStencilDefaultSettings,
+  ...cellularAutomatonDefaultSettings,
   // Core graph settings
   opacity: 0.9,
   totalNodes: 32,
@@ -283,16 +245,15 @@ export const graphTopologyDefaultSettings: BackgroundSettings = {
   requestedNodes: 8,
   animationSpeed: 1.0,
   scale: 1.0,
-  nodeBaseSize: 0.02,
+  cellBaseSize: 0.02,
   edgeThickness: 2.0,
   // Legacy settings (kept for compatibility)
   globalTimeMultiplier: 1.0,
-  waveSpeed1: 6.0,
-  waveSpeed2: 6.0,
-  diagonalWaveSpeed: 6.0,
-  flowAnimationSpeed: 4.0,
-  mouseWaveSpeed: 15.0,
-  waveAmplitude: pdeStencilDefaultSettings.waveAmplitude
+  evolutionSpeed1: 6.0,
+  evolutionSpeed2: 6.0,
+  diagonalEvolutionSpeed: 6.0,
+  updateAnimationSpeed: 4.0,
+  waveAmplitude: cellularAutomatonDefaultSettings.waveAmplitude
 };
 
 export const graphTopologySettingsSchema: SettingsSchema[] = [
@@ -373,7 +334,7 @@ export const graphTopologySettingsSchema: SettingsSchema[] = [
   },
   
   // Color settings (reuse existing)
-  ...pdeStencilSettingsSchema.filter(s => s.key.toString().startsWith('colors.'))
+  ...cellularAutomatonSettingsSchema.filter(s => s.key.toString().startsWith('colors.'))
 ];
 
 export const graphTopologyConfig: AnimatedBackgroundConfig = {
@@ -459,30 +420,26 @@ export const spectrogramOscilloscopeDefaultSettings: BackgroundSettings = {
     high: [1.0, 0.4, 0.8],     // Hot magenta for high amplitude
     peak: [1.0, 1.0, 0.0],     // Bright yellow for peak amplitude
     waveform: [0.0, 1.0, 0.5], // Bright green for waveform
-    // Legacy colors for compatibility
-    cold: [0.0, 0.2, 0.8],
+    // Standard colors for compatibility
+    alive: [0.0, 0.2, 0.8],
     neutral: [0.1, 0.8, 0.1],
-    hot: [1.0, 0.3, 0.0],
-    hottest: [1.0, 1.0, 0.2],
-    gridOverlay: [0.2, 0.3, 0.4],
-    mouseWave: [0.8, 0.9, 1.0]
-  } as BackgroundSettings['colors'],
+    active: [1.0, 0.3, 0.0],
+    highActivity: [1.0, 1.0, 0.2],
+    gridOverlay: [0.2, 0.3, 0.4]
+  },
   
   // Legacy settings (for compatibility)
-  gridSize: 0.08,
-  nodeBaseSize: 0.02,
-  nodeSizeMultiplier: 0.03,
-  waveSpeed1: 4.0,
-  waveSpeed2: 5.0,
-  diagonalWaveSpeed: 6.0,
-  flowAnimationSpeed: 8.0,
-  mouseWaveSpeed: 10.0,
+  cellSize: 0.08,
+  cellBaseSize: 0.02,
+  cellSizeMultiplier: 0.03,
+  evolutionSpeed1: 4.0,
+  evolutionSpeed2: 5.0,
+  diagonalEvolutionSpeed: 6.0,
+  updateAnimationSpeed: 8.0,
   waveAmplitude: 0.4,
-  mouseInfluenceRadius: 2.0,
-  mouseInfluenceStrength: 0.3,
-  stencilLineWidth: 0.003,
-  diagonalStencilWeight: 0.25,
-  computeActivityIntensity: 0.4
+  connectionLineWidth: 0.003,
+  diagonalConnectionWeight: 0.25,
+  activityIntensity: 0.4
 };
 
 // Settings schema for Spectrogram Oscilloscope background
@@ -1144,7 +1101,7 @@ export const spectrogramOscilloscopePresetGlitch: BackgroundSettings = {
 
 // Registry of all available animated backgrounds
 export const backgroundRegistry: AnimatedBackgroundConfig[] = [
-  pdeStencilConfig,
+  cellularAutomatonConfig,
   simpleWaveConfig,
   graphTopologyConfig,
   spectrogramOscilloscopeConfig,
@@ -1154,30 +1111,26 @@ export const backgroundRegistry: AnimatedBackgroundConfig[] = [
     description: 'Interactive shortest-path exploration on a random geometric graph. Heuristic weight w: w=0 → Dijkstra (no heuristic), w=1 → standard A*, w>1 → weighted A* (greedy bias, faster but may be inadmissible).',
     component: ShortestPathLabBackground,
     defaultSettings: {
-      gridSize: 0.08,
-      nodeBaseSize: 0.02,
-      nodeSizeMultiplier: 0.03,
+      cellSize: 0.08,
+      cellBaseSize: 0.02,
+      cellSizeMultiplier: 0.03,
       opacity: 0.9,
       globalTimeMultiplier: 1.0,
-      waveSpeed1: 6.0,
-      waveSpeed2: 6.0,
-      diagonalWaveSpeed: 6.0,
-      flowAnimationSpeed: 4.0,
-      mouseWaveSpeed: 10.0,
+      evolutionSpeed1: 6.0,
+      evolutionSpeed2: 6.0,
+      diagonalEvolutionSpeed: 6.0,
+      updateAnimationSpeed: 4.0,
       waveAmplitude: 0.4,
-      mouseInfluenceRadius: 2.0,
-      mouseInfluenceStrength: 0.3,
       colors: {
-        cold: [0.0, 0.2, 0.8],
+        alive: [0.0, 0.2, 0.8],
         neutral: [0.1, 0.8, 0.1],
-        hot: [1.0, 0.3, 0.0],
-        hottest: [1.0, 1.0, 0.2],
-        gridOverlay: [0.2, 0.3, 0.4],
-        mouseWave: [0.8, 0.9, 1.0]
+        active: [1.0, 0.3, 0.0],
+        highActivity: [1.0, 1.0, 0.2],
+        gridOverlay: [0.2, 0.3, 0.4]
       },
-      stencilLineWidth: 0.003,
-      diagonalStencilWeight: 0.25,
-      computeActivityIntensity: 0.4,
+      connectionLineWidth: 0.003,
+      diagonalConnectionWeight: 0.25,
+      activityIntensity: 0.4,
       spTotalNodes: 28,
       spEdgeDensity: 0.15,
       spHeuristicWeight: 1.0,

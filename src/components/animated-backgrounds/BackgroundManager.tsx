@@ -13,7 +13,7 @@ interface BackgroundManagerProps {
 
 const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   className,
-  initialBackgroundId = 'pde-stencil'
+  initialBackgroundId = 'cellular-automaton'
 }) => {
   // Use settings panel context
   const { setSettingsPanelOpen, setClosingSettingsPanel } = useSettingsPanel();

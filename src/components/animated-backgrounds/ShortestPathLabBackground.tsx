@@ -104,7 +104,7 @@ const ShortestPathLabBackground: React.FC<AnimatedBackgroundProps> = ({ classNam
     const edgeDensity = Math.min(1, Math.max(0.05, settings.spEdgeDensity ?? 0.15));
     const heuristicWeight = settings.spHeuristicWeight ?? 1.0; // 0=Dijkstra, 1=A*
     const stepsPerSecond = Math.max(0.5, settings.spAnimationSpeed ?? 4.0);
-    const nodeSize = (settings.nodeBaseSize || 0.02) * 380;
+    const nodeSize = (settings.cellBaseSize || 0.08) * 380;
     const edgeThickness = settings.edgeThickness || 1.5;
 
     let seed = 424242;

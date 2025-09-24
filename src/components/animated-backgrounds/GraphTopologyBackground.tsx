@@ -218,13 +218,13 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({ className,
     // Use new intuitive settings with fallbacks to legacy settings
     const opacity = settings.opacity;
     const simulationSpeed = settings.animationSpeed || settings.globalTimeMultiplier || 1.0;
-    const nodeCountParam = settings.totalNodes || Math.max(12, Math.min(48, Math.floor((settings.waveSpeed1 || 6) * 4)));
+    const nodeCountParam = settings.totalNodes || Math.max(12, Math.min(48, Math.floor((settings.evolutionSpeed1 || 6) * 4)));
     const clusterCountParam = settings.clusterCount || Math.max(2, Math.min(4, Math.floor(nodeCountParam / 8)));
-    const targetSubgraphSize = settings.requestedNodes || Math.max(3, Math.min(12, Math.floor((settings.mouseWaveSpeed || 15) / 3)));
+    const targetSubgraphSize = settings.requestedNodes || Math.max(3, Math.min(12, Math.floor((settings.updateAnimationSpeed || 8) / 2)));
     const graphScale = settings.scale || 1.0;
-    const edgeThickness = settings.edgeThickness || Math.max(1.0, (settings.stencilLineWidth || 0.003) * 300.0);
-    const walkStepsPerSecond = Math.max(0.5, (settings.flowAnimationSpeed || 4) / 4); // Slower for visibility
-    const highlightIntensity = settings.computeActivityIntensity || 1.0;
+    const edgeThickness = settings.edgeThickness || Math.max(1.0, (settings.connectionLineWidth || 0.008) * 300.0);
+    const walkStepsPerSecond = Math.max(0.5, (settings.updateAnimationSpeed || 6) / 4); // Slower for visibility
+    const highlightIntensity = settings.activityIntensity || 0.8;
 
     const rng = mulberry32(1337);
     const { nodes, edges } = createClusteredGraph(nodeCountParam, clusterCountParam, rng);
@@ -309,7 +309,7 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({ className,
     nodeGeometry.setAttribute('color', new THREE.BufferAttribute(nodeColors, 3));
 
     const nodeMaterial = new THREE.PointsMaterial({
-      size: (settings.nodeBaseSize || 0.02) * 300,
+      size: (settings.cellBaseSize || 0.08) * 300,
       vertexColors: true,
       transparent: true,
       opacity: opacity,
@@ -775,7 +775,7 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({ className,
       (nodeGeometry.getAttribute('color') as THREE.BufferAttribute).needsUpdate = true;
 
       // Dynamic node sizing based on algorithm state
-      const baseNodeSize = (settings.nodeBaseSize || 0.02) * 400; // Doubled base size
+      const baseNodeSize = (settings.cellBaseSize || 0.08) * 400; // Doubled base size
       let dynamicSize = baseNodeSize;
       
       if (hasConverged) {

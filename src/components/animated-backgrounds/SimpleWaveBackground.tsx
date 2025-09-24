@@ -81,12 +81,12 @@ const SimpleWaveBackground: React.FC<AnimatedBackgroundProps> = ({ className, se
       uniforms: {
         uTime: { value: 0.0 },
         uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-        uWaveFrequency: { value: settings.waveSpeed1 }, // Reuse existing settings
+        uWaveFrequency: { value: settings.evolutionSpeed1 }, // Reuse existing settings
         uWaveAmplitude: { value: settings.waveAmplitude },
         uWaveSpeed: { value: settings.globalTimeMultiplier },
-        uColor1: { value: new THREE.Vector3(...settings.colors.cold) },
+        uColor1: { value: new THREE.Vector3(...settings.colors.alive) },
         uColor2: { value: new THREE.Vector3(...settings.colors.neutral) },
-        uColor3: { value: new THREE.Vector3(...settings.colors.hot) }
+        uColor3: { value: new THREE.Vector3(...settings.colors.active) }
       },
       vertexShader,
       fragmentShader,
