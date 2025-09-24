@@ -10,7 +10,7 @@ jest.mock('jspdf', () => {
     addPage: jest.fn().mockReturnThis(),
     save: jest.fn().mockReturnThis(),
   };
-  
+
   return {
     __esModule: true,
     default: jest.fn(() => mockPdf),
@@ -38,20 +38,20 @@ jest.mock('html2canvas', () => ({
   }),
 }));
 
-import {
-  exportResumeAsPDF,
-  exportResumeAsMarkdown,
-  exportResumeAsDOCX,
-  downloadMarkdown,
-} from '../../../utils/exportResume';
 import { ResumeData } from '../../../types/resume';
+import {
+  downloadMarkdown,
+  exportResumeAsDOCX,
+  exportResumeAsMarkdown,
+  exportResumeAsPDF,
+} from '../../../utils/exportResume';
 
 // Get the mocked modules
 const mockJsPDF = require('jspdf').default;
 const mockDocument = require('docx').Document;
 const mockPacker = require('docx').Packer;
 const mockSaveAs = require('file-saver').saveAs;
-const mockHtml2Canvas = require('html2canvas').default;
+// const mockHtml2Canvas = require('html2canvas').default;
 
 describe('exportResume Utility Functions', () => {
   const mockResumeData: ResumeData = {
@@ -62,7 +62,8 @@ describe('exportResume Utility Functions', () => {
       email: 'john@example.com',
       website: 'https://johndoe.com',
       phone: '+1-555-0123',
-      summary: 'Experienced software engineer with 5+ years of experience in full-stack development.',
+      summary:
+        'Experienced software engineer with 5+ years of experience in full-stack development.',
     },
     experience: [
       {
@@ -99,8 +100,12 @@ describe('exportResume Utility Functions', () => {
         duration: '2014 - 2018',
         gpa: '3.8',
         description: 'Focused on software engineering and algorithms',
-        relevantCoursework: ['Data Structures', 'Algorithms', 'Database Systems'],
-        achievements: ['Magna Cum Laude', 'Dean\'s List'],
+        relevantCoursework: [
+          'Data Structures',
+          'Algorithms',
+          'Database Systems',
+        ],
+        achievements: ['Magna Cum Laude', "Dean's List"],
       },
     ],
     skills: {
@@ -170,7 +175,9 @@ describe('exportResume Utility Functions', () => {
       };
       mockJsPDF.mockReturnValue(mockPdfInstance);
 
-      await expect(exportResumeAsPDF(mockResumeData)).rejects.toThrow('PDF generation failed');
+      await expect(exportResumeAsPDF(mockResumeData)).rejects.toThrow(
+        'PDF generation failed'
+      );
     });
 
     it('should handle empty resume data', async () => {
@@ -189,6 +196,7 @@ describe('exportResume Utility Functions', () => {
           technical: [],
           soft: [],
         },
+        certifications: [],
       };
 
       // Reset the mock to ensure clean state
@@ -236,9 +244,13 @@ describe('exportResume Utility Functions', () => {
 
       expect(markdown).toContain('## Education');
       expect(markdown).toContain('### Bachelor of Science in Computer Science');
-      expect(markdown).toContain('**University of California**, Berkeley, CA | 2014 - 2018');
+      expect(markdown).toContain(
+        '**University of California**, Berkeley, CA | 2014 - 2018'
+      );
       expect(markdown).toContain('**GPA:** 3.8');
-      expect(markdown).toContain('**Relevant Coursework:** Data Structures, Algorithms, Database Systems');
+      expect(markdown).toContain(
+        '**Relevant Coursework:** Data Structures, Algorithms, Database Systems'
+      );
     });
 
     it('should include skills section', () => {
@@ -246,7 +258,9 @@ describe('exportResume Utility Functions', () => {
 
       expect(markdown).toContain('## Skills');
       expect(markdown).toContain('### Technical Skills');
-      expect(markdown).toContain('JavaScript, TypeScript, React, Node.js, Python');
+      expect(markdown).toContain(
+        'JavaScript, TypeScript, React, Node.js, Python'
+      );
       expect(markdown).toContain('### Soft Skills');
       expect(markdown).toContain('Leadership, Communication, Problem Solving');
       expect(markdown).toContain('### Languages');
@@ -257,8 +271,12 @@ describe('exportResume Utility Functions', () => {
       const markdown = exportResumeAsMarkdown(mockResumeData);
 
       expect(markdown).toContain('## Certifications');
-      expect(markdown).toContain('- **AWS Certified Solutions Architect**, Amazon Web Services (2021)');
-      expect(markdown).toContain('- **Certified Kubernetes Administrator**, Cloud Native Computing Foundation (2022)');
+      expect(markdown).toContain(
+        '- **AWS Certified Solutions Architect**, Amazon Web Services (2021)'
+      );
+      expect(markdown).toContain(
+        '- **Certified Kubernetes Administrator**, Cloud Native Computing Foundation (2022)'
+      );
     });
 
     it('should handle missing optional fields', () => {
@@ -277,6 +295,7 @@ describe('exportResume Utility Functions', () => {
           technical: ['JavaScript'],
           soft: ['Communication'],
         },
+        certifications: [],
       };
 
       const markdown = exportResumeAsMarkdown(minimalResumeData);
@@ -300,18 +319,19 @@ describe('exportResume Utility Functions', () => {
     it('should use default filename when not provided', async () => {
       await exportResumeAsDOCX(mockResumeData);
 
-      expect(mockSaveAs).toHaveBeenCalledWith(
-        expect.any(Blob),
-        'resume.docx'
-      );
+      expect(mockSaveAs).toHaveBeenCalledWith(expect.any(Blob), 'resume.docx');
     });
 
     it('should handle errors gracefully', async () => {
       // Clear previous mock calls and set up error
       mockPacker.toArrayBuffer.mockClear();
-      mockPacker.toArrayBuffer.mockRejectedValue(new Error('DOCX generation failed'));
+      mockPacker.toArrayBuffer.mockRejectedValue(
+        new Error('DOCX generation failed')
+      );
 
-      await expect(exportResumeAsDOCX(mockResumeData)).rejects.toThrow('DOCX generation failed');
+      await expect(exportResumeAsDOCX(mockResumeData)).rejects.toThrow(
+        'DOCX generation failed'
+      );
     });
 
     it('should create proper document structure', async () => {
@@ -346,9 +366,7 @@ describe('exportResume Utility Functions', () => {
 
       downloadMarkdown(markdown, filename);
 
-      expect(global.URL.createObjectURL).toHaveBeenCalledWith(
-        expect.any(Blob)
-      );
+      expect(global.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
       expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
     });
 
@@ -357,9 +375,7 @@ describe('exportResume Utility Functions', () => {
 
       downloadMarkdown(markdown);
 
-      expect(global.URL.createObjectURL).toHaveBeenCalledWith(
-        expect.any(Blob)
-      );
+      expect(global.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
     });
 
     it('should create blob with correct type', () => {
@@ -393,13 +409,19 @@ describe('exportResume Utility Functions', () => {
       };
       mockJsPDF.mockReturnValue(mockPdfInstance);
 
-      await expect(exportResumeAsPDF(mockResumeData)).rejects.toThrow('PDF save failed');
+      await expect(exportResumeAsPDF(mockResumeData)).rejects.toThrow(
+        'PDF save failed'
+      );
     });
 
     it('should handle DOCX generation errors', async () => {
-      mockPacker.toArrayBuffer.mockRejectedValue(new Error('DOCX generation failed'));
+      mockPacker.toArrayBuffer.mockRejectedValue(
+        new Error('DOCX generation failed')
+      );
 
-      await expect(exportResumeAsDOCX(mockResumeData)).rejects.toThrow('DOCX generation failed');
+      await expect(exportResumeAsDOCX(mockResumeData)).rejects.toThrow(
+        'DOCX generation failed'
+      );
     });
 
     it('should handle markdown download errors', () => {

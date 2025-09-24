@@ -24,15 +24,16 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
-  ignorePatterns: [
-    'node_modules/',
-    'public/',
-    '.cache/',
-    'dist/',
-  ],
+  ignorePatterns: ['node_modules/', 'public/', '.cache/', 'dist/'],
   overrides: [
     {
-      files: ['**/*.test.js', '**/*.test.ts', '**/*.test.tsx', '**/__tests__/**/*', '**/setupTests.*'],
+      files: [
+        '**/*.test.js',
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/__tests__/**/*',
+        '**/setupTests.*',
+      ],
       env: {
         jest: true,
       },
@@ -48,4 +49,4 @@ module.exports = {
       },
     },
   ],
-}
+};

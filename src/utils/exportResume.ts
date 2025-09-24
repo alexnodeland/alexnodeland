@@ -1,11 +1,5 @@
 import jsPDF from 'jspdf';
-import {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  AlignmentType,
-} from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { ResumeData } from '../config/resume';
 
@@ -570,7 +564,7 @@ export const downloadMarkdown = (
   const blob = new Blob([markdown], { type: 'text/markdown' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  
+
   // Set properties
   if (link.setAttribute) {
     link.setAttribute('href', url);
@@ -579,10 +573,10 @@ export const downloadMarkdown = (
     link.href = url;
     link.download = filename;
   }
-  
+
   // Ensure the link is properly added to the DOM
   try {
-    if (document.body && link.appendChild) {
+    if (document.body && typeof link.appendChild === 'function') {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -594,6 +588,6 @@ export const downloadMarkdown = (
     // Fallback for testing environments where DOM manipulation fails
     link.click();
   }
-  
+
   URL.revokeObjectURL(url);
 };
