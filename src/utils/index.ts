@@ -1,2 +1,2 @@
 // Utility functions barrel exports
-export * from './exportResume';
+export * from './export';

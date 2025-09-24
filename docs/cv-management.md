@@ -1,20 +1,21 @@
-# 📄 Resume Management Guide
+# 📄 CV Management Guide
 
-This guide explains how to easily update and maintain your resume using the structured data system.
+This guide explains how to easily update and maintain your CV using the structured data system.
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
 - [Quick Start](#quick-start)
 - [Data Structure](#data-structure)
-- [Updating Resume Content](#updating-resume-content)
+- [Updating Resume Content](#updating-CV-content)
 - [Export Options](#export-options)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 
 ## 🎯 Overview
 
-The resume system uses structured data that makes it incredibly easy to:
+The CV system uses structured data that makes it incredibly easy to:
+
 - **Update content** in one place
 - **Export to multiple formats** (PDF, Markdown)
 - **Maintain consistency** across all sections
@@ -24,7 +25,7 @@ The resume system uses structured data that makes it incredibly easy to:
 
 ### 1. Update Personal Information
 
-Edit `src/config/resume.ts`:
+Edit `src/config/cv.ts`:
 
 ```typescript
 personal: {
@@ -54,7 +55,7 @@ personal: {
 }
 ```
 
-### 3. Export Resume
+### 3. Export CV
 
 - **PDF**: Click "📄 Download PDF" button (clean markdown-style rendering)
 - **DOCX**: Click "📝 Download DOCX" button (Microsoft Word format)
@@ -120,7 +121,7 @@ skills: {
 
 ### Adding New Experience
 
-1. **Open** `src/config/resume.ts`
+1. **Open** `src/config/CV.ts`
 2. **Find** the `experience` array
 3. **Add** new experience object:
 
@@ -215,8 +216,8 @@ skills: {
 
 ### Adding New Sections
 
-1. **Update** the `ResumeData` interface in `src/config/resume.ts`
-2. **Add** the section to the `resumeData` object
+1. **Update** the `ResumeData` interface in `src/config/CV.ts`
+2. **Add** the section to the `cvData` object
 3. **Create** a component for the section
 4. **Add** it to the CV page
 
@@ -263,7 +264,7 @@ skills: {
 Some sections only show if they have content:
 
 ```typescript
-{resumeData.certifications && resumeData.certifications.length > 0 && (
+{cvData.certifications && cvData.certifications.length > 0 && (
   <section className="cv-section">
     <h2>Certifications</h2>
     {/* Certification content */}
@@ -274,6 +275,7 @@ Some sections only show if they have content:
 ### Dynamic Content
 
 The system automatically:
+
 - **Formats dates** consistently
 - **Handles missing fields** gracefully
 - **Generates proper links** for contact info
@@ -282,6 +284,7 @@ The system automatically:
 ### Type Safety
 
 All data is fully typed, so you get:
+
 - **Autocomplete** in your editor
 - **Error checking** for missing fields
 - **Consistent structure** across all sections
@@ -291,16 +294,19 @@ All data is fully typed, so you get:
 ### Common Issues
 
 **Export not working:**
+
 - Check browser console for errors
 - Ensure all required fields are filled
 - Try refreshing the page
 
 **PDF looks wrong:**
-- Check that the resume content fits on the page
+
+- Check that the CV content fits on the page
 - Verify all images are loaded
 - Try a different browser
 
 **Markdown formatting issues:**
+
 - Check for special characters in content
 - Ensure proper line breaks
 - Verify markdown syntax
@@ -314,24 +320,26 @@ All data is fully typed, so you get:
 
 ## 📚 Related Files
 
-- `src/config/resume.ts` - Main resume data
-- `src/components/resume/` - Resume components
-- `src/utils/exportResume.ts` - Export utilities
+- `src/config/cv.ts` - Main CV data
+- `src/components/cv/` - CV components
+- `src/utils/exportCV.ts` - Export utilities
 - `src/pages/cv.mdx` - CV page
 - `src/styles/cv.scss` - Resume styles
 
 ## 🎉 Benefits
 
 ### For You
+
 - **Easy updates**: Change content in one place
 - **Multiple formats**: Export to PDF or Markdown
 - **Consistent design**: Professional appearance
 - **Type safety**: No more typos or missing fields
 
 ### For Visitors
+
 - **Professional look**: Clean, modern design
 - **Easy to read**: Well-organized information
-- **Downloadable**: Can save your resume
+- **Downloadable**: Can save your CV
 - **Responsive**: Works on all devices
 
-This system makes resume management incredibly easy while maintaining a professional appearance. You can update your resume in minutes and export it in any format you need!
+This system makes CV management incredibly easy while maintaining a professional appearance. You can update your CV in minutes and export it in any format you need!

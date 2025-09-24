@@ -38,13 +38,13 @@ jest.mock('html2canvas', () => ({
   }),
 }));
 
-import { ResumeData } from '../../../types/resume';
+import { CVData } from '../../../types/cv';
 import {
   downloadMarkdown,
-  exportResumeAsDOCX,
-  exportResumeAsMarkdown,
-  exportResumeAsPDF,
-} from '../../../utils/exportResume';
+  exportCVAsDOCX,
+  exportCVAsMarkdown,
+  exportCVAsPDF,
+} from '../../../utils/export';
 
 // Get the mocked modules
 const mockJsPDF = require('jspdf').default;
@@ -53,8 +53,8 @@ const mockPacker = require('docx').Packer;
 const mockSaveAs = require('file-saver').saveAs;
 // const mockHtml2Canvas = require('html2canvas').default;
 
-describe('exportResume Utility Functions', () => {
-  const mockResumeData: ResumeData = {
+describe('exportCV Utility Functions', () => {
+  const mockCVData: CVData = {
     personal: {
       name: 'John Doe',
       title: 'Software Engineer',
@@ -131,9 +131,9 @@ describe('exportResume Utility Functions', () => {
     jest.clearAllMocks();
   });
 
-  describe('exportResumeAsPDF', () => {
+  describe('exportCVAsPDF', () => {
     it('should create PDF with correct structure', async () => {
-      await exportResumeAsPDF(mockResumeData, 'test-resume.pdf');
+      await exportCVAsPDF(mockCVData, 'test-resume.pdf');
 
       expect(mockJsPDF).toHaveBeenCalledWith('p', 'mm', 'a4');
       const mockPdfInstance = mockJsPDF.mock.results[0].value;
@@ -141,7 +141,7 @@ describe('exportResume Utility Functions', () => {
     });
 
     it('should handle resume data correctly', async () => {
-      await exportResumeAsPDF(mockResumeData);
+      await exportCVAsPDF(mockCVData);
 
       const mockPdfInstance = mockJsPDF.mock.results[0].value;
       // Check that text methods were called
@@ -152,7 +152,7 @@ describe('exportResume Utility Functions', () => {
     });
 
     it('should use default filename when not provided', async () => {
-      await exportResumeAsPDF(mockResumeData);
+      await exportCVAsPDF(mockCVData);
 
       const mockPdfInstance = mockJsPDF.mock.results[0].value;
       expect(mockPdfInstance.save).toHaveBeenCalledWith('resume.pdf');
@@ -175,13 +175,13 @@ describe('exportResume Utility Functions', () => {
       };
       mockJsPDF.mockReturnValue(mockPdfInstance);
 
-      await expect(exportResumeAsPDF(mockResumeData)).rejects.toThrow(
+      await expect(exportCVAsPDF(mockCVData)).rejects.toThrow(
         'PDF generation failed'
       );
     });
 
     it('should handle empty resume data', async () => {
-      const emptyResumeData: ResumeData = {
+      const emptyCVData: CVData = {
         personal: {
           name: '',
           title: '',
@@ -213,13 +213,13 @@ describe('exportResume Utility Functions', () => {
       };
       mockJsPDF.mockReturnValue(mockPdfInstance);
 
-      await expect(exportResumeAsPDF(emptyResumeData)).resolves.not.toThrow();
+      await expect(exportCVAsPDF(emptyCVData)).resolves.not.toThrow();
     });
   });
 
-  describe('exportResumeAsMarkdown', () => {
+  describe('exportCVAsMarkdown', () => {
     it('should generate correct markdown format', () => {
-      const markdown = exportResumeAsMarkdown(mockResumeData);
+      const markdown = exportCVAsMarkdown(mockCVData);
 
       expect(markdown).toContain('# John Doe');
       expect(markdown).toContain('## Software Engineer');
@@ -230,7 +230,7 @@ describe('exportResume Utility Functions', () => {
     });
 
     it('should include experience section', () => {
-      const markdown = exportResumeAsMarkdown(mockResumeData);
+      const markdown = exportCVAsMarkdown(mockCVData);
 
       expect(markdown).toContain('## Experience');
       expect(markdown).toContain('### Senior Software Engineer, Tech Corp');
@@ -240,7 +240,7 @@ describe('exportResume Utility Functions', () => {
     });
 
     it('should include education section', () => {
-      const markdown = exportResumeAsMarkdown(mockResumeData);
+      const markdown = exportCVAsMarkdown(mockCVData);
 
       expect(markdown).toContain('## Education');
       expect(markdown).toContain('### Bachelor of Science in Computer Science');
@@ -254,7 +254,7 @@ describe('exportResume Utility Functions', () => {
     });
 
     it('should include skills section', () => {
-      const markdown = exportResumeAsMarkdown(mockResumeData);
+      const markdown = exportCVAsMarkdown(mockCVData);
 
       expect(markdown).toContain('## Skills');
       expect(markdown).toContain('### Technical Skills');
@@ -268,7 +268,7 @@ describe('exportResume Utility Functions', () => {
     });
 
     it('should include certifications section', () => {
-      const markdown = exportResumeAsMarkdown(mockResumeData);
+      const markdown = exportCVAsMarkdown(mockCVData);
 
       expect(markdown).toContain('## Certifications');
       expect(markdown).toContain(
@@ -280,7 +280,7 @@ describe('exportResume Utility Functions', () => {
     });
 
     it('should handle missing optional fields', () => {
-      const minimalResumeData: ResumeData = {
+      const minimalCVData: CVData = {
         personal: {
           name: 'Jane Doe',
           title: 'Developer',
@@ -298,7 +298,7 @@ describe('exportResume Utility Functions', () => {
         certifications: [],
       };
 
-      const markdown = exportResumeAsMarkdown(minimalResumeData);
+      const markdown = exportCVAsMarkdown(minimalCVData);
 
       expect(markdown).toContain('# Jane Doe');
       expect(markdown).toContain('## Developer');
@@ -307,9 +307,9 @@ describe('exportResume Utility Functions', () => {
     });
   });
 
-  describe('exportResumeAsDOCX', () => {
+  describe('exportCVAsDOCX', () => {
     it('should create DOCX document', async () => {
-      await exportResumeAsDOCX(mockResumeData, 'test-resume.docx');
+      await exportCVAsDOCX(mockCVData, 'test-resume.docx');
 
       expect(mockDocument).toHaveBeenCalled();
       expect(mockPacker.toArrayBuffer).toHaveBeenCalled();
@@ -317,7 +317,7 @@ describe('exportResume Utility Functions', () => {
     });
 
     it('should use default filename when not provided', async () => {
-      await exportResumeAsDOCX(mockResumeData);
+      await exportCVAsDOCX(mockCVData);
 
       expect(mockSaveAs).toHaveBeenCalledWith(expect.any(Blob), 'resume.docx');
     });
@@ -329,7 +329,7 @@ describe('exportResume Utility Functions', () => {
         new Error('DOCX generation failed')
       );
 
-      await expect(exportResumeAsDOCX(mockResumeData)).rejects.toThrow(
+      await expect(exportCVAsDOCX(mockCVData)).rejects.toThrow(
         'DOCX generation failed'
       );
     });
@@ -339,7 +339,7 @@ describe('exportResume Utility Functions', () => {
       mockPacker.toArrayBuffer.mockClear();
       mockPacker.toArrayBuffer.mockResolvedValue(new ArrayBuffer(8));
 
-      await exportResumeAsDOCX(mockResumeData);
+      await exportCVAsDOCX(mockCVData);
 
       expect(mockDocument).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -409,7 +409,7 @@ describe('exportResume Utility Functions', () => {
       };
       mockJsPDF.mockReturnValue(mockPdfInstance);
 
-      await expect(exportResumeAsPDF(mockResumeData)).rejects.toThrow(
+      await expect(exportCVAsPDF(mockCVData)).rejects.toThrow(
         'PDF save failed'
       );
     });
@@ -419,7 +419,7 @@ describe('exportResume Utility Functions', () => {
         new Error('DOCX generation failed')
       );
 
-      await expect(exportResumeAsDOCX(mockResumeData)).rejects.toThrow(
+      await expect(exportCVAsDOCX(mockCVData)).rejects.toThrow(
         'DOCX generation failed'
       );
     });

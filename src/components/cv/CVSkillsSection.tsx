@@ -1,12 +1,15 @@
-import React from 'react'
-import { ResumeData } from '../../types'
+import React from 'react';
+import { CVData } from '../../types';
 
-interface SkillsSectionProps {
-  skills: ResumeData['skills']
-  className?: string
+interface CVSkillsSectionProps {
+  skills: CVData['skills'];
+  className?: string;
 }
 
-const SkillsSection: React.FC<SkillsSectionProps> = ({ skills, className = '' }) => {
+const CVSkillsSection: React.FC<CVSkillsSectionProps> = ({
+  skills,
+  className = '',
+}) => {
   return (
     <section className={`skills-section ${className}`}>
       <h2>Skills</h2>
@@ -15,33 +18,39 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ skills, className = '' })
           <h3>Technical Skills</h3>
           <div className="skill-tags">
             {skills.technical.map((skill, index) => (
-              <span key={index} className="skill-tag technical">{skill}</span>
+              <span key={index} className="skill-tag technical">
+                {skill}
+              </span>
             ))}
           </div>
         </div>
-        
+
         <div className="skill-category">
           <h3>Soft Skills</h3>
           <div className="skill-tags">
             {skills.soft.map((skill, index) => (
-              <span key={index} className="skill-tag soft">{skill}</span>
+              <span key={index} className="skill-tag soft">
+                {skill}
+              </span>
             ))}
           </div>
         </div>
-        
+
         {skills.languages && skills.languages.length > 0 && (
           <div className="skill-category">
             <h3>Languages</h3>
             <div className="skill-tags">
               {skills.languages.map((language, index) => (
-                <span key={index} className="skill-tag language">{language}</span>
+                <span key={index} className="skill-tag language">
+                  {language}
+                </span>
               ))}
             </div>
           </div>
         )}
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default SkillsSection
+export default CVSkillsSection;

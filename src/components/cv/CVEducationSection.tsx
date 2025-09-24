@@ -1,12 +1,15 @@
-import React from 'react'
-import { EducationItem } from '../../types'
+import React from 'react';
+import { EducationItem } from '../../types';
 
-interface EducationSectionProps {
-  education: EducationItem[]
-  className?: string
+interface CVEducationSectionProps {
+  education: EducationItem[];
+  className?: string;
 }
 
-const EducationSection: React.FC<EducationSectionProps> = ({ education, className = '' }) => {
+const CVEducationSection: React.FC<CVEducationSectionProps> = ({
+  education,
+  className = '',
+}) => {
   return (
     <section className={`education-section ${className}`}>
       <h2>Education</h2>
@@ -19,15 +22,14 @@ const EducationSection: React.FC<EducationSectionProps> = ({ education, classNam
           <div className="education-institution">
             <strong>{edu.institution}</strong>, {edu.location}
           </div>
-          {edu.gpa && (
-            <div className="education-gpa">GPA: {edu.gpa}</div>
-          )}
+          {edu.gpa && <div className="education-gpa">GPA: {edu.gpa}</div>}
           {edu.description && (
             <p className="education-description">{edu.description}</p>
           )}
           {edu.relevantCoursework && edu.relevantCoursework.length > 0 && (
             <div className="education-coursework">
-              <strong>Relevant Coursework:</strong> {edu.relevantCoursework.join(', ')}
+              <strong>Relevant Coursework:</strong>{' '}
+              {edu.relevantCoursework.join(', ')}
             </div>
           )}
           {edu.achievements && edu.achievements.length > 0 && (
@@ -40,7 +42,7 @@ const EducationSection: React.FC<EducationSectionProps> = ({ education, classNam
         </div>
       ))}
     </section>
-  )
-}
+  );
+};
 
-export default EducationSection
+export default CVEducationSection;

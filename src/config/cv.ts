@@ -37,7 +37,7 @@ export interface ProjectItem {
   highlights?: string[];
 }
 
-export interface ResumeData {
+export interface CVData {
   personal: {
     name: string;
     title: string;
@@ -75,7 +75,7 @@ export interface ResumeData {
   }>;
 }
 
-export const resumeData: ResumeData = {
+export const cvData: CVData = {
   personal: {
     name: 'Alex Nodeland',
     title: 'Senior AI Engineer & Technical Consultant',

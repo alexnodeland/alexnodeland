@@ -1,13 +1,13 @@
 import React from 'react';
 import {
+  EducationSection,
+  ExperienceSection,
+  ExportButtons,
   Layout,
   SEO,
-  ExperienceSection,
-  EducationSection,
   SkillsSection,
-  ExportButtons,
 } from '../components';
-import { resumeData } from '../config';
+import { cvData } from '../config';
 import '../styles/cv.scss';
 
 const CVPage: React.FC = () => {
@@ -24,7 +24,7 @@ const CVPage: React.FC = () => {
         </header>
 
         <ExportButtons
-          resumeData={resumeData}
+          resumeData={cvData}
           resumeElementId="resume-content"
           className="cv-export"
         />
@@ -32,7 +32,7 @@ const CVPage: React.FC = () => {
         <div className="cv-overview-contact">
           <div className="overview-section">
             <h3>overview</h3>
-            <p>{resumeData.personal.summary}</p>
+            <p>{cvData.personal.summary}</p>
           </div>
           <div className="contact-section">
             <h3>contact</h3>
@@ -40,37 +40,37 @@ const CVPage: React.FC = () => {
               <div className="contact-item">
                 <span className="contact-label">location</span>
                 <span className="contact-value">
-                  {resumeData.personal.location}
+                  {cvData.personal.location}
                 </span>
               </div>
               <div className="contact-item">
                 <span className="contact-label">email</span>
                 <a
-                  href={`mailto:${resumeData.personal.email}`}
+                  href={`mailto:${cvData.personal.email}`}
                   className="contact-value"
                 >
-                  {resumeData.personal.email}
+                  {cvData.personal.email}
                 </a>
               </div>
               <div className="contact-item">
                 <span className="contact-label">website</span>
                 <a
-                  href={`https://${resumeData.personal.website}`}
+                  href={`https://${cvData.personal.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="contact-value"
                 >
-                  {resumeData.personal.website}
+                  {cvData.personal.website}
                 </a>
               </div>
-              {resumeData.personal.phone && (
+              {cvData.personal.phone && (
                 <div className="contact-item">
                   <span className="contact-label">phone</span>
                   <a
-                    href={`tel:${resumeData.personal.phone}`}
+                    href={`tel:${cvData.personal.phone}`}
                     className="contact-value"
                   >
-                    {resumeData.personal.phone}
+                    {cvData.personal.phone}
                   </a>
                 </div>
               )}
@@ -80,31 +80,30 @@ const CVPage: React.FC = () => {
 
         <div id="resume-content">
           <div id="experience-section">
-            <ExperienceSection experiences={resumeData.experience} />
+            <ExperienceSection experiences={cvData.experience} />
           </div>
 
           <div id="education-section">
-            <EducationSection education={resumeData.education} />
+            <EducationSection education={cvData.education} />
           </div>
 
           <div id="skills-section">
-            <SkillsSection skills={resumeData.skills} />
+            <SkillsSection skills={cvData.skills} />
           </div>
 
-          {resumeData.certifications &&
-            resumeData.certifications.length > 0 && (
-              <section id="certifications-section" className="cv-section">
-                <h2>certifications</h2>
-                <ul className="certifications-list">
-                  {resumeData.certifications.map((cert, index) => (
-                    <li key={index}>
-                      <strong>{cert.name}</strong>, {cert.issuer}, {cert.date}
-                      {cert.credentialId && ` (${cert.credentialId})`}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+          {cvData.certifications && cvData.certifications.length > 0 && (
+            <section id="certifications-section" className="cv-section">
+              <h2>certifications</h2>
+              <ul className="certifications-list">
+                {cvData.certifications.map((cert, index) => (
+                  <li key={index}>
+                    <strong>{cert.name}</strong>, {cert.issuer}, {cert.date}
+                    {cert.credentialId && ` (${cert.credentialId})`}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </div>
     </Layout>

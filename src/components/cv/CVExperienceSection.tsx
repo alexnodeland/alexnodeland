@@ -1,19 +1,24 @@
-import React from 'react'
-import { ExperienceItem } from '../../types'
+import React from 'react';
+import { ExperienceItem } from '../../types';
 
-interface ExperienceSectionProps {
-  experiences: ExperienceItem[]
-  className?: string
+interface CVExperienceSectionProps {
+  experiences: ExperienceItem[];
+  className?: string;
 }
 
-const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experiences, className = '' }) => {
+const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
+  experiences,
+  className = '',
+}) => {
   return (
     <section className={`experience-section ${className}`}>
       <h2>Experience</h2>
       {experiences.map((exp, index) => (
         <div key={index} className="experience-item">
           <div className="experience-header">
-            <h3>{exp.title}, {exp.company}</h3>
+            <h3>
+              {exp.title}, {exp.company}
+            </h3>
             <span className="experience-duration">{exp.duration}</span>
           </div>
           <div className="experience-location">{exp.location}</div>
@@ -33,7 +38,7 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experiences, clas
         </div>
       ))}
     </section>
-  )
-}
+  );
+};
 
-export default ExperienceSection
+export default CVExperienceSection;
