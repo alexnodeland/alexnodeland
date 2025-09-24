@@ -377,3 +377,140 @@
     font-size: 0.85rem;
   }
 }
+
+// Light mode specific enhancements
+[data-theme='light'] {
+  // Hero section - text on dark background
+  .hero {
+    h1 {
+      color: white;  // White text on dark background
+      text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+      
+      &::after {
+        background: var(--accent-pink);
+        box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+      }
+    }
+    
+    .hero-subtitle {
+      color: rgba(255, 255, 255, 0.8);  // Light gray on dark background
+    }
+  }
+  
+  // Section titles not in cards - on dark background
+  h2:not(.consulting h2):not(.about h2):not(.blog-preview h2) {
+    color: white;
+  }
+  
+  .about {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    
+    &::before {
+      background: linear-gradient(
+        180deg,
+        var(--accent-pink) 0%,
+        var(--accent-blue) 50%,
+        var(--accent-cyan) 100%
+      );
+    }
+    
+    // Text inside white card uses dark colors
+    h2, h3 {
+      color: var(--text-primary);
+    }
+    
+    p {
+      color: var(--text-secondary);
+    }
+  }
+  
+  .consulting {
+    background: var(--bg-card);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    
+    &::before {
+      background: linear-gradient(
+        90deg,
+        var(--accent-pink) 0%,
+        var(--accent-cyan) 25%,
+        var(--accent-blue) 50%,
+        var(--accent-purple) 75%,
+        var(--accent-pink) 100%
+      );
+    }
+    
+    // Text inside white card uses dark colors
+    h2 {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent-pink);
+    }
+    
+    p {
+      color: var(--text-secondary);
+    }
+  }
+  
+  // Expertise section title on dark background
+  .expertise h2 {
+    color: white;
+    border-bottom-color: var(--accent-pink);
+  }
+  
+  .expertise-item {
+    background: var(--bg-card);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
+    
+    &:hover {
+      background: var(--bg-hover);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border-color: var(--accent-blue);
+    }
+    
+    .expertise-icon img {
+      opacity: 0.8;
+    }
+    
+    &:hover .expertise-icon img {
+      opacity: 1;
+    }
+    
+    // Text inside white cards
+    .expertise-title {
+      color: var(--text-primary);
+    }
+    
+    .expertise-description {
+      color: var(--text-secondary);
+    }
+  }
+  
+  .blog-preview {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    
+    &:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      border-color: var(--accent-purple);
+    }
+    
+    // Text inside white card
+    h2 {
+      color: var(--text-primary);
+    }
+    
+    p {
+      color: var(--text-secondary);
+      
+      a {
+        color: var(--accent-blue);
+        
+        &:hover {
+          color: var(--accent-pink);
+          text-shadow: 0 0 8px rgba(233, 30, 99, 0.3);
+        }
+      }
+    }
+  }
+}

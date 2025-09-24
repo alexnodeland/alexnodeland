@@ -97,26 +97,48 @@
   }
 }
 
-// Light theme layout
+// Light theme layout - keep dark panel for background visibility
 [data-theme='light'] .layout {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.1);  // Keep dark like dark mode
+  backdrop-filter: blur(3px);
+  box-shadow: var(--shadow-lg);
+  border: 2px solid rgba(255, 255, 255, 0.1);  // Subtle light border
 }
 
 [data-theme='light'] .footer {
   background: transparent;
+  border-top: none;  // No border for clean look
 }
 
 [data-theme='light'] .theme-toggle {
-  background: transparent;
+  background: transparent;  // Fully transparent
+  border: none;  // No border
+  color: white;  // White icon on dark background
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);  // Subtle hover effect
+    box-shadow: 0 0 15px rgba(33, 150, 243, 0.3);
+    transform: scale(1.05);
+  }
 }
 
 [data-theme='light'] .header-fixed {
-  background: rgba(255, 255, 255, 0.15);
-  border-bottom-color: var(--accent-color);
+  background: rgba(0, 0, 0, 0.1);  // Keep dark like dark mode
+  backdrop-filter: blur(5px);
+  border-bottom: 2px solid var(--accent-pink);
+  box-shadow: 0 0 20px rgba(233, 30, 99, 0.2);
 }
 
 [data-theme='light'] .footer-link {
-  background: transparent;
+  background: transparent;  // Fully transparent
+  border: none;  // No border
+  color: white;  // White icons on dark background
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);  // Subtle hover effect
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+  }
 }
 
 // Responsive design for settings panel sliding behavior
@@ -195,6 +217,14 @@
     &::after {
       width: 100%;
     }
+  }
+}
+
+[data-theme='light'] .nav-brand {
+  color: white;  // White text on dark background
+  
+  &:hover {
+    color: var(--accent-pink);
   }
 }
 
@@ -300,6 +330,15 @@
     &::after {
       width: 100%;
     }
+  }
+}
+
+[data-theme='light'] .nav-link {
+  color: white;  // White text on dark background
+  
+  &:hover {
+    color: var(--accent-pink);
+    background: rgba(233, 30, 99, 0.15);
   }
 }
 
@@ -418,6 +457,16 @@
   filter: invert(1);
 }
 
+// Light mode icons - invert for visibility on dark background
+[data-theme='light'] .footer-link .icon {
+  filter: invert(1);
+  opacity: 0.9;
+  
+  &:hover {
+    opacity: 1;
+  }
+}
+
 .footer-copyright {
   color: var(--text-muted);
   font-size: 0.8rem;
@@ -427,6 +476,10 @@
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
   text-transform: lowercase;
+}
+
+[data-theme='light'] .footer-copyright {
+  color: rgba(255, 255, 255, 0.6);  // Light text on dark background
 }
 
 @media (max-width: 768px) {

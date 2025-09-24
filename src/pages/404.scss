@@ -50,3 +50,17 @@
     }
   }
 }
+
+// Light mode - text on dark background
+[data-theme='light'] {
+  .not-found {
+    h1 {
+      color: white;
+      text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    }
+    
+    p {
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+}

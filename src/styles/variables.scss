@@ -54,43 +54,43 @@
 }
 
 [data-theme='light'] {
-  --primary-color: #00cc6a; // Darker green for light mode
-  --primary-dark: #00aa55; // Even darker green
+  --primary-color: #00a854; // Vibrant green - not too dark
+  --primary-dark: #008844; // Darker variant for hover states
   
-  // Vibrant accent palette (adjusted for light mode)
-  --accent-pink: #cc0066; // Darker pink
-  --accent-cyan: #0088cc; // Darker cyan
-  --accent-blue: #0066cc; // Darker blue
-  --accent-purple: #cc00cc; // Darker magenta
-  --accent-yellow: #cc8800; // Darker orange-yellow
+  // Vibrant accent palette - keeping the energy but with good contrast
+  --accent-pink: #e91e63; // Material pink - vibrant but readable
+  --accent-cyan: #00acc1; // Bright cyan - pops on light bg
+  --accent-blue: #2196f3; // Bright blue - excellent contrast
+  --accent-purple: #9c27b0; // Rich purple - stands out
+  --accent-yellow: #ff9800; // Warm orange - energetic
   
-  // Text colors
-  --text-primary: #1a1a1a; // Softer black text
-  --text-secondary: #4a4a4a; // Softer dark gray
-  --text-muted: #6a6a6a; // Softer medium gray
+  // Text colors - much darker for crisp readability
+  --text-primary: #212121; // Almost black - crisp and clear
+  --text-secondary: #616161; // Dark gray - good contrast
+  --text-muted: #9e9e9e; // Medium gray - still readable
   
-  // Backgrounds - Consistent light theme
-  --bg-primary: #fafafa; // Soft off-white background
-  --bg-card: #ffffff; // Pure white for cards
-  --bg-hover: #f5f5f5; // Hover state background
+  // Backgrounds - subtle but distinct layers
+  --bg-primary: #f8f9fa; // Very light gray - not pure white
+  --bg-card: #ffffff; // Pure white for cards - creates depth
+  --bg-hover: #f0f2f5; // Noticeable hover state
   
-  // Borders
-  --border-color: #e5e5e5; // Subtle border
-  --border-active: #d0d0d0; // Active/hover border
+  // Borders - more visible for definition
+  --border-color: #dee2e6; // Visible but not harsh
+  --border-active: #adb5bd; // Clear active state
   
-  // Legacy compatibility
-  --accent-color: #cc0066; // Pink (default accent)
-  --secondary-color: #0088cc; // Cyan (secondary)
-  --retro-blue: #0066cc; // Blue
-  --retro-green: #00cc6a; // Green
-  --retro-purple: #cc00cc; // Purple
+  // Legacy compatibility - keeping vibrant
+  --accent-color: #e91e63; // Pink (default accent)
+  --secondary-color: #00acc1; // Cyan (secondary)
+  --retro-blue: #2196f3; // Blue
+  --retro-green: #00a854; // Green
+  --retro-purple: #9c27b0; // Purple
 
-  // Softer shadows for light mode
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  // Enhanced shadows for depth
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.12), 0 1px 2px 0 rgb(0 0 0 / 0.08);
   --shadow-md:
-    0 4px 6px -1px rgb(0 0 0 / 0.15), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    0 4px 6px -1px rgb(0 0 0 / 0.12), 0 2px 4px -1px rgb(0 0 0 / 0.08);
   --shadow-lg:
-    0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    0 10px 25px -3px rgb(0 0 0 / 0.12), 0 4px 10px -2px rgb(0 0 0 / 0.08);
   --shadow-xl:
-    0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    0 20px 30px -5px rgb(0 0 0 / 0.16), 0 10px 15px -3px rgb(0 0 0 / 0.1);
 }

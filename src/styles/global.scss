@@ -66,24 +66,24 @@ body {
   background-image:
     radial-gradient(
       circle at 20% 80%,
-      rgba(0, 204, 106, 0.02) 0%,
+      rgba(0, 168, 84, 0.03) 0%,
       transparent 50%
     ),
     radial-gradient(
       circle at 80% 20%,
-      rgba(0, 136, 204, 0.02) 0%,
+      rgba(0, 172, 193, 0.03) 0%,
       transparent 50%
     ),
     radial-gradient(
       circle at 40% 40%,
-      rgba(204, 0, 102, 0.01) 0%,
+      rgba(233, 30, 99, 0.02) 0%,
       transparent 50%
     );
 
   &::before {
     background-image:
-      linear-gradient(rgba(0, 204, 106, 0.01) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 204, 106, 0.01) 1px, transparent 1px);
+      linear-gradient(rgba(0, 168, 84, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 168, 84, 0.02) 1px, transparent 1px);
   }
 }
 
@@ -202,6 +202,11 @@ img {
   color: white;
 }
 
+[data-theme='light'] ::selection {
+  background: var(--accent-blue);
+  color: white;
+}
+
 /* Focus styles */
 *:focus {
   outline: 2px solid var(--primary-color);
@@ -211,6 +216,12 @@ img {
 /* Dark mode image inversion for expertise icons */
 [data-theme='dark'] .expertise-icon img {
   filter: invert(1) !important;
+}
+
+/* Light mode - ensure icons are visible */
+[data-theme='light'] .expertise-icon img {
+  filter: none;
+  opacity: 0.9;
 }
 
 @media (max-width: 768px) {
