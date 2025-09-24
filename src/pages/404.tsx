@@ -7,7 +7,7 @@ import '../styles/404.scss';
 const NotFoundPage: React.FC = () => {
   return (
     <Layout>
-      <SEO title="404: Not Found" />
+      <SEO title="404" />
       <div className="not-found">
         <h1>404: Not Found</h1>
         <p>Sorry, the page you&apos;re looking for doesn&apos;t exist.</p>
