@@ -81,7 +81,7 @@ export const siteConfig: SiteConfig = {
 
   // SEO and meta
   seo: {
-    defaultTitle: 'Alex Nodeland',
+    defaultTitle: 'alex nodeland',
     defaultDescription:
       'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.',
     defaultImage: '/images/icon.png',
