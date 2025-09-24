@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { AnimatedBackgroundProps } from '../../types/animated-backgrounds';
+import { AnimatedBackgroundProps } from '../../core/types';
+import { GraphTopologySettings } from './config';
 
 type Vector2 = { x: number; y: number };
 
@@ -181,55 +182,9 @@ function calculateSubgraphConductivity(
   return quality * sizePenalty;
 }
 
-// Alternative: Normalized Cut for better numerical properties
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function calculateNormalizedCut(
-  nodeIds: Set<number>,
-  edges: GraphEdge[]
-): number {
-  if (nodeIds.size === 0) return Infinity;
-
-  let cutWeight = 0;
-  let volumeS = 0;
-  let volumeComplement = 0;
-
-  // Calculate cut weight and volumes
-  for (const e of edges) {
-    const sourceInSubgraph = nodeIds.has(e.source);
-    const targetInSubgraph = nodeIds.has(e.target);
-
-    if (sourceInSubgraph && targetInSubgraph) {
-      // Internal edge
-      volumeS += 2 * e.weight;
-    } else if (sourceInSubgraph || targetInSubgraph) {
-      // Cut edge
-      cutWeight += e.weight;
-      if (sourceInSubgraph) {
-        volumeS += e.weight;
-        volumeComplement += e.weight;
-      } else {
-        volumeComplement += e.weight;
-        volumeS += e.weight;
-      }
-    } else {
-      // External edge
-      volumeComplement += 2 * e.weight;
-    }
-  }
-
-  if (volumeS === 0 || volumeComplement === 0) return Infinity;
-
-  // Normalized cut: NCut(S) = cut(S,V\S) * (1/vol(S) + 1/vol(V\S))
-  const normalizedCut = cutWeight * (1.0 / volumeS + 1.0 / volumeComplement);
-
-  // Return negative for maximization (lower normalized cut is better)
-  return -normalizedCut;
-}
-
-const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
-  className,
-  settings,
-}) => {
+const GraphTopologyBackground: React.FC<
+  AnimatedBackgroundProps<GraphTopologySettings>
+> = ({ className, settings }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
 
@@ -244,34 +199,23 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    // Use new intuitive settings with fallbacks to legacy settings
+    // Use settings with fallbacks
     const opacity = settings.opacity;
     const simulationSpeed =
       settings.animationSpeed || settings.globalTimeMultiplier || 1.0;
     const nodeCountParam =
-      settings.totalNodes ||
-      Math.max(
-        12,
-        Math.min(48, Math.floor((settings.evolutionSpeed1 || 6) * 4))
-      );
+      settings.totalNodes || Math.max(12, Math.min(48, 32));
     const clusterCountParam =
       settings.clusterCount ||
       Math.max(2, Math.min(4, Math.floor(nodeCountParam / 8)));
     const targetSubgraphSize =
-      settings.requestedNodes ||
-      Math.max(
-        3,
-        Math.min(12, Math.floor((settings.updateAnimationSpeed || 8) / 2))
-      );
+      settings.requestedNodes || Math.max(3, Math.min(12, 8));
     const graphScale = settings.scale || 1.0;
-    const edgeThickness =
-      settings.edgeThickness ||
-      Math.max(1.0, (settings.connectionLineWidth || 0.008) * 300.0);
+    const edgeThickness = settings.edgeThickness || 2.0;
     const walkStepsPerSecond = Math.max(
       0.5,
-      (settings.updateAnimationSpeed || 6) / 4
-    ); // Slower for visibility
-    // const highlightIntensity = settings.activityIntensity || 0.8;
+      (settings.updateAnimationSpeed || 4) / 2
+    );
 
     const rng = mulberry32(1337);
     const { nodes, edges } = createClusteredGraph(
@@ -291,8 +235,6 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
     let currentSet: Set<number> = new Set<number>();
     let bestSet: Set<number> = new Set<number>();
     let bestScore = -Infinity;
-    // let currentScore = -Infinity;
-    // const frontier: number[] = [];
     let lastStepTime = 0;
     let iterationCount = 0; // Track iterations for temperature schedule
     let currentTemperature = 1.0; // Track current temperature for visualization
@@ -332,7 +274,6 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
     // Initialize best solution and current score
     bestSet = new Set(currentSet);
     bestScore = calculateSubgraphConductivity(bestSet, edges, nodes.length);
-    // currentScore = bestScore;
 
     // Build Three.js geometry for edges (lines) and nodes (instanced circles)
     const edgeMaterial = new THREE.LineBasicMaterial({
@@ -370,7 +311,7 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
     );
 
     const nodeMaterial = new THREE.PointsMaterial({
-      size: (settings.cellBaseSize || 0.08) * 300,
+      size: settings.elementSize * 300,
       vertexColors: true,
       transparent: true,
       opacity,
@@ -378,12 +319,6 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
     });
     const points = new THREE.Points(nodeGeometry, nodeMaterial);
     scene.add(points);
-
-    // const colorBlue = new THREE.Color(0.0, 0.6, 1.0);      // Bright cyan-blue for current subgraph
-    // const colorGreen = new THREE.Color(0.0, 1.0, 0.0);     // Pure bright green for optimal subgraph
-    // const colorNeutral = new THREE.Color(0.15, 0.15, 0.2); // Dark blue-gray for background
-    // const colorFlash = new THREE.Color(1.0, 0.95, 0.0);    // Bright gold for flashing convergence
-    // const colorPurple = new THREE.Color(1.0, 0.0, 1.0);    // Bright magenta for overlap
 
     function stepLayout(dt: number) {
       // Limit dt to prevent instability
@@ -525,7 +460,6 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
 
       if (shouldAccept) {
         currentSet = proposal;
-        // currentScore = proposedConductivity;
 
         // Update best solution found so far
         if (proposedConductivity > bestScore) {
@@ -741,43 +675,48 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
         let linewidth = 1.0;
 
         if (hasConverged && inBestSubgraph) {
-          // Converged optimal edges: flash between bright green and gold
+          // Converged optimal edges: flash between primary and accent
           const flash = flashPhase > 0 ? 1 : 0;
-          color = [
-            flash, // R: 0 -> 1 (green to gold)
-            1.0, // G: always max
-            0, // B: 0
-          ];
+          color =
+            flash > 0.5 ? settings.colors.accent : settings.colors.primary;
           alpha = 1.0; // Full opacity
           linewidth = 3.0;
         } else if (inBestSubgraph && inCurrentSubgraph) {
-          // Edge in both: bright magenta
-          color = [1.0, 0.0, 1.0];
+          // Edge in both: bright accent color
+          color = settings.colors.accent;
           alpha = 1.0;
           linewidth = 2.5;
         } else if (inBestSubgraph) {
-          // Best only: bright green
-          color = [0.0, 1.0, 0.0];
+          // Best only: primary color
+          color = settings.colors.primary;
           alpha = 0.9;
           linewidth = 2.0;
         } else if (inCurrentSubgraph) {
-          // Current only: bright cyan-blue with pulse
-          color = [0.0, 0.6 + searchPulse * 0.4, 1.0];
+          // Current only: secondary color with pulse
+          color = settings.colors.secondary;
           alpha = 0.8 + searchPulse * 0.2;
           linewidth = 2.0;
         } else if (touchesCurrent) {
-          // Boundary of current: medium blue
-          color = [0.2, 0.4, 0.8];
+          // Boundary of current: faded secondary
+          color = settings.colors.secondary.map(c => c * 0.5) as [
+            number,
+            number,
+            number,
+          ];
           alpha = 0.4;
           linewidth = 1.0;
         } else if (touchesBest) {
-          // Boundary of best: medium green
-          color = [0.2, 0.6, 0.2];
+          // Boundary of best: faded primary
+          color = settings.colors.primary.map(c => c * 0.5) as [
+            number,
+            number,
+            number,
+          ];
           alpha = 0.4;
           linewidth = 1.0;
         } else {
           // Background edge: very dark gray
-          color = [0.1, 0.1, 0.12];
+          color = settings.colors.background;
           alpha = 0.05 + normalizedWeight * 0.05; // Very faint
           linewidth = 0.3;
         }
@@ -817,49 +756,31 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
 
         let r: number, g: number, b: number;
         let brightness: number;
-        // let size = 1.0;
 
         if (hasConverged && inBest) {
-          // Converged optimal nodes: flash between bright green and gold
+          // Converged optimal nodes: flash between primary and accent
           if (flashPhase > 0) {
-            r = 1.0; // Gold
-            g = 1.0;
-            b = 0.0;
+            [r, g, b] = settings.colors.accent; // Accent
           } else {
-            r = 0.0; // Bright green
-            g = 1.0;
-            b = 0.0;
+            [r, g, b] = settings.colors.primary; // Primary
           }
           brightness = 1.5; // Extra bright
-          // size = 1.8 + Math.abs(flashPhase) * 0.4;
         } else if (inBest && inCurrent) {
-          // Node in both: bright magenta with pulse
-          r = 1.0;
-          g = 0.0;
-          b = 1.0;
+          // Node in both: bright accent with pulse
+          [r, g, b] = settings.colors.accent;
           brightness = 1.3 + slowPulse * 0.3;
-          // size = 1.6;
         } else if (inBest) {
-          // Best only: bright green
-          r = 0.0;
-          g = 1.0;
-          b = 0.0;
+          // Best only: primary color
+          [r, g, b] = settings.colors.primary;
           brightness = 1.2;
-          // size = 1.5;
         } else if (inCurrent) {
-          // Current only: bright cyan-blue with search animation
-          r = 0.0;
-          g = 0.6 + searchPulse * 0.4;
-          b = 1.0;
+          // Current only: secondary color with search animation
+          [r, g, b] = settings.colors.secondary;
           brightness = 1.1 + searchPulse * 0.3;
-          // size = 1.4 + searchPulse * 0.2;
         } else {
-          // Background nodes: very dark gray, barely visible
-          r = 0.15;
-          g = 0.15;
-          b = 0.2;
+          // Background nodes: background color, barely visible
+          [r, g, b] = settings.colors.background;
           brightness = 0.1 + normalizedConnectivity * 0.1; // Very dim
-          // size = 0.6 + normalizedConnectivity * 0.2;
         }
 
         // Apply temperature visualization (redder = hotter = more exploration)
@@ -881,7 +802,7 @@ const GraphTopologyBackground: React.FC<AnimatedBackgroundProps> = ({
       ).needsUpdate = true;
 
       // Dynamic node sizing based on algorithm state
-      const baseNodeSize = (settings.cellBaseSize || 0.08) * 400; // Doubled base size
+      const baseNodeSize = settings.elementSize * 400;
       let dynamicSize = baseNodeSize;
 
       if (hasConverged) {

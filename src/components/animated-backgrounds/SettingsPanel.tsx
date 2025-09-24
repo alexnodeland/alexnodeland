@@ -27,9 +27,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   currentBackgroundId,
   currentBackgroundName,
   currentBackgroundDescription,
-  _totalBackgrounds,
-  _onPreviousBackground,
-  _onNextBackground,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  totalBackgrounds,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onPreviousBackground,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onNextBackground,
   isClosing,
 }) => {
   // Define which categories are considered standard across all backgrounds
@@ -229,7 +232,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     const value = getNestedValue(settings, setting.key);
 
     switch (setting.type) {
-      case 'slider': { // Dynamic bounds for settings that depend on other settings
+      case 'slider': {
+        // Dynamic bounds for settings that depend on other settings
         let dynamicMin = setting.min;
         let dynamicMax = setting.max;
         if (setting.key === 'spStartNode' || setting.key === 'spGoalNode') {

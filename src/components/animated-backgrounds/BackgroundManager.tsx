@@ -10,7 +10,7 @@ import {
   BackgroundSettings,
 } from '../../types/animated-backgrounds';
 import BackgroundControls from './BackgroundControls';
-import { backgroundRegistry, getBackgroundById } from './backgroundRegistry';
+import { backgroundRegistry, getBackgroundById } from './index';
 // import SettingsPanel from './SettingsPanel';
 import { siteConfig } from '../../config';
 import { useSettingsPanel } from '../../contexts/SettingsPanelContext';

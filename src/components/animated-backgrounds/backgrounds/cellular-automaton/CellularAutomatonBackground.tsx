@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { AnimatedBackgroundProps } from '../../types/animated-backgrounds';
+import { AnimatedBackgroundProps } from '../../core/types';
+import { CellularAutomatonSettings } from './config';
 
-const CellularAutomatonBackground: React.FC<AnimatedBackgroundProps> = ({
-  className,
-  settings,
-}) => {
+const CellularAutomatonBackground: React.FC<
+  AnimatedBackgroundProps<CellularAutomatonSettings>
+> = ({ className, settings }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -54,11 +54,11 @@ const CellularAutomatonBackground: React.FC<AnimatedBackgroundProps> = ({
       uniform float uDiagonalEvolutionSpeed;
       uniform float uUpdateAnimationSpeed;
       uniform float uWaveAmplitude;
-      uniform vec3 uColorAlive;
-      uniform vec3 uColorNeutral;
-      uniform vec3 uColorActive;
-      uniform vec3 uColorHighActivity;
-      uniform vec3 uColorGridOverlay;
+      uniform vec3 uColorPrimary;
+      uniform vec3 uColorSecondary;
+      uniform vec3 uColorAccent;
+      uniform vec3 uColorBackground;
+      uniform vec3 uColorGrid;
       uniform float uConnectionLineWidth;
       uniform float uDiagonalConnectionWeight;
       uniform float uActivityIntensity;
@@ -127,13 +127,13 @@ const CellularAutomatonBackground: React.FC<AnimatedBackgroundProps> = ({
       }
 
       vec3 getAutomatonColor(float state) {
-        // Color mapping for cellular states using configurable colors
+        // Color mapping using standardized colors
         if (state < 0.0) {
-          return mix(uColorAlive, uColorNeutral, (state + 1.0));
+          return mix(uColorSecondary, uColorBackground, (state + 1.0));
         } else if (state < 0.5) {
-          return mix(uColorNeutral, uColorActive, state * 2.0);
+          return mix(uColorBackground, uColorPrimary, state * 2.0);
         } else {
-          return mix(uColorActive, uColorHighActivity, (state - 0.5) * 2.0);
+          return mix(uColorPrimary, uColorAccent, (state - 0.5) * 2.0);
         }
       }
 
@@ -229,7 +229,7 @@ const CellularAutomatonBackground: React.FC<AnimatedBackgroundProps> = ({
           smoothstep(0.002, 0.001, abs(localUv.x)),
           smoothstep(0.002, 0.001, abs(localUv.y))
         );
-        finalColor += uColorGridOverlay * gridLine * 0.3;
+        finalColor += uColorGrid * gridLine * 0.3;
 
         // Highlight active evolution zones - sweeping across screen
         float sweepPhase = sin(worldPos.x * 3.0 - adjustedTime * 4.0) * sin(worldPos.y * 2.0 - adjustedTime * 3.0);
@@ -255,25 +255,27 @@ const CellularAutomatonBackground: React.FC<AnimatedBackgroundProps> = ({
           ),
         },
 
-        // Configurable parameters from settings
-        uCellSize: { value: settings.cellSize },
-        uCellBaseSize: { value: settings.cellBaseSize },
-        uCellSizeMultiplier: { value: settings.cellSizeMultiplier },
+        // Standard settings mapped to uniforms
+        uCellBaseSize: { value: settings.elementSize },
         uGlobalTimeMultiplier: { value: settings.globalTimeMultiplier },
+        uColorPrimary: { value: new THREE.Vector3(...settings.colors.primary) },
+        uColorSecondary: {
+          value: new THREE.Vector3(...settings.colors.secondary),
+        },
+        uColorAccent: { value: new THREE.Vector3(...settings.colors.accent) },
+        uColorBackground: {
+          value: new THREE.Vector3(...settings.colors.background),
+        },
+        uColorGrid: { value: new THREE.Vector3(...settings.colors.grid) },
+
+        // Custom cellular automaton settings
+        uCellSize: { value: settings.cellSize },
+        uCellSizeMultiplier: { value: settings.cellSizeMultiplier },
         uEvolutionSpeed1: { value: settings.evolutionSpeed1 },
         uEvolutionSpeed2: { value: settings.evolutionSpeed2 },
         uDiagonalEvolutionSpeed: { value: settings.diagonalEvolutionSpeed },
         uUpdateAnimationSpeed: { value: settings.updateAnimationSpeed },
         uWaveAmplitude: { value: settings.waveAmplitude },
-        uColorAlive: { value: new THREE.Vector3(...settings.colors.alive) },
-        uColorNeutral: { value: new THREE.Vector3(...settings.colors.neutral) },
-        uColorActive: { value: new THREE.Vector3(...settings.colors.active) },
-        uColorHighActivity: {
-          value: new THREE.Vector3(...settings.colors.highActivity),
-        },
-        uColorGridOverlay: {
-          value: new THREE.Vector3(...settings.colors.gridOverlay),
-        },
         uConnectionLineWidth: { value: settings.connectionLineWidth },
         uDiagonalConnectionWeight: { value: settings.diagonalConnectionWeight },
         uActivityIntensity: { value: settings.activityIntensity },
