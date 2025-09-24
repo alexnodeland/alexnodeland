@@ -1,4 +1,4 @@
-const { siteConfig } = require('./src/config/site.ts')
+const { siteConfig } = require('./src/config/site.ts');
 
 /**
  * @type {import('gatsby').GatsbyConfig}
@@ -56,4 +56,4 @@ module.exports = {
       },
     },
   ],
-}
+};
