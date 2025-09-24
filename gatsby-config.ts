@@ -1,14 +1,10 @@
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { siteConfig } from './src/config/site.ts';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { siteConfig } from './src/config/site';
 
 /**
  * @type {import('gatsby').GatsbyConfig}
  */
-const config = {
+const config: import('gatsby').GatsbyConfig = {
   pathPrefix: `/alexnodeland`,
   siteMetadata: {
     title: siteConfig.siteName,
@@ -28,21 +24,21 @@ const config = {
       resolve: `gatsby-source-filesystem`,
       options: {
         name: `images`,
-        path: `${__dirname}/src/images`,
+        path: path.resolve(process.cwd(), `src`, `images`),
       },
     },
     {
       resolve: `gatsby-source-filesystem`,
       options: {
         name: `pages`,
-        path: `${__dirname}/src/pages`,
+        path: path.resolve(process.cwd(), `src`, `pages`),
       },
     },
     {
       resolve: `gatsby-source-filesystem`,
       options: {
         name: `blog`,
-        path: `${__dirname}/src/content/blog`,
+        path: path.resolve(process.cwd(), `src`, `content`, `blog`),
       },
     },
     {
