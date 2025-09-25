@@ -12,3 +12,6 @@ export { default as ExperienceSection } from './cv/CVExperienceSection';
 export { default as ExportButtons } from './cv/CVExportButtons';
 export { default as CVHeader } from './cv/CVHeader';
 export { default as SkillsSection } from './cv/CVSkillsSection';
+
+// Chat components
+export * from './chat';

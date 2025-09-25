@@ -47,6 +47,7 @@
   "homepage": "https://github.com/alexnodeland/alexnodeland#readme",
   "description": "Portfolio website for Alex Nodeland - Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.",
   "dependencies": {
+    "@huggingface/transformers": "^3.7.3",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@types/three": "^0.180.0",
