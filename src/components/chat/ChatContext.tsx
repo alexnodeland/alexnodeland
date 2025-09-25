@@ -1,17 +1,5 @@
 import React, { createContext, ReactNode, useContext, useState } from 'react';
-
-export interface ChatMessage {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-}
-
-export interface ChatModel {
-  id: string;
-  name: string;
-  description: string;
-}
+import { ChatMessage, ChatModel } from '../../types/chat';
 
 interface ChatContextType {
   isChatOpen: boolean;
