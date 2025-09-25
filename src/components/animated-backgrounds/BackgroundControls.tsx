@@ -94,7 +94,7 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
           {/* Keyboard Hints */}
           <div className="keyboard-hint">
             <kbd>←</kbd>
-            <kbd>→</kbd> switch • <kbd>S</kbd> settings • <kbd>Esc</kbd> close
+            <kbd>→</kbd> switch • <kbd>S</kbd> settings • <kbd>H</kbd> hide
           </div>
         </div>
       )}

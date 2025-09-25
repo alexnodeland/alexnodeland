@@ -25,7 +25,12 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   initialBackgroundId = 'cellular-automaton',
 }) => {
   // Use settings panel context
-  const { setSettingsPanelOpen, setClosingSettingsPanel } = useSettingsPanel();
+  const {
+    setSettingsPanelOpen,
+    setClosingSettingsPanel,
+    isContentHidden,
+    setContentHidden,
+  } = useSettingsPanel();
 
   // Initialize state with default settings for all backgrounds
   const [state, setState] = useState<BackgroundManagerState>(() => {
@@ -131,6 +136,11 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     setClosingSettingsPanel,
   ]);
 
+  // Toggle content visibility
+  const toggleContentHidden = useCallback(() => {
+    setContentHidden(!isContentHidden);
+  }, [isContentHidden, setContentHidden]);
+
   // Update settings for current background
   const updateCurrentSettings = useCallback(
     (newSettings: BackgroundSettings) => {
@@ -176,11 +186,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
           event.preventDefault();
           toggleSettingsPanel();
           break;
-        case 'Escape':
-          if (state.showSettingsPanel) {
-            event.preventDefault();
-            closeSettingsPanel();
-          }
+        case 'KeyH':
+          event.preventDefault();
+          toggleContentHidden();
           break;
       }
     },
@@ -188,8 +196,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
       switchToNextBackground,
       switchToPreviousBackground,
       toggleSettingsPanel,
-      closeSettingsPanel,
-      state.showSettingsPanel,
+      toggleContentHidden,
     ]
   );
 
