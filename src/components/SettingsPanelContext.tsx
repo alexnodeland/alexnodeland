@@ -3,8 +3,10 @@ import React, { createContext, ReactNode, useContext, useState } from 'react';
 interface SettingsPanelContextType {
   isSettingsPanelOpen: boolean;
   isClosingSettingsPanel: boolean;
+  isContentHidden: boolean;
   setSettingsPanelOpen: (isOpen: boolean) => void;
   setClosingSettingsPanel: (isClosing: boolean) => void;
+  setContentHidden: (isHidden: boolean) => void;
 }
 
 const SettingsPanelContext = createContext<
@@ -20,6 +22,7 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
 }) => {
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isClosingSettingsPanel, setIsClosingSettingsPanel] = useState(false);
+  const [isContentHidden, setIsContentHidden] = useState(false);
 
   const setSettingsPanelOpen = (isOpen: boolean) => {
     setIsSettingsPanelOpen(isOpen);
@@ -29,13 +32,19 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
     setIsClosingSettingsPanel(isClosing);
   };
 
+  const setContentHidden = (isHidden: boolean) => {
+    setIsContentHidden(isHidden);
+  };
+
   return (
     <SettingsPanelContext.Provider
       value={{
         isSettingsPanelOpen,
         isClosingSettingsPanel,
+        isContentHidden,
         setSettingsPanelOpen,
         setClosingSettingsPanel,
+        setContentHidden,
       }}
     >
       {children}

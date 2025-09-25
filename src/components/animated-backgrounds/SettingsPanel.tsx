@@ -471,7 +471,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
         <div className="sidebar-keyboard-hints">
           <kbd>←</kbd>
-          <kbd>→</kbd> switch • <kbd>S</kbd> settings • <kbd>Esc</kbd> close
+          <kbd>→</kbd> switch • <kbd>S</kbd> settings • <kbd>H</kbd> hide
         </div>
       </div>
     </div>

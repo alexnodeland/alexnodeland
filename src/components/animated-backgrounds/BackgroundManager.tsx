@@ -20,12 +20,24 @@ interface BackgroundManagerProps {
   initialBackgroundId?: string;
 }
 
+// Function to get a random background ID
+const getRandomBackgroundId = (): string => {
+  const backgroundIds = backgroundRegistry.map(bg => bg.id);
+  const randomIndex = Math.floor(Math.random() * backgroundIds.length);
+  return backgroundIds[randomIndex];
+};
+
 const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   className,
-  initialBackgroundId = 'cellular-automaton',
+  initialBackgroundId,
 }) => {
   // Use settings panel context
-  const { setSettingsPanelOpen, setClosingSettingsPanel } = useSettingsPanel();
+  const {
+    setSettingsPanelOpen,
+    setClosingSettingsPanel,
+    isContentHidden,
+    setContentHidden,
+  } = useSettingsPanel();
 
   // Initialize state with default settings for all backgrounds
   const [state, setState] = useState<BackgroundManagerState>(() => {
@@ -34,8 +46,11 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
       initialSettings[bg.id] = { ...bg.defaultSettings };
     });
 
+    // Use provided initialBackgroundId or select a random one
+    const selectedBackgroundId = initialBackgroundId || getRandomBackgroundId();
+
     return {
-      currentBackgroundId: initialBackgroundId,
+      currentBackgroundId: selectedBackgroundId,
       settings: initialSettings,
       showSettingsPanel: false,
       closingSettingsPanel: false,
@@ -131,6 +146,11 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     setClosingSettingsPanel,
   ]);
 
+  // Toggle content visibility
+  const toggleContentHidden = useCallback(() => {
+    setContentHidden(!isContentHidden);
+  }, [isContentHidden, setContentHidden]);
+
   // Update settings for current background
   const updateCurrentSettings = useCallback(
     (newSettings: BackgroundSettings) => {
@@ -176,11 +196,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
           event.preventDefault();
           toggleSettingsPanel();
           break;
-        case 'Escape':
-          if (state.showSettingsPanel) {
-            event.preventDefault();
-            closeSettingsPanel();
-          }
+        case 'KeyH':
+          event.preventDefault();
+          toggleContentHidden();
           break;
       }
     },
@@ -188,8 +206,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
       switchToNextBackground,
       switchToPreviousBackground,
       toggleSettingsPanel,
-      closeSettingsPanel,
-      state.showSettingsPanel,
+      toggleContentHidden,
     ]
   );
 
@@ -226,13 +243,27 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
             ...parsedState,
             showSettingsPanel: false, // Never restore panel open state
           }));
+        } else {
+          // If saved background doesn't exist, select a random one
+          setState(prev => ({
+            ...prev,
+            currentBackgroundId: getRandomBackgroundId(),
+            showSettingsPanel: false,
+          }));
         }
       }
+      // No need to do anything if no saved state - random background already selected in initial state
     } catch (error) {
       console.warn(
         'Failed to load background settings from localStorage:',
         error
       );
+      // On error, select a random background
+      setState(prev => ({
+        ...prev,
+        currentBackgroundId: getRandomBackgroundId(),
+        showSettingsPanel: false,
+      }));
     }
   }, []);
 
