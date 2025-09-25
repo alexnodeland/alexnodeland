@@ -28,7 +28,7 @@
 
 // Fixed rainbow border at the top
 .rainbow-border-fixed {
-  height: 6px;
+  height: 3px;
   background: linear-gradient(
     90deg,
     var(--accent-color) 0%,
@@ -46,7 +46,7 @@
 
 .layout {
   min-height: calc(
-    100vh - 2rem - 6px
+    100vh - 2rem - 3px
   ); // Viewport minus buffers and rainbow height
   display: flex;
   flex-direction: column;
@@ -54,7 +54,7 @@
   backdrop-filter: blur(3px);
   border-radius: var(--radius-lg);
   position: fixed;
-  top: calc(1rem + 6px); // Start below rainbow; header overlays transparently
+  top: calc(1rem + 3px); // Start below rainbow; header overlays transparently
   left: 1rem;
   right: 1rem;
   bottom: 1rem;
@@ -125,11 +125,16 @@
 }
 
 [data-theme='light'] .header-fixed {
-  background: rgba(0, 0, 0, 0.1); // Keep dark like dark mode
-  backdrop-filter: blur(5px);
-  border-bottom: 2px solid var(--accent-pink);
-  box-shadow: 0 0 20px rgba(233, 30, 99, 0.2);
+  background: rgba(0, 0, 0, 0.1); // Match layout exactly
+  backdrop-filter: blur(3px); // Match layout blur exactly
+  border: none; // Remove all borders for full transparency
+  box-shadow: none; // Remove box shadow for transparency
 }
+
+// Header always has blur to match content (light theme)
+// [data-theme='light'] .fixed-header-container.scrolled .header-fixed {
+//   backdrop-filter: blur(3px);
+// }
 
 [data-theme='light'] .footer-link {
   background: transparent; // Fully transparent
@@ -169,14 +174,19 @@
 
 .header-fixed {
   background: rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(5px);
-  border-bottom: 2px solid var(--accent-color);
-  margin: 0 1rem;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+  backdrop-filter: blur(3px); // Match layout blur exactly
+  border: none; // Remove all borders for full transparency
+  margin: 0 1rem; // Remove top margin to connect with rainbow
+  box-shadow: none; // Remove box shadow for transparency
   transition: all var(--transition-normal);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg); // Only round bottom corners
   pointer-events: auto; // Re-enable pointer events for the header
 }
+
+// Header always has blur to match content
+// .fixed-header-container.scrolled .header-fixed {
+//   backdrop-filter: blur(3px);
+// }
 
 .nav {
   max-width: 1200px;
@@ -185,6 +195,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  // When there's no nav-brand (on homepage), keep nav-menu on the right
+  &:not(:has(.nav-brand)) {
+    justify-content: flex-end;
+  }
 }
 
 .nav-brand {
@@ -493,7 +508,7 @@
   }
 
   .layout {
-    top: calc(0.5rem + 6px); // Panel starts below rainbow; header overlays
+    top: calc(0.5rem + 3px); // Panel starts below rainbow; header overlays
     left: 0.5rem;
     right: 0.5rem;
     bottom: 0.5rem;
@@ -545,7 +560,7 @@
   }
 
   .layout {
-    top: calc(0.25rem + 6px); // Panel starts below rainbow; header overlays
+    top: calc(0.25rem + 3px); // Panel starts below rainbow; header overlays
     left: 0.25rem;
     right: 0.25rem;
     bottom: 0.25rem;
