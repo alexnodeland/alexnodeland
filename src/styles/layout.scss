@@ -26,19 +26,35 @@
   }
 }
 
-// Removed rainbow border - no longer needed
+// Fixed rainbow border at the top
+.rainbow-border-fixed {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-color) 0%,
+    var(--retro-blue) 25%,
+    var(--retro-green) 50%,
+    var(--retro-purple) 75%,
+    var(--accent-color) 100%
+  );
+  box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+  animation: borderGlow 3s ease-in-out infinite alternate;
+  margin: 1rem 1rem 0 1rem;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  pointer-events: auto; // Re-enable pointer events for the border
+}
 
 .layout {
   min-height: calc(
-    100vh - 2rem
-  ); // Viewport minus buffers (removed rainbow height)
+    100vh - 2rem - 3px
+  ); // Viewport minus buffers and rainbow height
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(3px);
   border-radius: var(--radius-lg);
   position: fixed;
-  top: 1rem; // Start at top margin (no rainbow)
+  top: calc(1rem + 3px); // Start below rainbow; header overlays transparently
   left: 1rem;
   right: 1rem;
   bottom: 1rem;
@@ -109,11 +125,16 @@
 }
 
 [data-theme='light'] .header-fixed {
-  background: rgba(0, 0, 0, 0.1); // Keep dark like dark mode
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.1); // Match layout exactly
+  backdrop-filter: blur(3px); // Match layout blur exactly
   border: none; // Remove all borders for full transparency
   box-shadow: none; // Remove box shadow for transparency
 }
+
+// Header always has blur to match content (light theme)
+// [data-theme='light'] .fixed-header-container.scrolled .header-fixed {
+//   backdrop-filter: blur(3px);
+// }
 
 [data-theme='light'] .footer-link {
   background: transparent; // Fully transparent
@@ -153,14 +174,19 @@
 
 .header-fixed {
   background: rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px); // Match layout blur exactly
   border: none; // Remove all borders for full transparency
-  margin: 1rem;
+  margin: 0 1rem; // Remove top margin to connect with rainbow
   box-shadow: none; // Remove box shadow for transparency
   transition: all var(--transition-normal);
-  border-radius: var(--radius-lg); // Match layout border radius
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg); // Only round bottom corners
   pointer-events: auto; // Re-enable pointer events for the header
 }
+
+// Header always has blur to match content
+// .fixed-header-container.scrolled .header-fixed {
+//   backdrop-filter: blur(3px);
+// }
 
 .nav {
   max-width: 1200px;
@@ -473,12 +499,16 @@
 }
 
 @media (max-width: 768px) {
+  .rainbow-border-fixed {
+    margin: 0.5rem 0.5rem 0 0.5rem;
+  }
+
   .header-fixed {
-    margin: 0.5rem;
+    margin: 0 0.5rem;
   }
 
   .layout {
-    top: 0.5rem; // Panel starts at top margin
+    top: calc(0.5rem + 3px); // Panel starts below rainbow; header overlays
     left: 0.5rem;
     right: 0.5rem;
     bottom: 0.5rem;
@@ -521,12 +551,16 @@
 }
 
 @media (max-width: 480px) {
+  .rainbow-border-fixed {
+    margin: 0.25rem 0.25rem 0 0.25rem;
+  }
+
   .header-fixed {
-    margin: 0.25rem;
+    margin: 0 0.25rem;
   }
 
   .layout {
-    top: 0.25rem; // Panel starts at top margin
+    top: calc(0.25rem + 3px); // Panel starts below rainbow; header overlays
     left: 0.25rem;
     right: 0.25rem;
     bottom: 0.25rem;

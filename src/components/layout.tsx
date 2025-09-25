@@ -14,6 +14,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
   const { isSettingsPanelOpen, isClosingSettingsPanel } = useSettingsPanel();
   // Use window.location to determine current page (client-side)
   const [isHomePage, setIsHomePage] = React.useState(false);
+  const [isScrolled, setIsScrolled] = React.useState(false);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -26,11 +27,26 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
     }
   }, []);
 
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (typeof window !== 'undefined') {
+        // Apply blur when scrolled more than 50px
+        setIsScrolled(window.scrollY > 50);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
   // Determine CSS classes based on settings panel state
   const headerContainerClasses = [
     'fixed-header-container',
     isSettingsPanelOpen && 'settings-panel-open',
     isClosingSettingsPanel && 'settings-panel-closing',
+    isScrolled && 'scrolled',
   ]
     .filter(Boolean)
     .join(' ');
@@ -46,6 +62,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
   return (
     <>
       <div className={headerContainerClasses}>
+        <div className="rainbow-border-fixed"></div>
         <header className="header-fixed">
           <nav className="nav">
             {!isHomePage && (
