@@ -26,35 +26,19 @@
   }
 }
 
-// Fixed rainbow border at the top
-.rainbow-border-fixed {
-  height: 6px;
-  background: linear-gradient(
-    90deg,
-    var(--accent-color) 0%,
-    var(--retro-blue) 25%,
-    var(--retro-green) 50%,
-    var(--retro-purple) 75%,
-    var(--accent-color) 100%
-  );
-  box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-  animation: borderGlow 3s ease-in-out infinite alternate;
-  margin: 1rem 1rem 0 1rem;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  pointer-events: auto; // Re-enable pointer events for the border
-}
+// Removed rainbow border - no longer needed
 
 .layout {
   min-height: calc(
-    100vh - 2rem - 6px
-  ); // Viewport minus buffers and rainbow height
+    100vh - 2rem
+  ); // Viewport minus buffers (removed rainbow height)
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(3px);
   border-radius: var(--radius-lg);
   position: fixed;
-  top: calc(1rem + 6px); // Start below rainbow; header overlays transparently
+  top: 1rem; // Start at top margin (no rainbow)
   left: 1rem;
   right: 1rem;
   bottom: 1rem;
@@ -126,9 +110,9 @@
 
 [data-theme='light'] .header-fixed {
   background: rgba(0, 0, 0, 0.1); // Keep dark like dark mode
-  backdrop-filter: blur(5px);
-  border-bottom: 2px solid var(--accent-pink);
-  box-shadow: 0 0 20px rgba(233, 30, 99, 0.2);
+  backdrop-filter: blur(3px);
+  border: none; // Remove all borders for full transparency
+  box-shadow: none; // Remove box shadow for transparency
 }
 
 [data-theme='light'] .footer-link {
@@ -169,12 +153,12 @@
 
 .header-fixed {
   background: rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(5px);
-  border-bottom: 2px solid var(--accent-color);
-  margin: 0 1rem;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+  backdrop-filter: blur(3px);
+  border: none; // Remove all borders for full transparency
+  margin: 1rem;
+  box-shadow: none; // Remove box shadow for transparency
   transition: all var(--transition-normal);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border-radius: var(--radius-lg); // Match layout border radius
   pointer-events: auto; // Re-enable pointer events for the header
 }
 
@@ -185,6 +169,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  // When there's no nav-brand (on homepage), keep nav-menu on the right
+  &:not(:has(.nav-brand)) {
+    justify-content: flex-end;
+  }
 }
 
 .nav-brand {
@@ -484,16 +473,12 @@
 }
 
 @media (max-width: 768px) {
-  .rainbow-border-fixed {
-    margin: 0.5rem 0.5rem 0 0.5rem;
-  }
-
   .header-fixed {
-    margin: 0 0.5rem;
+    margin: 0.5rem;
   }
 
   .layout {
-    top: calc(0.5rem + 6px); // Panel starts below rainbow; header overlays
+    top: 0.5rem; // Panel starts at top margin
     left: 0.5rem;
     right: 0.5rem;
     bottom: 0.5rem;
@@ -536,16 +521,12 @@
 }
 
 @media (max-width: 480px) {
-  .rainbow-border-fixed {
-    margin: 0.25rem 0.25rem 0 0.25rem;
-  }
-
   .header-fixed {
-    margin: 0 0.25rem;
+    margin: 0.25rem;
   }
 
   .layout {
-    top: calc(0.25rem + 6px); // Panel starts below rainbow; header overlays
+    top: 0.25rem; // Panel starts at top margin
     left: 0.25rem;
     right: 0.25rem;
     bottom: 0.25rem;
