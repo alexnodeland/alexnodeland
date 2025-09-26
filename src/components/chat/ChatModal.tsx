@@ -24,6 +24,12 @@ const ChatModal: React.FC = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [promptValue, setPromptValue] = useState<string | undefined>(undefined);
+  const [skipConfirm, setSkipConfirm] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('chat-skip-clear-confirm') === 'true';
+    }
+    return false;
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handlePromptSelect = (prompt: string) => {
@@ -94,7 +100,13 @@ const ChatModal: React.FC = () => {
           {messages.length > 0 && (
             <button
               className="chat-clear-button"
-              onClick={() => setShowClearConfirm(true)}
+              onClick={() => {
+                if (skipConfirm && clearChatHistory) {
+                  clearChatHistory();
+                } else {
+                  setShowClearConfirm(true);
+                }
+              }}
               aria-label="Clear chat history"
               title="Clear all chat messages"
             >
@@ -214,6 +226,16 @@ const ChatModal: React.FC = () => {
         }}
         onCancel={() => setShowClearConfirm(false)}
         messageCount={messages.length}
+        skipConfirm={skipConfirm}
+        onSkipConfirmChange={value => {
+          setSkipConfirm(value);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(
+              'chat-skip-clear-confirm',
+              value ? 'true' : 'false'
+            );
+          }
+        }}
       />
     </div>
   );
