@@ -18,7 +18,7 @@ const createMockContextWithWorker = (
   availableModels: [
     {
       id: 'onnx-community/Qwen3-0.6B-ONNX',
-      name: 'Qwen3-0.6B',
+      name: 'qwen3-0.6b',
       description: 'Real model',
     },
   ],

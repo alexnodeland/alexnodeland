@@ -4,6 +4,8 @@ import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import ClearConfirmDialog from './ClearConfirmDialog';
 import Progress from './Progress';
+import SamplePrompts from './SamplePrompts';
+import WelcomeScreen from './WelcomeScreen';
 
 const ChatModal: React.FC = () => {
   const {
@@ -21,7 +23,14 @@ const ChatModal: React.FC = () => {
   } = useChat();
   const [isAnimating, setIsAnimating] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [promptValue, setPromptValue] = useState<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handlePromptSelect = (prompt: string) => {
+    setPromptValue(prompt);
+    // Clear the prompt value after a brief moment to allow ChatInput to pick it up
+    setTimeout(() => setPromptValue(undefined), 100);
+  };
 
   useEffect(() => {
     if (isChatOpen && !isAnimating) {
@@ -57,7 +66,7 @@ const ChatModal: React.FC = () => {
   return (
     <div className={modalClasses}>
       <div className="chat-header">
-        <h3 className="chat-title">AI Assistant</h3>
+        <h3 className="chat-title">Chat</h3>
         <div className="chat-header-controls">
           <div className="model-selector">
             <select
@@ -68,7 +77,7 @@ const ChatModal: React.FC = () => {
             >
               {availableModels.map(model => {
                 const isCached = cachedModels?.includes(model.id);
-                const displayName = `${model.name}${isCached ? ' ✓' : ''}`;
+                const displayName = model.name;
                 const sizeInfo = model.size ? ` (${model.size})` : '';
                 return (
                   <option
@@ -81,30 +90,6 @@ const ChatModal: React.FC = () => {
                 );
               })}
             </select>
-            <div className="model-info">
-              {(() => {
-                const currentModel = availableModels.find(
-                  m => m.id === selectedModel
-                );
-                if (!currentModel) return null;
-                const isCached = cachedModels?.includes(selectedModel);
-                return (
-                  <div className="model-details">
-                    <span className="model-size">
-                      {currentModel.size || 'Unknown size'}
-                    </span>
-                    {isCached && <span className="cached-badge">Cached</span>}
-                    {currentModel.device && (
-                      <span
-                        className={`device-badge device-${currentModel.device}`}
-                      >
-                        {currentModel.device === 'webgpu' ? 'GPU' : 'CPU'}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
           </div>
           {messages.length > 0 && (
             <button
@@ -160,14 +145,17 @@ const ChatModal: React.FC = () => {
         </div>
       </div>
 
+      {/* Show welcome screen when no model is loaded and no messages exist */}
+      {modelState?.status === 'idle' && messages.length === 0 && (
+        <WelcomeScreen />
+      )}
+
       {/* Non-breaking loading UI (visible only if modelState is loading) */}
       {modelState?.status === 'loading' && (
         <div className="chat-input-container" aria-live="polite">
           <div style={{ width: '100%' }}>
             {modelState.loadingMessage && (
-              <div style={{ marginBottom: '0.5rem' }}>
-                {modelState.loadingMessage}
-              </div>
+              <div className="loading-message">{modelState.loadingMessage}</div>
             )}
             {modelState.progress && modelState.progress.length > 0 ? (
               modelState.progress.map((item: any, i: number) => {
@@ -191,14 +179,30 @@ const ChatModal: React.FC = () => {
         </div>
       )}
 
-      <div className="chat-messages">
-        <ChatMessage />
-        <div ref={messagesEndRef} />
-      </div>
+      {/* Chat messages and input - hidden when showing welcome screen */}
+      {!(modelState?.status === 'idle' && messages.length === 0) && (
+        <>
+          <div className="chat-messages">
+            <ChatMessage />
+            <div ref={messagesEndRef} />
+          </div>
 
-      <div className="chat-input-container">
-        <ChatInput />
-      </div>
+          <div className="chat-input-container">
+            {/* Show sample prompts floating above input when model is ready but no messages sent yet */}
+            <SamplePrompts
+              onPromptSelect={handlePromptSelect}
+              isVisible={
+                modelState?.status === 'ready' && messages.length === 0
+              }
+            />
+
+            <ChatInput
+              initialValue={promptValue}
+              onValueChange={() => {}} // We don't need to track changes from input
+            />
+          </div>
+        </>
+      )}
 
       <ClearConfirmDialog
         isOpen={showClearConfirm}

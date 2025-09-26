@@ -52,16 +52,10 @@ const Progress: React.FC<ProgressProps> = ({
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={`Loading ${text}: ${clampedPercentage.toFixed(2)}% complete`}
-        >
+        />
+        <div className="chat-progress-text-overlay">
           <span className="chat-progress-text">{formatProgressText()}</span>
         </div>
-        {clampedPercentage < 100 && (
-          <div className="chat-progress-background">
-            <span className="chat-progress-text chat-progress-text-shadow">
-              {formatProgressText()}
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );

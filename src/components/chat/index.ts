@@ -10,3 +10,5 @@ export { default as ChatModal } from './ChatModal';
 export { default as ClearConfirmDialog } from './ClearConfirmDialog';
 export { default as KeyboardShortcuts } from './KeyboardShortcuts';
 export { default as Progress } from './Progress';
+export { default as SamplePrompts } from './SamplePrompts';
+export { default as ThinkingBlock } from './ThinkingBlock';

@@ -3,28 +3,35 @@
   // Retro futuristic color palette
   --primary-color: #00ff88; // Neon green (main brand color)
   --primary-dark: #00cc6a; // Darker neon green
-  
+
   // Vibrant accent palette
   --accent-pink: #ff0080; // Hot pink (for emphasis & borders)
   --accent-cyan: #00d4ff; // Cyan blue (for highlights)
   --accent-blue: #0080ff; // Electric blue (for links/CTAs)
   --accent-purple: #ff00ff; // Magenta (for special effects)
   --accent-yellow: #ffaa00; // Orange-yellow (for warnings/alerts)
-  
+
   // Text colors
   --text-primary: #ffffff; // White text
   --text-secondary: #b0b0b0; // Light gray
   --text-muted: #808080; // Medium gray
-  
+
   // Backgrounds - Consistent black theme
   --bg-primary: #0a0a0a; // Deep black (main background)
+  --bg-secondary: rgba(
+    0,
+    0,
+    0,
+    0.1
+  ); // Very subtle transparent overlay for controls
   --bg-card: #0f0f0f; // Slightly lighter black for cards
   --bg-hover: #141414; // Hover state background
-  
+  --bg-accent: rgba(255, 255, 255, 0.03); // Very light overlay for accents
+
   // Borders
   --border-color: #1a1a1a; // Subtle border
   --border-active: #2a2a2a; // Active/hover border
-  
+
   // Legacy compatibility
   --accent-color: #ff0080; // Pink (default accent)
   --secondary-color: #00d4ff; // Cyan (secondary)
@@ -56,28 +63,35 @@
 [data-theme='light'] {
   --primary-color: #00a854; // Vibrant green - not too dark
   --primary-dark: #008844; // Darker variant for hover states
-  
+
   // Vibrant accent palette - keeping the energy but with good contrast
   --accent-pink: #e91e63; // Material pink - vibrant but readable
   --accent-cyan: #00acc1; // Bright cyan - pops on light bg
   --accent-blue: #2196f3; // Bright blue - excellent contrast
   --accent-purple: #9c27b0; // Rich purple - stands out
   --accent-yellow: #ff9800; // Warm orange - energetic
-  
+
   // Text colors - much darker for crisp readability
   --text-primary: #212121; // Almost black - crisp and clear
   --text-secondary: #616161; // Dark gray - good contrast
   --text-muted: #9e9e9e; // Medium gray - still readable
-  
+
   // Backgrounds - subtle but distinct layers
   --bg-primary: #f8f9fa; // Very light gray - not pure white
+  --bg-secondary: rgba(
+    255,
+    255,
+    255,
+    0.7
+  ); // Semi-transparent white for controls
   --bg-card: #ffffff; // Pure white for cards - creates depth
   --bg-hover: #f0f2f5; // Noticeable hover state
-  
+  --bg-accent: rgba(0, 0, 0, 0.05); // Very light dark overlay for accents
+
   // Borders - more visible for definition
   --border-color: #dee2e6; // Visible but not harsh
   --border-active: #adb5bd; // Clear active state
-  
+
   // Legacy compatibility - keeping vibrant
   --accent-color: #e91e63; // Pink (default accent)
   --secondary-color: #00acc1; // Cyan (secondary)

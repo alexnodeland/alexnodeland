@@ -2,16 +2,40 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRollingContext } from '../../lib/utils/chat';
 import { useChat } from './ChatContext';
 
-const ChatInput: React.FC = () => {
+interface ChatInputProps {
+  initialValue?: string;
+  onValueChange?: (value: string) => void;
+}
+
+const ChatInput: React.FC<ChatInputProps> = ({
+  initialValue,
+  onValueChange,
+}) => {
   const {
     addMessage,
-    setLoading,
     isLoading,
     messages,
     isGenerating,
     generateResponse,
+    modelState,
   } = useChat();
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState(initialValue || '');
+
+  // Update input value when initialValue changes (for sample prompts)
+  useEffect(() => {
+    if (initialValue !== undefined) {
+      setInputValue(initialValue);
+      // Focus the textarea after setting value
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        // Move cursor to end
+        if (textareaRef.current) {
+          const length = textareaRef.current.value.length;
+          textareaRef.current.setSelectionRange(length, length);
+        }
+      }, 50);
+    }
+  }, [initialValue]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -19,12 +43,20 @@ const ChatInput: React.FC = () => {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [inputValue]);
+    // Notify parent of value changes if callback provided
+    if (onValueChange) {
+      onValueChange(inputValue);
+    }
+  }, [inputValue, onValueChange]);
+
+  const isModelReady = modelState?.status === 'ready';
+  const isInputDisabled = isLoading || !isModelReady;
+  const isSendDisabled = !inputValue.trim() || isInputDisabled || isGenerating;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!inputValue.trim() || isLoading || isGenerating) return;
+    if (isSendDisabled) return;
 
     const userMessage = inputValue.trim();
     setInputValue('');
@@ -40,7 +72,7 @@ const ChatInput: React.FC = () => {
       role: 'user',
     });
 
-    // Always delegate to ChatContext; it will queue if the model isn't ready
+    // Generate response - model is guaranteed to be ready
     if (generateResponse) {
       const allMessages = [
         ...messages,
@@ -53,38 +85,17 @@ const ChatInput: React.FC = () => {
       ];
       const contextMessages = createRollingContext(allMessages, 2048);
       generateResponse(contextMessages);
-    } else {
-      // Extremely rare fallback if context isn't available
-      setLoading(true);
-      setTimeout(() => {
-        generateMockResponse();
-      }, 100);
     }
   };
 
-  const generateMockResponse = () => {
-    const responses = [
-      "That's an interesting question! Let me think about that...",
-      "I understand what you're asking. Here's my perspective on that topic.",
-      'Great question! Based on my knowledge, I can help you with that.',
-      "I'd be happy to help you with that. Let me provide some insights.",
-      "That's a fascinating topic! Here's what I think about it...",
-    ];
-
-    const randomResponse =
-      responses[Math.floor(Math.random() * responses.length)];
-
-    addMessage({
-      content: randomResponse,
-      role: 'assistant',
-    });
-
-    setLoading(false);
-
-    // Re-focus the textarea after the response is added
-    setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 0);
+  const getPlaceholderText = () => {
+    if (modelState?.status === 'loading') {
+      return 'Loading model...';
+    }
+    if (modelState?.status === 'idle') {
+      return 'Please download the model first';
+    }
+    return 'Type your message here...';
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -102,14 +113,14 @@ const ChatInput: React.FC = () => {
         value={inputValue}
         onChange={e => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Type your message here..."
-        disabled={isLoading || isGenerating}
+        placeholder={getPlaceholderText()}
+        disabled={isInputDisabled}
         rows={1}
       />
       <button
         type="submit"
         className="chat-send-button"
-        disabled={!inputValue.trim() || isLoading || isGenerating}
+        disabled={isSendDisabled}
         aria-label="Send message"
       >
         <svg

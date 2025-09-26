@@ -99,12 +99,13 @@ export async function detectWebGPUSupport(): Promise<boolean> {
 export const AVAILABLE_MODELS: ChatModel[] = [
   {
     id: 'onnx-community/Qwen3-0.6B-ONNX',
-    name: 'Qwen3-0.6B',
+    name: 'qwen3-0.6b',
     description: 'Fast reasoning model optimized for in-browser inference',
     size: '~600MB',
     contextWindow: 4096,
     device: 'webgpu',
     dtype: 'q4f16',
+    fallbackDevice: 'wasm',
   },
   // Additional models can be easily added here in the future
   // Example:
@@ -177,6 +178,93 @@ export function createSystemMessage(
   return {
     content,
     role: 'assistant', // System messages are typically treated as assistant messages
+  };
+}
+
+/**
+ * Thinking block parsing utilities
+ * Handles detection and extraction of <think> tags from AI responses
+ */
+export interface ThinkingBlockParseResult {
+  thinking: string;
+  content: string;
+  isThinkingComplete: boolean;
+  isInThinkingBlock: boolean;
+}
+
+/**
+ * Parses text content to extract thinking blocks and regular content
+ */
+export function parseThinkingBlocks(text: string): ThinkingBlockParseResult {
+  const thinkingStart = text.indexOf('<think>');
+  const thinkingEnd = text.indexOf('</think>');
+
+  // No thinking tags found
+  if (thinkingStart === -1) {
+    return {
+      thinking: '',
+      content: text,
+      isThinkingComplete: false,
+      isInThinkingBlock: false,
+    };
+  }
+
+  // Has opening tag but no closing tag (still thinking)
+  if (thinkingEnd === -1) {
+    const thinking = text.substring(thinkingStart + 7); // Remove '<think>'
+    return {
+      thinking,
+      content: '',
+      isThinkingComplete: false,
+      isInThinkingBlock: true,
+    };
+  }
+
+  // Has both opening and closing tags (thinking complete)
+  const thinking = text.substring(thinkingStart + 7, thinkingEnd);
+  const content = text.substring(thinkingEnd + 8); // Remove '</think>'
+
+  return {
+    thinking,
+    content,
+    isThinkingComplete: true,
+    isInThinkingBlock: false,
+  };
+}
+
+/**
+ * Updates an existing message with new thinking or content based on streaming text
+ */
+export function updateMessageWithThinking(
+  existingMessage: ChatMessage,
+  newText: string
+): ChatMessage {
+  // If message already has thinking and no raw content (meaning it was pre-parsed),
+  // and we're not adding thinking tags, just append to regular content
+  const hasPreParsedThinking =
+    existingMessage.thinking && !existingMessage._rawContent;
+  const isThinkingComplete =
+    existingMessage._thinkingComplete || hasPreParsedThinking;
+
+  if (isThinkingComplete && !newText.includes('<think>')) {
+    return {
+      ...existingMessage,
+      content: (existingMessage.content || '') + newText,
+      thinking: existingMessage.thinking, // Preserve existing thinking
+      _thinkingComplete: true,
+    };
+  }
+
+  // For streaming with thinking tags or incomplete thinking, use raw content accumulation
+  const rawContent = (existingMessage._rawContent || '') + newText;
+  const parsed = parseThinkingBlocks(rawContent);
+
+  return {
+    ...existingMessage,
+    content: parsed.content,
+    thinking: parsed.thinking || undefined,
+    _rawContent: rawContent,
+    _thinkingComplete: parsed.isThinkingComplete,
   };
 }
 

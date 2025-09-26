@@ -11,6 +11,8 @@ import {
   createRollingContext,
   getRecommendedContextWindow,
   ModelCache,
+  parseThinkingBlocks,
+  updateMessageWithThinking,
 } from '../../lib/utils/chat';
 import {
   ChatMessage,
@@ -69,10 +71,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [cachedModels, setCachedModels] = useState<string[]>([]);
   const workerRef = useRef<Worker | null>(null);
-  // Queue messages to generate once model becomes ready
-  const pendingGenerateRef = useRef<ChatMessage[] | null>(null);
-  const fallbackTimerRef = useRef<number | null>(null);
-  const loadFallbackTimerRef = useRef<number | null>(null);
 
   // Feature flag for worker connection - controllable via environment
   // Set GATSBY_CHAT_WORKER=true to enable real model
@@ -115,19 +113,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       setIsGenerating(false);
     }
 
-    // Clear any pending generation requests
-    pendingGenerateRef.current = null;
-
-    // Clear any timers
-    if (fallbackTimerRef.current) {
-      clearTimeout(fallbackTimerRef.current);
-      fallbackTimerRef.current = null;
-    }
-    if (loadFallbackTimerRef.current) {
-      clearTimeout(loadFallbackTimerRef.current);
-      loadFallbackTimerRef.current = null;
-    }
-
     // Reset loading states
     setIsLoading(false);
 
@@ -139,6 +124,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         console.warn('Failed to reset worker conversation:', error);
       }
     }
+
+    // Welcome message removed - using sample pills instead
 
     if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
       // eslint-disable-next-line no-console
@@ -156,18 +143,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       setIsGenerating(false);
     }
 
-    // Clear any fallback timers
-    if (fallbackTimerRef.current) {
-      clearTimeout(fallbackTimerRef.current);
-      fallbackTimerRef.current = null;
-    }
-    if (loadFallbackTimerRef.current) {
-      clearTimeout(loadFallbackTimerRef.current);
-      loadFallbackTimerRef.current = null;
-    }
-
-    // Reset any pending generation
-    pendingGenerateRef.current = null;
+    // Reset loading states
     setIsLoading(false);
 
     // Update the selected model
@@ -229,128 +205,48 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   };
 
   const generateResponse = (msgs: ChatMessage[]) => {
-    // All models now use the worker for real AI responses
-    if (USE_CHAT_WORKER && workerRef.current && modelState.status === 'ready') {
-      try {
-        // Apply rolling context window management
-        const contextWindow = getRecommendedContextWindow(selectedModel);
-        const contextMessages = createRollingContext(msgs, contextWindow);
-
-        if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-          // eslint-disable-next-line no-console
-          console.log(`[chat] Context window: ${contextWindow} tokens`);
-          // eslint-disable-next-line no-console
-          console.log(
-            `[chat] Original messages: ${msgs.length}, Context messages: ${contextMessages.length}`
-          );
-        }
-
-        const req: WorkerRequest = {
-          type: 'generate',
-          data: {
-            messages: contextMessages,
-            modelId: selectedModel,
-          },
-        } as any;
-        workerRef.current.postMessage(req);
-
-        // Start a fallback timer: if no 'start' within 6s, inject mock response
-        if (fallbackTimerRef.current) {
-          clearTimeout(fallbackTimerRef.current);
-          fallbackTimerRef.current = null;
-        }
-        fallbackTimerRef.current = window.setTimeout(() => {
-          setIsGenerating(false);
-          setIsLoading(false);
-          setMessages((prev: ChatMessage[]) => {
-            const newMessages = [...prev];
-            const last = newMessages[newMessages.length - 1];
-            if (!last || last.role !== 'assistant') {
-              newMessages.push({
-                id: Math.random().toString(36).substr(2, 9),
-                role: 'assistant',
-                content:
-                  "I'm having trouble starting the model right now. Here's a quick reply while I recover.",
-                timestamp: new Date(),
-              });
-            }
-            return newMessages;
-          });
-        }, 6000);
-        return;
-      } catch (error) {
-        console.error('Worker generation failed:', error);
-        setIsGenerating(false);
-        setIsLoading(false);
-        addMessage({
-          role: 'assistant',
-          content:
-            'Sorry, I encountered an error processing your request. Please try again.',
-        });
-        return;
-      }
-    }
-
-    // If worker is available but model isn't ready, queue the request and kick off load
-    // But only for non-DistilBERT models
+    // Only generate if model is ready
     if (
-      USE_CHAT_WORKER &&
-      workerRef.current &&
-      modelState.status !== 'ready' &&
-      selectedModel !== 'distilbert-base-uncased'
+      !USE_CHAT_WORKER ||
+      !workerRef.current ||
+      modelState.status !== 'ready'
     ) {
-      // Apply rolling context even for queued requests
-      const contextWindow = getRecommendedContextWindow(selectedModel);
-      const contextMessages = createRollingContext(msgs, contextWindow);
-      pendingGenerateRef.current = contextMessages;
-      // If we aren't already loading, trigger it
-      if (modelState.status === 'idle' || modelState.status === 'error') {
-        setModelState({
-          status: 'loading',
-          progress: [],
-          loadingMessage: 'Loading model...',
-        });
-        workerRef.current.postMessage({
-          type: 'load',
-          data: { modelId: selectedModel },
-        });
-      }
-
-      // Start/refresh a load fallback timer (e.g., 15s) to inject a mock if model can't load
-      if (loadFallbackTimerRef.current) {
-        clearTimeout(loadFallbackTimerRef.current);
-        loadFallbackTimerRef.current = null;
-      }
-      loadFallbackTimerRef.current = window.setTimeout(() => {
-        setModelState(prev => ({ ...prev, status: 'idle' }));
-        setIsGenerating(false);
-        setIsLoading(false);
-        setMessages((prev: ChatMessage[]) => {
-          const newMessages = [...prev];
-          const last = newMessages[newMessages.length - 1];
-          if (!last || last.role !== 'assistant') {
-            newMessages.push({
-              id: Math.random().toString(36).substr(2, 9),
-              role: 'assistant',
-              content:
-                'The model is taking longer than expected to load. Please try again or refresh the page.',
-              timestamp: new Date(),
-            });
-          }
-          return newMessages;
-        });
-      }, 15000);
+      console.warn('Cannot generate response: model not ready');
       return;
     }
 
-    // If worker isn't available, show error message
-    setIsGenerating(false);
-    setIsLoading(false);
-    addMessage({
-      role: 'assistant',
-      content:
-        'The AI model is not available. Please check your connection and try again.',
-    });
+    try {
+      // Apply rolling context window management
+      const contextWindow = getRecommendedContextWindow(selectedModel);
+      const contextMessages = createRollingContext(msgs, contextWindow);
+
+      if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+        // eslint-disable-next-line no-console
+        console.log(`[chat] Context window: ${contextWindow} tokens`);
+        // eslint-disable-next-line no-console
+        console.log(
+          `[chat] Original messages: ${msgs.length}, Context messages: ${contextMessages.length}`
+        );
+      }
+
+      const req: WorkerRequest = {
+        type: 'generate',
+        data: {
+          messages: contextMessages,
+          modelId: selectedModel,
+        },
+      } as any;
+      workerRef.current.postMessage(req);
+    } catch (error) {
+      console.error('Worker generation failed:', error);
+      setIsGenerating(false);
+      setIsLoading(false);
+      addMessage({
+        role: 'assistant',
+        content:
+          'Sorry, I encountered an error processing your request. Please try again.',
+      });
+    }
   };
 
   const interruptGeneration = () => {
@@ -422,10 +318,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           case 'ready': {
             setModelState({ status: 'ready', progress: [] });
             setIsGenerating(false);
-            if (loadFallbackTimerRef.current) {
-              clearTimeout(loadFallbackTimerRef.current);
-              loadFallbackTimerRef.current = null;
-            }
             // Mark the model as cached when it's ready
             const deviceInfo =
               typeof data.data === 'string' ? data.data : 'unknown';
@@ -434,46 +326,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             setCachedModels(
               ModelCache.getCachedModels().map(entry => entry.modelId)
             );
-            // If a request was queued while loading, flush it now
-            if (
-              USE_CHAT_WORKER &&
-              workerRef.current &&
-              pendingGenerateRef.current
-            ) {
-              const queued = pendingGenerateRef.current;
-              pendingGenerateRef.current = null;
-              try {
-                workerRef.current.postMessage({
-                  type: 'generate',
-                  data: {
-                    messages: queued,
-                    modelId: selectedModel,
-                  },
-                });
-              } catch (e) {
-                console.warn('Failed to flush queued request:', e);
-              }
-            }
+            // Model is ready - no automatic welcome message (using sample pills instead)
             break;
           }
           case 'start':
             setIsGenerating(true);
-            if (fallbackTimerRef.current) {
-              clearTimeout(fallbackTimerRef.current);
-              fallbackTimerRef.current = null;
-            }
             addMessage({ role: 'assistant', content: '' });
             break;
           case 'update':
-            // Update the last assistant message with streaming content
+            // Update the last assistant message with streaming content, handling thinking blocks
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
               const lastMessage = newMessages[newMessages.length - 1];
               if (lastMessage && lastMessage.role === 'assistant') {
-                newMessages[newMessages.length - 1] = {
-                  ...lastMessage,
-                  content: lastMessage.content + (data.output || ''),
-                };
+                const updatedMessage = updateMessageWithThinking(
+                  lastMessage,
+                  data.output || ''
+                );
+                newMessages[newMessages.length - 1] = updatedMessage;
               }
               return newMessages;
             });
@@ -481,30 +351,35 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           case 'complete': {
             setIsGenerating(false);
             setIsLoading(false);
-            if (fallbackTimerRef.current) {
-              clearTimeout(fallbackTimerRef.current);
-              fallbackTimerRef.current = null;
-            }
             const finalText = Array.isArray((data as any).output)
               ? (data as any).output.join('')
               : String((data as any).output || '');
-            // Ensure the final output is reflected even if no streaming occurred
+            // Ensure the final output is reflected and thinking blocks are finalized
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
               const lastMessage = newMessages[newMessages.length - 1];
               if (lastMessage && lastMessage.role === 'assistant') {
+                // If we have existing content, keep it, otherwise use final text
+                const contentToProcess =
+                  lastMessage.content && lastMessage.content.length > 0
+                    ? lastMessage.content
+                    : finalText;
+
+                // Parse final content for any thinking blocks
+                const parsed = parseThinkingBlocks(contentToProcess);
                 newMessages[newMessages.length - 1] = {
                   ...lastMessage,
-                  content:
-                    lastMessage.content && lastMessage.content.length > 0
-                      ? lastMessage.content
-                      : finalText,
+                  content: parsed.content,
+                  thinking: parsed.thinking || lastMessage.thinking,
                 };
               } else if (finalText) {
+                // Create new message with thinking block parsing
+                const parsed = parseThinkingBlocks(finalText);
                 newMessages.push({
                   id: Math.random().toString(36).substr(2, 9),
                   role: 'assistant',
-                  content: finalText,
+                  content: parsed.content,
+                  thinking: parsed.thinking,
                   timestamp: new Date(),
                 });
               }
@@ -521,10 +396,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             }));
             setIsGenerating(false);
             setIsLoading(false);
-            if (fallbackTimerRef.current) {
-              clearTimeout(fallbackTimerRef.current);
-              fallbackTimerRef.current = null;
-            }
             // Surface an assistant message so users see feedback even on failure
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
@@ -578,10 +449,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           workerRef.current?.removeEventListener('message', onMessage as any);
           workerRef.current?.removeEventListener('error', onError as any);
           workerRef.current?.terminate();
-          if (fallbackTimerRef.current) {
-            clearTimeout(fallbackTimerRef.current);
-            fallbackTimerRef.current = null;
-          }
         } catch (err) {
           console.warn('Error cleaning up worker:', err);
         }
