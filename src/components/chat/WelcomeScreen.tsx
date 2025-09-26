@@ -145,22 +145,22 @@ const WelcomeScreen: React.FC = () => {
                 <p className="info-description">{modelDescription}</p>
                 <div className="info-details">
                   <div className="info-item">
-                    <strong>Size:</strong> {modelSize}
+                    <strong>size:</strong> {modelSize}
                   </div>
                   <div className="info-item">
-                    <strong>Location:</strong> Browser cache
+                    <strong>location:</strong> browser cache
                   </div>
                   <div className="info-item">
-                    <strong>Privacy:</strong> Runs completely offline
+                    <strong>privacy:</strong> runs completely offline
                   </div>
                   <div className="info-item">
-                    <strong>Compatibility:</strong>
+                    <strong>compatibility:</strong>
                     <div className="compatibility-badges">
                       {currentModel?.device && (
                         <span
                           className={`device-badge device-${currentModel.device}`}
                         >
-                          {currentModel.device === 'webgpu' ? 'GPU' : 'CPU'}
+                          {currentModel.device === 'webgpu' ? 'gpu' : 'GPU'}
                         </span>
                       )}
                       {currentModel?.fallbackDevice && (
@@ -168,7 +168,7 @@ const WelcomeScreen: React.FC = () => {
                           className={`device-badge device-${currentModel.fallbackDevice}`}
                         >
                           {currentModel.fallbackDevice === 'wasm'
-                            ? 'WASM'
+                            ? 'wasm'
                             : 'CPU'}
                         </span>
                       )}
@@ -196,7 +196,7 @@ const WelcomeScreen: React.FC = () => {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  View on Hugging Face
+                  view on hugging face
                 </a>
               </div>
             </div>

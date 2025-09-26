@@ -90,12 +90,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const getPlaceholderText = () => {
     if (modelState?.status === 'loading') {
-      return 'Loading model...';
+      return 'loading model...';
     }
     if (modelState?.status === 'idle') {
-      return 'Please download the model first';
+      return 'please download the model first';
     }
-    return 'Type your message here...';
+    return 'type your message here...';
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

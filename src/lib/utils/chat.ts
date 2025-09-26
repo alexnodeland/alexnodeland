@@ -100,7 +100,7 @@ export const AVAILABLE_MODELS: ChatModel[] = [
   {
     id: 'onnx-community/Qwen3-0.6B-ONNX',
     name: 'qwen3-0.6b',
-    description: 'Fast reasoning model optimized for in-browser inference',
+    description: 'fast reasoning model optimized for in-browser inference',
     size: '~600MB',
     contextWindow: 4096,
     device: 'webgpu',
