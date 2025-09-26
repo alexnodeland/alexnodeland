@@ -48,7 +48,7 @@ const ChatIcon: React.FC = () => {
         </div>
       </button>
       <div className="keyboard-hint">
-        <kbd>C</kbd> to open chat
+        <kbd>C</kbd> chat
       </div>
     </div>
   );
