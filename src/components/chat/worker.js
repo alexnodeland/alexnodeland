@@ -3,7 +3,37 @@ import {
   AutoTokenizer,
   InterruptableStoppingCriteria,
   TextStreamer,
+  env,
 } from '@huggingface/transformers';
+// Disable browser cache to avoid stale model files
+env.useBrowserCache = false;
+
+// Configure ONNX Runtime Web (wasm) for broader browser compatibility
+// - In non cross-origin-isolated contexts (most local dev servers),
+//   SharedArrayBuffer is unavailable. ORT's wasm multi-thread/proxy requires it.
+//   We disable threads and proxy to avoid runtime errors (notably in Firefox).
+try {
+  const isCOI =
+    typeof self !== 'undefined' && !!(self && self.crossOriginIsolated);
+  // Ensure nested objects exist before assignment
+  env.backends = env.backends || {};
+  env.backends.onnx = env.backends.onnx || {};
+  env.backends.onnx.wasm = env.backends.onnx.wasm || {};
+  // Hint where to fetch ORT wasm binaries when bundler paths are not resolved in workers
+  if (!env.backends.onnx.wasm.wasmPaths) {
+    env.backends.onnx.wasm.wasmPaths =
+      'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
+  }
+  // Prefer SIMD when available; ORT will feature-detect
+  env.backends.onnx.wasm.simd = true;
+  if (!isCOI) {
+    // Disable multi-threading and the worker proxy in non-COI environments
+    env.backends.onnx.wasm.numThreads = 1;
+    env.backends.onnx.wasm.proxy = false;
+  }
+} catch (error) {
+  // ONNX configuration may fail in some environments, continue with defaults
+}
 
 /**
  * Helper function to perform feature detection for WebGPU
@@ -31,8 +61,9 @@ class TextGenerationPipeline {
   static model_id = 'onnx-community/Qwen3-0.6B-ONNX';
   static tokenizer = null;
   static model = null;
+  static device = null; // 'webgpu' | 'cpu'
 
-  static async getInstance(progress_callback = null) {
+  static async getInstance(progress_callback = null, forceDevice = null) {
     // Initialize tokenizer if not already done
     if (!this.tokenizer) {
       this.tokenizer = AutoTokenizer.from_pretrained(this.model_id, {
@@ -42,14 +73,37 @@ class TextGenerationPipeline {
 
     // Initialize model if not already done
     if (!this.model) {
-      // Check WebGPU support and fallback to CPU if needed
-      const supportsWebGPU = await checkWebGPUSupport();
+      // Check WebGPU support and prefer it when possible
+      const supportsWebGPU = forceDevice
+        ? forceDevice === 'webgpu'
+        : await checkWebGPUSupport();
 
-      this.model = AutoModelForCausalLM.from_pretrained(this.model_id, {
-        dtype: supportsWebGPU ? 'q4f16' : 'q4', // Use appropriate dtype
-        device: supportsWebGPU ? 'webgpu' : 'cpu',
-        progress_callback,
-      });
+      // Attempt preferred device first, then gracefully fall back to CPU
+      try {
+        const preferred = await AutoModelForCausalLM.from_pretrained(
+          this.model_id,
+          {
+            dtype: supportsWebGPU ? 'q4f16' : 'auto',
+            device: supportsWebGPU ? 'webgpu' : 'wasm',
+            progress_callback,
+          }
+        );
+        this.model = preferred;
+        this.device = supportsWebGPU ? 'webgpu' : 'wasm';
+      } catch (e) {
+        // If WebGPU path fails at runtime (common on Firefox with partial support),
+        // retry with a safe CPU configuration.
+        const fallback = await AutoModelForCausalLM.from_pretrained(
+          this.model_id,
+          {
+            dtype: 'auto',
+            device: 'wasm',
+            progress_callback,
+          }
+        );
+        this.model = fallback;
+        this.device = 'wasm';
+      }
 
       // Optionally log device when debugging
       // console.debug(`Loading model on: ${supportsWebGPU ? 'WebGPU' : 'CPU'}`);
@@ -121,21 +175,52 @@ async function generate({ messages }) {
     self.postMessage({ status: 'start' });
 
     // Generate response with the model
-    const { past_key_values, sequences } = await model.generate({
-      ...inputs,
-      past_key_values: past_key_values_cache,
+    let past_key_values, sequences;
+    try {
+      ({ past_key_values, sequences } = await model.generate({
+        ...inputs,
+        past_key_values: past_key_values_cache,
 
-      // Generation parameters optimized for chat
-      do_sample: true,
-      top_k: 40,
-      temperature: 0.7,
-      repetition_penalty: 1.1,
+        // Generation parameters optimized for chat
+        do_sample: TextGenerationPipeline.device !== 'wasm',
+        top_k: TextGenerationPipeline.device === 'wasm' ? 20 : 40,
+        temperature: TextGenerationPipeline.device === 'wasm' ? 0.0 : 0.7,
+        repetition_penalty: 1.05,
 
-      max_new_tokens: 512, // Reasonable limit for chat responses
-      streamer,
-      stopping_criteria,
-      return_dict_in_generate: true,
-    });
+        // Keep CPU generations short for responsiveness
+        max_new_tokens: TextGenerationPipeline.device === 'wasm' ? 96 : 512,
+        streamer,
+        stopping_criteria,
+        return_dict_in_generate: true,
+      }));
+    } catch (genErr) {
+      // If generation fails and we were on WebGPU, fall back to CPU and retry once
+      if (TextGenerationPipeline.device === 'webgpu') {
+        self.postMessage({
+          status: 'loading',
+          data: 'WebGPU failed during generation. Falling back to WASM...',
+        });
+        TextGenerationPipeline.reset();
+        const [, modelCPU] = await TextGenerationPipeline.getInstance(
+          null,
+          'wasm'
+        );
+        ({ past_key_values, sequences } = await modelCPU.generate({
+          ...inputs,
+          past_key_values: null, // reset context on fallback
+          do_sample: false,
+          top_k: 20,
+          temperature: 0.0,
+          repetition_penalty: 1.05,
+          max_new_tokens: 96,
+          streamer,
+          stopping_criteria,
+          return_dict_in_generate: true,
+        }));
+      } else {
+        throw genErr;
+      }
+    }
 
     // Cache the key values for context continuity
     past_key_values_cache = past_key_values;
@@ -164,31 +249,94 @@ async function generate({ messages }) {
  */
 async function load() {
   try {
+    // Announce device and fallback strategy upfront
+    const supportsWebGPU = await checkWebGPUSupport();
     self.postMessage({
       status: 'loading',
-      data: 'Loading model...',
+      data: supportsWebGPU
+        ? 'Loading model on WebGPU...'
+        : 'WebGPU not available. Loading WASM backend...',
+    });
+
+    // Emit initial progress items so UI shows bars immediately
+    self.postMessage({
+      status: 'initiate',
+      file: 'tokenizer.json',
+      loaded: 0,
+      total: 1,
+    });
+    self.postMessage({
+      status: 'initiate',
+      file: 'model.onnx',
+      loaded: 0,
+      total: 1,
     });
 
     // Load the pipeline with progress tracking
     const [tokenizer, model] = await TextGenerationPipeline.getInstance(
       progress => {
-        // Forward progress updates to main thread
-        self.postMessage(progress);
+        // Handle initiation, progress, and completion for each file
+        if (
+          progress &&
+          typeof progress.loaded === 'number' &&
+          typeof progress.total === 'number'
+        ) {
+          const file = progress.file || 'model';
+          // Determine status
+          let status = 'progress';
+          if (progress.status === 'initiate') {
+            status = 'initiate';
+          } else if (progress.loaded === progress.total) {
+            status = 'done';
+          }
+          self.postMessage({
+            status,
+            file,
+            loaded: progress.loaded,
+            total: progress.total,
+            // Include raw ratio if available
+            progress:
+              typeof progress.progress === 'number'
+                ? progress.progress
+                : undefined,
+          });
+        }
       }
     );
 
     self.postMessage({
       status: 'loading',
-      data: 'Compiling shaders and warming up model...',
+      data:
+        TextGenerationPipeline.device === 'webgpu'
+          ? 'Compiling shaders and warming up model...'
+          : 'Warming up WASM backend for generation...',
     });
 
     // Run dummy generation to compile shaders
     const inputs = tokenizer('Hello');
-    await model.generate({
-      ...inputs,
-      max_new_tokens: 1,
-      do_sample: false, // Deterministic for warmup
-    });
+    try {
+      await model.generate({
+        ...inputs,
+        max_new_tokens: 1,
+        do_sample: false, // Deterministic for warmup
+      });
+    } catch (warmupErr) {
+      // If warmup fails (likely due to WebGPU issues), try CPU fallback
+      self.postMessage({
+        status: 'loading',
+        data: 'WebGPU warmup failed. Falling back to WASM...',
+      });
+      TextGenerationPipeline.reset();
+      const [, modelCPU] = await TextGenerationPipeline.getInstance(
+        null,
+        'wasm'
+      );
+      await modelCPU.generate({
+        ...inputs,
+        max_new_tokens: 1,
+        do_sample: false,
+      });
+    }
 
     // Model is ready for use
     self.postMessage({ status: 'ready' });
@@ -216,6 +364,16 @@ function reset() {
  */
 self.addEventListener('message', async event => {
   const { type, data } = event.data;
+  try {
+    if (
+      self &&
+      (self.CHAT_DEBUG || (typeof window !== 'undefined' && window.CHAT_DEBUG))
+    )
+      // eslint-disable-next-line no-console
+      console.log('[chat-worker] message', type);
+  } catch (error) {
+    // Debug logging may fail, continue silently
+  }
 
   try {
     switch (type) {

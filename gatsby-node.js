@@ -30,6 +30,41 @@ exports.onCreateNode = ({ node, actions, getNode }) => {
   }
 };
 
+exports.onCreateWebpackConfig = ({ stage, actions, plugins }) => {
+  const { setWebpackConfig } = actions;
+
+  // Exclude Transformers.js and related packages from SSR
+  if (stage === 'build-html' || stage === 'develop-html') {
+    setWebpackConfig({
+      externals: [
+        '@huggingface/transformers',
+        'onnxruntime-web',
+        'onnxruntime-node',
+      ],
+      plugins: [
+        plugins.define({
+          'process.env.GATSBY_CHAT_WORKER': JSON.stringify(
+            process.env.GATSBY_CHAT_WORKER || 'false'
+          ),
+        }),
+      ],
+    });
+  }
+
+  // For client-side builds, ensure proper worker handling
+  if (stage === 'build-javascript' || stage === 'develop') {
+    setWebpackConfig({
+      plugins: [
+        plugins.define({
+          'process.env.GATSBY_CHAT_WORKER': JSON.stringify(
+            process.env.GATSBY_CHAT_WORKER || 'false'
+          ),
+        }),
+      ],
+    });
+  }
+};
+
 exports.createPages = async ({ graphql, actions, reporter }) => {
   const { createPage } = actions;
 

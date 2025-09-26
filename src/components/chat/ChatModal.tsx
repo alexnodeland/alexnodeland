@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useChat } from './ChatContext';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
+import Progress from './Progress';
 
 const ChatModal: React.FC = () => {
   const {
@@ -13,6 +14,7 @@ const ChatModal: React.FC = () => {
     setSelectedModel,
     setChatOpen,
     setClosing,
+    modelState,
   } = useChat();
   const [isAnimating, setIsAnimating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -95,6 +97,37 @@ const ChatModal: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Non-breaking loading UI (visible only if modelState is loading) */}
+      {modelState?.status === 'loading' && (
+        <div className="chat-input-container" aria-live="polite">
+          <div style={{ width: '100%' }}>
+            {modelState.loadingMessage && (
+              <div style={{ marginBottom: '0.5rem' }}>
+                {modelState.loadingMessage}
+              </div>
+            )}
+            {modelState.progress && modelState.progress.length > 0 ? (
+              modelState.progress.map((item: any, i: number) => {
+                const fileName = item.file
+                  ? item.file.split('/').pop()
+                  : 'model file';
+                return (
+                  <Progress
+                    key={`${item.file || 'file'}-${i}`}
+                    text={fileName}
+                    percentage={Number((item.progress || 0).toFixed(2))}
+                    total={item.total ? Number(item.total) : undefined}
+                    loaded={item.loaded ? Number(item.loaded) : undefined}
+                  />
+                );
+              })
+            ) : (
+              <Progress text="Initializing model loading..." percentage={0} />
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="chat-messages">
         <ChatMessage />

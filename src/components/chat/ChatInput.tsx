@@ -1,8 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createRollingContext } from '../../lib/utils/chat';
 import { useChat } from './ChatContext';
 
 const ChatInput: React.FC = () => {
-  const { addMessage, setLoading, isLoading } = useChat();
+  const {
+    addMessage,
+    setLoading,
+    isLoading,
+    messages,
+    isGenerating,
+    generateResponse,
+  } = useChat();
   const [inputValue, setInputValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -16,7 +24,7 @@ const ChatInput: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!inputValue.trim() || isLoading) return;
+    if (!inputValue.trim() || isLoading || isGenerating) return;
 
     const userMessage = inputValue.trim();
     setInputValue('');
@@ -32,34 +40,51 @@ const ChatInput: React.FC = () => {
       role: 'user',
     });
 
-    // Simulate AI response
-    setLoading(true);
-
-    // Simulate processing delay
-    setTimeout(() => {
-      const responses = [
-        "That's an interesting question! Let me think about that...",
-        "I understand what you're asking. Here's my perspective on that topic.",
-        'Great question! Based on my knowledge, I can help you with that.',
-        "I'd be happy to help you with that. Let me provide some insights.",
-        "That's a fascinating topic! Here's what I think about it...",
+    // Always delegate to ChatContext; it will queue if the model isn't ready
+    if (generateResponse) {
+      const allMessages = [
+        ...messages,
+        {
+          id: 'temp',
+          content: userMessage,
+          role: 'user' as const,
+          timestamp: new Date(),
+        },
       ];
-
-      const randomResponse =
-        responses[Math.floor(Math.random() * responses.length)];
-
-      addMessage({
-        content: randomResponse,
-        role: 'assistant',
-      });
-
-      setLoading(false);
-
-      // Re-focus the textarea after the response is added
+      const contextMessages = createRollingContext(allMessages, 2048);
+      generateResponse(contextMessages);
+    } else {
+      // Extremely rare fallback if context isn't available
+      setLoading(true);
       setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 0);
-    }, 100); // Shorter delay for testing
+        generateMockResponse();
+      }, 100);
+    }
+  };
+
+  const generateMockResponse = () => {
+    const responses = [
+      "That's an interesting question! Let me think about that...",
+      "I understand what you're asking. Here's my perspective on that topic.",
+      'Great question! Based on my knowledge, I can help you with that.',
+      "I'd be happy to help you with that. Let me provide some insights.",
+      "That's a fascinating topic! Here's what I think about it...",
+    ];
+
+    const randomResponse =
+      responses[Math.floor(Math.random() * responses.length)];
+
+    addMessage({
+      content: randomResponse,
+      role: 'assistant',
+    });
+
+    setLoading(false);
+
+    // Re-focus the textarea after the response is added
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -78,13 +103,13 @@ const ChatInput: React.FC = () => {
         onChange={e => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Type your message here..."
-        disabled={isLoading}
+        disabled={isLoading || isGenerating}
         rows={1}
       />
       <button
         type="submit"
         className="chat-send-button"
-        disabled={!inputValue.trim() || isLoading}
+        disabled={!inputValue.trim() || isLoading || isGenerating}
         aria-label="Send message"
       >
         <svg

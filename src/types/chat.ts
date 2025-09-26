@@ -50,7 +50,10 @@ export interface WorkerResponse {
     | 'start'
     | 'update'
     | 'complete'
-    | 'error';
+    | 'error'
+    | 'check_complete'
+    | 'interrupted'
+    | 'reset_complete';
   data?: any;
   file?: string;
   progress?: number;
