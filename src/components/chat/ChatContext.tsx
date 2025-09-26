@@ -7,6 +7,12 @@ import React, {
   useState,
 } from 'react';
 import {
+  AVAILABLE_MODELS,
+  createRollingContext,
+  getRecommendedContextWindow,
+  ModelCache,
+} from '../../lib/utils/chat';
+import {
   ChatMessage,
   ChatModel,
   ModelLoadingState,
@@ -25,6 +31,7 @@ interface ChatContextType {
   modelState?: ModelLoadingState;
   webGPUSupported?: boolean | null;
   isGenerating?: boolean;
+  cachedModels?: string[];
   setChatOpen: (isOpen: boolean) => void;
   setClosing: (isClosing: boolean) => void;
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
@@ -36,6 +43,7 @@ interface ChatContextType {
   generateResponse?: (messages: ChatMessage[]) => void;
   interruptGeneration?: () => void;
   resetConversation?: () => void;
+  clearChatHistory?: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -49,16 +57,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [selectedModel, setSelectedModelState] = useState(
-    'distilbert-base-uncased'
+    'onnx-community/Qwen3-0.6B-ONNX' // Default to QWEN 0.6B
   );
   const [isLoading, setIsLoading] = useState(false);
   // New non-breaking state additions
   const [modelState, setModelState] = useState<ModelLoadingState>({
-    status: 'ready', // Start as ready since default is DistilBERT (mock)
+    status: 'idle', // Start as idle since we need to load QWEN model
     progress: [],
   });
   const [webGPUSupported, setWebGPUSupported] = useState<boolean | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [cachedModels, setCachedModels] = useState<string[]>([]);
   const workerRef = useRef<Worker | null>(null);
   // Queue messages to generate once model becomes ready
   const pendingGenerateRef = useRef<ChatMessage[] | null>(null);
@@ -73,20 +82,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     console.log('[chat] USE_CHAT_WORKER', USE_CHAT_WORKER);
   }
 
-  const availableModels: ChatModel[] = [
-    {
-      id: 'distilbert-base-uncased',
-      name: 'DistilBERT',
-      description: 'Lightweight BERT model for text understanding',
-    },
-    {
-      id: 'onnx-community/Qwen3-0.6B-ONNX',
-      name: 'Qwen3-0.6B',
-      description: 'Fast, lightweight reasoning model (WebGPU/CPU fallback)',
-      size: '~600MB',
-      contextWindow: 4096,
-    },
-  ];
+  const availableModels: ChatModel[] = AVAILABLE_MODELS;
 
   const setChatOpen = (isOpen: boolean) => {
     setIsChatOpen(isOpen);
@@ -110,7 +106,44 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   };
 
   const clearMessages = () => {
+    // Clear all messages
     setMessages([]);
+
+    // Stop any ongoing generation
+    if (isGenerating && workerRef.current) {
+      workerRef.current.postMessage({ type: 'interrupt' });
+      setIsGenerating(false);
+    }
+
+    // Clear any pending generation requests
+    pendingGenerateRef.current = null;
+
+    // Clear any timers
+    if (fallbackTimerRef.current) {
+      clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
+    if (loadFallbackTimerRef.current) {
+      clearTimeout(loadFallbackTimerRef.current);
+      loadFallbackTimerRef.current = null;
+    }
+
+    // Reset loading states
+    setIsLoading(false);
+
+    // Reset conversation context in worker if available
+    if (USE_CHAT_WORKER && workerRef.current) {
+      try {
+        workerRef.current.postMessage({ type: 'reset' });
+      } catch (error) {
+        console.warn('Failed to reset worker conversation:', error);
+      }
+    }
+
+    if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+      // eslint-disable-next-line no-console
+      console.log('[chat] Chat history cleared and conversation reset');
+    }
   };
 
   const setSelectedModel = (modelId: string) => {
@@ -140,30 +173,30 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     // Update the selected model
     setSelectedModelState(modelId);
 
-    // If switching to Qwen and worker is available, trigger loading
-    if (
-      modelId === 'onnx-community/Qwen3-0.6B-ONNX' &&
-      USE_CHAT_WORKER &&
-      workerRef.current
-    ) {
-      // Start loading the model
+    // Handle model loading based on cache status
+    if (ModelCache.isModelCached(modelId)) {
+      // Model is already cached, switch instantly
+      setModelState({ status: 'ready', progress: [] });
+    } else if (USE_CHAT_WORKER && workerRef.current) {
+      // Load new model via worker
       setModelState({
         status: 'loading',
         progress: [],
-        loadingMessage: 'Loading model...',
+        loadingMessage: `Loading ${availableModels.find(m => m.id === modelId)?.name || modelId}...`,
       });
 
+      ModelCache.setModelLoading(modelId);
       workerRef.current.postMessage({
         type: 'load',
         data: { modelId },
       });
-    } else if (modelId === 'distilbert-base-uncased') {
-      // For DistilBERT, set model state to ready (it's just mock)
-      setModelState({ status: 'ready', progress: [] });
     } else {
-      // For any other model, set to idle until loaded
+      // Worker not available, set to idle
       setModelState({ status: 'idle', progress: [] });
     }
+
+    // Update cached models list
+    setCachedModels(ModelCache.getCachedModels().map(entry => entry.modelId));
   };
 
   // Safe no-op methods when worker is disabled
@@ -196,41 +229,28 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   };
 
   const generateResponse = (msgs: ChatMessage[]) => {
-    // Route based on selected model
-    if (selectedModel === 'distilbert-base-uncased') {
-      // Always use mock responses for DistilBERT
-      setIsLoading(true);
-      setTimeout(
-        () => {
-          const responses = [
-            "I'm DistilBERT! This is a mock response - I'm a lightweight model for text understanding, but I'm just simulated for this demo.",
-            'DistilBERT here with a placeholder response. In a real implementation, I would analyze text semantically.',
-            'Hello from the DistilBERT model! This is a test response while the real model integration is in progress.',
-            'DistilBERT mock: I specialize in understanding text, but this is just a development placeholder.',
-            'This is a simulated DistilBERT response. The real model would provide text classification and understanding.',
-          ];
-
-          const randomResponse =
-            responses[Math.floor(Math.random() * responses.length)];
-
-          addMessage({
-            content: randomResponse,
-            role: 'assistant',
-          });
-
-          setIsLoading(false);
-        },
-        300 + Math.random() * 200
-      ); // Variable delay for more realistic feel
-      return;
-    }
-
-    // For Qwen and other real models, use worker
+    // All models now use the worker for real AI responses
     if (USE_CHAT_WORKER && workerRef.current && modelState.status === 'ready') {
       try {
+        // Apply rolling context window management
+        const contextWindow = getRecommendedContextWindow(selectedModel);
+        const contextMessages = createRollingContext(msgs, contextWindow);
+
+        if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+          // eslint-disable-next-line no-console
+          console.log(`[chat] Context window: ${contextWindow} tokens`);
+          // eslint-disable-next-line no-console
+          console.log(
+            `[chat] Original messages: ${msgs.length}, Context messages: ${contextMessages.length}`
+          );
+        }
+
         const req: WorkerRequest = {
           type: 'generate',
-          data: { messages: msgs },
+          data: {
+            messages: contextMessages,
+            modelId: selectedModel,
+          },
         } as any;
         workerRef.current.postMessage(req);
 
@@ -259,8 +279,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         }, 6000);
         return;
       } catch (error) {
-        console.error('Worker generation failed, falling back to mock:', error);
-        // Fall through to mock behavior
+        console.error('Worker generation failed:', error);
+        setIsGenerating(false);
+        setIsLoading(false);
+        addMessage({
+          role: 'assistant',
+          content:
+            'Sorry, I encountered an error processing your request. Please try again.',
+        });
+        return;
       }
     }
 
@@ -272,7 +299,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       modelState.status !== 'ready' &&
       selectedModel !== 'distilbert-base-uncased'
     ) {
-      pendingGenerateRef.current = msgs;
+      // Apply rolling context even for queued requests
+      const contextWindow = getRecommendedContextWindow(selectedModel);
+      const contextMessages = createRollingContext(msgs, contextWindow);
+      pendingGenerateRef.current = contextMessages;
       // If we aren't already loading, trigger it
       if (modelState.status === 'idle' || modelState.status === 'error') {
         setModelState({
@@ -303,7 +333,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
               id: Math.random().toString(36).substr(2, 9),
               role: 'assistant',
               content:
-                "The model is taking too long to load, so here's a quick response while I keep trying.",
+                'The model is taking longer than expected to load. Please try again or refresh the page.',
               timestamp: new Date(),
             });
           }
@@ -313,33 +343,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       return;
     }
 
-    // Mock behavior (fallback or default) - only for non-DistilBERT models
-    // DistilBERT already has its dedicated mock responses above
-    if (selectedModel !== 'distilbert-base-uncased') {
-      setIsLoading(true);
-      setTimeout(
-        () => {
-          const responses = [
-            "I'm working on integrating a real AI model! For now, here's a mock response.",
-            'The AI model is being set up. This is a simulated response while we prepare the real one.',
-            'Real AI coming soon! This is a placeholder response for testing.',
-            "Model loading in progress. Here's a mock response while we wait.",
-            'AI model integration in development. This is a test response.',
-          ];
-
-          const randomResponse =
-            responses[Math.floor(Math.random() * responses.length)];
-
-          addMessage({
-            content: randomResponse,
-            role: 'assistant',
-          });
-
-          setIsLoading(false);
-        },
-        300 + Math.random() * 200
-      ); // Variable delay for more realistic feel
-    }
+    // If worker isn't available, show error message
+    setIsGenerating(false);
+    setIsLoading(false);
+    addMessage({
+      role: 'assistant',
+      content:
+        'The AI model is not available. Please check your connection and try again.',
+    });
   };
 
   const interruptGeneration = () => {
@@ -360,6 +371,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
     // Simulated no-op
     setModelState(prev => ({ ...prev, status: 'idle', progress: [] }));
+  };
+
+  // Enhanced clear function that combines message clearing with conversation reset
+  const clearChatHistory = () => {
+    clearMessages();
+    resetConversation();
   };
 
   // Initialize worker when feature flag is enabled
@@ -402,13 +419,21 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             }));
             break;
           }
-          case 'ready':
+          case 'ready': {
             setModelState({ status: 'ready', progress: [] });
             setIsGenerating(false);
             if (loadFallbackTimerRef.current) {
               clearTimeout(loadFallbackTimerRef.current);
               loadFallbackTimerRef.current = null;
             }
+            // Mark the model as cached when it's ready
+            const deviceInfo =
+              typeof data.data === 'string' ? data.data : 'unknown';
+            ModelCache.setModelReady(selectedModel, deviceInfo);
+            // Update cached models list to reflect the change
+            setCachedModels(
+              ModelCache.getCachedModels().map(entry => entry.modelId)
+            );
             // If a request was queued while loading, flush it now
             if (
               USE_CHAT_WORKER &&
@@ -420,13 +445,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
               try {
                 workerRef.current.postMessage({
                   type: 'generate',
-                  data: { messages: queued },
+                  data: {
+                    messages: queued,
+                    modelId: selectedModel,
+                  },
                 });
               } catch (e) {
                 console.warn('Failed to flush queued request:', e);
               }
             }
             break;
+          }
           case 'start':
             setIsGenerating(true);
             if (fallbackTimerRef.current) {
@@ -566,7 +595,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         error: 'Failed to initialize worker',
       });
     }
-  }, [USE_CHAT_WORKER]);
+  }, [USE_CHAT_WORKER, selectedModel]);
+
+  // Sync cached models state with ModelCache on mount and when selected model changes
+  useEffect(() => {
+    const updateCachedModels = () => {
+      const currentCachedModels = ModelCache.getCachedModels().map(
+        entry => entry.modelId
+      );
+      setCachedModels(currentCachedModels);
+
+      if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+        // eslint-disable-next-line no-console
+        console.log('[chat] Cached models updated:', currentCachedModels);
+      }
+    };
+
+    updateCachedModels();
+  }, [selectedModel]); // Sync cache when model selection changes
 
   return (
     <ChatContext.Provider
@@ -580,6 +626,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         modelState,
         webGPUSupported,
         isGenerating,
+        cachedModels,
         setChatOpen,
         setClosing,
         addMessage,
@@ -590,6 +637,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         generateResponse,
         interruptGeneration,
         resetConversation,
+        clearChatHistory,
       }}
     >
       {children}

@@ -53,69 +53,95 @@ async function checkWebGPUSupport() {
 }
 
 /**
- * Text Generation Pipeline using Singleton pattern
- * Enables lazy-loading of the model for better performance
+ * Text Generation Pipeline with multi-model support
+ * Enables lazy-loading and caching of multiple models for better performance
  * Based on Transformers.js examples but adapted for our chat system
  */
 class TextGenerationPipeline {
-  static model_id = 'onnx-community/Qwen3-0.6B-ONNX';
-  static tokenizer = null;
-  static model = null;
-  static device = null; // 'webgpu' | 'cpu'
+  // Model cache - stores multiple loaded models
+  static modelCache = new Map(); // modelId -> { tokenizer, model, device }
+  static currentModelId = null;
 
-  static async getInstance(progress_callback = null, forceDevice = null) {
-    // Initialize tokenizer if not already done
-    if (!this.tokenizer) {
-      this.tokenizer = AutoTokenizer.from_pretrained(this.model_id, {
+  static async getInstance(
+    modelId,
+    progress_callback = null,
+    forceDevice = null
+  ) {
+    // Check if model is already cached
+    const cached = this.modelCache.get(modelId);
+    if (cached) {
+      this.currentModelId = modelId;
+      return [cached.tokenizer, cached.model];
+    }
+
+    // Load new model
+    const tokenizer = AutoTokenizer.from_pretrained(modelId, {
+      progress_callback,
+    });
+
+    // Check WebGPU support and prefer it when possible
+    const supportsWebGPU = forceDevice
+      ? forceDevice === 'webgpu'
+      : await checkWebGPUSupport();
+
+    let model, device;
+
+    // Attempt preferred device first, then gracefully fall back to CPU
+    try {
+      model = await AutoModelForCausalLM.from_pretrained(modelId, {
+        dtype: supportsWebGPU ? 'q4f16' : 'auto',
+        device: supportsWebGPU ? 'webgpu' : 'wasm',
         progress_callback,
       });
+      device = supportsWebGPU ? 'webgpu' : 'wasm';
+    } catch (e) {
+      // If WebGPU path fails at runtime (common on Firefox with partial support),
+      // retry with a safe CPU configuration.
+      model = await AutoModelForCausalLM.from_pretrained(modelId, {
+        dtype: 'auto',
+        device: 'wasm',
+        progress_callback,
+      });
+      device = 'wasm';
     }
 
-    // Initialize model if not already done
-    if (!this.model) {
-      // Check WebGPU support and prefer it when possible
-      const supportsWebGPU = forceDevice
-        ? forceDevice === 'webgpu'
-        : await checkWebGPUSupport();
+    // Cache the loaded model
+    const resolvedTokenizer = await tokenizer;
+    const resolvedModel = await model;
 
-      // Attempt preferred device first, then gracefully fall back to CPU
-      try {
-        const preferred = await AutoModelForCausalLM.from_pretrained(
-          this.model_id,
-          {
-            dtype: supportsWebGPU ? 'q4f16' : 'auto',
-            device: supportsWebGPU ? 'webgpu' : 'wasm',
-            progress_callback,
-          }
-        );
-        this.model = preferred;
-        this.device = supportsWebGPU ? 'webgpu' : 'wasm';
-      } catch (e) {
-        // If WebGPU path fails at runtime (common on Firefox with partial support),
-        // retry with a safe CPU configuration.
-        const fallback = await AutoModelForCausalLM.from_pretrained(
-          this.model_id,
-          {
-            dtype: 'auto',
-            device: 'wasm',
-            progress_callback,
-          }
-        );
-        this.model = fallback;
-        this.device = 'wasm';
-      }
+    this.modelCache.set(modelId, {
+      tokenizer: resolvedTokenizer,
+      model: resolvedModel,
+      device,
+    });
 
-      // Optionally log device when debugging
-      // console.debug(`Loading model on: ${supportsWebGPU ? 'WebGPU' : 'CPU'}`);
-    }
-
-    return Promise.all([this.tokenizer, this.model]);
+    this.currentModelId = modelId;
+    return [resolvedTokenizer, resolvedModel];
   }
 
   // Reset the pipeline (useful for switching models or debugging)
-  static reset() {
-    this.tokenizer = null;
-    this.model = null;
+  static reset(modelId = null) {
+    if (modelId) {
+      // Clear specific model from cache
+      this.modelCache.delete(modelId);
+      if (this.currentModelId === modelId) {
+        this.currentModelId = null;
+      }
+    } else {
+      // Clear all models
+      this.modelCache.clear();
+      this.currentModelId = null;
+    }
+  }
+
+  // Get currently cached models
+  static getCachedModels() {
+    return Array.from(this.modelCache.keys());
+  }
+
+  // Check if a model is cached
+  static isModelCached(modelId) {
+    return this.modelCache.has(modelId);
   }
 }
 
@@ -132,7 +158,10 @@ let past_key_values_cache = null;
 async function generate({ messages }) {
   try {
     // Retrieve the text-generation pipeline
-    const [tokenizer, model] = await TextGenerationPipeline.getInstance();
+    const modelId =
+      TextGenerationPipeline.currentModelId || 'onnx-community/Qwen3-0.6B-ONNX';
+    const [tokenizer, model] =
+      await TextGenerationPipeline.getInstance(modelId);
 
     // Apply chat template to format messages correctly
     const inputs = tokenizer.apply_chat_template(messages, {
@@ -273,7 +302,9 @@ async function load() {
     });
 
     // Load the pipeline with progress tracking
+    const modelId = 'onnx-community/Qwen3-0.6B-ONNX'; // Default model
     const [tokenizer, model] = await TextGenerationPipeline.getInstance(
+      modelId,
       progress => {
         // Handle initiation, progress, and completion for each file
         if (
@@ -388,8 +419,9 @@ self.addEventListener('message', async event => {
       }
 
       case 'load': {
-        // Load the model
-        await load();
+        // Load the model with specified ID
+        const modelId = data?.modelId || 'onnx-community/Qwen3-0.6B-ONNX';
+        await load(modelId);
         break;
       }
 

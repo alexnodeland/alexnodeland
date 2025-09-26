@@ -92,17 +92,11 @@ export async function detectWebGPUSupport(): Promise<boolean> {
 /**
  * Available AI models for the chat interface
  * This will be the source of truth for model selection
+ *
+ * Currently focused on QWEN 0.6B for optimal performance and user experience.
+ * Architecture is designed to easily support additional models in the future.
  */
 export const AVAILABLE_MODELS: ChatModel[] = [
-  {
-    id: 'mock-model',
-    name: 'Mock Model',
-    description: 'Development testing model with simulated responses',
-    size: '~0MB',
-    contextWindow: 2048,
-    device: 'cpu',
-    dtype: 'mock',
-  },
   {
     id: 'onnx-community/Qwen3-0.6B-ONNX',
     name: 'Qwen3-0.6B',
@@ -112,6 +106,17 @@ export const AVAILABLE_MODELS: ChatModel[] = [
     device: 'webgpu',
     dtype: 'q4f16',
   },
+  // Additional models can be easily added here in the future
+  // Example:
+  // {
+  //   id: 'onnx-community/NewModel-ONNX',
+  //   name: 'New Model Name',
+  //   description: 'Model description',
+  //   size: '~XMB',
+  //   contextWindow: XXXX,
+  //   device: 'webgpu',
+  //   dtype: 'q4f16',
+  // },
 ];
 
 /**
@@ -173,4 +178,94 @@ export function createSystemMessage(
     content,
     role: 'assistant', // System messages are typically treated as assistant messages
   };
+}
+
+/**
+ * Model caching utilities
+ * Helps track which models are loaded and cached
+ */
+export interface ModelCacheEntry {
+  modelId: string;
+  loadedAt: Date;
+  device: string;
+  status: 'loading' | 'ready' | 'error';
+}
+
+export class ModelCache {
+  private static cache = new Map<string, ModelCacheEntry>();
+
+  static isModelCached(modelId: string): boolean {
+    const entry = this.cache.get(modelId);
+    return entry?.status === 'ready';
+  }
+
+  static getModelEntry(modelId: string): ModelCacheEntry | undefined {
+    return this.cache.get(modelId);
+  }
+
+  static setModelLoading(modelId: string, device: string = 'auto'): void {
+    this.cache.set(modelId, {
+      modelId,
+      loadedAt: new Date(),
+      device,
+      status: 'loading',
+    });
+  }
+
+  static setModelReady(modelId: string, device: string): void {
+    const entry = this.cache.get(modelId);
+    if (entry) {
+      entry.status = 'ready';
+      entry.device = device;
+      entry.loadedAt = new Date();
+    } else {
+      this.cache.set(modelId, {
+        modelId,
+        loadedAt: new Date(),
+        device,
+        status: 'ready',
+      });
+    }
+  }
+
+  static setModelError(modelId: string): void {
+    const entry = this.cache.get(modelId);
+    if (entry) {
+      entry.status = 'error';
+    }
+  }
+
+  static getCachedModels(): ModelCacheEntry[] {
+    return Array.from(this.cache.values()).filter(
+      entry => entry.status === 'ready'
+    );
+  }
+
+  static clearCache(): void {
+    this.cache.clear();
+  }
+
+  static removeModel(modelId: string): void {
+    this.cache.delete(modelId);
+  }
+}
+
+/**
+ * Gets the recommended context window size for a model based on available memory
+ */
+export function getRecommendedContextWindow(modelId: string): number {
+  const model = getModelById(modelId);
+  if (!model || !model.contextWindow) {
+    return 2048; // Safe default
+  }
+
+  // For larger models, reduce context window if running on CPU
+  const isLargeModel = model.size && parseInt(model.size) > 1000; // > 1GB
+  const prefersCPU = model.device === 'cpu';
+
+  if (isLargeModel && prefersCPU) {
+    return Math.min(model.contextWindow, 1024); // Reduce for performance
+  }
+
+  return model.contextWindow;
 }
