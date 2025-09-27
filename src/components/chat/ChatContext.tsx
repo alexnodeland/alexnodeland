@@ -48,6 +48,7 @@ interface ChatContextType {
   resetConversation?: () => void;
   clearChatHistory?: () => void;
   toggleThinking?: () => void;
+  cancelModelLoading?: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -82,6 +83,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
     return chatConfig.interface.enableThinking;
   });
+  const [workerInitKey, setWorkerInitKey] = useState(0); // Force worker reinitialization
   const workerRef = useRef<Worker | null>(null);
 
   // Feature flag for worker connection - controllable via environment
@@ -304,6 +306,37 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
   };
 
+  const cancelModelLoading = () => {
+    if (USE_CHAT_WORKER && workerRef.current) {
+      // Terminate the worker to cancel download
+      try {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      } catch (err) {
+        console.warn('Error terminating worker during cancel:', err);
+      }
+    }
+
+    // Reset model state back to idle to show welcome screen
+    setModelState({ status: 'idle', progress: [] });
+    setIsLoading(false);
+    setIsGenerating(false);
+
+    // Clear any model loading cache state completely
+    ModelCache.removeModel(selectedModel);
+
+    // Clear the cached models list to ensure fresh state
+    setCachedModels([]);
+
+    if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+      // eslint-disable-next-line no-console
+      console.log('[chat] Model loading cancelled, worker terminated');
+    }
+
+    // Force worker reinitialization by incrementing the key
+    setWorkerInitKey(prev => prev + 1);
+  };
+
   // Initialize worker when feature flag is enabled
   useEffect(() => {
     if (!USE_CHAT_WORKER) return;
@@ -491,7 +524,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         error: 'Failed to initialize worker',
       });
     }
-  }, [USE_CHAT_WORKER, selectedModel]);
+  }, [USE_CHAT_WORKER, selectedModel, workerInitKey]);
 
   // Sync cached models state with ModelCache on mount and when selected model changes
   useEffect(() => {
@@ -536,6 +569,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         resetConversation,
         clearChatHistory,
         toggleThinking,
+        cancelModelLoading,
       }}
     >
       {children}

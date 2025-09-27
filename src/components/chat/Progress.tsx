@@ -12,6 +12,8 @@ interface ProgressProps {
   loaded?: number;
   /** Custom className for styling */
   className?: string;
+  /** Optional callback to cancel the download */
+  onCancel?: () => void;
 }
 
 /**
@@ -24,6 +26,7 @@ const Progress: React.FC<ProgressProps> = ({
   total,
   loaded,
   className = '',
+  onCancel,
 }) => {
   // Ensure percentage is within bounds
   const clampedPercentage = Math.max(0, Math.min(100, percentage));
@@ -55,6 +58,30 @@ const Progress: React.FC<ProgressProps> = ({
         />
         <div className="chat-progress-text-overlay">
           <span className="chat-progress-text">{formatProgressText()}</span>
+          {onCancel && (
+            <button
+              className="chat-progress-cancel"
+              onClick={onCancel}
+              aria-label="Cancel download"
+              title="Cancel download"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M18 6L6 18M6 6L18 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     </div>

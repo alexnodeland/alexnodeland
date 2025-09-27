@@ -961,8 +961,8 @@
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding-left: 0.5rem;
+  justify-content: space-between;
+  padding: 0 0.5rem;
   z-index: 2;
   pointer-events: none;
 }
@@ -974,10 +974,41 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
+  flex: 1;
   text-shadow:
     0 0 3px var(--bg-primary),
     0 0 6px var(--bg-primary);
+}
+
+.chat-progress-cancel {
+  pointer-events: auto;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
 }
 
 // Loading message styles

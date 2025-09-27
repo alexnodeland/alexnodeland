@@ -28,6 +28,7 @@ const ChatModal: React.FC = () => {
     cachedModels,
     clearChatHistory,
     isGenerating,
+    cancelModelLoading,
   } = useChat();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [promptValue, setPromptValue] = useState<string | undefined>(undefined);
@@ -214,11 +215,16 @@ const ChatModal: React.FC = () => {
                     percentage={Number((item.progress || 0).toFixed(2))}
                     total={item.total ? Number(item.total) : undefined}
                     loaded={item.loaded ? Number(item.loaded) : undefined}
+                    onCancel={cancelModelLoading}
                   />
                 );
               })
             ) : (
-              <Progress text="Initializing model loading..." percentage={0} />
+              <Progress
+                text="Initializing model loading..."
+                percentage={0}
+                onCancel={cancelModelLoading}
+              />
             )}
           </div>
         </div>
