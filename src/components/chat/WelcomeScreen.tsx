@@ -77,6 +77,8 @@ const WelcomeScreen: React.FC = () => {
         </div>
 
         <div className="welcome-actions">
+          <p className="download-note">Downloads once, cached forever</p>
+
           <div className="download-button-group">
             <button
               className="download-button"
@@ -202,7 +204,9 @@ const WelcomeScreen: React.FC = () => {
             </div>
           )}
 
-          <p className="download-note">Downloads once, cached forever</p>
+          <div className="chat-keyboard-hints">
+            <kbd>C</kbd> chat • <kbd>Enter</kbd> send
+          </div>
         </div>
       </div>
     </div>
