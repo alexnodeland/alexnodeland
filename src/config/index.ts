@@ -1,4 +1,5 @@
 // Configuration barrel exports
+export * from './chat';
 export * from './constants';
 export * from './cv';
 export * from './helpers';

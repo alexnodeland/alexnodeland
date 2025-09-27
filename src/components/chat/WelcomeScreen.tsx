@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { chatConfig } from '../../config/chat';
 import { useChat } from './ChatContext';
 
 const WelcomeScreen: React.FC = () => {
@@ -43,7 +44,7 @@ const WelcomeScreen: React.FC = () => {
           </div>
           <h3>welcome to chat</h3>
           <p className="welcome-subtitle">
-            this ai assistant runs entirely in your browser - private and secure
+            {chatConfig.interface.welcomeMessage}
           </p>
         </div>
 

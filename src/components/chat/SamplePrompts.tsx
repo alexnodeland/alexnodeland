@@ -1,22 +1,19 @@
 import React from 'react';
+import { chatConfig } from '../../config/chat';
 
 interface SamplePromptsProps {
   onPromptSelect: (prompt: string) => void;
   isVisible: boolean;
 }
 
-const SAMPLE_PROMPTS = [
-  {
-    id: 'explain-concept',
-    text: 'explain a complex concept in simple terms',
-    icon: '🧠',
-  },
-  {
-    id: 'help-with-task',
-    text: 'help me brainstorm ideas for a project',
-    icon: '💡',
-  },
-];
+const getSamplePrompts = () => {
+  const icons = ['🧠', '💡', '🚀', '⚡', '🔧'];
+  return chatConfig.interface.samplePrompts.map((text, index) => ({
+    id: `prompt-${index}`,
+    text,
+    icon: icons[index % icons.length],
+  }));
+};
 
 const SamplePrompts: React.FC<SamplePromptsProps> = ({
   onPromptSelect,
@@ -24,11 +21,13 @@ const SamplePrompts: React.FC<SamplePromptsProps> = ({
 }) => {
   if (!isVisible) return null;
 
+  const samplePrompts = getSamplePrompts();
+
   return (
     <div className="sample-prompts">
       <div className="sample-prompts-title">try asking:</div>
       <div className="sample-prompts-grid">
-        {SAMPLE_PROMPTS.map(prompt => (
+        {samplePrompts.map(prompt => (
           <button
             key={prompt.id}
             className="sample-prompt-pill"

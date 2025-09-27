@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { chatConfig } from '../../config/chat';
 import { createRollingContext } from '../../lib/utils/chat';
 import { useChat } from './ChatContext';
 
@@ -90,12 +91,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const getPlaceholderText = () => {
     if (modelState?.status === 'loading') {
-      return 'loading model...';
+      return chatConfig.interface.placeholderText.loading;
     }
     if (modelState?.status === 'idle') {
-      return 'please download the model first';
+      return chatConfig.interface.placeholderText.idle;
     }
-    return 'type your message here...';
+    return chatConfig.interface.placeholderText.ready;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

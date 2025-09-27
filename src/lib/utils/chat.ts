@@ -19,7 +19,7 @@ export function estimateTokens(text: string): number {
 /**
  * Creates a rolling context window from messages
  * Keeps recent messages within token limits for better performance
- * Always preserves the system message if present
+ * Always preserves the system message if present and follows chat template standards
  */
 export function createRollingContext(
   messages: ChatMessage[],
@@ -33,21 +33,27 @@ export function createRollingContext(
     return [];
   }
 
-  // Always keep the most recent message
-  const result: ChatMessage[] = [];
-  let tokenCount = 0;
+  // Separate system messages from conversation messages for proper chat templating
+  const systemMessages = messages.filter(msg => msg.role === 'system');
+  const conversationMessages = messages.filter(msg => msg.role !== 'system');
 
-  // Process messages in reverse order (newest first)
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const message = messages[i];
+  // Always preserve system messages - they're critical for proper behavior
+  let result: ChatMessage[] = [...systemMessages];
+  let tokenCount = systemMessages.reduce(
+    (count, msg) => count + estimateTokens(msg.content),
+    0
+  );
+
+  // If system messages already exceed token limit, just return them
+  if (tokenCount >= maxTokens) {
+    console.warn('[chat] System messages exceed token limit, may cause issues');
+    return result;
+  }
+
+  // Add conversation messages in reverse order (newest first)
+  for (let i = conversationMessages.length - 1; i >= 0; i--) {
+    const message = conversationMessages[i];
     const messageTokens = estimateTokens(message.content);
-
-    // Always include the most recent message
-    if (result.length === 0) {
-      result.unshift(message);
-      tokenCount += messageTokens;
-      continue;
-    }
 
     // Check if adding this message would exceed token limit
     if (tokenCount + messageTokens > maxTokens) {
@@ -55,11 +61,19 @@ export function createRollingContext(
       break;
     }
 
-    result.unshift(message);
+    result.push(message);
     tokenCount += messageTokens;
   }
 
-  return result;
+  // Sort to maintain proper chat template order: system messages first, then chronological
+  return result.sort((a, b) => {
+    // System messages always go first
+    if (a.role === 'system' && b.role !== 'system') return -1;
+    if (a.role !== 'system' && b.role === 'system') return 1;
+
+    // For non-system messages, maintain chronological order
+    return a.timestamp.getTime() - b.timestamp.getTime();
+  });
 }
 
 /**
@@ -154,7 +168,9 @@ export function isValidChatMessage(message: any): message is ChatMessage {
   return (
     typeof message.id === 'string' &&
     typeof message.content === 'string' &&
-    (message.role === 'user' || message.role === 'assistant') &&
+    (message.role === 'user' ||
+      message.role === 'assistant' ||
+      message.role === 'system') &&
     message.timestamp instanceof Date
   );
 }
@@ -179,7 +195,7 @@ export function createSystemMessage(
 ): Omit<ChatMessage, 'id' | 'timestamp'> {
   return {
     content,
-    role: 'assistant', // System messages are typically treated as assistant messages
+    role: 'system', // System messages should use 'system' role for proper chat templating
   };
 }
 

@@ -6,10 +6,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { chatConfig } from '../../config/chat';
 import {
   AVAILABLE_MODELS,
   createRollingContext,
-  getRecommendedContextWindow,
   ModelCache,
   parseThinkingBlocks,
   updateMessageWithThinking,
@@ -61,7 +61,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [selectedModel, setSelectedModelState] = useState(
-    'onnx-community/Qwen3-0.6B-ONNX' // Default to QWEN 0.6B
+    chatConfig.models.default
   );
   const [isLoading, setIsLoading] = useState(false);
   // New non-breaking state additions
@@ -76,9 +76,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     // Load thinking preference from localStorage
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('chat-thinking-enabled');
-      return saved !== null ? saved === 'true' : true; // Default to enabled
+      return saved !== null
+        ? saved === 'true'
+        : chatConfig.interface.enableThinking;
     }
-    return true;
+    return chatConfig.interface.enableThinking;
   });
   const workerRef = useRef<Worker | null>(null);
 
@@ -226,8 +228,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
 
     try {
-      // Apply rolling context window management
-      const contextWindow = getRecommendedContextWindow(selectedModel);
+      // Apply rolling context window management using config
+      const contextWindow = chatConfig.behavior.contextWindow;
       const contextMessages = createRollingContext(msgs, contextWindow);
 
       if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
@@ -245,6 +247,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           messages: contextMessages,
           modelId: selectedModel,
           reasonEnabled: isThinkingEnabled,
+          systemPrompt: chatConfig.generation.systemPrompt,
+          generationConfig: {
+            maxTokens: chatConfig.generation.maxTokens,
+            temperature: chatConfig.generation.temperature,
+            topK: chatConfig.generation.topK,
+            repetitionPenalty: chatConfig.generation.repetitionPenalty,
+          },
         },
       } as any;
       workerRef.current.postMessage(req);

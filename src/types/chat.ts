@@ -1,10 +1,11 @@
 // Chat types for Transformers.js integration
+import { CVContextLevel } from '../lib/utils/cvFormatter';
 
 // Core chat types
 export interface ChatMessage {
   id: string;
   content: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   timestamp: Date;
   // Optional thinking block content
   thinking?: string;
@@ -26,6 +27,7 @@ export interface ChatModel {
   dtype?: string;
   fallbackDevice?: 'wasm' | 'cpu';
   supportsThinking?: boolean;
+  cvContextLevel?: CVContextLevel;
 }
 
 // Model loading and progress tracking

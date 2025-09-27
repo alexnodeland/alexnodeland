@@ -155,10 +155,16 @@ let past_key_values_cache = null;
  * Generate text using the loaded model
  * Handles streaming output and context management
  */
-async function generate({ messages, reasonEnabled = false }) {
+async function generate({
+  messages,
+  reasonEnabled = false,
+  systemPrompt = null,
+  generationConfig = {},
+}) {
   try {
     // Debug logging for thinking integration
     if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
+      // eslint-disable-next-line no-console
       console.log('[worker] Generate with thinking enabled:', reasonEnabled);
     }
 
@@ -168,12 +174,78 @@ async function generate({ messages, reasonEnabled = false }) {
     const [tokenizer, model] =
       await TextGenerationPipeline.getInstance(modelId);
 
-    // Apply chat template to format messages correctly
-    const inputs = tokenizer.apply_chat_template(messages, {
-      add_generation_prompt: true,
-      return_dict: true,
-      enable_thinking: reasonEnabled,
-    });
+    // Prepare messages with system prompt following Hugging Face chat template standards
+    let processedMessages = [...messages];
+
+    // Always ensure system prompt is properly injected as first message if provided
+    if (systemPrompt) {
+      // Remove any existing system messages to avoid duplication
+      processedMessages = processedMessages.filter(
+        msg => msg.role !== 'system'
+      );
+
+      // Add system prompt as first message
+      processedMessages.unshift({
+        role: 'system',
+        content: systemPrompt,
+      });
+    }
+
+    // Validate message structure for chat templating
+    processedMessages = processedMessages.filter(
+      msg =>
+        msg &&
+        typeof msg.content === 'string' &&
+        msg.content.trim().length > 0 &&
+        ['system', 'user', 'assistant'].includes(msg.role)
+    );
+
+    // Debug logging for chat templating
+    if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
+      // eslint-disable-next-line no-console
+      console.log(
+        '[worker] Processed messages for chat template:',
+        processedMessages
+      );
+      // eslint-disable-next-line no-console
+      console.log('[worker] System prompt present:', !!systemPrompt);
+      // eslint-disable-next-line no-console
+      console.log('[worker] Thinking enabled:', reasonEnabled);
+    }
+
+    // Apply Hugging Face chat template to format messages correctly
+    let inputs;
+    try {
+      inputs = tokenizer.apply_chat_template(processedMessages, {
+        add_generation_prompt: true,
+        return_dict: true,
+        enable_thinking: reasonEnabled,
+        // Ensure we don't add special tokens twice
+        add_special_tokens: false,
+      });
+
+      if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
+        // eslint-disable-next-line no-console
+        console.log('[worker] Chat template applied successfully');
+      }
+    } catch (templateError) {
+      console.error('[worker] Chat template error:', templateError);
+
+      // Fallback: try without thinking enabled
+      try {
+        inputs = tokenizer.apply_chat_template(processedMessages, {
+          add_generation_prompt: true,
+          return_dict: true,
+          add_special_tokens: false,
+        });
+        console.warn('[worker] Chat template applied without thinking mode');
+      } catch (fallbackError) {
+        console.error('[worker] Chat template fallback failed:', fallbackError);
+        throw new Error(
+          'Failed to apply chat template: ' + fallbackError.message
+        );
+      }
+    }
 
     // Get thinking tokens for state tracking (only if reasoning is enabled)
     let START_THINKING_TOKEN_ID = null;
@@ -209,11 +281,13 @@ async function generate({ messages, reasonEnabled = false }) {
         if (tokenId === START_THINKING_TOKEN_ID) {
           state = 'thinking';
           if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
+            // eslint-disable-next-line no-console
             console.log('[worker] Switched to thinking state');
           }
         } else if (tokenId === END_THINKING_TOKEN_ID) {
           state = 'answering';
           if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
+            // eslint-disable-next-line no-console
             console.log('[worker] Switched to answering state');
           }
         }
@@ -249,31 +323,31 @@ async function generate({ messages, reasonEnabled = false }) {
         ...inputs,
         past_key_values: past_key_values_cache,
 
-        // Generation parameters optimized for chat
+        // Generation parameters from config with fallbacks for device optimization
         do_sample: TextGenerationPipeline.device !== 'wasm',
         top_k:
           TextGenerationPipeline.device === 'wasm'
-            ? 20
+            ? generationConfig.topK?.wasm || 20
             : reasonEnabled
-              ? 20
-              : 40,
+              ? generationConfig.topK?.thinking || 20
+              : generationConfig.topK?.default || 40,
         temperature:
           TextGenerationPipeline.device === 'wasm'
-            ? 0.0
+            ? generationConfig.temperature?.wasm || 0.0
             : reasonEnabled
-              ? 0.6
-              : 0.7,
-        repetition_penalty: 1.05,
+              ? generationConfig.temperature?.thinking || 0.6
+              : generationConfig.temperature?.default || 0.7,
+        repetition_penalty: generationConfig.repetitionPenalty || 1.05,
 
-        // Keep CPU generations short for responsiveness, but allow more tokens for thinking
+        // Use config-based token limits with device optimization
         max_new_tokens:
           TextGenerationPipeline.device === 'wasm'
             ? reasonEnabled
-              ? 192
-              : 96
+              ? generationConfig.maxTokens?.wasmThinking || 192
+              : generationConfig.maxTokens?.wasm || 96
             : reasonEnabled
-              ? 1024
-              : 512,
+              ? generationConfig.maxTokens?.thinking || 1024
+              : generationConfig.maxTokens?.default || 512,
         streamer,
         stopping_criteria,
         return_dict_in_generate: true,
@@ -294,10 +368,12 @@ async function generate({ messages, reasonEnabled = false }) {
           ...inputs,
           past_key_values: null, // reset context on fallback
           do_sample: false,
-          top_k: 20,
-          temperature: 0.0,
-          repetition_penalty: 1.05,
-          max_new_tokens: reasonEnabled ? 192 : 96,
+          top_k: generationConfig.topK?.wasm || 20,
+          temperature: generationConfig.temperature?.wasm || 0.0,
+          repetition_penalty: generationConfig.repetitionPenalty || 1.05,
+          max_new_tokens: reasonEnabled
+            ? generationConfig.maxTokens?.wasmThinking || 192
+            : generationConfig.maxTokens?.wasm || 96,
           streamer,
           stopping_criteria,
           return_dict_in_generate: true,
