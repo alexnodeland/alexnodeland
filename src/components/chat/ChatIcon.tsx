@@ -21,8 +21,8 @@ const ChatIcon: React.FC = () => {
     }
   };
 
-  // Don't render the icon when chat is open
-  if (isChatPanelOpen) {
+  // Don't render the icon when chat is open (but show during closing animation like background controls)
+  if (isChatPanelOpen && !isClosingChatPanel) {
     return null;
   }
 

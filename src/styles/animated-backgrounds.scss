@@ -112,23 +112,31 @@
   }
 }
 
-// Settings sidebar
+// Settings sidebar (matches chat panel floating effect)
 .settings-sidebar {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: calc(1rem + 3px); // Match main content - start below rainbow border
+  left: 1rem; // Match main content left margin
+  bottom: 1rem; // Match main content bottom margin
   width: 28rem;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(5px);
-  border-right: 2px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.7); // Match chat panel transparency
+  backdrop-filter: blur(20px); // Match chat panel blur
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 2px solid var(--border-color); // Primary border to separate from main content
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg); // Full border radius like main content
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
   z-index: 1002; // Above controls
   display: flex;
   flex-direction: column;
   overflow: hidden;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  box-shadow: var(--shadow-lg);
 
   // Animate in from left
   animation: slideInFromLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -139,29 +147,34 @@
   }
 
   .sidebar-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    background: transparent;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-direction: column;
 
     .background-header {
-      margin-bottom: 1rem;
+      width: 100%;
+      margin-bottom: 0;
 
       .background-controls-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
 
         .background-name {
           color: var(--primary-color);
           font-weight: 600;
-          font-size: 1.125rem;
+          font-size: 1rem; // Match chat panel font sizing
         }
 
         .close-button {
           background: none;
           border: none;
           color: var(--text-secondary);
-          font-size: 1rem;
           cursor: pointer;
           width: 2rem;
           height: 2rem;
@@ -173,23 +186,28 @@
           font-family: inherit;
 
           &:hover {
-            color: var(--accent-color);
-            background: rgba(255, 0, 128, 0.05);
+            color: var(--text-primary);
+            background: var(--bg-hover);
+          }
+
+          svg {
+            width: 20px;
+            height: 20px;
           }
 
           &:before {
             content: '×';
-            font-size: 1.2em;
+            font-size: 1.5rem;
           }
         }
       }
 
       .background-description {
         color: var(--text-secondary);
-        font-size: 0.875rem;
-        opacity: 0.8;
+        font-size: 0.8125rem; // Match chat panel sizing
+        opacity: 0.9;
         line-height: 1.4;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
       }
 
       // Special hotkeys styling when in header
@@ -477,7 +495,8 @@
 
   .settings-panel-footer {
     padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: transparent; // Match chat footer transparency
 
     .special-hotkeys {
       margin-bottom: 1rem;
@@ -515,45 +534,46 @@
     .reset-button {
       width: 100%;
       padding: 0.75rem 1rem;
-      background: var(--bg-accent);
+      background: var(--bg-hover);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      color: var(--text-secondary);
-      font-size: 0.75rem;
+      color: var(--text-primary);
+      font-size: 0.8125rem; // Match chat font sizing
       cursor: pointer;
       transition: all var(--transition-fast);
       font-family: inherit;
       margin-bottom: 1rem;
 
       &:hover {
-        background: var(--accent-color);
-        border-color: var(--accent-color);
-        color: white;
-        box-shadow: 0 0 12px rgba(255, 0, 128, 0.2);
+        background: var(--bg-accent);
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
       }
 
       &:active {
-        transform: scale(0.98);
+        transform: translateY(0);
       }
     }
 
     .sidebar-keyboard-hints {
-      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      font-size: 0.6875rem;
       color: var(--text-muted);
-      opacity: 0.6;
+      opacity: 0.7; // Slightly more visible
       font-family: inherit;
-      text-align: center;
       padding-top: 0.5rem;
-      border-top: 1px solid var(--border-color);
 
       kbd {
-        background: var(--bg-accent);
-        border: 1px solid var(--border-color);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: var(--radius-sm);
-        padding: 0.125rem 0.25rem;
-        margin: 0 0.125rem;
+        padding: 0.125rem 0.3rem;
         font-size: 0.625rem;
         font-family: inherit;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
       }
     }
   }
