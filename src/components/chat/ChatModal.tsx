@@ -27,7 +27,6 @@ const ChatModal: React.FC = () => {
     cachedModels,
     clearChatHistory,
   } = useChat();
-  const [isAnimating, setIsAnimating] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [promptValue, setPromptValue] = useState<string | undefined>(undefined);
   const [skipConfirm, setSkipConfirm] = useState(() => {
@@ -37,6 +36,10 @@ const ChatModal: React.FC = () => {
     return false;
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Track if we just opened the panel to trigger animation only on actual open transition
+  const [justOpened, setJustOpened] = useState(false);
+  const wasOpenRef = useRef(isChatPanelOpen);
 
   // Close chat panel with animation
   const closeChatPanel = useCallback(() => {
@@ -55,13 +58,19 @@ const ChatModal: React.FC = () => {
     setTimeout(() => setPromptValue(undefined), 100);
   };
 
+  // Only trigger opening animation on actual transition from closed to open
   useEffect(() => {
-    if (isChatPanelOpen && !isAnimating) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => setIsAnimating(false), 300);
+    if (isChatPanelOpen && !wasOpenRef.current) {
+      // Panel just opened - trigger animation
+      setJustOpened(true);
+      const timer = setTimeout(() => setJustOpened(false), 300);
+      wasOpenRef.current = true;
       return () => clearTimeout(timer);
+    } else if (!isChatPanelOpen) {
+      // Panel closed
+      wasOpenRef.current = false;
     }
-  }, [isChatPanelOpen, isAnimating]);
+  }, [isChatPanelOpen]);
 
   const scrollToBottom = () => {
     if (
@@ -80,7 +89,7 @@ const ChatModal: React.FC = () => {
 
   const modalClasses = [
     'chat-sidebar',
-    isAnimating && !isClosingChatPanel ? 'opening' : '',
+    justOpened ? 'opening' : '',
     isClosingChatPanel ? 'closing' : '',
   ]
     .filter(Boolean)
