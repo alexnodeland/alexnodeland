@@ -3,9 +3,18 @@ import * as THREE from 'three';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { SpectrogramOscilloscopeSettings } from './config';
 
+interface SpectrogramOscilloscopeBackgroundProps
+  extends AnimatedBackgroundProps<SpectrogramOscilloscopeSettings> {
+  onAudioControlsReady?: (
+    startAudio: () => void,
+    stopAudio: () => void,
+    isPlaying: boolean
+  ) => void;
+}
+
 const SpectrogramOscilloscopeBackground: React.FC<
-  AnimatedBackgroundProps<SpectrogramOscilloscopeSettings>
-> = ({ className, settings }) => {
+  SpectrogramOscilloscopeBackgroundProps
+> = ({ className, settings, onAudioControlsReady }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -863,6 +872,15 @@ const SpectrogramOscilloscopeBackground: React.FC<
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
+    // Store audio functions in ref for access across effects
+    audioFunctionsRef.current = {
+      startAudio: startAudioPlayback,
+      stopAudio: stopAudioPlayback,
+    };
+
+    // Expose audio functions to parent component
+    onAudioControlsReady?.(startAudioPlayback, stopAudioPlayback, false);
+
     // Animation loop
     let currentRow = 0;
     const animate = (time: number) => {
@@ -934,6 +952,12 @@ const SpectrogramOscilloscopeBackground: React.FC<
   // State for showing audio playback indicator
   const [isPlaying, setIsPlaying] = React.useState(false);
 
+  // Refs to store audio functions so they can be accessed across effects
+  const audioFunctionsRef = useRef<{
+    startAudio: (() => void) | null;
+    stopAudio: (() => void) | null;
+  }>({ startAudio: null, stopAudio: null });
+
   // Update the audio playback functions to set state
   React.useEffect(() => {
     // Monitor playing state for UI update
@@ -943,6 +967,20 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
     return () => clearInterval(checkInterval);
   }, []);
+
+  // Update parent component whenever isPlaying state changes
+  React.useEffect(() => {
+    if (
+      audioFunctionsRef.current.startAudio &&
+      audioFunctionsRef.current.stopAudio
+    ) {
+      onAudioControlsReady?.(
+        audioFunctionsRef.current.startAudio,
+        audioFunctionsRef.current.stopAudio,
+        isPlaying
+      );
+    }
+  }, [isPlaying, onAudioControlsReady]);
 
   return (
     <>

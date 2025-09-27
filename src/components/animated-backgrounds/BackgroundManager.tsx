@@ -57,6 +57,13 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     };
   });
 
+  // Audio control functions for spectrogram-oscilloscope background
+  const [audioControls, setAudioControls] = useState<{
+    startAudio: (() => void) | null;
+    stopAudio: (() => void) | null;
+    isPlaying: boolean;
+  }>({ startAudio: null, stopAudio: null, isPlaying: false });
+
   // Get current background configuration
   const currentBackground = useMemo(() => {
     return getBackgroundById(state.currentBackgroundId);
@@ -375,6 +382,26 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     }
 
     const BackgroundComponent = currentBackground.component;
+
+    // Handle spectrogram-oscilloscope background with audio controls
+    if (currentBackground.id === 'spectrogram-oscilloscope') {
+      const handleAudioControlsReady = (
+        startAudio: () => void,
+        stopAudio: () => void,
+        isPlaying: boolean
+      ) => {
+        setAudioControls({ startAudio, stopAudio, isPlaying });
+      };
+
+      return (
+        <BackgroundComponent
+          className={className}
+          settings={currentSettings}
+          onAudioControlsReady={handleAudioControlsReady}
+        />
+      );
+    }
+
     return (
       <BackgroundComponent className={className} settings={currentSettings} />
     );
@@ -415,6 +442,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
         settingsSchema={currentBackground?.settingsSchema}
         onSettingsChange={updateCurrentSettings}
         onCloseSettings={closeSettingsPanel}
+        onStartAudio={audioControls.startAudio || undefined}
+        onStopAudio={audioControls.stopAudio || undefined}
+        isAudioPlaying={audioControls.isPlaying}
       />
 
       {/* Settings panel moved into BackgroundControls anchor */}

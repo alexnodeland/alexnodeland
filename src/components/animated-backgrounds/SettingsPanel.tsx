@@ -17,6 +17,10 @@ interface SettingsPanelProps {
   onPreviousBackground: () => void;
   onNextBackground: () => void;
   isClosing: boolean;
+  // Audio playback functions for special controls
+  onStartAudio?: () => void;
+  onStopAudio?: () => void;
+  isAudioPlaying?: boolean;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -34,6 +38,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onNextBackground,
   isClosing,
+  onStartAudio,
+  onStopAudio,
+  isAudioPlaying,
 }) => {
   // Define which categories are considered standard across all backgrounds
   const STANDARD_CATEGORY_ORDER = useMemo(
@@ -339,7 +346,37 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="special-hotkeys">
               <div className="special-hotkeys-title">special controls</div>
               <div className="special-hotkey-item">
-                <kbd>P</kbd> play sound
+                <button
+                  className={`play-sound-button ${isAudioPlaying ? 'active' : ''}`}
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    onStartAudio?.();
+                  }}
+                  onMouseUp={e => {
+                    e.preventDefault();
+                    onStopAudio?.();
+                  }}
+                  onMouseLeave={e => {
+                    e.preventDefault();
+                    onStopAudio?.();
+                  }}
+                  onTouchStart={e => {
+                    e.preventDefault();
+                    onStartAudio?.();
+                  }}
+                  onTouchEnd={e => {
+                    e.preventDefault();
+                    onStopAudio?.();
+                  }}
+                  onTouchCancel={e => {
+                    e.preventDefault();
+                    onStopAudio?.();
+                  }}
+                  aria-label="Hold to play sound"
+                  title="Click and hold to play sound"
+                >
+                  <kbd>P</kbd> play sound
+                </button>
               </div>
             </div>
           )}

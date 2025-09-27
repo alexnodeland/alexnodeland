@@ -20,6 +20,10 @@ interface BackgroundControlsProps {
   settingsSchema?: SettingsSchema[];
   onSettingsChange?: (newSettings: BackgroundSettings) => void;
   onCloseSettings?: () => void;
+  // Audio playback functions for special controls
+  onStartAudio?: () => void;
+  onStopAudio?: () => void;
+  isAudioPlaying?: boolean;
 }
 
 const BackgroundControls: React.FC<BackgroundControlsProps> = ({
@@ -34,6 +38,9 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
   settingsSchema,
   onSettingsChange,
   onCloseSettings,
+  onStartAudio,
+  onStopAudio,
+  isAudioPlaying,
 }) => {
   const {
     isSettingsPanelOpen,
@@ -79,6 +86,9 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
             onPreviousBackground={onPreviousBackground}
             onNextBackground={onNextBackground}
             isClosing={closingSettingsPanel}
+            onStartAudio={onStartAudio}
+            onStopAudio={onStopAudio}
+            isAudioPlaying={isAudioPlaying}
           />
         )}
 
