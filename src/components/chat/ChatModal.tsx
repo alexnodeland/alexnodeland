@@ -27,6 +27,7 @@ const ChatModal: React.FC = () => {
     modelState,
     cachedModels,
     clearChatHistory,
+    isGenerating,
   } = useChat();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [promptValue, setPromptValue] = useState<string | undefined>(undefined);
@@ -129,14 +130,24 @@ const ChatModal: React.FC = () => {
             <button
               className="chat-clear-button"
               onClick={() => {
+                if (isGenerating) return; // Prevent clearing during generation
                 if (skipConfirm && clearChatHistory) {
                   clearChatHistory();
                 } else {
                   setShowClearConfirm(true);
                 }
               }}
-              aria-label="Clear chat history"
-              title="Clear all chat messages"
+              disabled={isGenerating}
+              aria-label={
+                isGenerating
+                  ? 'Cannot clear chat while generating response'
+                  : 'Clear chat history'
+              }
+              title={
+                isGenerating
+                  ? 'Cannot clear chat while generating response'
+                  : 'Clear all chat messages'
+              }
             >
               <svg
                 width="18"
@@ -241,6 +252,7 @@ const ChatModal: React.FC = () => {
       <ClearConfirmDialog
         isOpen={showClearConfirm}
         onConfirm={() => {
+          if (isGenerating) return; // Prevent clearing during generation
           if (clearChatHistory) {
             clearChatHistory();
           }
@@ -249,6 +261,7 @@ const ChatModal: React.FC = () => {
         onCancel={() => setShowClearConfirm(false)}
         messageCount={messages.length}
         skipConfirm={skipConfirm}
+        isGenerating={isGenerating}
         onSkipConfirmChange={value => {
           setSkipConfirm(value);
           if (typeof window !== 'undefined') {

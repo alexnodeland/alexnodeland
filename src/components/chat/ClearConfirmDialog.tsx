@@ -6,6 +6,7 @@ interface ClearConfirmDialogProps {
   onCancel: () => void;
   messageCount: number;
   skipConfirm?: boolean;
+  isGenerating?: boolean;
   onSkipConfirmChange?: (value: boolean) => void;
 }
 
@@ -15,6 +16,7 @@ const ClearConfirmDialog: React.FC<ClearConfirmDialogProps> = ({
   onCancel,
   messageCount,
   skipConfirm = false,
+  isGenerating = false,
   onSkipConfirmChange,
 }) => {
   const [dontAskAgain, setDontAskAgain] = useState(skipConfirm);
@@ -22,6 +24,7 @@ const ClearConfirmDialog: React.FC<ClearConfirmDialogProps> = ({
   if (!isOpen) return null;
 
   const handleConfirm = () => {
+    if (isGenerating) return; // Prevent clearing during generation
     if (dontAskAgain && onSkipConfirmChange) {
       onSkipConfirmChange(true);
     }
@@ -51,6 +54,11 @@ const ClearConfirmDialog: React.FC<ClearConfirmDialogProps> = ({
             this will delete <strong>{messageCount}</strong> message
             {messageCount !== 1 ? 's' : ''}
           </p>
+          {isGenerating && (
+            <p className="generation-warning">
+              <strong>Cannot clear while generating response</strong>
+            </p>
+          )}
 
           <label className="dont-ask-checkbox">
             <input
@@ -70,7 +78,16 @@ const ClearConfirmDialog: React.FC<ClearConfirmDialogProps> = ({
           >
             cancel
           </button>
-          <button className="clear-confirm-button" onClick={handleConfirm}>
+          <button
+            className="clear-confirm-button"
+            onClick={handleConfirm}
+            disabled={isGenerating}
+            title={
+              isGenerating
+                ? 'Cannot clear while generating response'
+                : 'Clear chat history'
+            }
+          >
             clear
           </button>
         </div>
