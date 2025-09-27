@@ -35,17 +35,24 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
   onSettingsChange,
   onCloseSettings,
 }) => {
-  const { isSettingsPanelOpen, isClosingSettingsPanel } = useSettingsPanel();
+  const {
+    isSettingsPanelOpen,
+    isClosingSettingsPanel,
+    isChatPanelOpen,
+    isClosingChatPanel,
+  } = useSettingsPanel();
   const currentIndex = backgroundRegistry.findIndex(
     bg => bg.id === currentBackgroundId
   );
   const totalBackgrounds = backgroundRegistry.length;
 
-  // Determine CSS classes for background controls based on settings panel state
+  // Determine CSS classes for background controls based on panel states
   const backgroundControlsClasses = [
     'background-controls',
     isSettingsPanelOpen && 'settings-panel-open',
     isClosingSettingsPanel && 'settings-panel-closing',
+    isChatPanelOpen && 'chat-panel-open',
+    isClosingChatPanel && 'chat-panel-closing',
   ]
     .filter(Boolean)
     .join(' ');

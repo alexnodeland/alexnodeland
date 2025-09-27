@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface ThinkingBlockProps {
   content: string;
@@ -77,8 +78,17 @@ const ThinkingBlock: React.FC<ThinkingBlockProps> = ({
       {expanded && (
         <div className="thinking-content">
           <div className="thinking-text">
-            {content || (isTyping ? '' : 'no thinking content yet...')}
-            {isTyping && <span className="thinking-cursor">|</span>}
+            {content ? (
+              <>
+                <MarkdownRenderer content={content} />
+                {isTyping && <span className="thinking-cursor">|</span>}
+              </>
+            ) : (
+              <>
+                {isTyping ? '' : 'no thinking content yet...'}
+                {isTyping && <span className="thinking-cursor">|</span>}
+              </>
+            )}
           </div>
         </div>
       )}

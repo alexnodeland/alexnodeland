@@ -11,18 +11,41 @@
   // Shifted state when settings panel is open - resize and reposition
   &.settings-panel-open {
     left: 28rem;
-    right: 0;
-    width: auto;
-    transform: translateX(0);
+    // Keep right unchanged unless chat panel is also open
   }
 
-  // During closing animation, animate back to original position
+  // Shifted state when chat panel is open - resize and reposition from right
+  &.chat-panel-open {
+    right: 28rem;
+    // Keep left unchanged unless settings panel is also open
+  }
+
+  // Both panels open - squeezed between both
+  &.settings-panel-open.chat-panel-open {
+    left: 28rem;
+    right: 28rem;
+  }
+
+  // During closing animations, animate back smoothly
   &.settings-panel-closing {
     left: 0;
-    right: 0;
-    width: auto;
-    transform: translateX(0);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &.chat-panel-closing {
+    right: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  // Handle mixed states - one opening, one closing
+  &.settings-panel-closing.chat-panel-open {
+    left: 0;
+    right: 28rem;
+  }
+
+  &.settings-panel-open.chat-panel-closing {
+    left: 28rem;
+    right: 0;
   }
 }
 
@@ -66,18 +89,41 @@
   // Shifted state when settings panel is open - resize and reposition
   &.settings-panel-open {
     left: calc(28rem + 1rem);
-    right: 1rem;
-    width: auto;
-    transform: translateX(0);
+    // Keep right unchanged unless chat panel is also open
   }
 
-  // During closing animation, animate back to original position
+  // Shifted state when chat panel is open - resize and reposition from right
+  &.chat-panel-open {
+    right: calc(28rem + 1rem);
+    // Keep left unchanged unless settings panel is also open
+  }
+
+  // Both panels open - squeezed between both
+  &.settings-panel-open.chat-panel-open {
+    left: calc(28rem + 1rem);
+    right: calc(28rem + 1rem);
+  }
+
+  // During closing animations, animate back smoothly
   &.settings-panel-closing {
     left: 1rem;
-    right: 1rem;
-    width: auto;
-    transform: translateX(0);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &.chat-panel-closing {
+    right: 1rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  // Handle mixed states - one opening, one closing
+  &.settings-panel-closing.chat-panel-open {
+    left: 1rem;
+    right: calc(28rem + 1rem);
+  }
+
+  &.settings-panel-open.chat-panel-closing {
+    left: calc(28rem + 1rem);
+    right: 1rem;
   }
 
   // Add a subtle top border that complements the fixed header
@@ -148,11 +194,13 @@
   }
 }
 
-// Responsive design for settings panel sliding behavior
+// Responsive design for panel sliding behavior
 @media (max-width: 768px) {
-  // On mobile, dim content when settings panel is open (panel takes full width)
+  // On mobile, dim content when any panel is open (panels take full width)
   .fixed-header-container.settings-panel-open,
-  .fixed-header-container.settings-panel-closing {
+  .fixed-header-container.settings-panel-closing,
+  .fixed-header-container.chat-panel-open,
+  .fixed-header-container.chat-panel-closing {
     left: 0;
     right: 0;
     width: auto;
@@ -161,12 +209,21 @@
   }
 
   .layout.settings-panel-open,
-  .layout.settings-panel-closing {
+  .layout.settings-panel-closing,
+  .layout.chat-panel-open,
+  .layout.chat-panel-closing {
     left: 0.5rem;
     right: 0.5rem;
     width: auto;
     transform: translateX(0);
     opacity: 0.3; // Dim instead of resize
+  }
+
+  // On mobile, both panels open still just dims content
+  .layout.settings-panel-open.chat-panel-open {
+    left: 0.5rem;
+    right: 0.5rem;
+    opacity: 0.3;
   }
 }
 

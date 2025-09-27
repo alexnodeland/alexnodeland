@@ -11,21 +11,43 @@
   gap: 1rem;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  
+
   // Slide in from left with fade when appearing
   animation: slideInFromLeftWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  
+
   // Reposition when settings panel is open (stay in relative bottom-left of reduced viewport)
   &.settings-panel-open {
     left: calc(28rem + 2rem);
-    transform: translateX(0);
   }
-  
-  // During closing, animate back to original position
+
+  // Reposition when chat panel is open (maintain position but account for right panel)
+  &.chat-panel-open {
+    // Stay in same position since chat panel is on the right
+  }
+
+  // Both panels open - position relative to settings panel (left side)
+  &.settings-panel-open.chat-panel-open {
+    left: calc(28rem + 2rem);
+  }
+
+  // During closing animations
   &.settings-panel-closing {
     left: 2rem;
-    transform: translateX(0);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &.chat-panel-closing {
+    // No position change needed for chat panel closing
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  // Mixed states - one opening, one closing
+  &.settings-panel-closing.chat-panel-open {
+    left: 2rem;
+  }
+
+  &.settings-panel-open.chat-panel-closing {
+    left: calc(28rem + 2rem);
   }
 
   // Combined toolbar - now clickable to open settings
@@ -45,7 +67,7 @@
     transition: all var(--transition-normal);
     min-width: 280px; // Match keyboard hints width for alignment
     cursor: pointer; // Indicate clickable
-    
+
     &:hover {
       border-color: var(--primary-color);
       box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
@@ -68,7 +90,6 @@
       font-size: 0.875rem;
       text-align: center;
     }
-
   }
 
   .keyboard-hint {
@@ -78,7 +99,7 @@
     opacity: 0.6;
     font-family: inherit;
     width: 280px; // Fixed width to prevent jumping
-    
+
     kbd {
       background: var(--bg-accent);
       border: 1px solid var(--border-color);
@@ -108,34 +129,34 @@
   overflow: hidden;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   box-shadow: var(--shadow-lg);
-  
+
   // Animate in from left
   animation: slideInFromLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  
+
   // Closing animation
   &.closing {
     animation: slideOutToLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
-  
+
   .sidebar-header {
     padding: 1.5rem;
     border-bottom: 1px solid var(--border-color);
-    
+
     .background-header {
       margin-bottom: 1rem;
-      
+
       .background-controls-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin-bottom: 0.5rem;
-        
+
         .background-name {
           color: var(--primary-color);
           font-weight: 600;
           font-size: 1.125rem;
         }
-        
+
         .close-button {
           background: none;
           border: none;
@@ -162,7 +183,7 @@
           }
         }
       }
-      
+
       .background-description {
         color: var(--text-secondary);
         font-size: 0.875rem;
@@ -170,7 +191,7 @@
         line-height: 1.4;
         margin-bottom: 0.5rem;
       }
-      
+
       // Special hotkeys styling when in header
       .special-hotkeys {
         margin-top: 1rem;
@@ -219,7 +240,7 @@
     flex: 1;
     overflow-y: auto;
     padding: 0;
-    
+
     // Custom scrollbar using design system
     &::-webkit-scrollbar {
       width: 4px;
@@ -288,7 +309,9 @@
         align-items: center;
         justify-content: center;
         color: var(--text-secondary);
-        transition: transform var(--transition-normal), color var(--transition-normal);
+        transition:
+          transform var(--transition-normal),
+          color var(--transition-normal);
 
         &:before {
           content: '▸'; // right-pointing triangle (carrot)
@@ -522,7 +545,7 @@
       text-align: center;
       padding-top: 0.5rem;
       border-top: 1px solid var(--border-color);
-      
+
       kbd {
         background: var(--bg-accent);
         border: 1px solid var(--border-color);
@@ -534,7 +557,6 @@
       }
     }
   }
-
 }
 
 // Section headers and action icons (collapse/expand all)
@@ -574,7 +596,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   font-size: 0.75rem; // match category-toggle size
   line-height: 1;
 
@@ -587,7 +611,7 @@
 // Light theme settings sidebar
 [data-theme='light'] .settings-sidebar {
   background: rgba(255, 255, 255, 0.8);
-  
+
   .sidebar-header .background-header .special-hotkeys {
     background: rgba(0, 204, 106, 0.05);
     border-color: rgba(0, 204, 106, 0.2);
@@ -668,34 +692,36 @@
   .background-controls {
     bottom: 1rem;
     left: 1rem;
-    
-    // On mobile, don't reposition - just dim background controls when panel is open
+
+    // On mobile, don't reposition - just dim background controls when any panel is open
     &.settings-panel-open,
-    &.settings-panel-closing {
+    &.settings-panel-closing,
+    &.chat-panel-open,
+    &.chat-panel-closing {
       left: 1rem;
+      right: auto;
       transform: translateX(0);
       opacity: 0.3;
     }
-    
+
     .background-toolbar {
       padding: 0.5rem 0.75rem;
-      
+
       .background-name {
         font-size: 0.75rem;
       }
     }
-    
+
     .keyboard-hint {
       display: none; // Hide keyboard hints on mobile
     }
   }
-  
+
   .settings-sidebar {
     left: 0;
     width: 100%;
-    
+
     // On mobile, ensure it covers the controls
     z-index: 1003;
   }
-
 }

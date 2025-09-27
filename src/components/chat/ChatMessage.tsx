@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { parseThinkingBlocks } from '../../lib/utils/chat';
 import { useChat } from './ChatContext';
+import MarkdownRenderer from './MarkdownRenderer';
 import ThinkingBlock from './ThinkingBlock';
 
 const ChatMessage: React.FC = () => {
@@ -124,7 +125,12 @@ const ChatMessage: React.FC = () => {
                 )}
 
               {/* Regular message content */}
-              {displayContent && <p>{displayContent}</p>}
+              {displayContent &&
+                (message.role === 'assistant' ? (
+                  <MarkdownRenderer content={displayContent} />
+                ) : (
+                  <p>{displayContent}</p>
+                ))}
 
               <div className="message-timestamp">
                 {formatTime(message.timestamp)}

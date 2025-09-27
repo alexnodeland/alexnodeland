@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useSettingsPanel } from '../SettingsPanelContext';
 import { useChat } from './ChatContext';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
@@ -8,15 +9,20 @@ import SamplePrompts from './SamplePrompts';
 import WelcomeScreen from './WelcomeScreen';
 
 const ChatModal: React.FC = () => {
+  // Use settings panel context for panel state management
   const {
-    isChatOpen,
-    isClosing,
+    isChatPanelOpen,
+    isClosingChatPanel,
+    setChatPanelOpen,
+    setClosingChatPanel,
+  } = useSettingsPanel();
+
+  // Use chat context for chat functionality
+  const {
     messages,
     selectedModel,
     availableModels,
     setSelectedModel,
-    setChatOpen,
-    setClosing,
     modelState,
     cachedModels,
     clearChatHistory,
@@ -32,6 +38,17 @@ const ChatModal: React.FC = () => {
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Close chat panel with animation
+  const closeChatPanel = useCallback(() => {
+    setClosingChatPanel(true);
+
+    // After animation completes, fully close
+    setTimeout(() => {
+      setChatPanelOpen(false);
+      setClosingChatPanel(false);
+    }, 300);
+  }, [setChatPanelOpen, setClosingChatPanel]);
+
   const handlePromptSelect = (prompt: string) => {
     setPromptValue(prompt);
     // Clear the prompt value after a brief moment to allow ChatInput to pick it up
@@ -39,12 +56,12 @@ const ChatModal: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isChatOpen && !isAnimating) {
+    if (isChatPanelOpen && !isAnimating) {
       setIsAnimating(true);
       const timer = setTimeout(() => setIsAnimating(false), 300);
       return () => clearTimeout(timer);
     }
-  }, [isChatOpen, isAnimating]);
+  }, [isChatPanelOpen, isAnimating]);
 
   const scrollToBottom = () => {
     if (
@@ -57,14 +74,14 @@ const ChatModal: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [isChatOpen, messages]);
+  }, [isChatPanelOpen, messages]);
 
-  if (!isChatOpen) return null;
+  if (!isChatPanelOpen) return null;
 
   const modalClasses = [
-    'chat-modal',
-    isAnimating && !isClosing ? 'opening' : '',
-    isClosing ? 'closing' : '',
+    'chat-sidebar',
+    isAnimating && !isClosingChatPanel ? 'opening' : '',
+    isClosingChatPanel ? 'closing' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -129,13 +146,7 @@ const ChatModal: React.FC = () => {
           )}
           <button
             className="chat-close-button"
-            onClick={() => {
-              setClosing(true);
-              setTimeout(() => {
-                setChatOpen(false);
-                setClosing(false);
-              }, 300);
-            }}
+            onClick={closeChatPanel}
             aria-label="Close chat"
           >
             <svg

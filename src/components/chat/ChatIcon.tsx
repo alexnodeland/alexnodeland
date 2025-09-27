@@ -1,23 +1,28 @@
 import React from 'react';
-import { useChat } from './ChatContext';
+import { useSettingsPanel } from '../SettingsPanelContext';
 
 const ChatIcon: React.FC = () => {
-  const { isChatOpen, isClosing, setChatOpen, setClosing } = useChat();
+  const {
+    isChatPanelOpen,
+    isClosingChatPanel,
+    setChatPanelOpen,
+    setClosingChatPanel,
+  } = useSettingsPanel();
 
   const handleClick = () => {
-    if (isChatOpen && !isClosing) {
-      setClosing(true);
+    if (isChatPanelOpen && !isClosingChatPanel) {
+      setClosingChatPanel(true);
       setTimeout(() => {
-        setChatOpen(false);
-        setClosing(false);
+        setChatPanelOpen(false);
+        setClosingChatPanel(false);
       }, 300); // Match animation duration
-    } else if (!isChatOpen && !isClosing) {
-      setChatOpen(true);
+    } else if (!isChatPanelOpen && !isClosingChatPanel) {
+      setChatPanelOpen(true);
     }
   };
 
   // Don't render the icon when chat is open
-  if (isChatOpen) {
+  if (isChatPanelOpen) {
     return null;
   }
 

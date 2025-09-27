@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect } from 'react';
-import { useChat } from './ChatContext';
+import { useSettingsPanel } from '../SettingsPanelContext';
 
 const KeyboardShortcuts: React.FC = () => {
-  const { isChatOpen, setChatOpen, setClosing } = useChat();
+  const { isChatPanelOpen, setChatPanelOpen, setClosingChatPanel } =
+    useSettingsPanel();
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -17,21 +18,21 @@ const KeyboardShortcuts: React.FC = () => {
       switch (event.code) {
         case 'KeyC':
           event.preventDefault();
-          if (isChatOpen) {
-            // Close the chat
-            setClosing(true);
+          if (isChatPanelOpen) {
+            // Close the chat panel with animation
+            setClosingChatPanel(true);
             setTimeout(() => {
-              setChatOpen(false);
-              setClosing(false);
+              setChatPanelOpen(false);
+              setClosingChatPanel(false);
             }, 300);
           } else {
-            // Open the chat
-            setChatOpen(true);
+            // Open the chat panel
+            setChatPanelOpen(true);
           }
           break;
       }
     },
-    [isChatOpen, setChatOpen, setClosing]
+    [isChatPanelOpen, setChatPanelOpen, setClosingChatPanel]
   );
 
   useEffect(() => {

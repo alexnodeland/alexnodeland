@@ -12,8 +12,13 @@ interface LayoutProps {
 
 // Inner Layout component that uses the settings panel context
 const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
-  const { isSettingsPanelOpen, isClosingSettingsPanel, isContentHidden } =
-    useSettingsPanel();
+  const {
+    isSettingsPanelOpen,
+    isClosingSettingsPanel,
+    isChatPanelOpen,
+    isClosingChatPanel,
+    isContentHidden,
+  } = useSettingsPanel();
   // Use window.location to determine current page (client-side)
   const [isHomePage, setIsHomePage] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
@@ -43,11 +48,13 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
     }
   }, []);
 
-  // Determine CSS classes based on settings panel state
+  // Determine CSS classes based on panel states
   const headerContainerClasses = [
     'fixed-header-container',
     isSettingsPanelOpen && 'settings-panel-open',
     isClosingSettingsPanel && 'settings-panel-closing',
+    isChatPanelOpen && 'chat-panel-open',
+    isClosingChatPanel && 'chat-panel-closing',
     isScrolled && 'scrolled',
   ]
     .filter(Boolean)
@@ -57,6 +64,8 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
     'layout',
     isSettingsPanelOpen && 'settings-panel-open',
     isClosingSettingsPanel && 'settings-panel-closing',
+    isChatPanelOpen && 'chat-panel-open',
+    isClosingChatPanel && 'chat-panel-closing',
   ]
     .filter(Boolean)
     .join(' ');
