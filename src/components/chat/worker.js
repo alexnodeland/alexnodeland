@@ -155,8 +155,13 @@ let past_key_values_cache = null;
  * Generate text using the loaded model
  * Handles streaming output and context management
  */
-async function generate({ messages }) {
+async function generate({ messages, reasonEnabled = false }) {
   try {
+    // Debug logging for thinking integration
+    if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
+      console.log('[worker] Generate with thinking enabled:', reasonEnabled);
+    }
+
     // Retrieve the text-generation pipeline
     const modelId =
       TextGenerationPipeline.currentModelId || 'onnx-community/Qwen3-0.6B-ONNX';
@@ -167,18 +172,51 @@ async function generate({ messages }) {
     const inputs = tokenizer.apply_chat_template(messages, {
       add_generation_prompt: true,
       return_dict: true,
+      enable_thinking: reasonEnabled,
     });
+
+    // Get thinking tokens for state tracking (only if reasoning is enabled)
+    let START_THINKING_TOKEN_ID = null;
+    let END_THINKING_TOKEN_ID = null;
+    if (reasonEnabled) {
+      try {
+        const tokens = tokenizer.encode('<think></think>', {
+          add_special_tokens: false,
+        });
+        START_THINKING_TOKEN_ID = tokens[0];
+        END_THINKING_TOKEN_ID = tokens[1];
+      } catch (e) {
+        console.warn('Could not encode thinking tokens:', e);
+      }
+    }
 
     let startTime;
     let numTokens = 0;
     let tps = 0;
+    let state = 'answering'; // Track whether we're 'thinking' or 'answering'
 
-    // Token callback for performance tracking
-    const token_callback_function = () => {
+    // Token callback for performance tracking and thinking state management
+    const token_callback_function = tokens => {
       startTime ??= performance.now();
 
       if (numTokens++ > 0) {
         tps = (numTokens / (performance.now() - startTime)) * 1000;
+      }
+
+      // Track thinking state if reasoning is enabled
+      if (reasonEnabled && tokens && tokens.length > 0) {
+        const tokenId = Number(tokens[0]);
+        if (tokenId === START_THINKING_TOKEN_ID) {
+          state = 'thinking';
+          if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
+            console.log('[worker] Switched to thinking state');
+          }
+        } else if (tokenId === END_THINKING_TOKEN_ID) {
+          state = 'answering';
+          if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
+            console.log('[worker] Switched to answering state');
+          }
+        }
       }
     };
 
@@ -189,6 +227,7 @@ async function generate({ messages }) {
         output,
         tps,
         numTokens,
+        state: reasonEnabled ? state : 'answering',
       });
     };
 
@@ -212,12 +251,29 @@ async function generate({ messages }) {
 
         // Generation parameters optimized for chat
         do_sample: TextGenerationPipeline.device !== 'wasm',
-        top_k: TextGenerationPipeline.device === 'wasm' ? 20 : 40,
-        temperature: TextGenerationPipeline.device === 'wasm' ? 0.0 : 0.7,
+        top_k:
+          TextGenerationPipeline.device === 'wasm'
+            ? 20
+            : reasonEnabled
+              ? 20
+              : 40,
+        temperature:
+          TextGenerationPipeline.device === 'wasm'
+            ? 0.0
+            : reasonEnabled
+              ? 0.6
+              : 0.7,
         repetition_penalty: 1.05,
 
-        // Keep CPU generations short for responsiveness
-        max_new_tokens: TextGenerationPipeline.device === 'wasm' ? 96 : 512,
+        // Keep CPU generations short for responsiveness, but allow more tokens for thinking
+        max_new_tokens:
+          TextGenerationPipeline.device === 'wasm'
+            ? reasonEnabled
+              ? 192
+              : 96
+            : reasonEnabled
+              ? 1024
+              : 512,
         streamer,
         stopping_criteria,
         return_dict_in_generate: true,
@@ -241,7 +297,7 @@ async function generate({ messages }) {
           top_k: 20,
           temperature: 0.0,
           repetition_penalty: 1.05,
-          max_new_tokens: 96,
+          max_new_tokens: reasonEnabled ? 192 : 96,
           streamer,
           stopping_criteria,
           return_dict_in_generate: true,

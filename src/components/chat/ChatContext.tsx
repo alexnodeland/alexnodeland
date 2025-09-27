@@ -34,6 +34,7 @@ interface ChatContextType {
   webGPUSupported?: boolean | null;
   isGenerating?: boolean;
   cachedModels?: string[];
+  isThinkingEnabled?: boolean;
   setChatOpen: (isOpen: boolean) => void;
   setClosing: (isClosing: boolean) => void;
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
@@ -46,6 +47,7 @@ interface ChatContextType {
   interruptGeneration?: () => void;
   resetConversation?: () => void;
   clearChatHistory?: () => void;
+  toggleThinking?: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -70,6 +72,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [webGPUSupported, setWebGPUSupported] = useState<boolean | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [cachedModels, setCachedModels] = useState<string[]>([]);
+  const [isThinkingEnabled, setIsThinkingEnabled] = useState(() => {
+    // Load thinking preference from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('chat-thinking-enabled');
+      return saved !== null ? saved === 'true' : true; // Default to enabled
+    }
+    return true;
+  });
   const workerRef = useRef<Worker | null>(null);
 
   // Feature flag for worker connection - controllable via environment
@@ -234,6 +244,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         data: {
           messages: contextMessages,
           modelId: selectedModel,
+          reasonEnabled: isThinkingEnabled,
         },
       } as any;
       workerRef.current.postMessage(req);
@@ -273,6 +284,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const clearChatHistory = () => {
     clearMessages();
     resetConversation();
+  };
+
+  const toggleThinking = () => {
+    const newValue = !isThinkingEnabled;
+    setIsThinkingEnabled(newValue);
+    // Persist thinking preference
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chat-thinking-enabled', newValue.toString());
+    }
   };
 
   // Initialize worker when feature flag is enabled
@@ -494,6 +514,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         webGPUSupported,
         isGenerating,
         cachedModels,
+        isThinkingEnabled,
         setChatOpen,
         setClosing,
         addMessage,
@@ -505,6 +526,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         interruptGeneration,
         resetConversation,
         clearChatHistory,
+        toggleThinking,
       }}
     >
       {children}

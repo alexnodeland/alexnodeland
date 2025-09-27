@@ -25,6 +25,7 @@ export interface ChatModel {
   device?: 'webgpu' | 'cpu';
   dtype?: string;
   fallbackDevice?: 'wasm' | 'cpu';
+  supportsThinking?: boolean;
 }
 
 // Model loading and progress tracking
@@ -69,6 +70,7 @@ export interface WorkerResponse {
   output?: string;
   tps?: number;
   numTokens?: number;
+  state?: 'thinking' | 'answering';
 }
 
 // Generation parameters

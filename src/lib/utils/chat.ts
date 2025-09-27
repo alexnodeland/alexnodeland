@@ -106,6 +106,7 @@ export const AVAILABLE_MODELS: ChatModel[] = [
     device: 'webgpu',
     dtype: 'q4f16',
     fallbackDevice: 'wasm',
+    supportsThinking: true,
   },
   // Additional models can be easily added here in the future
   // Example:
@@ -117,6 +118,7 @@ export const AVAILABLE_MODELS: ChatModel[] = [
   //   contextWindow: XXXX,
   //   device: 'webgpu',
   //   dtype: 'q4f16',
+  //   supportsThinking: true,
   // },
 ];
 

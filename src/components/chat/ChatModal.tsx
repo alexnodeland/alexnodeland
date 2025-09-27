@@ -6,6 +6,7 @@ import ChatMessage from './ChatMessage';
 import ClearConfirmDialog from './ClearConfirmDialog';
 import Progress from './Progress';
 import SamplePrompts from './SamplePrompts';
+import ThinkingToggle from './ThinkingToggle';
 import WelcomeScreen from './WelcomeScreen';
 
 const ChatModal: React.FC = () => {
@@ -100,6 +101,7 @@ const ChatModal: React.FC = () => {
       <div className="chat-header">
         <h3 className="chat-title">Chat</h3>
         <div className="chat-header-controls">
+          <ThinkingToggle key="thinking-toggle" />
           <div className="model-selector">
             <select
               value={selectedModel}
