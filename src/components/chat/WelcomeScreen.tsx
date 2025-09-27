@@ -203,10 +203,6 @@ const WelcomeScreen: React.FC = () => {
               </div>
             </div>
           )}
-
-          <div className="chat-keyboard-hints">
-            <kbd>C</kbd> chat • <kbd>Enter</kbd> send
-          </div>
         </div>
       </div>
     </div>

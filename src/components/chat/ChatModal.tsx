@@ -249,6 +249,13 @@ const ChatModal: React.FC = () => {
         </>
       )}
 
+      {/* Persistent keyboard shortcuts footer */}
+      <div className="chat-sidebar-footer">
+        <div className="chat-keyboard-hints">
+          <kbd>C</kbd> chat • <kbd>Enter</kbd> send
+        </div>
+      </div>
+
       <ClearConfirmDialog
         isOpen={showClearConfirm}
         onConfirm={() => {
