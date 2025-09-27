@@ -81,7 +81,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     return { customCategories: custom, standardCategories: standardSorted };
   }, [settingsByCategory, STANDARD_CATEGORIES, STANDARD_CATEGORY_ORDER]);
 
-  // Track open/closed per-category; default: custom open, standard closed
+  // Track open/closed per-category; default: all categories closed
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
     {}
   );
@@ -91,7 +91,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     setOpenCategories(prev => {
       const next: Record<string, boolean> = { ...prev };
       for (const name of customCategories) {
-        if (next[name] === undefined) next[name] = true;
+        if (next[name] === undefined) next[name] = false;
       }
       for (const name of standardCategories) {
         if (next[name] === undefined) next[name] = false;
