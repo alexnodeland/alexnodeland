@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const { createFilePath } = require('gatsby-source-filesystem');
 
 exports.createSchemaCustomization = ({ actions }) => {
@@ -107,4 +108,17 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
       },
     });
   });
+};
+
+// Copy .nojekyll file to public directory for GitHub Pages
+exports.onPostBuild = () => {
+  const srcPath = path.join(__dirname, '.nojekyll');
+  const destPath = path.join(__dirname, 'public', '.nojekyll');
+
+  if (fs.existsSync(srcPath)) {
+    fs.copyFileSync(srcPath, destPath);
+    console.log(
+      '✅ .nojekyll file copied to public directory for GitHub Pages'
+    );
+  }
 };
