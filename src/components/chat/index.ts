@@ -12,3 +12,4 @@ export { default as KeyboardShortcuts } from './KeyboardShortcuts';
 export { default as Progress } from './Progress';
 export { default as SamplePrompts } from './SamplePrompts';
 export { default as ThinkingBlock } from './ThinkingBlock';
+export { default as WasmPerformanceBanner } from './WasmPerformanceBanner';

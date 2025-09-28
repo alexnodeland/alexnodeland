@@ -35,6 +35,7 @@ interface ChatContextType {
   isGenerating?: boolean;
   cachedModels?: string[];
   isThinkingEnabled?: boolean;
+  currentDevice?: string | null;
   setChatOpen: (isOpen: boolean) => void;
   setClosing: (isClosing: boolean) => void;
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
@@ -73,6 +74,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [webGPUSupported, setWebGPUSupported] = useState<boolean | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [cachedModels, setCachedModels] = useState<string[]>([]);
+  const [currentDevice, setCurrentDevice] = useState<string | null>(null);
   const [isThinkingEnabled, setIsThinkingEnabled] = useState(() => {
     // Load thinking preference from localStorage
     if (typeof window !== 'undefined') {
@@ -483,6 +485,21 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
               // Only clear progress on the initial model download start
               progress: message === 'Loading model...' ? [] : prev.progress,
             }));
+
+            // Track device based on loading messages
+            if (message.includes('Loading model on WebGPU')) {
+              setCurrentDevice('webgpu');
+            } else if (message.includes('Loading WASM backend')) {
+              setCurrentDevice('wasm');
+            } else if (
+              message.includes('Compiling shaders and warming up model')
+            ) {
+              setCurrentDevice('webgpu');
+            } else if (message.includes('Warming up WASM backend')) {
+              setCurrentDevice('wasm');
+            } else if (message.includes('Falling back to WASM')) {
+              setCurrentDevice('wasm');
+            }
             break;
           }
           case 'ready': {
@@ -719,6 +736,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         isGenerating,
         cachedModels,
         isThinkingEnabled,
+        currentDevice,
         setChatOpen,
         setClosing,
         addMessage,
