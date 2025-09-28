@@ -147,17 +147,10 @@
 }
 
 #resume-content {
-  // Remove container styling - sections will have their own
   margin-bottom: 2rem;
-
-  // Add spacing between major sections
-  > div {
-    margin-bottom: 3rem;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .cv-header {
@@ -202,15 +195,33 @@
   }
 }
 
-.cv-section {
+// New section title style for direct layout
+.cv-section-title {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--accent-pink);
+  display: inline-block;
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  text-transform: lowercase;
+  letter-spacing: -0.02em;
+  position: relative;
+  color: var(--text-primary);
+}
+
+// Shared card style for experience, education, and certifications
+.cv-card {
   background: var(--bg-card);
   padding: 2rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
-  margin-bottom: 2rem;
   position: relative;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.05);
+  transition: all var(--transition-normal);
 
-  // Add accent top border
+  // Add subtle gradient border on hover
   &::before {
     content: '';
     position: absolute;
@@ -218,73 +229,37 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: var(--accent-pink);
+    background: linear-gradient(
+      90deg,
+      var(--accent-pink) 0%,
+      var(--accent-cyan) 33%,
+      var(--primary-color) 66%,
+      var(--accent-pink) 100%
+    );
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    opacity: 0.5;
   }
 
-  h2 {
-    font-size: 1.8rem;
-    margin-bottom: 1.5rem;
-    border-bottom: 2px solid var(--accent-pink);
-    padding-bottom: 0.5rem;
-    display: inline-block;
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.02em;
-    position: relative;
-  }
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 255, 136, 0.1);
+    border-color: var(--border-active);
 
-  h3 {
-    font-size: 1.3rem;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.01em;
-    position: relative;
-  }
-
-  p {
-    margin-bottom: 1rem;
-    text-align: justify;
+    &::before {
+      opacity: 1;
+    }
   }
 }
 
 .experience-item {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: var(--bg-hover);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  transition: all var(--transition-normal);
-  position: relative;
-
-  // Add colorful left accent border
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--accent-cyan);
-    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  &.cv-card {
+    // Use the shared cv-card styles with cyan accent
+    &::before {
+      background: var(--accent-cyan);
+    }
   }
 
-  &:hover {
-    background: var(--bg-card);
-    box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
-    transform: translateY(-1px);
-    border-color: var(--border-active);
-  }
-
-  &:last-child {
-    margin-bottom: 0;
-  }
+  // Keep internal structure styles
 }
 
 .experience-header {
@@ -300,7 +275,88 @@
     flex: 1;
     min-width: 200px;
     color: var(--text-primary);
+    font-size: 1.2rem;
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
   }
+}
+
+.cv-collapse {
+  padding: 0;
+  overflow: hidden;
+
+  summary {
+    list-style: none;
+  }
+
+  & > summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+// Remove accent top line for collapsible cards
+.cv-card.cv-collapse::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  height: 0 !important;
+}
+
+.cv-collapse-summary {
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  display: block;
+
+  .summary-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .cv-collapse-chevron {
+    transition: transform var(--transition-normal);
+    display: inline-block;
+  }
+}
+
+// Collapsed institution line style
+.education-institution-collapsed {
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  font-size: 0.95rem;
+}
+
+details[open] .cv-collapse-summary .cv-collapse-chevron {
+  transform: rotate(180deg);
+}
+
+.cv-summary-skills {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: block;
+  line-height: 1.4;
+
+  .cv-summary-label {
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    font-weight: 600;
+    margin-right: 0.5rem;
+    color: var(--text-muted);
+  }
+
+  .cv-summary-list {
+    word-break: break-word;
+  }
+}
+
+.cv-collapse-details {
+  padding: 0 1.5rem 1.25rem 1.5rem;
 }
 
 .experience-duration {
@@ -329,37 +385,14 @@
 }
 
 .education-item {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: var(--bg-hover);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  transition: all var(--transition-normal);
-  position: relative;
-
-  // Add colorful left accent border
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--primary-color);
-    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  &.cv-card {
+    // Use the shared cv-card styles with green accent
+    &::before {
+      background: var(--primary-color);
+    }
   }
 
-  &:hover {
-    background: var(--bg-card);
-    box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
-    transform: translateY(-1px);
-    border-color: var(--border-active);
-  }
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
+  // Keep internal structure styles
   h3 {
     margin-bottom: 0.5rem;
   }
@@ -381,16 +414,114 @@
   }
 }
 
-.certifications-list {
-  margin: 0;
-  padding-left: 1.5rem;
+// Certifications as chips with tooltips
+.certifications-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
 
-  li {
-    margin-bottom: 0.5rem;
+.certification-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 0.925rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: 0 2px 8px rgba(147, 51, 234, 0.2);
+
+  .cert-name {
     position: relative;
+    z-index: 1;
+  }
 
-    &::marker {
-      color: var(--primary-color);
+  &:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 16px rgba(147, 51, 234, 0.3);
+
+    .cert-tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(-10px);
+    }
+  }
+
+  .cert-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    margin-bottom: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-normal);
+    z-index: 1000;
+    pointer-events: none;
+
+    .tooltip-content {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      min-width: 250px;
+      max-width: 350px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      position: relative;
+
+      // Arrow pointing down
+      &::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 8px solid transparent;
+        border-top-color: var(--border-color);
+      }
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-2px);
+        border: 7px solid transparent;
+        border-top-color: var(--bg-card);
+      }
+
+      strong {
+        display: block;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+      }
+
+      .cert-issuer {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .cert-date {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .cert-credential {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--border-color);
+      }
     }
   }
 }
@@ -501,359 +632,171 @@
   }
 }
 
-// Experience Section Component
-.experience-section {
-  background: var(--bg-card);
-  padding: 2rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  margin-bottom: 2rem;
-  position: relative;
-
-  // Add cyan accent top
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--accent-cyan);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
-
-  h2 {
-    font-size: 1.8rem;
-    margin-bottom: 2rem;
-    border-bottom: 2px solid var(--accent-cyan);
-    padding-bottom: 0.5rem;
-    display: inline-block;
-  }
-
-  .experience-item {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: var(--bg-hover);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-    transition: all var(--transition-normal);
-    position: relative;
-
-    // Subtle left accent
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: var(--accent-cyan);
-      opacity: 0.5;
-      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-    }
-
-    &:hover {
-      background: var(--bg-card);
-      box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
-      transform: translateY(-1px);
-      border-color: var(--border-active);
-
-      &::before {
-        opacity: 1;
-      }
-    }
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  .experience-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.5rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-
-    h3 {
-      margin: 0;
-      flex: 1;
-      min-width: 200px;
-      color: var(--text-primary);
-      font-size: 1.2rem;
-    }
-  }
-
-  .experience-duration {
-    color: var(--text-secondary);
-    font-weight: 600;
-    white-space: nowrap;
-    background: var(--bg-primary);
-    padding: 0.25rem 0.75rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.9rem;
-    border: 1px solid var(--border-color);
-  }
-
-  .experience-location {
-    color: var(--text-secondary);
-    font-style: italic;
-    margin-bottom: 1rem;
-  }
-
-  .experience-description {
-    margin-bottom: 1rem;
-    color: var(--text-secondary);
-    font-style: italic;
-  }
-
-  .experience-achievements {
-    margin: 0;
-    padding-left: 1.5rem;
-
-    li {
-      margin-bottom: 0.75rem;
-      position: relative;
-
-      &::marker {
-        color: var(--primary-color);
-      }
-    }
-  }
-
-  .experience-skills {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-  }
+// Experience specific styles (using cv-card base)
+.experience-location {
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 1rem;
 }
 
-// Education Section Component
-.education-section {
-  background: var(--bg-card);
-  padding: 2rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  margin-bottom: 2rem;
-  position: relative;
+.experience-description {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
 
-  // Add green accent top
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--primary-color);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
+.experience-achievements {
+  margin: 0;
+  padding-left: 1.5rem;
 
-  h2 {
-    font-size: 1.8rem;
-    margin-bottom: 2rem;
-    border-bottom: 2px solid var(--primary-color);
-    padding-bottom: 0.5rem;
-    display: inline-block;
-  }
-
-  .education-item {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: var(--bg-hover);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-    transition: all var(--transition-normal);
+  li {
+    margin-bottom: 0.75rem;
     position: relative;
 
-    // Subtle left accent
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: var(--primary-color);
-      opacity: 0.5;
-      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-    }
-
-    &:hover {
-      background: var(--bg-card);
-      box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
-      transform: translateY(-1px);
-      border-color: var(--border-active);
-
-      &::before {
-        opacity: 1;
-      }
-    }
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  .education-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.5rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-
-    h3 {
-      margin: 0;
-      flex: 1;
-      min-width: 200px;
-      color: var(--text-primary);
-      font-size: 1.2rem;
-    }
-  }
-
-  .education-duration {
-    color: var(--text-secondary);
-    font-weight: 600;
-    white-space: nowrap;
-    background: var(--bg-primary);
-    padding: 0.25rem 0.75rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.9rem;
-    border: 1px solid var(--border-color);
-  }
-
-  .education-institution {
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-  }
-
-  .education-gpa {
-    color: var(--text-secondary);
-    font-weight: 500;
-    margin-bottom: 1rem;
-  }
-
-  .education-description {
-    margin-bottom: 1rem;
-    color: var(--text-secondary);
-    font-style: italic;
-  }
-
-  .education-coursework {
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-  }
-
-  .education-achievements {
-    margin: 0;
-    padding-left: 1.5rem;
-
-    li {
-      margin-bottom: 0.5rem;
-      position: relative;
-
-      &::marker {
-        color: var(--primary-color);
-      }
+    &::marker {
+      color: var(--primary-color);
     }
   }
 }
 
-// Skills Section Component
-.skills-section {
-  background: var(--bg-card);
-  padding: 2rem;
-  border-radius: var(--radius-lg);
+.experience-skills {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+// Education specific styles (using cv-card base)
+.education-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  h3 {
+    margin: 0;
+    flex: 1;
+    min-width: 200px;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+  }
+}
+
+.education-duration {
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--bg-primary);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
   border: 1px solid var(--border-color);
-  margin-bottom: 2rem;
-  position: relative;
+}
 
-  // Add purple accent top
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--accent-purple);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
+.education-institution {
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
 
-  h2 {
-    font-size: 1.8rem;
-    margin-bottom: 2rem;
-    border-bottom: 2px solid var(--accent-purple);
-    padding-bottom: 0.5rem;
-    display: inline-block;
-  }
+.education-location {
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
 
-  .skills-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-  }
+.education-gpa {
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
 
-  .skill-category {
-    h3 {
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
-      color: var(--text-primary);
+.education-description {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.education-coursework {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.education-achievements {
+  margin: 0;
+  padding-left: 1.5rem;
+
+  li {
+    margin-bottom: 0.5rem;
+    position: relative;
+
+    &::marker {
+      color: var(--primary-color);
     }
   }
+}
 
-  .skill-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+// Skills styles for direct display
+.skill-category-direct {
+  margin-bottom: 1.5rem;
+
+  .skill-subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
+  }
+}
+
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.skill-tag {
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-md);
+  font-size: 0.925rem;
+  font-weight: 500;
+  transition: all var(--transition-normal);
+  cursor: default;
+
+  &.technical {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+    color: white;
+    border: 1px solid transparent;
   }
 
-  .skill-tag {
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-md);
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all var(--transition-normal);
+  &.soft {
+    background: linear-gradient(
+      135deg,
+      var(--primary-color),
+      var(--accent-cyan)
+    );
+    color: white;
+    border: 1px solid transparent;
+  }
 
-    &.technical {
-      background: linear-gradient(
-        135deg,
-        var(--accent-cyan),
-        var(--accent-blue)
-      );
-      color: white;
-      border: 1px solid transparent;
-    }
+  &.language {
+    background: linear-gradient(
+      135deg,
+      var(--accent-pink),
+      var(--accent-purple)
+    );
+    color: white;
+    border: 1px solid transparent;
+  }
 
-    &.soft {
-      background: linear-gradient(
-        135deg,
-        var(--primary-color),
-        var(--accent-cyan)
-      );
-      color: white;
-      border: 1px solid transparent;
-    }
-
-    &.language {
-      background: linear-gradient(
-        135deg,
-        var(--accent-pink),
-        var(--accent-purple)
-      );
-      color: white;
-      border: 1px solid transparent;
-    }
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-    }
+  &:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-md);
   }
 }
 
@@ -1249,6 +1192,29 @@
       padding-left: 1rem;
     }
   }
+
+  // Certification chips responsive
+  .certifications-container {
+    gap: 0.5rem;
+  }
+
+  .certification-chip {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+
+    .cert-tooltip {
+      left: 0;
+      right: 0;
+      transform: translateX(0) translateY(0);
+
+      .tooltip-content {
+        min-width: 200px;
+        max-width: calc(100vw - 2rem);
+        left: 0;
+        transform: none;
+      }
+    }
+  }
 }
 
 // Add glow animation for export buttons
@@ -1454,8 +1420,34 @@
       }
 
       &:hover {
-        transform: translateY(-2px);
+        transform: translateY(-2px) scale(1.05);
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    .certification-chip {
+      background: linear-gradient(
+        135deg,
+        var(--accent-purple),
+        var(--accent-pink)
+      );
+      color: white;
+      box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);
+
+      &:hover {
+        box-shadow: 0 4px 16px rgba(147, 51, 234, 0.4);
+      }
+
+      .cert-tooltip {
+        .tooltip-content {
+          background: white;
+          border: 2px solid var(--border-color);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+          &::before {
+            border-top-color: white;
+          }
+        }
       }
     }
   }

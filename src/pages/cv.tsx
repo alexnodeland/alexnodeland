@@ -79,30 +79,64 @@ const CVPage: React.FC = () => {
         </div>
 
         <div id="resume-content">
-          <div id="experience-section">
-            <ExperienceSection experiences={cvData.experience} />
-          </div>
+          <ExperienceSection experiences={cvData.experience} />
 
-          <div id="education-section">
-            <EducationSection education={cvData.education} />
-          </div>
+          <EducationSection education={cvData.education} />
 
-          <div id="skills-section">
-            <SkillsSection skills={cvData.skills} />
-          </div>
+          <SkillsSection skills={cvData.skills} />
 
           {cvData.certifications && cvData.certifications.length > 0 && (
-            <section id="certifications-section" className="cv-section">
-              <h2>certifications</h2>
-              <ul className="certifications-list">
-                {cvData.certifications.map((cert, index) => (
-                  <li key={index}>
-                    <strong>{cert.name}</strong>, {cert.issuer}, {cert.date}
-                    {cert.credentialId && ` (${cert.credentialId})`}
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <>
+              <h2 className="cv-section-title">Certifications</h2>
+              <div className="certifications-container">
+                {cvData.certifications.map((cert, index) => {
+                  // Create a shorter name for the chip - be more careful with word boundaries
+                  let shortName = cert.name
+                    // Remove common certification words only when they're complete words
+                    .replace(
+                      /\b(Certified|Certificate|Professional|Developer|Engineer|Specialist|Administrator|Associate|Training|Program|Course)\b/gi,
+                      ''
+                    )
+                    // Remove common prepositions and articles
+                    .replace(/\b(in|of|for|the|a|an|and)\b/gi, '')
+                    // Clean up multiple spaces
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                  // If the result is too short or empty, use a better fallback
+                  if (!shortName || shortName.length < 3) {
+                    // Try to get the first meaningful words or acronym
+                    const words = cert.name
+                      .split(' ')
+                      .filter(word => word.length > 2);
+                    shortName = words.slice(0, 3).join(' ');
+                  }
+
+                  // If still too long, truncate intelligently
+                  if (shortName.length > 25) {
+                    shortName = shortName.substring(0, 22) + '...';
+                  }
+
+                  return (
+                    <div key={index} className="certification-chip">
+                      <span className="cert-name">{shortName}</span>
+                      <div className="cert-tooltip">
+                        <div className="tooltip-content">
+                          <strong>{cert.name}</strong>
+                          <div className="cert-issuer">{cert.issuer}</div>
+                          <div className="cert-date">{cert.date}</div>
+                          {cert.credentialId && (
+                            <div className="cert-credential">
+                              ID: {cert.credentialId}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>

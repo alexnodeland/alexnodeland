@@ -3,53 +3,48 @@ import { CVData } from '../../types';
 
 interface CVSkillsSectionProps {
   skills: CVData['skills'];
-  className?: string;
 }
 
-const CVSkillsSection: React.FC<CVSkillsSectionProps> = ({
-  skills,
-  className = '',
-}) => {
+const CVSkillsSection: React.FC<CVSkillsSectionProps> = ({ skills }) => {
   return (
-    <section className={`skills-section ${className}`}>
-      <h2>Skills</h2>
-      <div className="skills-grid">
-        <div className="skill-category">
-          <h3>Technical Skills</h3>
-          <div className="skill-tags">
-            {skills.technical.map((skill, index) => (
-              <span key={index} className="skill-tag technical">
-                {skill}
-              </span>
-            ))}
-          </div>
-        </div>
+    <>
+      <h2 className="cv-section-title">Skills</h2>
 
-        <div className="skill-category">
-          <h3>Soft Skills</h3>
-          <div className="skill-tags">
-            {skills.soft.map((skill, index) => (
-              <span key={index} className="skill-tag soft">
-                {skill}
-              </span>
-            ))}
-          </div>
+      <div className="skill-category-direct">
+        <h3 className="skill-subtitle">Technical Skills</h3>
+        <div className="skill-tags">
+          {skills.technical.map((skill, index) => (
+            <span key={index} className="skill-tag technical">
+              {skill}
+            </span>
+          ))}
         </div>
-
-        {skills.languages && skills.languages.length > 0 && (
-          <div className="skill-category">
-            <h3>Languages</h3>
-            <div className="skill-tags">
-              {skills.languages.map((language, index) => (
-                <span key={index} className="skill-tag language">
-                  {language}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
-    </section>
+
+      <div className="skill-category-direct">
+        <h3 className="skill-subtitle">Soft Skills</h3>
+        <div className="skill-tags">
+          {skills.soft.map((skill, index) => (
+            <span key={index} className="skill-tag soft">
+              {skill}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {skills.languages && skills.languages.length > 0 && (
+        <div className="skill-category-direct">
+          <h3 className="skill-subtitle">Languages</h3>
+          <div className="skill-tags">
+            {skills.languages.map((language, index) => (
+              <span key={index} className="skill-tag language">
+                {language}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
