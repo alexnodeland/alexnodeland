@@ -4,6 +4,16 @@
   line-height: 1.7;
 }
 
+// Enable smooth scrolling for anchor links
+html {
+  scroll-behavior: smooth;
+}
+
+// Ensure sections are targetable
+section[id] {
+  position: relative;
+}
+
 // CV Page Header (similar to blog page)
 .cv-page-header {
   text-align: center;
@@ -42,6 +52,80 @@
     font-size: 1.1rem;
     line-height: 1.6;
     font-style: italic;
+  }
+}
+
+// Compact sticky section navigation
+.cv-section-nav-container {
+  position: sticky;
+  top: calc(var(--header-height) + 0.5rem);
+  z-index: 5;
+  margin-bottom: 1rem;
+}
+
+.cv-section-nav {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.06);
+  overflow: hidden;
+
+  ul {
+    margin: 0;
+    padding: 0.5rem;
+    list-style: none;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  li {
+    margin: 0;
+  }
+
+  a {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    user-select: none;
+
+    &:hover {
+      color: var(--text-primary);
+      border-color: var(--border-color);
+      background: var(--bg-hover);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+
+  li.active a {
+    color: var(--primary-color);
+    background: var(--bg-accent);
+    border-color: var(--primary-color);
+  }
+
+  // Show desktop labels by default, mobile labels hidden
+  .nav-label-desktop {
+    display: inline;
+  }
+
+  .nav-label-mobile {
+    display: none;
   }
 }
 
@@ -151,6 +235,16 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+// Ensure anchor jumps account for sticky header and nav
+#cv-experience,
+#cv-education,
+#cv-skills,
+#cv-certifications {
+  scroll-margin-top: calc(
+    var(--header-height) + 80px
+  ); // Header + sticky nav + padding
 }
 
 .cv-header {
@@ -1117,6 +1211,38 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 }
 
 @media (max-width: 768px) {
+  // Adjust scroll margins for mobile
+  #cv-experience,
+  #cv-education,
+  #cv-skills,
+  #cv-certifications {
+    scroll-margin-top: calc(
+      var(--header-height) + 60px
+    ); // Smaller offset on mobile
+  }
+
+  // Switch to mobile labels in section nav
+  .cv-section-nav {
+    .nav-label-desktop {
+      display: none;
+    }
+
+    .nav-label-mobile {
+      display: inline;
+    }
+
+    // Make nav more compact on mobile
+    ul {
+      padding: 0.4rem;
+      gap: 0.4rem;
+    }
+
+    a {
+      padding: 0.35rem 0.6rem;
+      font-size: 0.85rem;
+    }
+  }
+
   .cv-page-header {
     padding: calc(var(--header-height) + 0.5rem) 0 1.5rem; // Dynamic padding with responsive header height
     margin-bottom: 2rem;
@@ -1214,6 +1340,31 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         transform: none;
       }
     }
+  }
+}
+
+// Extra small devices (phones in portrait)
+@media (max-width: 480px) {
+  .cv-section-nav {
+    ul {
+      padding: 0.3rem;
+      gap: 0.3rem;
+    }
+
+    a {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  // Adjust scroll margins for small mobile
+  #cv-experience,
+  #cv-education,
+  #cv-skills,
+  #cv-certifications {
+    scroll-margin-top: calc(
+      var(--header-height) + 50px
+    ); // Even smaller offset on small mobile
   }
 }
 

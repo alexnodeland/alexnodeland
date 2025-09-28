@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  CVSectionNav,
   EducationSection,
   ExperienceSection,
   ExportButtons,
@@ -27,6 +28,24 @@ const CVPage: React.FC = () => {
           resumeData={cvData}
           resumeElementId="resume-content"
           className="cv-export"
+        />
+
+        <CVSectionNav
+          className="cv-section-nav-container"
+          sections={[
+            { id: 'cv-experience', label: 'Experience', mobileLabel: 'Exp' },
+            { id: 'cv-education', label: 'Education', mobileLabel: 'Edu' },
+            { id: 'cv-skills', label: 'Skills', mobileLabel: 'Skills' },
+            ...(cvData.certifications && cvData.certifications.length > 0
+              ? [
+                  {
+                    id: 'cv-certifications',
+                    label: 'Certifications',
+                    mobileLabel: 'Certs',
+                  },
+                ]
+              : []),
+          ]}
         />
 
         <div className="cv-overview-contact">
@@ -79,14 +98,20 @@ const CVPage: React.FC = () => {
         </div>
 
         <div id="resume-content">
-          <ExperienceSection experiences={cvData.experience} />
+          <section id="cv-experience">
+            <ExperienceSection experiences={cvData.experience} />
+          </section>
 
-          <EducationSection education={cvData.education} />
+          <section id="cv-education">
+            <EducationSection education={cvData.education} />
+          </section>
 
-          <SkillsSection skills={cvData.skills} />
+          <section id="cv-skills">
+            <SkillsSection skills={cvData.skills} />
+          </section>
 
           {cvData.certifications && cvData.certifications.length > 0 && (
-            <>
+            <section id="cv-certifications">
               <h2 className="cv-section-title">Certifications</h2>
               <div className="certifications-container">
                 {cvData.certifications.map((cert, index) => {
@@ -136,7 +161,7 @@ const CVPage: React.FC = () => {
                   );
                 })}
               </div>
-            </>
+            </section>
           )}
         </div>
       </div>
