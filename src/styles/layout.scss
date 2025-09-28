@@ -698,6 +698,11 @@
     }
   }
 
+  // Light mode small mobile nav-brand color fix
+  [data-theme='light'] .nav-brand .nav-link::before {
+    color: white; // Match blog and cv link colors in light mode
+  }
+
   .nav-menu {
     gap: 1rem;
   }
