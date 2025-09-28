@@ -601,7 +601,7 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
   id: 'spectrogram-oscilloscope',
   name: 'Dual FM Oscillator',
   description:
-    'Rich audio synthesis visualization with dual oscillators, effects chain, and real-time frequency analysis. Features logarithmic spectrogram display with harmonics and oscilloscope for waveform visualization.',
+    'A dual VCO FM synthesizer with full effects chain: two voltage-controlled oscillators generate waveforms (sine, square, triangle, sawtooth), frequency modulate each other, then pass through filters, delays, distortion, and reverb. The top oscilloscope shows the final waveform over time, while the bottom spectrogram displays frequency content (low frequencies on left, high on right) with intensity shown as brightness and color. Pure synesthetic visualization of digital audio synthesis.',
   component: SpectrogramOscilloscopeBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

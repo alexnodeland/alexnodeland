@@ -98,7 +98,8 @@ const customSettingsSchema: SettingsSchema[] = [
 export const simpleWaveConfig = createBackgroundConfig({
   id: 'simple-waves',
   name: 'Simple Sine Waves',
-  description: 'A simple animated background with colorful sine wave patterns.',
+  description:
+    'Multiple sine waves interfering with each other create complex interference patterns as they overlap and interact. When waves align (constructive interference), colors brighten to warm oranges and magentas. When they cancel out (destructive interference), they fade to deep blues and purples. Watch how simple mathematical functions combine to create intricate, ever-changing visual harmonies.',
   component: SimpleWaveBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

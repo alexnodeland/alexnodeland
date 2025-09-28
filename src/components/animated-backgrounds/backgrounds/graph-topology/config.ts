@@ -151,7 +151,7 @@ export const graphTopologyConfig = createBackgroundConfig({
   id: 'graph-topology',
   name: 'Job Scheduling',
   description:
-    'Random-walk search for high-conductivity n-node subgraphs on a network interconnect; edge length (loosely) encodes latency.',
+    "This is a graph-theory based job scheduler searching for highly-connected subgraphs - sets of computing resources that can efficiently handle a job deployment. The algorithm explores the network topology to find clusters of nodes with strong interconnections (low latency, high bandwidth) that match the job's resource requirements. Bright cyan shows optimal resource clusters, while golden paths represent active exploration of the system architecture.",
   component: GraphTopologyBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

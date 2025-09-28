@@ -58,13 +58,13 @@ export const siteConfig: SiteConfig = {
   siteName: 'alex nodeland',
   siteUrl: 'https://alexnodeland.com',
   description:
-    'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.',
-  author: 'Alex Nodeland',
+    'senior ai engineer & technical consultant specializing in ai system architecture, devops automation, and production-ready ai infrastructure.',
+  author: 'alex nodeland',
 
   // Contact information
   contact: {
     email: 'alex@ournature.studio',
-    location: 'Upstate, New York, USA',
+    location: 'upstate, new york, usa',
     website: 'alexnodeland.com',
   },
 
@@ -83,7 +83,7 @@ export const siteConfig: SiteConfig = {
   seo: {
     defaultTitle: 'alex nodeland',
     defaultDescription:
-      'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.',
+      'senior ai engineer & technical consultant specializing in ai system architecture, devops automation, and production-ready ai infrastructure.',
     defaultImage: '/images/icon.png',
   },
 

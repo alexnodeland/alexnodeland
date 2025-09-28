@@ -210,7 +210,7 @@ export const cellularAutomatonConfig = createBackgroundConfig({
   id: 'cellular-automaton',
   name: 'Cellular Automaton',
   description:
-    'An evolving cellular automaton showing emergent patterns, life-like behaviors, and state propagation across a computational grid.',
+    'A tiny study in emergence: individual cells follow simple rules, but when populations grow large enough, complex behaviors emerge that are impossible to predict from individual actions alone. Zoom in and see chaotic individual interactions; zoom out and witness elegant population-level dynamics. Green cells represent stable populations, orange shows active growth regions, and golden highlights mark areas of high evolutionary pressure.',
   component: CellularAutomatonBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

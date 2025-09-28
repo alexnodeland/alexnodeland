@@ -275,7 +275,7 @@ export const shortestPathLabConfig = createBackgroundConfig({
   id: 'shortest-path-lab',
   name: 'Shortest Path (Dijkstra/A*)',
   description:
-    'Interactive shortest-path exploration on a random geometric graph. Heuristic weight w: w=0 → Dijkstra (no heuristic), w=1 → standard A*, w>1 → weighted A* (greedy bias, faster but may be inadmissible).',
+    'A live visualization of routing algorithm efficiency comparing different pathfinding strategies. Dijkstra (heuristic weight = 0) methodically explores all possibilities to guarantee the shortest path, while A* (weight = 1) uses smart heuristics to find solutions faster. Higher weights create greedy algorithms that prioritize speed over optimality. Yellow shows active exploration, blue reveals the final optimal route - watch how different algorithms balance thoroughness versus speed in network routing decisions.',
   component: ShortestPathLabBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
