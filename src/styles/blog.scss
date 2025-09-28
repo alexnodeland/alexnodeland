@@ -585,6 +585,14 @@
 @media (max-width: 768px) {
   .blog-header {
     padding: calc(var(--header-height) + 0.5rem) 0 1.5rem; // Dynamic padding with responsive header height
+
+    h1 {
+      font-size: 2rem; // Standardize with CV header
+    }
+
+    p {
+      font-size: 1rem; // Standardize with CV header
+    }
   }
   .blog-page {
     padding: 0 1rem;

@@ -41,7 +41,7 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   position: relative;
-  
+
   // Add gradient left accent
   &::before {
     content: '';
@@ -75,7 +75,7 @@
   box-shadow: 0 0 30px rgba(255, 0, 128, 0.1);
   border: 1px solid var(--border-color);
   position: relative;
-  
+
   // Add animated gradient border
   &::before {
     content: '';
@@ -162,14 +162,26 @@
     transform: scaleX(0);
     transition: transform var(--transition-normal);
   }
-  
+
   // Different accent colors for each expertise
-  &:nth-child(1)::before { background: var(--accent-cyan); }
-  &:nth-child(2)::before { background: var(--accent-blue); }
-  &:nth-child(3)::before { background: var(--primary-color); }
-  &:nth-child(4)::before { background: var(--accent-pink); }
-  &:nth-child(5)::before { background: var(--accent-purple); }
-  &:nth-child(6)::before { background: var(--accent-yellow); }
+  &:nth-child(1)::before {
+    background: var(--accent-cyan);
+  }
+  &:nth-child(2)::before {
+    background: var(--accent-blue);
+  }
+  &:nth-child(3)::before {
+    background: var(--primary-color);
+  }
+  &:nth-child(4)::before {
+    background: var(--accent-pink);
+  }
+  &:nth-child(5)::before {
+    background: var(--accent-purple);
+  }
+  &:nth-child(6)::before {
+    background: var(--accent-yellow);
+  }
 
   &:hover {
     background: var(--bg-hover);
@@ -188,15 +200,18 @@
     display: block;
     opacity: 0.8;
     transition: all var(--transition-normal);
-      
-      img {
-        width: 64px;
-        height: 64px;
-        object-fit: contain;
-        display: inline-block;
-        filter: none;
-        transition: transform var(--transition-normal), opacity var(--transition-normal), filter var(--transition-normal);
-      }
+
+    img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      display: inline-block;
+      filter: none;
+      transition:
+        transform var(--transition-normal),
+        opacity var(--transition-normal),
+        filter var(--transition-normal);
+    }
   }
 
   &:hover .expertise-icon {
@@ -204,7 +219,7 @@
     transform: scale(1.1);
   }
 
-// Dark mode image inversion for expertise icons (black line PNGs -> white lines)
+  // Dark mode image inversion for expertise icons (black line PNGs -> white lines)
 
   .expertise-title {
     font-size: 1.1rem;
@@ -235,7 +250,7 @@
   border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
   position: relative;
-  
+
   // Add purple accent top
   &::before {
     content: '';
@@ -303,13 +318,13 @@
     margin-bottom: 3rem;
 
     h1 {
-      font-size: 2.5rem;
+      font-size: 2rem; // Standardize with CV header
       text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
     }
   }
 
   .hero-subtitle {
-    font-size: 1.1rem;
+    font-size: 1rem; // Standardize with CV header
     padding: 0 1rem;
   }
 
@@ -361,11 +376,11 @@
 
 @media (max-width: 480px) {
   .hero h1 {
-    font-size: 2rem;
+    font-size: 2rem; // Keep consistent sizing
   }
 
   .hero-subtitle {
-    font-size: 1rem;
+    font-size: 1rem; // Keep consistent sizing
   }
 
   .expertise-item {
@@ -383,29 +398,29 @@
   // Hero section - text on dark background
   .hero {
     h1 {
-      color: white;  // White text on dark background
+      color: white; // White text on dark background
       text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-      
+
       &::after {
         background: var(--accent-pink);
         box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
       }
     }
-    
+
     .hero-subtitle {
-      color: rgba(255, 255, 255, 0.8);  // Light gray on dark background
+      color: rgba(255, 255, 255, 0.8); // Light gray on dark background
     }
   }
-  
+
   // Section titles not in cards - on dark background
   h2:not(.consulting h2):not(.about h2):not(.blog-preview h2) {
     color: white;
   }
-  
+
   .about {
     background: var(--bg-card);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    
+
     &::before {
       background: linear-gradient(
         180deg,
@@ -414,21 +429,22 @@
         var(--accent-cyan) 100%
       );
     }
-    
+
     // Text inside white card uses dark colors
-    h2, h3 {
+    h2,
+    h3 {
       color: var(--text-primary);
     }
-    
+
     p {
       color: var(--text-secondary);
     }
   }
-  
+
   .consulting {
     background: var(--bg-card);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    
+
     &::before {
       background: linear-gradient(
         90deg,
@@ -439,73 +455,73 @@
         var(--accent-pink) 100%
       );
     }
-    
+
     // Text inside white card uses dark colors
     h2 {
       color: var(--text-primary);
       border-bottom-color: var(--accent-pink);
     }
-    
+
     p {
       color: var(--text-secondary);
     }
   }
-  
+
   // Expertise section title on dark background
   .expertise h2 {
     color: white;
     border-bottom-color: var(--accent-pink);
   }
-  
+
   .expertise-item {
     background: var(--bg-card);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     border: 1px solid var(--border-color);
-    
+
     &:hover {
       background: var(--bg-hover);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       border-color: var(--accent-blue);
     }
-    
+
     .expertise-icon img {
       opacity: 0.8;
     }
-    
+
     &:hover .expertise-icon img {
       opacity: 1;
     }
-    
+
     // Text inside white cards
     .expertise-title {
       color: var(--text-primary);
     }
-    
+
     .expertise-description {
       color: var(--text-secondary);
     }
   }
-  
+
   .blog-preview {
     background: var(--bg-card);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    
+
     &:hover {
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
       border-color: var(--accent-purple);
     }
-    
+
     // Text inside white card
     h2 {
       color: var(--text-primary);
     }
-    
+
     p {
       color: var(--text-secondary);
-      
+
       a {
         color: var(--accent-blue);
-        
+
         &:hover {
           color: var(--accent-pink);
           text-shadow: 0 0 8px rgba(233, 30, 99, 0.3);
