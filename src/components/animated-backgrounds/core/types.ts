@@ -39,6 +39,7 @@ export interface BackgroundConfig<TCustomSettings = {}> {
   standardSettings: StandardSettings;
   customSettings: TCustomSettings;
   customSettingsSchema: SettingsSchema[];
+  blogPostSection?: string; // Optional link to blog post section
 }
 
 // Combined settings type
@@ -61,4 +62,5 @@ export interface AnimatedBackgroundConfig {
   component: React.ComponentType<any>;
   defaultSettings: any;
   settingsSchema: SettingsSchema[];
+  blogPostSection?: string;
 }

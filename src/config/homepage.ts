@@ -36,67 +36,68 @@ export interface HomepageConfig {
 export const homepageConfig: HomepageConfig = {
   hero: {
     title: 'alex nodeland',
-    subtitle: 'ai engineering & devops specialist',
+    subtitle: 'systems thinker // creative technologist',
   },
   about: {
     paragraphs: [
-      'i build ai systems that actually work. from llm orchestration to distributed workflows, i solve complex engineering challenges with production-ready solutions.',
-      "ready to transform your ai initiatives into scalable, reliable systems? let's architect something powerful together.",
-      'specializing in python, aws, kubernetes, and the full ai engineering stack that powers modern intelligent applications.',
+      "i transform complex challenges into elegant solutions. whether it's orchestrating ai systems, architecting cloud infrastructure, or bridging technical and creative domains, i bring deep expertise across the full technology stack.",
+      "from startup cto to ai engineering lead, i've spent years turning ambitious ideas into production-ready systems that actually deliver value. currently focused on ai engineering, devops automation, and innovative technical projects.",
+      "ready to solve your toughest technical challenges? let's build something remarkable together.",
     ],
   },
   consulting: {
     title: "let's build something",
     description:
-      'stop struggling with ai system complexity and scaling challenges. i help companies implement robust, production-ready ai infrastructure that delivers real business value.',
+      "stuck on a complex technical challenge? from ai system architecture to strategic technology decisions, i help organizations cut through complexity and build solutions that actually work. whether you need hands-on engineering or strategic guidance, we'll turn your biggest obstacles into competitive advantages.",
     ctaButtons: {
       primary: {
-        text: 'start building',
+        text: 'discuss your challenge',
         action: 'email',
       },
       secondary: {
-        text: 'explore possibilities',
+        text: 'schedule a strategy call',
         action: 'calendar',
       },
     },
   },
   expertise: {
-    title: 'core capabilities',
+    title: 'how i can help',
     items: [
       {
         icon: '🤖',
         title: 'ai system architecture',
         description:
-          'llm orchestration, rag systems, and autonomous ai agent workflows',
+          'llm orchestration, rag systems, and autonomous ai agent workflows that scale',
       },
       {
         icon: '⚙️',
-        title: 'devops & infrastructure',
-        description: 'aws, kubernetes, docker, and infrastructure as code',
+        title: 'cloud & devops',
+        description:
+          'aws, kubernetes, infrastructure as code, and reliable deployment pipelines',
       },
       {
-        icon: '📊',
-        title: 'data engineering',
+        icon: '🧠',
+        title: 'technical strategy',
         description:
-          'pipeline design, etl processes, and data lineage tracking',
+          'system design, technology assessment, and strategic technical decision-making',
       },
       {
         icon: '🔧',
-        title: 'mlops & monitoring',
+        title: 'full-stack engineering',
         description:
-          'model deployment, monitoring, and continuous improvement systems',
+          'from databases to frontends, building complete solutions that work',
+      },
+      {
+        icon: '🎨',
+        title: 'creative technology',
+        description:
+          'bridging art and engineering, from audio processing to interactive systems',
       },
       {
         icon: '🚀',
-        title: 'technical leadership',
+        title: 'startup & product leadership',
         description:
-          'cross-functional teams, strategic planning, and technical consulting',
-      },
-      {
-        icon: '💡',
-        title: 'ai product development',
-        description:
-          'from mvp to production, building ai products that users love',
+          'from concept to launch, building teams and products that deliver real value',
       },
     ],
   },

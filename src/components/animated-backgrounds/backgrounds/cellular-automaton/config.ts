@@ -210,9 +210,10 @@ export const cellularAutomatonConfig = createBackgroundConfig({
   id: 'cellular-automaton',
   name: 'Cellular Automaton',
   description:
-    'An evolving cellular automaton showing emergent patterns, life-like behaviors, and state propagation across a computational grid.',
+    'Study of emergence: how simple local rules create complex global patterns. Each cell follows basic survival rules based on neighbor states, yet large populations exhibit sophisticated behaviors impossible to predict from individual interactions. Demonstrates how biological systems, neural networks, and distributed systems generate complex behaviors from simple components. Green cells show stable populations, orange indicates active growth, golden highlights mark evolutionary pressure zones.',
   component: CellularAutomatonBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  blogPostSection: '#cellular-automata',
 });

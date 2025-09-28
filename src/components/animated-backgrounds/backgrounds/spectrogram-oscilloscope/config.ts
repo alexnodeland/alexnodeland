@@ -601,9 +601,10 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
   id: 'spectrogram-oscilloscope',
   name: 'Dual FM Oscillator',
   description:
-    'Rich audio synthesis visualization with dual oscillators, effects chain, and real-time frequency analysis. Features logarithmic spectrogram display with harmonics and oscilloscope for waveform visualization.',
+    "Complete digital audio synthesizer demonstrating frequency modulation synthesis - a technique that creates complex harmonic content by having one oscillator modulate another's frequency. Two VCOs generate basic waveforms, then frequency modulate each other to produce rich timbres, passing through filters, delay, distortion, and reverb. Top display: oscilloscope showing waveform amplitude over time. Bottom: spectrogram showing frequency content evolution (low-to-high, left-to-right), with brightness indicating spectral intensity. Fundamental technique in electronic music production and audio DSP.",
   component: SpectrogramOscilloscopeBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  blogPostSection: '#fm-synthesis',
 });

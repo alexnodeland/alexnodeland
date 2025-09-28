@@ -151,9 +151,10 @@ export const graphTopologyConfig = createBackgroundConfig({
   id: 'graph-topology',
   name: 'Job Scheduling',
   description:
-    'Random-walk search for high-conductivity n-node subgraphs on a network interconnect; edge length (loosely) encodes latency.',
+    'Graph-based resource allocation algorithm solving the distributed computing challenge of efficiently assigning jobs to optimal infrastructure clusters. Searches network topology for highly-connected subgraphs - groups of servers, containers, or VMs with strong interconnections that can handle workload requirements. Golden paths show active topology exploration, bright cyan highlights discovered optimal clusters. Powers container orchestration, cloud resource management, and high-performance computing job scheduling.',
   component: GraphTopologyBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  blogPostSection: '#job-scheduling',
 });

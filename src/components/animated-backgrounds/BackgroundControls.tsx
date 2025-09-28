@@ -82,6 +82,9 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
             currentBackgroundDescription={
               backgroundRegistry[currentIndex]?.description || ''
             }
+            currentBackgroundBlogPostSection={
+              backgroundRegistry[currentIndex]?.blogPostSection || undefined
+            }
             totalBackgrounds={totalBackgrounds}
             onPreviousBackground={onPreviousBackground}
             onNextBackground={onNextBackground}
