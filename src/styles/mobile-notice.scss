@@ -1,0 +1,300 @@
+// Mobile Interactivity Notice Styles
+// Only show on mobile devices
+.mobile-interactivity-container {
+  display: none; // Hidden by default (desktop)
+
+  @media (max-width: 768px) {
+    display: block; // Changed from flex to block for left alignment
+    position: fixed;
+    bottom: 2rem;
+    left: 2rem;
+    z-index: 1000;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    animation: slideInFromLeftWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)
+      forwards;
+  }
+
+  @media (max-width: 480px) {
+    bottom: 1rem;
+    left: 1rem;
+    right: auto; // Remove right to prevent stretching
+  }
+}
+
+.mobile-interactivity-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.1));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  font-family: inherit;
+  width: auto; // Only as wide as content
+
+  &:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  svg {
+    flex-shrink: 0;
+    color: var(--primary-color);
+  }
+
+  .mobile-interactivity-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: lowercase;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+
+    .mobile-interactivity-label {
+      font-size: 0.8rem;
+    }
+  }
+}
+
+// Light mode adjustments for button
+[data-theme='light'] .mobile-interactivity-btn {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Popup/Modal Overlay
+.mobile-notice-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+// Popup Container
+.mobile-notice-popup {
+  position: relative;
+  max-width: 90vw;
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.9));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  // Rainbow gradient top border
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      var(--accent-pink) 0%,
+      var(--accent-blue) 25%,
+      var(--primary-color) 50%,
+      var(--accent-purple) 75%,
+      var(--accent-pink) 100%
+    );
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    animation: gradient-shift 3s ease-in-out infinite;
+  }
+}
+
+// Close button
+.mobile-notice-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--text-primary);
+    background: var(--bg-accent, rgba(255, 255, 255, 0.05));
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// Popup Content
+.mobile-notice-content {
+  text-align: center;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    text-transform: lowercase;
+    font-weight: 600;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+  }
+
+  .mobile-notice-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-style: italic;
+  }
+
+  .mobile-notice-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-accent, rgba(255, 255, 255, 0.03));
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      text-align: left;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        border-color: var(--primary-color);
+        background: var(--bg-accent, rgba(255, 255, 255, 0.05));
+      }
+
+      .feature-icon {
+        font-size: 1.25rem;
+        filter: saturate(0.8);
+      }
+
+      span:not(.feature-icon) {
+        text-transform: lowercase;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  .mobile-notice-recommend {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    text-transform: lowercase;
+  }
+}
+
+// Light mode adjustments for popup
+[data-theme='light'] .mobile-notice-popup {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+
+  .mobile-notice-features .feature-item {
+    background: rgba(0, 0, 0, 0.03);
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-shift {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+// Hide desktop interactive elements on mobile
+@media (max-width: 768px) {
+  // Hide background controls
+  .background-controls {
+    display: none !important;
+  }
+
+  // Hide chat icon
+  .chat-icon-container {
+    display: none !important;
+  }
+
+  // Hide keyboard shortcuts modal toggle
+  .keyboard-shortcuts-toggle {
+    display: none !important;
+  }
+
+  // Hide any keyboard hint texts
+  .keyboard-hint {
+    display: none !important;
+  }
+}

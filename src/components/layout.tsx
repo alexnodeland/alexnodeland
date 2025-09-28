@@ -5,6 +5,7 @@ import '../styles/layout.scss';
 import { useSettingsPanel } from './SettingsPanelContext';
 import ThemeToggle from './ThemeToggle';
 import { ChatIcon, ChatModal, KeyboardShortcuts } from './chat';
+import MobileInteractivityNotice from './MobileInteractivityNotice';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -136,6 +137,9 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
       <ChatIcon />
       <ChatModal />
       <KeyboardShortcuts />
+
+      {/* Mobile Interactivity Notice - only shows on mobile */}
+      <MobileInteractivityNotice />
     </>
   );
 };
