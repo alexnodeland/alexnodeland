@@ -1,8 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import BackgroundManager from '../../../../components/animated-backgrounds/BackgroundManager';
-import { BackgroundProvider } from '../../../../components/BackgroundProvider';
-import { SettingsPanelProvider } from '../../../../components/SettingsPanelContext';
 
 jest.mock('../../../../components/animated-backgrounds/index', () => {
   const React = require('react');
@@ -58,19 +56,54 @@ jest.mock('../../../../components/SettingsPanelContext', () => ({
   }),
 }));
 
-// Test wrapper component to provide necessary contexts
-const TestWrapper: React.FC<{
-  children: React.ReactNode;
-  initialBackgroundId?: string;
-}> = ({ children, initialBackgroundId }) => {
-  return (
-    <SettingsPanelProvider>
-      <BackgroundProvider initialBackgroundId={initialBackgroundId}>
-        {children}
-      </BackgroundProvider>
-    </SettingsPanelProvider>
-  );
-};
+// Mock the BackgroundProvider context
+jest.mock('../../../../components/BackgroundProvider', () => ({
+  useBackground: () => ({
+    state: {
+      currentBackgroundId: 'one',
+      settings: {
+        one: {
+          opacity: 0.8,
+          elementSize: 0.02,
+          globalTimeMultiplier: 1,
+        },
+      },
+      showSettingsPanel: false,
+      closingSettingsPanel: false,
+    },
+    switchToNextBackground: jest.fn(),
+    switchToPreviousBackground: jest.fn(),
+    updateCurrentSettings: jest.fn(),
+    toggleSettingsPanel: jest.fn(),
+    closeSettingsPanel: jest.fn(),
+    audioControls: {
+      startAudio: null,
+      stopAudio: null,
+      isPlaying: false,
+    },
+    overlayOpacity: 0,
+    setOverlayOpacity: jest.fn(),
+    currentBackground: {
+      id: 'one',
+      name: 'One',
+      description: 'First',
+      component: ({ className }: { className?: string }) => (
+        <div data-testid="bg" className={className} />
+      ),
+      defaultSettings: {
+        opacity: 0.8,
+        elementSize: 0.02,
+        globalTimeMultiplier: 1,
+      },
+      settingsSchema: [],
+    },
+    currentSettings: {
+      opacity: 0.8,
+      elementSize: 0.02,
+      globalTimeMultiplier: 1,
+    },
+  }),
+}));
 
 describe('BackgroundManager', () => {
   beforeEach(() => {
@@ -81,21 +114,13 @@ describe('BackgroundManager', () => {
   });
 
   it('renders current background and overlay', () => {
-    render(
-      <TestWrapper initialBackgroundId="one">
-        <BackgroundManager />
-      </TestWrapper>
-    );
+    render(<BackgroundManager />);
     expect(screen.getByTestId('bg')).toBeInTheDocument();
     // overlay div exists (cannot easily select inline style-only, but render succeeded)
   });
 
   it('handles keyboard navigation', () => {
-    render(
-      <TestWrapper initialBackgroundId="one">
-        <BackgroundManager />
-      </TestWrapper>
-    );
+    render(<BackgroundManager />);
     fireEvent.keyDown(window, { code: 'ArrowRight' });
     fireEvent.keyDown(window, { code: 'ArrowLeft' });
     fireEvent.keyDown(window, { code: 'KeyS' });
