@@ -343,10 +343,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     try {
       if (typeof window !== 'undefined') {
+        // Get the path prefix from Gatsby (if any)
+        const pathPrefix = (window as any).__PATH_PREFIX__ || '';
+
         // Try multiple strategies for worker URL resolution
         const workerPaths = [
-          '/worker.js', // Standard Gatsby static path
-          `${window.location.origin}/worker.js`, // Absolute URL
+          `${pathPrefix}/worker.js`, // Gatsby static path with prefix
+          `${window.location.origin}${pathPrefix}/worker.js`, // Absolute URL with prefix
+          '/worker.js', // Fallback for local development
           new URL(
             './worker.js',
             window.location.origin + window.location.pathname
