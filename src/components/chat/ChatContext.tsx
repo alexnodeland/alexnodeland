@@ -343,12 +343,31 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     try {
       if (typeof window !== 'undefined') {
-        // Get the path prefix from Gatsby (if any)
-        const pathPrefix = (window as any).__PATH_PREFIX__ || '';
+        // Detect path prefix from current location for GitHub Pages deployment
+        const currentPath = window.location.pathname;
+        let pathPrefix = '';
+
+        // For GitHub Pages deployment at /alexnodeland/, extract the prefix
+        if (currentPath.startsWith('/alexnodeland/')) {
+          pathPrefix = '/alexnodeland';
+        } else if (
+          currentPath !== '/' &&
+          !currentPath.startsWith('/worker.js')
+        ) {
+          // Extract first path segment as potential prefix
+          const segments = currentPath.split('/').filter(Boolean);
+          if (segments.length > 0) {
+            pathPrefix = '/' + segments[0];
+          }
+        }
+
+        // Debug logging
+        console.log('[chat] Current path:', currentPath);
+        console.log('[chat] Detected pathPrefix:', pathPrefix || '(none)');
 
         // Try multiple strategies for worker URL resolution
         const workerPaths = [
-          `${pathPrefix}/worker.js`, // Gatsby static path with prefix
+          `${pathPrefix}/worker.js`, // GitHub Pages path with detected prefix
           `${window.location.origin}${pathPrefix}/worker.js`, // Absolute URL with prefix
           '/worker.js', // Fallback for local development
           new URL(
@@ -357,11 +376,19 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           ).href, // Relative to current path
         ];
 
+        console.log('[chat] Will try worker URLs:', workerPaths);
+
         for (const workerUrl of workerPaths) {
           try {
+            if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+              console.log('[chat] Attempting to load worker from:', workerUrl);
+            }
             const worker = new Worker(workerUrl, { type: 'module' });
             if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-              // Worker created successfully
+              console.log(
+                '[chat] Worker created successfully from:',
+                workerUrl
+              );
             }
             return worker;
           } catch (urlErr) {
@@ -401,12 +428,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     try {
       const worker = createWorker();
       if (!worker) {
-        console.warn('[chat] Worker creation failed or not supported');
+        console.warn(
+          '[chat] Worker creation failed or not supported - chat will be disabled'
+        );
         setModelState({
           status: 'idle',
           progress: [],
         });
-        return;
+        // Don't return early - let the component continue to work without worker
+        return () => {}; // Return cleanup function
       }
       // Worker created successfully
       workerRef.current = worker;
@@ -584,11 +614,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       };
     } catch (err) {
       console.error('Failed to initialize worker:', err);
+      // Set to idle instead of error to allow app to continue functioning
       setModelState({
-        status: 'error',
+        status: 'idle',
         progress: [],
-        error: 'Failed to initialize worker',
       });
+      // Don't throw the error - let the app continue to work without chat
     }
   }, [USE_CHAT_WORKER, selectedModel, workerInitKey]);
 
