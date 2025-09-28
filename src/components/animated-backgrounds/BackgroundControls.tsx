@@ -20,6 +20,10 @@ interface BackgroundControlsProps {
   settingsSchema?: SettingsSchema[];
   onSettingsChange?: (newSettings: BackgroundSettings) => void;
   onCloseSettings?: () => void;
+  // Audio playback functions for special controls
+  onStartAudio?: () => void;
+  onStopAudio?: () => void;
+  isAudioPlaying?: boolean;
 }
 
 const BackgroundControls: React.FC<BackgroundControlsProps> = ({
@@ -34,18 +38,28 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
   settingsSchema,
   onSettingsChange,
   onCloseSettings,
+  onStartAudio,
+  onStopAudio,
+  isAudioPlaying,
 }) => {
-  const { isSettingsPanelOpen, isClosingSettingsPanel } = useSettingsPanel();
+  const {
+    isSettingsPanelOpen,
+    isClosingSettingsPanel,
+    isChatPanelOpen,
+    isClosingChatPanel,
+  } = useSettingsPanel();
   const currentIndex = backgroundRegistry.findIndex(
     bg => bg.id === currentBackgroundId
   );
   const totalBackgrounds = backgroundRegistry.length;
 
-  // Determine CSS classes for background controls based on settings panel state
+  // Determine CSS classes for background controls based on panel states
   const backgroundControlsClasses = [
     'background-controls',
     isSettingsPanelOpen && 'settings-panel-open',
     isClosingSettingsPanel && 'settings-panel-closing',
+    isChatPanelOpen && 'chat-panel-open',
+    isClosingChatPanel && 'chat-panel-closing',
   ]
     .filter(Boolean)
     .join(' ');
@@ -72,6 +86,9 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
             onPreviousBackground={onPreviousBackground}
             onNextBackground={onNextBackground}
             isClosing={closingSettingsPanel}
+            onStartAudio={onStartAudio}
+            onStopAudio={onStopAudio}
+            isAudioPlaying={isAudioPlaying}
           />
         )}
 

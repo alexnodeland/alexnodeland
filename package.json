@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "gatsby build",
-    "develop": "gatsby develop",
-    "start": "gatsby develop",
+    "build:worker": "npx webpack --config webpack.worker.config.js",
+    "build": "npm run build:worker && gatsby build",
+    "develop": "npm run build:worker && gatsby develop",
+    "start": "npm run build:worker && gatsby develop",
     "serve": "gatsby serve",
     "clean": "gatsby clean",
     "test": "jest",
@@ -47,6 +48,7 @@
   "homepage": "https://github.com/alexnodeland/alexnodeland#readme",
   "description": "Portfolio website for Alex Nodeland - Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.",
   "dependencies": {
+    "@huggingface/transformers": "^3.7.3",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@types/three": "^0.180.0",
@@ -62,11 +64,15 @@
     "gatsby-source-filesystem": "^5.15.0",
     "gatsby-transformer-remark": "^6.15.0",
     "gatsby-transformer-sharp": "^5.15.0",
+    "highlight.js": "^11.11.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-helmet": "^6.1.0",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
     "three": "^0.180.0",
     "typescript": "^5.9.2"
   },
@@ -77,6 +83,7 @@
     "@babel/preset-typescript": "^7.27.1",
     "@babel/register": "^7.28.3",
     "@playwright/test": "^1.40.0",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -101,7 +108,8 @@
     "prettier": "^3.6.2",
     "sass": "^1.93.1",
     "sass-true": "^9.0.0",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "webpack-cli": "^6.0.1"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

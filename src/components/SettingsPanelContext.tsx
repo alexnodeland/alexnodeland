@@ -3,9 +3,13 @@ import React, { createContext, ReactNode, useContext, useState } from 'react';
 interface SettingsPanelContextType {
   isSettingsPanelOpen: boolean;
   isClosingSettingsPanel: boolean;
+  isChatPanelOpen: boolean;
+  isClosingChatPanel: boolean;
   isContentHidden: boolean;
   setSettingsPanelOpen: (isOpen: boolean) => void;
   setClosingSettingsPanel: (isClosing: boolean) => void;
+  setChatPanelOpen: (isOpen: boolean) => void;
+  setClosingChatPanel: (isClosing: boolean) => void;
   setContentHidden: (isHidden: boolean) => void;
 }
 
@@ -22,6 +26,8 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
 }) => {
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isClosingSettingsPanel, setIsClosingSettingsPanel] = useState(false);
+  const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
+  const [isClosingChatPanel, setIsClosingChatPanel] = useState(false);
   const [isContentHidden, setIsContentHidden] = useState(false);
 
   const setSettingsPanelOpen = (isOpen: boolean) => {
@@ -30,6 +36,14 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
 
   const setClosingSettingsPanel = (isClosing: boolean) => {
     setIsClosingSettingsPanel(isClosing);
+  };
+
+  const setChatPanelOpen = (isOpen: boolean) => {
+    setIsChatPanelOpen(isOpen);
+  };
+
+  const setClosingChatPanel = (isClosing: boolean) => {
+    setIsClosingChatPanel(isClosing);
   };
 
   const setContentHidden = (isHidden: boolean) => {
@@ -41,9 +55,13 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
       value={{
         isSettingsPanelOpen,
         isClosingSettingsPanel,
+        isChatPanelOpen,
+        isClosingChatPanel,
         isContentHidden,
         setSettingsPanelOpen,
         setClosingSettingsPanel,
+        setChatPanelOpen,
+        setClosingChatPanel,
         setContentHidden,
       }}
     >

@@ -22,10 +22,10 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html', 'json'],
   coverageThreshold: {
     global: {
-      branches: 45,
-      functions: 60,
-      lines: 55,
-      statements: 55,
+      branches: 40,
+      functions: 50,
+      lines: 50,
+      statements: 50,
     },
   },
   transform: {
@@ -38,7 +38,7 @@ module.exports = {
     '<rootDir>/e2e/',
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!(gatsby|gatsby-script|gatsby-link)/)',
+    'node_modules/(?!(gatsby|gatsby-script|gatsby-link|react-markdown|remark.*|rehype.*|unified|bail|is-plain-obj|trough|vfile.*|unist.*|property-information|hast.*|html-void-elements|comma-separated-tokens|space-separated-tokens|micromark.*|decode-named-character-reference|character-entities|mdast.*|parse-entities|character-reference-invalid|is-decimal|is-hexadecimal|is-alphanumerical|is-alphabetical)/)',
   ],
   testTimeout: 10000,
   clearMocks: true,

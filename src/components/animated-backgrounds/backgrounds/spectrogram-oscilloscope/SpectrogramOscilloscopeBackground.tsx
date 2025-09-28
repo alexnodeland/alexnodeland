@@ -1,11 +1,20 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { SpectrogramOscilloscopeSettings } from './config';
 
+interface SpectrogramOscilloscopeBackgroundProps
+  extends AnimatedBackgroundProps<SpectrogramOscilloscopeSettings> {
+  onAudioControlsReady?: (
+    startAudio: () => void,
+    stopAudio: () => void,
+    isPlaying: boolean
+  ) => void;
+}
+
 const SpectrogramOscilloscopeBackground: React.FC<
-  AnimatedBackgroundProps<SpectrogramOscilloscopeSettings>
-> = ({ className, settings }) => {
+  SpectrogramOscilloscopeBackgroundProps
+> = ({ className, settings, onAudioControlsReady }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -24,6 +33,179 @@ const SpectrogramOscilloscopeBackground: React.FC<
   const distortionNodeRef = useRef<WaveShaperNode | null>(null);
   const convolverNodeRef = useRef<ConvolverNode | null>(null);
   const isPlayingRef = useRef<boolean>(false);
+
+  // Create stable audio control functions using useCallback
+  const stableStartAudio = useCallback(async () => {
+    if (isPlayingRef.current) return;
+
+    try {
+      // Create audio context
+      audioContextRef.current = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+
+      // Resume context if suspended (browser security)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+
+      // Create oscillators
+      vco1Ref.current = audioContextRef.current.createOscillator();
+      vco2Ref.current = audioContextRef.current.createOscillator();
+
+      // Set oscillator types
+      const waveTypes = ['sine', 'square', 'triangle', 'sawtooth'] as const;
+      vco1Ref.current.type = waveTypes[Math.floor(settings.vco1WaveformType)];
+      vco2Ref.current.type = waveTypes[Math.floor(settings.vco2WaveformType)];
+
+      // Set frequencies
+      vco1Ref.current.frequency.value = settings.vco1Frequency;
+      vco2Ref.current.frequency.value =
+        settings.vco2Frequency * (1 + settings.detune);
+
+      // Create gain nodes for mixing
+      const vco1Gain = audioContextRef.current.createGain();
+      const vco2Gain = audioContextRef.current.createGain();
+      vco1Gain.gain.value = settings.vco1Amplitude * 0.3; // Scale for audible volume
+      vco2Gain.gain.value = settings.vco2Amplitude * 0.3;
+
+      // Create mixer
+      const mixer = audioContextRef.current.createGain();
+      mixer.gain.value = 0.7; // Overall volume control
+
+      // Create filter
+      filterNodeRef.current = audioContextRef.current.createBiquadFilter();
+      const filterTypes = [
+        'lowpass',
+        'lowpass',
+        'highpass',
+        'bandpass',
+      ] as const;
+      filterNodeRef.current.type = filterTypes[Math.floor(settings.filterType)];
+      filterNodeRef.current.frequency.value = settings.filterCutoff * 10000;
+      filterNodeRef.current.Q.value = settings.filterResonance * 30;
+
+      // Final gain for output
+      gainNodeRef.current = audioContextRef.current.createGain();
+      gainNodeRef.current.gain.value = 0; // Start at 0, ramp up
+
+      // Connect the audio graph
+      vco1Ref.current.connect(vco1Gain);
+      vco2Ref.current.connect(vco2Gain);
+      vco1Gain.connect(mixer);
+      vco2Gain.connect(mixer);
+
+      // Apply effects chain - simplified for debugging
+      let currentNode: AudioNode = mixer;
+
+      // Filter
+      if (settings.filterType > 0) {
+        currentNode.connect(filterNodeRef.current);
+        currentNode = filterNodeRef.current;
+      }
+
+      // Connect directly to output for now
+      currentNode.connect(gainNodeRef.current);
+      gainNodeRef.current.connect(audioContextRef.current.destination);
+
+      // Start oscillators
+      vco1Ref.current.start();
+      vco2Ref.current.start();
+
+      // Fade in - use linear ramp for more reliable fade
+      gainNodeRef.current.gain.setValueAtTime(
+        0.001,
+        audioContextRef.current.currentTime
+      );
+      gainNodeRef.current.gain.linearRampToValueAtTime(
+        0.4,
+        audioContextRef.current.currentTime + 0.1
+      );
+
+      // Add FM modulation
+      if (settings.vco1FMAmount > 0) {
+        const lfo1 = audioContextRef.current.createOscillator();
+        const lfo1Gain = audioContextRef.current.createGain();
+        lfo1.frequency.value = settings.vco1FMFrequency;
+        lfo1Gain.gain.value = settings.vco1FMAmount * 50;
+        lfo1.connect(lfo1Gain);
+        lfo1Gain.connect(vco1Ref.current.frequency);
+        lfo1.start();
+      }
+
+      if (settings.vco2FMAmount > 0) {
+        const lfo2 = audioContextRef.current.createOscillator();
+        const lfo2Gain = audioContextRef.current.createGain();
+        lfo2.frequency.value = settings.vco2FMFrequency;
+        lfo2Gain.gain.value = settings.vco2FMAmount * 50;
+        lfo2.connect(lfo2Gain);
+        lfo2Gain.connect(vco2Ref.current.frequency);
+        lfo2.start();
+      }
+
+      // Add filter LFO
+      if (settings.filterLFOAmount > 0 && filterNodeRef.current) {
+        const filterLFO = audioContextRef.current.createOscillator();
+        const filterLFOGain = audioContextRef.current.createGain();
+        filterLFO.frequency.value = settings.filterLFOSpeed;
+        filterLFOGain.gain.value = settings.filterLFOAmount * 5000;
+        filterLFO.connect(filterLFOGain);
+        filterLFOGain.connect(filterNodeRef.current.frequency);
+        filterLFO.start();
+      }
+
+      isPlayingRef.current = true;
+    } catch (error) {
+      // Audio playback failed - silently continue
+      isPlayingRef.current = false;
+    }
+  }, [settings]);
+
+  const stableStopAudio = useCallback(() => {
+    if (!isPlayingRef.current) return;
+
+    try {
+      // Fade out
+      if (gainNodeRef.current && audioContextRef.current) {
+        gainNodeRef.current.gain.linearRampToValueAtTime(
+          0.001,
+          audioContextRef.current.currentTime + 0.1
+        );
+
+        // Stop after fade
+        setTimeout(() => {
+          if (vco1Ref.current) {
+            try {
+              vco1Ref.current.stop();
+            } catch (e) {
+              // Already stopped
+            }
+            vco1Ref.current = null;
+          }
+          if (vco2Ref.current) {
+            try {
+              vco2Ref.current.stop();
+            } catch (e) {
+              // Already stopped
+            }
+            vco2Ref.current = null;
+          }
+          if (audioContextRef.current) {
+            audioContextRef.current.close();
+            audioContextRef.current = null;
+          }
+
+          gainNodeRef.current = null;
+          filterNodeRef.current = null;
+          delayNodeRef.current = null;
+          distortionNodeRef.current = null;
+          convolverNodeRef.current = null;
+          isPlayingRef.current = false;
+        }, 150);
+      }
+    } catch (error) {
+      // Audio stop failed - silently continue
+    }
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -672,196 +854,29 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Web Audio API functions (currently unused but kept for future expansion)
-
-    const startAudioPlayback = async () => {
-      if (isPlayingRef.current) return;
-
-      try {
-        // Create audio context
-        audioContextRef.current = new (window.AudioContext ||
-          (window as any).webkitAudioContext)();
-
-        // Resume context if suspended (browser security)
-        if (audioContextRef.current.state === 'suspended') {
-          await audioContextRef.current.resume();
-        }
-
-        // Create oscillators
-        vco1Ref.current = audioContextRef.current.createOscillator();
-        vco2Ref.current = audioContextRef.current.createOscillator();
-
-        // Set oscillator types
-        const waveTypes = ['sine', 'square', 'triangle', 'sawtooth'] as const;
-        vco1Ref.current.type = waveTypes[Math.floor(settings.vco1WaveformType)];
-        vco2Ref.current.type = waveTypes[Math.floor(settings.vco2WaveformType)];
-
-        // Set frequencies
-        vco1Ref.current.frequency.value = settings.vco1Frequency;
-        vco2Ref.current.frequency.value =
-          settings.vco2Frequency * (1 + settings.detune);
-
-        // Create gain nodes for mixing
-        const vco1Gain = audioContextRef.current.createGain();
-        const vco2Gain = audioContextRef.current.createGain();
-        vco1Gain.gain.value = settings.vco1Amplitude * 0.3; // Scale for audible volume
-        vco2Gain.gain.value = settings.vco2Amplitude * 0.3;
-
-        // Create mixer
-        const mixer = audioContextRef.current.createGain();
-        mixer.gain.value = 0.7; // Overall volume control
-
-        // Create filter
-        filterNodeRef.current = audioContextRef.current.createBiquadFilter();
-        const filterTypes = [
-          'lowpass',
-          'lowpass',
-          'highpass',
-          'bandpass',
-        ] as const;
-        filterNodeRef.current.type =
-          filterTypes[Math.floor(settings.filterType)];
-        filterNodeRef.current.frequency.value = settings.filterCutoff * 10000;
-        filterNodeRef.current.Q.value = settings.filterResonance * 30;
-
-        // Final gain for output
-        gainNodeRef.current = audioContextRef.current.createGain();
-        gainNodeRef.current.gain.value = 0; // Start at 0, ramp up
-
-        // Connect the audio graph
-        vco1Ref.current.connect(vco1Gain);
-        vco2Ref.current.connect(vco2Gain);
-        vco1Gain.connect(mixer);
-        vco2Gain.connect(mixer);
-
-        // Apply effects chain - simplified for debugging
-        let currentNode: AudioNode = mixer;
-
-        // Filter
-        if (settings.filterType > 0) {
-          currentNode.connect(filterNodeRef.current);
-          currentNode = filterNodeRef.current;
-        }
-
-        // Connect directly to output for now
-        currentNode.connect(gainNodeRef.current);
-        gainNodeRef.current.connect(audioContextRef.current.destination);
-
-        // Start oscillators
-        vco1Ref.current.start();
-        vco2Ref.current.start();
-
-        // Fade in - use linear ramp for more reliable fade
-        gainNodeRef.current.gain.setValueAtTime(
-          0.001,
-          audioContextRef.current.currentTime
-        );
-        gainNodeRef.current.gain.linearRampToValueAtTime(
-          0.4,
-          audioContextRef.current.currentTime + 0.1
-        );
-
-        // Add FM modulation
-        if (settings.vco1FMAmount > 0) {
-          const lfo1 = audioContextRef.current.createOscillator();
-          const lfo1Gain = audioContextRef.current.createGain();
-          lfo1.frequency.value = settings.vco1FMFrequency;
-          lfo1Gain.gain.value = settings.vco1FMAmount * 50;
-          lfo1.connect(lfo1Gain);
-          lfo1Gain.connect(vco1Ref.current.frequency);
-          lfo1.start();
-        }
-
-        if (settings.vco2FMAmount > 0) {
-          const lfo2 = audioContextRef.current.createOscillator();
-          const lfo2Gain = audioContextRef.current.createGain();
-          lfo2.frequency.value = settings.vco2FMFrequency;
-          lfo2Gain.gain.value = settings.vco2FMAmount * 50;
-          lfo2.connect(lfo2Gain);
-          lfo2Gain.connect(vco2Ref.current.frequency);
-          lfo2.start();
-        }
-
-        // Add filter LFO
-        if (settings.filterLFOAmount > 0 && filterNodeRef.current) {
-          const filterLFO = audioContextRef.current.createOscillator();
-          const filterLFOGain = audioContextRef.current.createGain();
-          filterLFO.frequency.value = settings.filterLFOSpeed;
-          filterLFOGain.gain.value = settings.filterLFOAmount * 5000;
-          filterLFO.connect(filterLFOGain);
-          filterLFOGain.connect(filterNodeRef.current.frequency);
-          filterLFO.start();
-        }
-
-        isPlayingRef.current = true;
-      } catch (error) {
-        // Audio playback failed - silently continue
-        isPlayingRef.current = false;
-      }
-    };
-
-    const stopAudioPlayback = () => {
-      if (!isPlayingRef.current) return;
-
-      try {
-        // Fade out
-        if (gainNodeRef.current && audioContextRef.current) {
-          gainNodeRef.current.gain.linearRampToValueAtTime(
-            0.001,
-            audioContextRef.current.currentTime + 0.1
-          );
-
-          // Stop after fade
-          setTimeout(() => {
-            if (vco1Ref.current) {
-              try {
-                vco1Ref.current.stop();
-              } catch (e) {
-                // Already stopped
-              }
-              vco1Ref.current = null;
-            }
-            if (vco2Ref.current) {
-              try {
-                vco2Ref.current.stop();
-              } catch (e) {
-                // Already stopped
-              }
-              vco2Ref.current = null;
-            }
-            if (audioContextRef.current) {
-              audioContextRef.current.close();
-              audioContextRef.current = null;
-            }
-
-            gainNodeRef.current = null;
-            filterNodeRef.current = null;
-            delayNodeRef.current = null;
-            distortionNodeRef.current = null;
-            convolverNodeRef.current = null;
-            isPlayingRef.current = false;
-          }, 150);
-        }
-      } catch (error) {
-        // Audio stop failed - silently continue
-      }
-    };
+    // Web Audio API functions - now using stable callbacks
 
     // Keyboard event handlers
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() === 'p' && !event.repeat) {
-        startAudioPlayback();
+        stableStartAudio();
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() === 'p') {
-        stopAudioPlayback();
+        stableStopAudio();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+
+    // Store audio functions in ref for access across effects
+    audioFunctionsRef.current = {
+      startAudio: stableStartAudio,
+      stopAudio: stableStopAudio,
+    };
 
     // Animation loop
     let currentRow = 0;
@@ -911,7 +926,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
       }
 
       // Stop audio if playing
-      stopAudioPlayback();
+      stableStopAudio();
 
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
@@ -929,20 +944,54 @@ const SpectrogramOscilloscopeBackground: React.FC<
       if (spectrogramTexture) spectrogramTexture.dispose();
       if (waveformTexture) waveformTexture.dispose();
     };
-  }, [settings]);
+  }, [settings, stableStartAudio, stableStopAudio]);
 
   // State for showing audio playback indicator
   const [isPlaying, setIsPlaying] = React.useState(false);
 
-  // Update the audio playback functions to set state
+  // Refs to store audio functions so they can be accessed across effects
+  const audioFunctionsRef = useRef<{
+    startAudio: (() => void) | null;
+    stopAudio: (() => void) | null;
+  }>({ startAudio: null, stopAudio: null });
+
+  // Store the callback in a ref to avoid dependency issues
+  const onAudioControlsReadyRef = useRef(onAudioControlsReady);
+  onAudioControlsReadyRef.current = onAudioControlsReady;
+
+  // Update the audio playback functions to set state - with proper dependencies
   React.useEffect(() => {
-    // Monitor playing state for UI update
+    let previousPlaying = false;
+
+    // Monitor playing state for UI update and call parent callback when it changes
     const checkInterval = setInterval(() => {
-      setIsPlaying(isPlayingRef.current);
+      const currentPlaying = isPlayingRef.current;
+
+      if (currentPlaying !== previousPlaying) {
+        setIsPlaying(currentPlaying);
+
+        // Call the parent callback when playing state actually changes
+        if (onAudioControlsReadyRef.current) {
+          onAudioControlsReadyRef.current(
+            stableStartAudio,
+            stableStopAudio,
+            currentPlaying
+          );
+        }
+
+        previousPlaying = currentPlaying;
+      }
     }, 100);
 
     return () => clearInterval(checkInterval);
-  }, []);
+  }, [stableStartAudio, stableStopAudio]); // Only depend on the stable functions
+
+  // Call parent callback once on mount with initial state
+  React.useEffect(() => {
+    if (onAudioControlsReadyRef.current) {
+      onAudioControlsReadyRef.current(stableStartAudio, stableStopAudio, false);
+    }
+  }, [stableStartAudio, stableStopAudio]); // Include stable audio functions
 
   return (
     <>
