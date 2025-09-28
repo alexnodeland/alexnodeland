@@ -1,4 +1,10 @@
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 interface SettingsPanelContextType {
   isSettingsPanelOpen: boolean;
@@ -24,11 +30,71 @@ interface SettingsPanelProviderProps {
 export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
   children,
 }) => {
-  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
+  // Initialize states with values from localStorage if available
+  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('settings-panel-open');
+        return saved !== null ? saved === 'true' : false;
+      } catch (error) {
+        console.warn(
+          'Failed to load settings panel state from localStorage:',
+          error
+        );
+        return false;
+      }
+    }
+    return false;
+  });
+
   const [isClosingSettingsPanel, setIsClosingSettingsPanel] = useState(false);
-  const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
+
+  const [isChatPanelOpen, setIsChatPanelOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('chat-panel-open');
+        return saved !== null ? saved === 'true' : false;
+      } catch (error) {
+        console.warn(
+          'Failed to load chat panel state from localStorage:',
+          error
+        );
+        return false;
+      }
+    }
+    return false;
+  });
+
   const [isClosingChatPanel, setIsClosingChatPanel] = useState(false);
   const [isContentHidden, setIsContentHidden] = useState(false);
+
+  // Persist settings panel state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(
+          'settings-panel-open',
+          isSettingsPanelOpen.toString()
+        );
+      } catch (error) {
+        console.warn(
+          'Failed to save settings panel state to localStorage:',
+          error
+        );
+      }
+    }
+  }, [isSettingsPanelOpen]);
+
+  // Persist chat panel state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('chat-panel-open', isChatPanelOpen.toString());
+      } catch (error) {
+        console.warn('Failed to save chat panel state to localStorage:', error);
+      }
+    }
+  }, [isChatPanelOpen]);
 
   const setSettingsPanelOpen = (isOpen: boolean) => {
     setIsSettingsPanelOpen(isOpen);

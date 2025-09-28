@@ -1,3 +1,4 @@
+import { navigate } from 'gatsby';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   BackgroundSettings,
@@ -347,10 +348,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {currentBackgroundBlogPostSection && (
             <div className="blog-post-link-container">
               <a
-                href={`/blog/250928_interactive-algorithm-visualizations${currentBackgroundBlogPostSection}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/blog/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`}
                 className="blog-post-link"
+                onClick={e => {
+                  e.preventDefault();
+                  // Navigate using Gatsby's navigate to maintain state persistence
+                  navigate(
+                    `/blog/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`
+                  );
+                }}
               >
                 <svg
                   width="16"
