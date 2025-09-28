@@ -275,9 +275,10 @@ export const shortestPathLabConfig = createBackgroundConfig({
   id: 'shortest-path-lab',
   name: 'Shortest Path (Dijkstra/A*)',
   description:
-    'A live visualization of routing algorithm efficiency comparing different pathfinding strategies. Dijkstra (heuristic weight = 0) methodically explores all possibilities to guarantee the shortest path, while A* (weight = 1) uses smart heuristics to find solutions faster. Higher weights create greedy algorithms that prioritize speed over optimality. Yellow shows active exploration, blue reveals the final optimal route - watch how different algorithms balance thoroughness versus speed in network routing decisions.',
+    "Comparative visualization of pathfinding algorithms that power GPS navigation, internet routing, and game AI. Dijkstra's algorithm (weight = 0) systematically explores all possibilities to guarantee optimal paths. A* (weight = 1) uses distance heuristics to find optimal paths faster. Greedy search (weight > 1) sacrifices optimality for speed. Yellow patterns show exploration strategy: uniform for Dijkstra, directionally-biased for A*, narrow for greedy. Blue highlights the discovered optimal route. Demonstrates the fundamental trade-off between computational thoroughness and execution speed in network optimization.",
   component: ShortestPathLabBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  blogPostSection: '#pathfinding',
 });

@@ -601,9 +601,10 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
   id: 'spectrogram-oscilloscope',
   name: 'Dual FM Oscillator',
   description:
-    'A dual VCO FM synthesizer with full effects chain: two voltage-controlled oscillators generate waveforms (sine, square, triangle, sawtooth), frequency modulate each other, then pass through filters, delays, distortion, and reverb. The top oscilloscope shows the final waveform over time, while the bottom spectrogram displays frequency content (low frequencies on left, high on right) with intensity shown as brightness and color. Pure synesthetic visualization of digital audio synthesis.',
+    "Complete digital audio synthesizer demonstrating frequency modulation synthesis - a technique that creates complex harmonic content by having one oscillator modulate another's frequency. Two VCOs generate basic waveforms, then frequency modulate each other to produce rich timbres, passing through filters, delay, distortion, and reverb. Top display: oscilloscope showing waveform amplitude over time. Bottom: spectrogram showing frequency content evolution (low-to-high, left-to-right), with brightness indicating spectral intensity. Fundamental technique in electronic music production and audio DSP.",
   component: SpectrogramOscilloscopeBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  blogPostSection: '#fm-synthesis',
 });

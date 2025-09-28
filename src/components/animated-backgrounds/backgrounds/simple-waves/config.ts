@@ -99,9 +99,10 @@ export const simpleWaveConfig = createBackgroundConfig({
   id: 'simple-waves',
   name: 'Simple Sine Waves',
   description:
-    'Multiple sine waves interfering with each other create complex interference patterns as they overlap and interact. When waves align (constructive interference), colors brighten to warm oranges and magentas. When they cancel out (destructive interference), they fade to deep blues and purples. Watch how simple mathematical functions combine to create intricate, ever-changing visual harmonies.',
+    'Visualization of wave interference - the fundamental physics governing sound, light, radio, and quantum mechanics. Multiple sine waves combine through superposition, creating constructive interference (bright warm colors) when waves align, destructive interference (dark cool colors) when they cancel. Essential for understanding audio processing, signal analysis, noise cancellation, and communications systems. Colors map wave amplitude: bright indicates reinforcement, dark shows cancellation.',
   component: SimpleWaveBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  blogPostSection: '#wave-interference',
 });

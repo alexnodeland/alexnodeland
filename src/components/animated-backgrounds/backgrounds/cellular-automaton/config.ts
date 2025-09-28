@@ -210,9 +210,10 @@ export const cellularAutomatonConfig = createBackgroundConfig({
   id: 'cellular-automaton',
   name: 'Cellular Automaton',
   description:
-    'A tiny study in emergence: individual cells follow simple rules, but when populations grow large enough, complex behaviors emerge that are impossible to predict from individual actions alone. Zoom in and see chaotic individual interactions; zoom out and witness elegant population-level dynamics. Green cells represent stable populations, orange shows active growth regions, and golden highlights mark areas of high evolutionary pressure.',
+    'Study of emergence: how simple local rules create complex global patterns. Each cell follows basic survival rules based on neighbor states, yet large populations exhibit sophisticated behaviors impossible to predict from individual interactions. Demonstrates how biological systems, neural networks, and distributed systems generate complex behaviors from simple components. Green cells show stable populations, orange indicates active growth, golden highlights mark evolutionary pressure zones.',
   component: CellularAutomatonBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  blogPostSection: '#cellular-automata',
 });

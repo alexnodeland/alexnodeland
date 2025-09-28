@@ -151,9 +151,10 @@ export const graphTopologyConfig = createBackgroundConfig({
   id: 'graph-topology',
   name: 'Job Scheduling',
   description:
-    "This is a graph-theory based job scheduler searching for highly-connected subgraphs - sets of computing resources that can efficiently handle a job deployment. The algorithm explores the network topology to find clusters of nodes with strong interconnections (low latency, high bandwidth) that match the job's resource requirements. Bright cyan shows optimal resource clusters, while golden paths represent active exploration of the system architecture.",
+    'Graph-based resource allocation algorithm solving the distributed computing challenge of efficiently assigning jobs to optimal infrastructure clusters. Searches network topology for highly-connected subgraphs - groups of servers, containers, or VMs with strong interconnections that can handle workload requirements. Golden paths show active topology exploration, bright cyan highlights discovered optimal clusters. Powers container orchestration, cloud resource management, and high-performance computing job scheduling.',
   component: GraphTopologyBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  blogPostSection: '#job-scheduling',
 });

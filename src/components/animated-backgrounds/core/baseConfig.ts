@@ -17,6 +17,7 @@ export function createBackgroundConfig<
   customSettings: TCustomSettings;
   customSettingsSchema: SettingsSchema[];
   standardOverrides?: Partial<StandardSettings>;
+  blogPostSection?: string;
 }): BackgroundConfig<TCustomSettings> {
   const standardSettings = {
     ...defaultStandardSettings,
@@ -31,6 +32,7 @@ export function createBackgroundConfig<
     standardSettings,
     customSettings: config.customSettings,
     customSettingsSchema: config.customSettingsSchema,
+    blogPostSection: config.blogPostSection,
   };
 }
 
@@ -62,5 +64,6 @@ export function toLegacyConfig(config: BackgroundConfig<any>) {
     component: config.component,
     defaultSettings: getCompleteSettings(config),
     settingsSchema: getCompleteSettingsSchema(config),
+    blogPostSection: config.blogPostSection,
   };
 }

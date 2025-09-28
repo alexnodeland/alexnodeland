@@ -13,6 +13,7 @@ interface SettingsPanelProps {
   currentBackgroundId: string;
   currentBackgroundName: string;
   currentBackgroundDescription: string;
+  currentBackgroundBlogPostSection?: string;
   totalBackgrounds: number;
   onPreviousBackground: () => void;
   onNextBackground: () => void;
@@ -31,6 +32,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   currentBackgroundId,
   currentBackgroundName,
   currentBackgroundDescription,
+  currentBackgroundBlogPostSection,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   totalBackgrounds,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -341,6 +343,34 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="background-description">
             {currentBackgroundDescription?.toLowerCase?.() || ''}
           </div>
+
+          {currentBackgroundBlogPostSection && (
+            <div className="blog-post-link-container">
+              <a
+                href={`/blog/250928_interactive-algorithm-visualizations${currentBackgroundBlogPostSection}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="blog-post-link"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                view in post
+              </a>
+            </div>
+          )}
 
           {currentBackgroundId === 'spectrogram-oscilloscope' && (
             <div className="special-hotkeys">
