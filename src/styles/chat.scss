@@ -844,12 +844,79 @@
     border-radius: 0;
     color: var(--text-primary);
 
+    // Show copy button on message hover
+    &:hover .message-timestamp .copy-button {
+      opacity: 0.7;
+      transform: translateY(0);
+    }
+
     .message-timestamp {
       font-size: 0.625rem;
       opacity: 0.5;
       margin-top: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+
+      .timestamp-text {
+        flex: 1;
+      }
+
+      .copy-button {
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        cursor: pointer;
+        padding: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-sm);
+        transition: all var(--transition-fast);
+        opacity: 0;
+        transform: translateY(2px);
+        font-size: 0;
+
+        svg {
+          flex-shrink: 0;
+          transition: all var(--transition-fast);
+        }
+
+        &:hover {
+          color: var(--primary-color);
+          background: var(--bg-hover);
+          transform: translateY(0);
+        }
+
+        &:active {
+          transform: scale(0.95);
+        }
+
+        &:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+
+          &:hover {
+            color: var(--text-primary);
+            background: transparent;
+            transform: translateY(2px);
+          }
+        }
+
+        // Success state (copied)
+        &[title='Copied!'] {
+          color: var(--primary-color);
+          opacity: 1;
+          transform: translateY(0);
+
+          &:hover {
+            color: var(--primary-color);
+          }
+        }
+      }
     }
   }
 }
