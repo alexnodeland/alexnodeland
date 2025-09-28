@@ -7,7 +7,6 @@ import ClearConfirmDialog from './ClearConfirmDialog';
 import Progress from './Progress';
 import SamplePrompts from './SamplePrompts';
 import ThinkingToggle from './ThinkingToggle';
-import WasmPerformanceBanner from './WasmPerformanceBanner';
 import WelcomeScreen from './WelcomeScreen';
 
 const ChatModal: React.FC = () => {
@@ -30,7 +29,6 @@ const ChatModal: React.FC = () => {
     clearChatHistory,
     isGenerating,
     cancelModelLoading,
-    currentDevice,
   } = useChat();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [promptValue, setPromptValue] = useState<string | undefined>(undefined);
@@ -194,11 +192,6 @@ const ChatModal: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Performance notice banner for WASM mode */}
-      <WasmPerformanceBanner
-        isVisible={currentDevice === 'wasm' && modelState?.status === 'ready'}
-      />
 
       {/* Show welcome screen when no model is loaded and no messages exist */}
       {modelState?.status === 'idle' && messages.length === 0 && (

@@ -481,28 +481,47 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             break;
           case 'loading': {
             const message = String(data.data ?? '');
-            setModelState((prev: ModelLoadingState) => ({
-              ...prev,
-              status: 'loading',
-              loadingMessage: message,
-              // Only clear progress on the initial model download start
-              progress: message === 'Loading model...' ? [] : prev.progress,
-            }));
 
             // Track device based on loading messages
+            let detectedDevice: string | null = null;
             if (message.includes('Loading model on WebGPU')) {
+              detectedDevice = 'webgpu';
               setCurrentDevice('webgpu');
             } else if (message.includes('Loading WASM backend')) {
+              detectedDevice = 'wasm';
               setCurrentDevice('wasm');
             } else if (
               message.includes('Compiling shaders and warming up model')
             ) {
+              detectedDevice = 'webgpu';
               setCurrentDevice('webgpu');
             } else if (message.includes('Warming up WASM backend')) {
+              detectedDevice = 'wasm';
               setCurrentDevice('wasm');
             } else if (message.includes('Falling back to WASM')) {
+              detectedDevice = 'wasm';
               setCurrentDevice('wasm');
             }
+
+            // Add compatibility mode info to the loading message when using WASM
+            let displayMessage = message;
+            if (
+              detectedDevice === 'wasm' &&
+              (message.includes('Loading WASM backend') ||
+                message.includes('Warming up WASM backend') ||
+                message.includes('Falling back to WASM'))
+            ) {
+              displayMessage = `${message}\n\n⚡ For faster responses, try a modern browser with WebGPU support, like Chrome or Safari.`;
+            }
+
+            setModelState((prev: ModelLoadingState) => ({
+              ...prev,
+              status: 'loading',
+              loadingMessage: displayMessage,
+              // Only clear progress on the initial model download start
+              progress: message === 'Loading model...' ? [] : prev.progress,
+            }));
+
             break;
           }
           case 'ready': {
