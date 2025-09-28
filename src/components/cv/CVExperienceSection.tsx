@@ -3,13 +3,17 @@ import { ExperienceItem } from '../../types';
 
 interface CVExperienceSectionProps {
   experiences: ExperienceItem[];
+  className?: string;
 }
 
 const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
   experiences,
+  className,
 }) => {
   return (
-    <>
+    <section
+      className={`experience-section${className ? ` ${className}` : ''}`}
+    >
       <h2 className="cv-section-title">Experience</h2>
       {experiences.map((exp, index) => (
         <details key={index} className="cv-card cv-collapse">
@@ -48,7 +52,7 @@ const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
           </div>
         </details>
       ))}
-    </>
+    </section>
   );
 };
 

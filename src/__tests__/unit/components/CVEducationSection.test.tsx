@@ -63,11 +63,9 @@ describe('CVEducationSection Component', () => {
     expect(screen.getByText(firstEdu.description!)).toBeInTheDocument();
 
     // Check relevant coursework
+    expect(screen.getAllByText('coursework:').length).toBeGreaterThanOrEqual(1);
     expect(
-      screen.getAllByText('Relevant Coursework:').length
-    ).toBeGreaterThanOrEqual(1);
-    expect(
-      screen.getByText('Linear Algebra, Statistics, Discrete Mathematics')
+      screen.getByText('Linear Algebra • Statistics • Discrete Mathematics')
     ).toBeInTheDocument();
 
     // Check achievements
@@ -89,7 +87,7 @@ describe('CVEducationSection Component', () => {
     render(<CVEducationSection education={minimalEducation} />);
 
     expect(screen.queryByText(/GPA:/)).not.toBeInTheDocument();
-    expect(screen.queryByText('Relevant Coursework:')).not.toBeInTheDocument();
+    expect(screen.queryByText('coursework:')).not.toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument(); // No achievements list
   });
 
@@ -136,7 +134,7 @@ describe('CVEducationSection Component', () => {
 
     render(<CVEducationSection education={educationWithoutCoursework} />);
 
-    expect(screen.queryByText('Relevant Coursework:')).not.toBeInTheDocument();
+    expect(screen.queryByText('coursework:')).not.toBeInTheDocument();
   });
 
   it('should not render achievements when not provided or empty', () => {
@@ -174,7 +172,7 @@ describe('CVEducationSection Component', () => {
     const section = container.querySelector('section');
     expect(section).toHaveClass('education-section');
 
-    const educationItems = container.querySelectorAll('.education-item');
+    const educationItems = container.querySelectorAll('.cv-card.cv-collapse');
     expect(educationItems).toHaveLength(mockEducation.length);
 
     const educationHeaders = container.querySelectorAll('.education-header');
@@ -194,7 +192,7 @@ describe('CVEducationSection Component', () => {
     ).toBeInTheDocument();
     // Should not have any education items
     const { container } = render(<CVEducationSection education={[]} />);
-    const educationItems = container.querySelectorAll('.education-item');
+    const educationItems = container.querySelectorAll('.cv-card.cv-collapse');
     expect(educationItems).toHaveLength(0);
   });
 
@@ -239,7 +237,7 @@ describe('CVEducationSection Component', () => {
 
     render(<CVEducationSection education={educationWithEmptyCoursework} />);
 
-    expect(screen.queryByText('Relevant Coursework:')).not.toBeInTheDocument();
+    expect(screen.queryByText('coursework:')).not.toBeInTheDocument();
   });
 
   it('should handle special characters and formatting in education data', () => {
@@ -271,7 +269,7 @@ describe('CVEducationSection Component', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('École Polytechnique')).toBeInTheDocument();
     expect(
-      screen.getByText('Algorithms & Data Structures, Machine Learning & AI')
+      screen.getByText('Algorithms & Data Structures • Machine Learning & AI')
     ).toBeInTheDocument();
     expect(
       screen.getByText('Best Thesis Award - "Neural Networks"')

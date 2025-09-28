@@ -3,11 +3,15 @@ import { CVData } from '../../types';
 
 interface CVSkillsSectionProps {
   skills: CVData['skills'];
+  className?: string;
 }
 
-const CVSkillsSection: React.FC<CVSkillsSectionProps> = ({ skills }) => {
+const CVSkillsSection: React.FC<CVSkillsSectionProps> = ({
+  skills,
+  className,
+}) => {
   return (
-    <>
+    <section className={`skills-section${className ? ` ${className}` : ''}`}>
       <h2 className="cv-section-title">Skills</h2>
 
       <div className="skill-category-direct">
@@ -44,7 +48,7 @@ const CVSkillsSection: React.FC<CVSkillsSectionProps> = ({ skills }) => {
           </div>
         </div>
       )}
-    </>
+    </section>
   );
 };
 

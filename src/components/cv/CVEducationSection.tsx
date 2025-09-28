@@ -3,13 +3,15 @@ import { EducationItem } from '../../types';
 
 interface CVEducationSectionProps {
   education: EducationItem[];
+  className?: string;
 }
 
 const CVEducationSection: React.FC<CVEducationSectionProps> = ({
   education,
+  className,
 }) => {
   return (
-    <>
+    <section className={`education-section${className ? ` ${className}` : ''}`}>
       <h2 className="cv-section-title">Education</h2>
       {education.map((edu, index) => (
         <details key={index} className="cv-card cv-collapse">
@@ -52,7 +54,7 @@ const CVEducationSection: React.FC<CVEducationSectionProps> = ({
           </div>
         </details>
       ))}
-    </>
+    </section>
   );
 };
 
