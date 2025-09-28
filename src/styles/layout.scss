@@ -1,3 +1,22 @@
+// CSS Custom Properties for dynamic header height calculation
+:root {
+  --header-height: calc(
+    3px + 1.5rem + 1.5rem + 3rem
+  ); // rainbow (3px) + nav padding + nav content height estimate
+
+  @media (max-width: 768px) {
+    --header-height: calc(
+      3px + 1rem + 1rem + 2.5rem
+    ); // Adjusted for mobile nav padding
+  }
+
+  @media (max-width: 480px) {
+    --header-height: calc(
+      3px + 0.75rem + 0.75rem + 2rem
+    ); // Adjusted for small mobile
+  }
+}
+
 // Fixed header container that holds both rainbow border and header
 .fixed-header-container {
   position: fixed;
@@ -574,8 +593,32 @@
 
   .nav {
     padding: 1rem 1.5rem;
-    flex-direction: column;
+    // Keep horizontal layout on mobile
+    flex-direction: row;
+    justify-content: space-between; // Space between nav-brand and nav-menu
     gap: 1rem;
+  }
+
+  // Show shortened nav-brand on mobile to prevent two-row header expansion
+  .nav-brand {
+    font-size: 0.9rem; // Same size as nav-links for consistency
+    font-weight: 500; // Match nav-link font weight
+  }
+
+  // Use shorter text on mobile through CSS content replacement
+  .nav-brand .nav-link {
+    font-size: 0.9rem; // Match nav-link size
+    padding: 0.4rem 0.8rem; // Same padding as other nav-links
+    position: relative;
+    color: transparent; // Hide text color but maintain layout
+
+    &::before {
+      content: 'alex';
+      position: absolute;
+      left: 0.8rem; // Match padding-left
+      color: var(--text-primary); // Restore text color
+      font-weight: inherit; // Inherit font weight
+    }
   }
 
   .nav-menu {
@@ -625,6 +668,29 @@
 
   .nav {
     padding: 0.75rem 1rem;
+    // Keep space-between layout on small mobile
+    justify-content: space-between;
+  }
+
+  // Keep shortened nav-brand on small mobile too
+  .nav-brand {
+    font-size: 0.85rem; // Same size as nav-links on small mobile
+    font-weight: 500; // Match nav-link font weight
+  }
+
+  // Ensure the "alex" replacement works on small mobile too
+  .nav-brand .nav-link {
+    font-size: 0.85rem; // Match nav-link size on small mobile
+    padding: 0.3rem 0.6rem; // Same padding as other nav-links on small mobile
+    color: transparent; // Hide text color but maintain layout
+
+    &::before {
+      content: 'alex';
+      position: absolute;
+      left: 0.6rem; // Match padding-left for small mobile
+      color: var(--text-primary); // Restore text color
+      font-weight: inherit; // Inherit font weight
+    }
   }
 
   .nav-menu {
