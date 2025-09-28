@@ -947,7 +947,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
       if (spectrogramTexture) spectrogramTexture.dispose();
       if (waveformTexture) waveformTexture.dispose();
     };
-  }, [settings]);
+  }, [settings, onAudioControlsReady]);
 
   // State for showing audio playback indicator
   const [isPlaying, setIsPlaying] = React.useState(false);

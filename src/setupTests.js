@@ -1,6 +1,22 @@
 import '@testing-library/jest-dom';
 import 'jest-canvas-mock';
 
+// Mock react-markdown and related modules before any imports
+jest.mock('react-markdown', () => ({
+  __esModule: true,
+  default: ({ children }) => children,
+}));
+
+jest.mock('remark-gfm', () => ({
+  __esModule: true,
+  default: () => {},
+}));
+
+jest.mock('rehype-highlight', () => ({
+  __esModule: true,
+  default: () => {},
+}));
+
 // Mock Gatsby
 jest.mock('gatsby', () => ({
   graphql: jest.fn(),
@@ -131,6 +147,21 @@ Object.defineProperty(URL, 'revokeObjectURL', {
   writable: true,
   value: jest.fn(),
 });
+
+// Mock import.meta for Jest
+global.import = {
+  meta: {
+    url: 'file:///mock-path/test.js',
+  },
+};
+
+// Mock Worker constructor for web workers
+global.Worker = jest.fn().mockImplementation(() => ({
+  postMessage: jest.fn(),
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  terminate: jest.fn(),
+}));
 
 // Keep default document.createElement behavior; anchor elements must be real Nodes
 

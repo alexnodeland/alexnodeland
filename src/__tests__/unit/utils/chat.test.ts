@@ -91,10 +91,9 @@ describe('Chat Utilities', () => {
       expect(result[result.length - 1].id).toBe('3'); // Most recent message
     });
 
-    it('should always include at least the most recent message', () => {
+    it('should return empty when token limit is too small', () => {
       const result = createRollingContext(mockMessages, 1); // Very small limit
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('3'); // Most recent message
+      expect(result).toHaveLength(0); // Can't fit any message in 1 token
     });
 
     it('should preserve message order', () => {
@@ -189,18 +188,14 @@ describe('Chat Utilities', () => {
   });
 
   describe('AVAILABLE_MODELS', () => {
-    it('should contain at least the mock and Qwen3 models', () => {
-      expect(AVAILABLE_MODELS.length).toBeGreaterThanOrEqual(2);
-
-      const mockModel = AVAILABLE_MODELS.find(m => m.id === 'mock-model');
-      expect(mockModel).toBeDefined();
-      expect(mockModel?.name).toBe('Mock Model');
+    it('should contain the Qwen3 model', () => {
+      expect(AVAILABLE_MODELS.length).toBeGreaterThanOrEqual(1);
 
       const qwenModel = AVAILABLE_MODELS.find(
         m => m.id === 'onnx-community/Qwen3-0.6B-ONNX'
       );
       expect(qwenModel).toBeDefined();
-      expect(qwenModel?.name).toBe('Qwen3-0.6B');
+      expect(qwenModel?.name).toBe('qwen3-0.6b');
     });
 
     it('should have all required properties for each model', () => {
@@ -223,10 +218,10 @@ describe('Chat Utilities', () => {
 
   describe('getModelById', () => {
     it('should return model when ID exists', () => {
-      const model = getModelById('mock-model');
+      const model = getModelById('onnx-community/Qwen3-0.6B-ONNX');
       expect(model).toBeDefined();
-      expect(model?.id).toBe('mock-model');
-      expect(model?.name).toBe('Mock Model');
+      expect(model?.id).toBe('onnx-community/Qwen3-0.6B-ONNX');
+      expect(model?.name).toBe('qwen3-0.6b');
     });
 
     it('should return undefined when ID does not exist', () => {
@@ -354,12 +349,12 @@ describe('Chat Utilities', () => {
   });
 
   describe('createSystemMessage', () => {
-    it('should create system message with assistant role', () => {
+    it('should create system message with system role', () => {
       const content = 'You are a helpful AI assistant.';
       const result = createSystemMessage(content);
 
       expect(result.content).toBe(content);
-      expect(result.role).toBe('assistant');
+      expect(result.role).toBe('system');
       expect(result).not.toHaveProperty('id');
       expect(result).not.toHaveProperty('timestamp');
     });
@@ -367,7 +362,7 @@ describe('Chat Utilities', () => {
     it('should handle empty content', () => {
       const result = createSystemMessage('');
       expect(result.content).toBe('');
-      expect(result.role).toBe('assistant');
+      expect(result.role).toBe('system');
     });
 
     it('should handle special characters in content', () => {

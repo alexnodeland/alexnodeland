@@ -38,7 +38,7 @@ module.exports = {
     '<rootDir>/e2e/',
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!(gatsby|gatsby-script|gatsby-link)/)',
+    'node_modules/(?!(gatsby|gatsby-script|gatsby-link|react-markdown|remark.*|rehype.*|unified|bail|is-plain-obj|trough|vfile.*|unist.*|property-information|hast.*|html-void-elements|comma-separated-tokens|space-separated-tokens|micromark.*|decode-named-character-reference|character-entities|mdast.*|parse-entities|character-reference-invalid|is-decimal|is-hexadecimal|is-alphanumerical|is-alphabetical)/)',
   ],
   testTimeout: 10000,
   clearMocks: true,

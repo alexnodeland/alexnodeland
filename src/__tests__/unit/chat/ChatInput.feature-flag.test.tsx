@@ -14,8 +14,8 @@ const mockUseChat = {
   messages: [],
   modelState: { status: 'idle', progress: [] },
   isGenerating: false,
-  generateResponse: undefined, // Will be set in tests
-  loadModel: undefined, // Will be set in tests
+  generateResponse: undefined as jest.Mock | undefined, // Will be set in tests
+  loadModel: undefined as jest.Mock | undefined, // Will be set in tests
 };
 
 jest.mock('../../../components/chat/ChatContext', () => ({

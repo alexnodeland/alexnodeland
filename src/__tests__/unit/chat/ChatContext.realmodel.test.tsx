@@ -53,7 +53,7 @@ describe('ChatContext Real Model Integration (Step 3C)', () => {
       process.env.GATSBY_CHAT_WORKER = 'true';
 
       // In a real browser environment (window exists), worker should be enabled
-      const mockWindow = {};
+      const mockWindow = {} as any;
       global.window = mockWindow;
 
       // Test that the feature flag logic would work
@@ -62,13 +62,13 @@ describe('ChatContext Real Model Integration (Step 3C)', () => {
         process.env.GATSBY_CHAT_WORKER === 'true';
       expect(shouldEnable).toBe(true);
 
-      delete global.window;
+      (global as any).window = undefined;
     });
 
     it('should disable worker when GATSBY_CHAT_WORKER is not set', () => {
       process.env.GATSBY_CHAT_WORKER = undefined;
 
-      const mockWindow = {};
+      const mockWindow = {} as any;
       global.window = mockWindow;
 
       const shouldEnable =
@@ -76,19 +76,23 @@ describe('ChatContext Real Model Integration (Step 3C)', () => {
         process.env.GATSBY_CHAT_WORKER === 'true';
       expect(shouldEnable).toBe(false);
 
-      delete global.window;
+      (global as any).window = undefined;
     });
 
     it('should disable worker in SSR environment (no window)', () => {
       process.env.GATSBY_CHAT_WORKER = 'true';
 
-      // No window object (SSR)
-      global.window = undefined;
+      // Simulate SSR by removing window from global
+      const originalWindow = (global as any).window;
+      delete (global as any).window;
 
       const shouldEnable =
         typeof window !== 'undefined' &&
         process.env.GATSBY_CHAT_WORKER === 'true';
       expect(shouldEnable).toBe(false);
+
+      // Restore window for other tests
+      (global as any).window = originalWindow;
     });
   });
 
