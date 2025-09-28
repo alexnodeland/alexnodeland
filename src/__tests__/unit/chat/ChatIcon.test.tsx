@@ -2,9 +2,14 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { ChatProvider } from '../../../components/chat/ChatContext';
 import ChatIcon from '../../../components/chat/ChatIcon';
+import { SettingsPanelProvider } from '../../../components/SettingsPanelContext';
 
 const renderWithProvider = (component: React.ReactElement) => {
-  return render(<ChatProvider>{component}</ChatProvider>);
+  return render(
+    <SettingsPanelProvider>
+      <ChatProvider>{component}</ChatProvider>
+    </SettingsPanelProvider>
+  );
 };
 
 describe('ChatIcon', () => {
@@ -31,18 +36,17 @@ describe('ChatIcon', () => {
     );
   });
 
-  it('toggles to close icon when opened', () => {
+  it('disappears when clicked (opens chat)', () => {
     renderWithProvider(<ChatIcon />);
 
     const button = screen.getByRole('button');
+    expect(button).toBeInTheDocument();
 
-    // Click to open
+    // Click to open chat
     fireEvent.click(button);
 
-    // Should show close icon
-    const svg = button.querySelector('svg');
-    const path = svg?.querySelector('path');
-    expect(path).toHaveAttribute('d', expect.stringContaining('M18 6L6 18'));
+    // Button should disappear after opening chat
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
   it('has correct accessibility attributes', () => {
@@ -50,39 +54,22 @@ describe('ChatIcon', () => {
 
     const button = screen.getByRole('button');
     expect(button).toHaveAttribute('aria-label', 'Open chat');
-
-    // After clicking, aria-label should change
-    fireEvent.click(button);
-    expect(button).toHaveAttribute('aria-label', 'Close chat');
   });
 
-  it('applies open class when chat is open', () => {
+  it('maintains chat icon appearance', () => {
     renderWithProvider(<ChatIcon />);
 
     const button = screen.getByRole('button');
+    expect(button).toHaveClass('chat-icon');
     expect(button).not.toHaveClass('open');
 
-    fireEvent.click(button);
-    expect(button).toHaveClass('open');
-  });
-
-  it('handles multiple clicks correctly', async () => {
-    renderWithProvider(<ChatIcon />);
-
-    const button = screen.getByRole('button');
-
-    // First click - open
-    fireEvent.click(button);
-    expect(button).toHaveClass('open');
-    expect(button).toHaveAttribute('aria-label', 'Close chat');
-
-    // Wait for the closing animation to complete
-    await new Promise(resolve => setTimeout(resolve, 350));
-
-    // Second click - close
-    fireEvent.click(button);
-    expect(button).not.toHaveClass('open');
-    expect(button).toHaveAttribute('aria-label', 'Open chat');
+    // Icon always shows chat bubble (doesn't change to close icon)
+    const svg = button.querySelector('svg');
+    const path = svg?.querySelector('path');
+    expect(path).toHaveAttribute(
+      'd',
+      expect.stringContaining('M21 15C21 15.5304')
+    );
   });
 
   it('has proper SVG structure', () => {
@@ -91,8 +78,8 @@ describe('ChatIcon', () => {
     const button = screen.getByRole('button');
     const svg = button.querySelector('svg');
 
-    expect(svg).toHaveAttribute('width', '24');
-    expect(svg).toHaveAttribute('height', '24');
+    expect(svg).toHaveAttribute('width', '20');
+    expect(svg).toHaveAttribute('height', '20');
     expect(svg).toHaveAttribute('viewBox', '0 0 24 24');
     expect(svg).toHaveAttribute('fill', 'none');
     expect(svg).toHaveAttribute('xmlns', 'http://www.w3.org/2000/svg');

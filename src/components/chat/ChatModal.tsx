@@ -90,6 +90,8 @@ const ChatModal: React.FC = () => {
 
   if (!isChatPanelOpen) return null;
 
+  // Debug logging for welcome screen conditions (removed console.log for ESLint compliance)
+
   const modalClasses = [
     'chat-sidebar',
     justOpened ? 'opening' : '',

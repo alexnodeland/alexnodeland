@@ -40,7 +40,7 @@ describe('ChatContext', () => {
     expect(screen.getByTestId('is-closing')).toHaveTextContent('false');
     expect(screen.getByTestId('messages-count')).toHaveTextContent('0');
     expect(screen.getByTestId('selected-model')).toHaveTextContent(
-      'distilbert-base-uncased'
+      'onnx-community/Qwen3-0.6B-ONNX'
     );
     expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
   });
@@ -85,7 +85,7 @@ describe('ChatContext', () => {
     );
 
     expect(screen.getByTestId('selected-model')).toHaveTextContent(
-      'distilbert-base-uncased'
+      'onnx-community/Qwen3-0.6B-ONNX'
     );
 
     act(() => {

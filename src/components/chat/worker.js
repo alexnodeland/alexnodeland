@@ -47,7 +47,7 @@ async function checkWebGPUSupport() {
     const adapter = await navigator.gpu.requestAdapter();
     return adapter !== null;
   } catch (error) {
-    console.warn('WebGPU detection failed:', error);
+    // WebGPU detection failed, continue with fallback
     return false;
   }
 }
@@ -229,7 +229,7 @@ async function generate({
         console.log('[worker] Chat template applied successfully');
       }
     } catch (templateError) {
-      console.error('[worker] Chat template error:', templateError);
+      // Chat template error, attempting fallback
 
       // Fallback: try without thinking enabled
       try {
@@ -238,9 +238,9 @@ async function generate({
           return_dict: true,
           add_special_tokens: false,
         });
-        console.warn('[worker] Chat template applied without thinking mode');
+        // Chat template applied without thinking mode
       } catch (fallbackError) {
-        console.error('[worker] Chat template fallback failed:', fallbackError);
+        // Chat template fallback failed
         throw new Error(
           'Failed to apply chat template: ' + fallbackError.message
         );
@@ -258,7 +258,7 @@ async function generate({
         START_THINKING_TOKEN_ID = tokens[0];
         END_THINKING_TOKEN_ID = tokens[1];
       } catch (e) {
-        console.warn('Could not encode thinking tokens:', e);
+        // Could not encode thinking tokens
       }
     }
 

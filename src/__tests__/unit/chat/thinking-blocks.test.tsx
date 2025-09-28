@@ -160,7 +160,7 @@ describe('Thinking Block Functionality', () => {
     it('should render collapsed by default', () => {
       render(<ThinkingBlock {...defaultProps} />);
 
-      expect(screen.getByText('Thinking...')).toBeInTheDocument();
+      expect(screen.getByText('thinking...')).toBeInTheDocument();
       expect(
         screen.queryByText('This is thinking content')
       ).not.toBeInTheDocument();
@@ -169,7 +169,7 @@ describe('Thinking Block Functionality', () => {
     it('should render expanded when isExpanded is true', () => {
       render(<ThinkingBlock {...defaultProps} isExpanded={true} />);
 
-      expect(screen.getByText('Thinking...')).toBeInTheDocument();
+      expect(screen.getByText('thinking...')).toBeInTheDocument();
       expect(screen.getByText('This is thinking content')).toBeInTheDocument();
     });
 
@@ -207,7 +207,7 @@ describe('Thinking Block Functionality', () => {
 
       const button = screen.getByRole('button');
       expect(button).toHaveAttribute('aria-expanded', 'false');
-      expect(button).toHaveAttribute('aria-label', 'Expand thinking process');
+      expect(button).toHaveAttribute('aria-label', 'expand thinking process');
     });
 
     it('should update accessibility attributes when expanded', () => {
@@ -215,7 +215,7 @@ describe('Thinking Block Functionality', () => {
 
       const button = screen.getByRole('button');
       expect(button).toHaveAttribute('aria-expanded', 'true');
-      expect(button).toHaveAttribute('aria-label', 'Collapse thinking process');
+      expect(button).toHaveAttribute('aria-label', 'collapse thinking process');
     });
 
     it('should handle local state when no onToggle provided', () => {
@@ -260,7 +260,7 @@ describe('Thinking Block Functionality', () => {
       render(<ThinkingBlock content="" isExpanded={true} />);
 
       expect(
-        screen.getByText('No thinking content yet...')
+        screen.getByText('no thinking content yet...')
       ).toBeInTheDocument();
     });
 
@@ -268,7 +268,7 @@ describe('Thinking Block Functionality', () => {
       render(<ThinkingBlock content="" isExpanded={true} isTyping={true} />);
 
       expect(
-        screen.queryByText('No thinking content yet...')
+        screen.queryByText('no thinking content yet...')
       ).not.toBeInTheDocument();
       const cursor = document.querySelector('.thinking-cursor');
       expect(cursor).toBeInTheDocument();

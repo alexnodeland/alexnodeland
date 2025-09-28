@@ -337,15 +337,75 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     setWorkerInitKey(prev => prev + 1);
   };
 
-  // Initialize worker when feature flag is enabled
-  useEffect(() => {
-    if (!USE_CHAT_WORKER) return;
-    if (workerRef.current) return;
+  // Helper function to create worker (environment-safe approach)
+  const createWorker = () => {
+    if (typeof Worker === 'undefined') return null;
 
     try {
-      workerRef.current = new Worker(new URL('./worker.js', import.meta.url), {
-        type: 'module',
-      });
+      if (typeof window !== 'undefined') {
+        // Try multiple strategies for worker URL resolution
+        const workerPaths = [
+          '/worker.js', // Standard Gatsby static path
+          `${window.location.origin}/worker.js`, // Absolute URL
+          new URL(
+            './worker.js',
+            window.location.origin + window.location.pathname
+          ).href, // Relative to current path
+        ];
+
+        for (const workerUrl of workerPaths) {
+          try {
+            const worker = new Worker(workerUrl, { type: 'module' });
+            if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+              // Worker created successfully
+            }
+            return worker;
+          } catch (urlErr) {
+            if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+              console.warn(
+                '[chat] Worker creation failed for URL:',
+                workerUrl,
+                urlErr
+              );
+            }
+            continue; // Try next URL
+          }
+        }
+      }
+      return null;
+    } catch (err) {
+      // This is expected in test environment
+      if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+        console.warn(
+          '[chat] Worker creation failed (expected in test environment):',
+          err
+        );
+      }
+      return null;
+    }
+  };
+
+  // Initialize worker when feature flag is enabled
+  useEffect(() => {
+    if (!USE_CHAT_WORKER) {
+      // Worker disabled by feature flag
+      return;
+    }
+    if (workerRef.current) return;
+
+    // Initializing worker...
+    try {
+      const worker = createWorker();
+      if (!worker) {
+        console.warn('[chat] Worker creation failed or not supported');
+        setModelState({
+          status: 'idle',
+          progress: [],
+        });
+        return;
+      }
+      // Worker created successfully
+      workerRef.current = worker;
 
       const onMessage = (e: MessageEvent<WorkerResponse>) => {
         const data = e.data as any; // Type assertion for flexibility
@@ -502,9 +562,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       workerRef.current.addEventListener('error', onError as any);
 
       // Perform WebGPU capability check
+      // Checking WebGPU support...
       workerRef.current.postMessage({ type: 'check' });
 
       // Don't auto-load any model - only load when user selects Qwen
+      // Worker initialized, modelState should be idle
 
       return () => {
         try {

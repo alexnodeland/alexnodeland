@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "gatsby build",
-    "develop": "gatsby develop",
-    "start": "gatsby develop",
+    "build:worker": "npx webpack --config webpack.worker.config.js",
+    "build": "npm run build:worker && gatsby build",
+    "develop": "npm run build:worker && gatsby develop",
+    "start": "npm run build:worker && gatsby develop",
     "serve": "gatsby serve",
     "clean": "gatsby clean",
     "test": "jest",
@@ -107,7 +108,8 @@
     "prettier": "^3.6.2",
     "sass": "^1.93.1",
     "sass-true": "^9.0.0",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "webpack-cli": "^6.0.1"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

@@ -155,13 +155,107 @@ global.import = {
   },
 };
 
-// Mock Worker constructor for web workers
-global.Worker = jest.fn().mockImplementation(() => ({
-  postMessage: jest.fn(),
-  addEventListener: jest.fn(),
-  removeEventListener: jest.fn(),
-  terminate: jest.fn(),
-}));
+// Enhanced Worker mock for chat functionality
+global.Worker = class MockWorker {
+  constructor(scriptURL, options) {
+    this.scriptURL = scriptURL;
+    this.options = options;
+    this.onmessage = null;
+    this.onerror = null;
+    this.listeners = new Map();
+  }
+
+  postMessage(_data) {
+    // Mock worker responses for tests - use shorter timeout and check for function
+    const sendResponse = () => {
+      if (this.onmessage && typeof this.onmessage === 'function') {
+        try {
+          this.onmessage({ data: { status: 'ready' } });
+        } catch (err) {
+          // Silently ignore errors in tests
+        }
+      }
+    };
+
+    // Send response immediately in tests to avoid timing issues
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+      sendResponse();
+    } else {
+      setTimeout(sendResponse, 0);
+    }
+
+    // Also notify event listeners
+    const messageListeners = this.listeners.get('message') || [];
+    messageListeners.forEach(listener => {
+      if (typeof listener === 'function') {
+        try {
+          listener({ data: { status: 'ready' } });
+        } catch (err) {
+          // Silently ignore errors in tests
+        }
+      }
+    });
+  }
+
+  terminate() {
+    // Mock termination - clean up listeners
+    this.listeners.clear();
+    this.onmessage = null;
+    this.onerror = null;
+  }
+
+  addEventListener(type, listener) {
+    if (!this.listeners.has(type)) {
+      this.listeners.set(type, []);
+    }
+    this.listeners.get(type).push(listener);
+
+    // For backward compatibility - only set if it's the first listener
+    if (type === 'message' && !this.onmessage) this.onmessage = listener;
+    if (type === 'error' && !this.onerror) this.onerror = listener;
+  }
+
+  removeEventListener(type, listener) {
+    if (this.listeners.has(type)) {
+      const listeners = this.listeners.get(type);
+      const index = listeners.indexOf(listener);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    }
+
+    // For backward compatibility
+    if (type === 'message' && this.onmessage === listener) {
+      this.onmessage = null;
+    }
+    if (type === 'error' && this.onerror === listener) {
+      this.onerror = null;
+    }
+  }
+};
+
+// Enhanced URL mock to handle worker URLs properly
+const OriginalURL = global.URL;
+global.URL = class MockURL extends OriginalURL {
+  constructor(url, base) {
+    // Handle worker.js URLs specifically
+    if (url === './worker.js' && base && typeof base === 'string') {
+      super('file:///mock-worker.js');
+    } else if (url === './worker.js' && base === 'file:///mock-path/test.js') {
+      super('file:///mock-worker.js');
+    } else {
+      super(url, base);
+    }
+  }
+};
+
+// Preserve static methods
+Object.setPrototypeOf(global.URL, OriginalURL);
+Object.getOwnPropertyNames(OriginalURL).forEach(name => {
+  if (typeof OriginalURL[name] === 'function') {
+    global.URL[name] = OriginalURL[name];
+  }
+});
 
 // Keep default document.createElement behavior; anchor elements must be real Nodes
 

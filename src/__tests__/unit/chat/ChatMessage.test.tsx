@@ -3,15 +3,42 @@ import React from 'react';
 import { ChatProvider } from '../../../components/chat/ChatContext';
 import ChatMessage from '../../../components/chat/ChatMessage';
 
-const renderWithProvider = (messages: any[] = []) => {
+// Mock the child components to avoid dependency issues in tests
+jest.mock('../../../components/chat/MarkdownRenderer', () => {
+  return function MarkdownRenderer({ content }: { content: string }) {
+    return <div className="markdown-content">{content}</div>;
+  };
+});
+
+jest.mock('../../../components/chat/ThinkingBlock', () => {
+  return function ThinkingBlock({ content, onToggle }: any) {
+    return (
+      <div className="thinking-block" onClick={onToggle}>
+        {content}
+      </div>
+    );
+  };
+});
+
+// We need to import useChat for the test component
+import { useChat } from '../../../components/chat/ChatContext';
+
+const renderWithProvider = (initialMessages: any[] = [], loading = false) => {
   const TestComponent = () => {
-    const { addMessage } = useChat();
+    const { addMessage, setLoading } = useChat();
 
     React.useEffect(() => {
-      messages.forEach(msg => {
-        addMessage(msg);
+      initialMessages.forEach(msg => {
+        addMessage({
+          ...msg,
+          id: msg.id || `msg-${Date.now()}-${Math.random()}`,
+          timestamp: msg.timestamp || new Date(),
+        });
       });
-    }, [addMessage]);
+      if (loading) {
+        setLoading(true);
+      }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return <ChatMessage />;
   };
@@ -23,19 +50,12 @@ const renderWithProvider = (messages: any[] = []) => {
   );
 };
 
-// We need to import useChat for the test component
-import { useChat } from '../../../components/chat/ChatContext';
-
 describe('ChatMessage', () => {
-  it('renders welcome message when no messages exist', () => {
+  it('renders empty when no messages exist', () => {
     renderWithProvider();
 
-    expect(
-      screen.getByText(
-        "Hello! I'm your AI assistant. How can I help you today?"
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByText('AI')).toBeInTheDocument(); // Avatar
+    // Component should render empty - no messages to display
+    expect(screen.queryByText('Hello there!')).not.toBeInTheDocument();
   });
 
   it('renders user messages correctly', () => {
@@ -44,7 +64,9 @@ describe('ChatMessage', () => {
     renderWithProvider(messages);
 
     expect(screen.getByText('Hello there!')).toBeInTheDocument();
-    expect(screen.getByText('U')).toBeInTheDocument(); // User avatar
+    // Check for SVG user icon instead of text
+    const userAvatar = document.querySelector('.message-avatar.user svg');
+    expect(userAvatar).toBeInTheDocument();
   });
 
   it('renders assistant messages correctly', () => {
@@ -55,7 +77,11 @@ describe('ChatMessage', () => {
     renderWithProvider(messages);
 
     expect(screen.getByText('Hello! How can I help you?')).toBeInTheDocument();
-    expect(screen.getByText('AI')).toBeInTheDocument(); // Assistant avatar
+    // Check for SVG assistant/robot icon instead of text
+    const assistantAvatar = document.querySelector(
+      '.message-avatar.assistant svg'
+    );
+    expect(assistantAvatar).toBeInTheDocument();
   });
 
   it('renders multiple messages in correct order', () => {
@@ -82,7 +108,7 @@ describe('ChatMessage', () => {
       .closest('.chat-message');
     expect(messageElement).toHaveClass('chat-message', 'user');
 
-    const avatarElement = screen.getByText('U').closest('.message-avatar');
+    const avatarElement = document.querySelector('.message-avatar.user');
     expect(avatarElement).toHaveClass('message-avatar', 'user');
   });
 
@@ -98,7 +124,7 @@ describe('ChatMessage', () => {
       .closest('.chat-message');
     expect(messageElement).toHaveClass('chat-message', 'assistant');
 
-    const avatarElement = screen.getByText('AI').closest('.message-avatar');
+    const avatarElement = document.querySelector('.message-avatar.assistant');
     expect(avatarElement).toHaveClass('message-avatar', 'assistant');
   });
 
@@ -116,25 +142,14 @@ describe('ChatMessage', () => {
   });
 
   it('shows loading indicator when loading', () => {
-    const TestComponentWithLoading = () => {
-      const { addMessage, setLoading } = useChat();
+    renderWithProvider([], true);
 
-      React.useEffect(() => {
-        addMessage({ content: 'Test message', role: 'user' });
-        setLoading(true);
-      }, [addMessage, setLoading]);
-
-      return <ChatMessage />;
-    };
-
-    render(
-      <ChatProvider>
-        <TestComponentWithLoading />
-      </ChatProvider>
-    );
-
-    expect(screen.getByText('AI')).toBeInTheDocument(); // Loading avatar
-    expect(screen.getByText('Test message')).toBeInTheDocument(); // User message
+    // Check for loading dots and assistant avatar
+    expect(document.querySelector('.chat-loading')).toBeInTheDocument();
+    expect(document.querySelector('.loading-dots')).toBeInTheDocument();
+    expect(
+      document.querySelector('.chat-loading .message-avatar.assistant svg')
+    ).toBeInTheDocument();
   });
 
   it('formats time correctly', () => {
@@ -159,25 +174,34 @@ describe('ChatMessage', () => {
     renderWithProvider(messages);
 
     // Should still render the message structure
-    expect(screen.getByText('U')).toBeInTheDocument(); // Avatar
-    const messageContent = screen
-      .getByText('U')
-      .closest('.chat-message')
-      ?.querySelector('.message-content');
+    const userAvatar = document.querySelector('.message-avatar.user svg');
+    expect(userAvatar).toBeInTheDocument();
+
+    const messageContent = document.querySelector(
+      '.chat-message.user .message-content'
+    );
     expect(messageContent).toBeInTheDocument();
   });
 
-  it('renders welcome message only when no messages exist', () => {
+  it('uses MarkdownRenderer for assistant messages', () => {
+    const messages = [
+      { content: 'Assistant **bold** message', role: 'assistant' as const },
+    ];
+
+    renderWithProvider(messages);
+
+    // Should use MarkdownRenderer for assistant messages
+    expect(document.querySelector('.markdown-content')).toBeInTheDocument();
+    expect(screen.getByText('Assistant **bold** message')).toBeInTheDocument();
+  });
+
+  it('uses plain paragraph for user messages', () => {
     const messages = [{ content: 'User message', role: 'user' as const }];
 
     renderWithProvider(messages);
 
-    // Should only show user message, not welcome message when messages exist
-    expect(
-      screen.queryByText(
-        "Hello! I'm your AI assistant. How can I help you today?"
-      )
-    ).not.toBeInTheDocument();
-    expect(screen.getByText('User message')).toBeInTheDocument();
+    // Should use plain <p> tag for user messages
+    const userMessage = screen.getByText('User message');
+    expect(userMessage.tagName).toBe('P');
   });
 });

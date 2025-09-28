@@ -1,0 +1,11 @@
+# Build artifacts and generated files
+static/
+dist/
+build/
+public/
+
+# Node modules
+node_modules/
+
+# Cache directories
+.cache/

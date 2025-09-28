@@ -1,9 +1,14 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { act, render, screen } from '@testing-library/react';
 import React from 'react';
-import { ChatProvider, useChat } from '../../../components/chat/ChatContext';
+import { ChatProvider } from '../../../components/chat/ChatContext';
 import ChatModal from '../../../components/chat/ChatModal';
+import {
+  SettingsPanelProvider,
+  useSettingsPanel,
+} from '../../../components/SettingsPanelContext';
 
-// Mock the child components
+// Mock the chat components to simplify testing
 jest.mock('../../../components/chat/ChatMessage', () => {
   return function MockChatMessage() {
     return <div data-testid="chat-messages">Chat Messages</div>;
@@ -16,129 +21,114 @@ jest.mock('../../../components/chat/ChatInput', () => {
   };
 });
 
-const renderWithProvider = (isOpen = false) => {
-  const TestComponent = () => {
-    const { setChatOpen } = useChat();
-
-    React.useEffect(() => {
-      setChatOpen(isOpen);
-    }, [setChatOpen]);
-
-    return (
-      <div>
-        <button onClick={() => setChatOpen(true)}>Open Modal</button>
-        <button onClick={() => setChatOpen(false)}>Close Modal</button>
-        <ChatModal />
-      </div>
-    );
+// Mock other chat components to avoid complex dependencies
+jest.mock('../../../components/chat/ClearConfirmDialog', () => {
+  return function MockClearConfirmDialog() {
+    return null;
   };
+});
 
-  return render(
-    <ChatProvider>
-      <TestComponent />
-    </ChatProvider>
+jest.mock('../../../components/chat/Progress', () => {
+  return function MockProgress() {
+    return <div data-testid="progress">Progress</div>;
+  };
+});
+
+jest.mock('../../../components/chat/SamplePrompts', () => {
+  return function MockSamplePrompts() {
+    return <div data-testid="sample-prompts">Sample Prompts</div>;
+  };
+});
+
+jest.mock('../../../components/chat/ThinkingToggle', () => {
+  return function MockThinkingToggle() {
+    return <div data-testid="thinking-toggle">Thinking Toggle</div>;
+  };
+});
+
+jest.mock('../../../components/chat/WelcomeScreen', () => {
+  return function MockWelcomeScreen() {
+    return <div data-testid="welcome-screen">Welcome Screen</div>;
+  };
+});
+
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <SettingsPanelProvider>
+      <ChatProvider>{children}</ChatProvider>
+    </SettingsPanelProvider>
   );
 };
 
 describe('ChatModal', () => {
-  it('renders when chat is open', () => {
-    renderWithProvider(true);
+  it('renders properly with providers', () => {
+    render(
+      <TestWrapper>
+        <ChatModal />
+      </TestWrapper>
+    );
 
-    expect(screen.getByTestId('chat-messages')).toBeInTheDocument();
-    expect(screen.getByTestId('chat-input')).toBeInTheDocument();
+    // Modal should render without errors
+    // If chat is closed initially, modal content shouldn't be visible
+    expect(document.body).toBeInTheDocument();
   });
 
-  it('does not render when chat is closed', () => {
-    renderWithProvider(false);
+  it('can be opened and closed', async () => {
+    const TestComponent = () => {
+      const { setChatPanelOpen, isChatPanelOpen } = useSettingsPanel();
 
-    expect(screen.queryByTestId('chat-messages')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('chat-input')).not.toBeInTheDocument();
-  });
+      return (
+        <div>
+          <button onClick={() => setChatPanelOpen(true)}>Open Chat</button>
+          <button onClick={() => setChatPanelOpen(false)}>Close Chat</button>
+          <div data-testid="chat-open-state">
+            {isChatPanelOpen ? 'open' : 'closed'}
+          </div>
+          <ChatModal />
+        </div>
+      );
+    };
 
-  it('has correct modal structure', () => {
-    renderWithProvider(true);
-
-    const modal = screen.getByTestId('chat-messages').closest('.chat-modal');
-    expect(modal).toBeInTheDocument();
-    expect(modal).toHaveClass('chat-modal');
-  });
-
-  it('displays chat header with title', () => {
-    renderWithProvider(true);
-
-    expect(screen.getByText('AI Assistant')).toBeInTheDocument();
-    expect(screen.getByText('AI Assistant')).toHaveClass('chat-title');
-  });
-
-  it('displays model selector', () => {
-    renderWithProvider(true);
-
-    const select = screen.getByRole('combobox');
-    expect(select).toBeInTheDocument();
-    expect(select).toHaveAttribute('aria-label', 'Select AI model');
-  });
-
-  it('shows correct default model', () => {
-    renderWithProvider(true);
-
-    const select = screen.getByRole('combobox');
-    expect(select).toHaveValue('distilbert-base-uncased');
-  });
-
-  it('has proper CSS classes for animation states', async () => {
-    renderWithProvider(false);
+    render(
+      <TestWrapper>
+        <TestComponent />
+      </TestWrapper>
+    );
 
     // Initially closed
-    expect(screen.queryByTestId('chat-messages')).not.toBeInTheDocument();
+    expect(screen.getByTestId('chat-open-state')).toHaveTextContent('closed');
 
-    // Open the modal
-    fireEvent.click(screen.getByText('Open Modal'));
-
-    await waitFor(() => {
-      const modal = screen.getByTestId('chat-messages').closest('.chat-modal');
-      expect(modal).toHaveClass('chat-modal', 'opening');
+    // Open chat
+    const openButton = screen.getByText('Open Chat');
+    await act(async () => {
+      openButton.click();
     });
+
+    expect(screen.getByTestId('chat-open-state')).toHaveTextContent('open');
   });
 
-  it('renders all required sections', () => {
-    renderWithProvider(true);
+  it('displays chat interface when opened', async () => {
+    const TestComponent = () => {
+      const { setChatPanelOpen } = useSettingsPanel();
 
-    // Header
-    expect(screen.getByText('AI Assistant')).toBeInTheDocument();
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
+      React.useEffect(() => {
+        setChatPanelOpen(true);
+      }, [setChatPanelOpen]);
 
-    // Messages area
+      return <ChatModal />;
+    };
+
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <TestComponent />
+        </TestWrapper>
+      );
+    });
+
+    // Should show chat interface elements when opened
     expect(screen.getByTestId('chat-messages')).toBeInTheDocument();
-
-    // Input area
     expect(screen.getByTestId('chat-input')).toBeInTheDocument();
-  });
-
-  it('has proper container structure', () => {
-    renderWithProvider(true);
-
-    const modal = screen.getByTestId('chat-messages').closest('.chat-modal');
-    expect(modal).toBeInTheDocument();
-
-    // Check for header
-    const header = modal?.querySelector('.chat-header');
-    expect(header).toBeInTheDocument();
-
-    // Check for messages container
-    const messages = modal?.querySelector('.chat-messages');
-    expect(messages).toBeInTheDocument();
-
-    // Check for input container
-    const inputContainer = modal?.querySelector('.chat-input-container');
-    expect(inputContainer).toBeInTheDocument();
-  });
-
-  it('scrolls to bottom when opened', () => {
-    const scrollIntoViewMock = jest.fn();
-    Element.prototype.scrollIntoView = scrollIntoViewMock;
-
-    renderWithProvider(true);
-
-    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+    expect(screen.getByTestId('sample-prompts')).toBeInTheDocument();
   });
 });

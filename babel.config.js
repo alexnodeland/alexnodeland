@@ -9,12 +9,34 @@ module.exports = {
       return {
         visitor: {
           MetaProperty(path) {
-            // Replace import.meta.url with a mock URL in test environment
+            // Replace any import.meta reference in test environment
+            if (path.node.meta.name === 'import') {
+              if (path.node.property.name === 'url') {
+                path.replaceWithSourceString('"file:///mock-path/test.js"');
+              } else if (path.node.property.name === 'meta') {
+                // Handle import.meta itself
+                path.replaceWithSourceString('{}');
+              }
+            }
+          },
+          // Handle typeof import checks
+          UnaryExpression(path) {
             if (
-              path.node.meta.name === 'import' &&
-              path.node.property.name === 'url'
+              path.node.operator === 'typeof' &&
+              path.node.argument.type === 'Identifier' &&
+              path.node.argument.name === 'import'
             ) {
-              path.replaceWithSourceString('"file:///mock-path/test.js"');
+              path.replaceWithSourceString('"undefined"');
+            }
+          },
+          // Handle direct import references in conditional expressions
+          Identifier(path) {
+            if (
+              path.node.name === 'import' &&
+              path.parent.type === 'BinaryExpression' &&
+              path.parent.operator === '!=='
+            ) {
+              path.replaceWithSourceString('undefined');
             }
           },
         },
