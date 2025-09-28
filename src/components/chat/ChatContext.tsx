@@ -343,48 +343,47 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     try {
       if (typeof window !== 'undefined') {
-        // Detect path prefix from current location for GitHub Pages deployment
-        const currentPath = window.location.pathname;
+        // Detect path prefix from the initial app base URL (navigation-independent)
+        const baseUrl = window.location.origin;
         let pathPrefix = '';
 
-        // For GitHub Pages deployment at /alexnodeland/, extract the prefix
-        if (currentPath.startsWith('/alexnodeland/')) {
+        // For GitHub Pages deployment, check if we're in a subdirectory
+        // Use a more reliable detection method based on the initial load location
+        const href = window.location.href;
+        if (href.includes('/alexnodeland/')) {
           pathPrefix = '/alexnodeland';
-        } else if (
-          currentPath !== '/' &&
-          !currentPath.startsWith('/worker.js')
-        ) {
-          // Extract first path segment as potential prefix
-          const segments = currentPath.split('/').filter(Boolean);
-          if (segments.length > 0) {
-            pathPrefix = '/' + segments[0];
-          }
         }
 
         // Debug logging
-        console.log('[chat] Current path:', currentPath);
-        console.log('[chat] Detected pathPrefix:', pathPrefix || '(none)');
+        if ((window as any).CHAT_DEBUG) {
+          // eslint-disable-next-line no-console
+          console.log('[chat] Base URL:', baseUrl);
+          // eslint-disable-next-line no-console
+          console.log('[chat] Detected pathPrefix:', pathPrefix || '(none)');
+        }
 
-        // Try multiple strategies for worker URL resolution
+        // Try multiple strategies for worker URL resolution (navigation-independent)
         const workerPaths = [
-          `${pathPrefix}/worker.js`, // GitHub Pages path with detected prefix
-          `${window.location.origin}${pathPrefix}/worker.js`, // Absolute URL with prefix
-          '/worker.js', // Fallback for local development
-          new URL(
-            './worker.js',
-            window.location.origin + window.location.pathname
-          ).href, // Relative to current path
+          `${baseUrl}${pathPrefix}/worker.js`, // Full absolute URL with prefix
+          `${pathPrefix}/worker.js`, // Relative path with prefix
+          '/worker.js', // Root fallback
+          `${baseUrl}/worker.js`, // Absolute root fallback
         ];
 
-        console.log('[chat] Will try worker URLs:', workerPaths);
+        if ((window as any).CHAT_DEBUG) {
+          // eslint-disable-next-line no-console
+          console.log('[chat] Will try worker URLs:', workerPaths);
+        }
 
         for (const workerUrl of workerPaths) {
           try {
             if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+              // eslint-disable-next-line no-console
               console.log('[chat] Attempting to load worker from:', workerUrl);
             }
             const worker = new Worker(workerUrl, { type: 'module' });
             if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+              // eslint-disable-next-line no-console
               console.log(
                 '[chat] Worker created successfully from:',
                 workerUrl
@@ -393,6 +392,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             return worker;
           } catch (urlErr) {
             if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+              // eslint-disable-next-line no-console
               console.warn(
                 '[chat] Worker creation failed for URL:',
                 workerUrl,
@@ -407,6 +407,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     } catch (err) {
       // This is expected in test environment
       if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+        // eslint-disable-next-line no-console
         console.warn(
           '[chat] Worker creation failed (expected in test environment):',
           err
@@ -419,23 +420,36 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   // Initialize worker when feature flag is enabled
   useEffect(() => {
     if (!USE_CHAT_WORKER) {
-      // Worker disabled by feature flag
+      // Worker disabled by feature flag - set to idle to allow basic chat interface
+      setModelState({
+        status: 'idle',
+        progress: [],
+      });
       return;
     }
-    if (workerRef.current) return;
+
+    // Clean up existing worker if any
+    if (workerRef.current) {
+      try {
+        workerRef.current.terminate();
+      } catch (err) {
+        console.warn('[chat] Error terminating existing worker:', err);
+      }
+      workerRef.current = null;
+    }
 
     // Initializing worker...
     try {
       const worker = createWorker();
       if (!worker) {
         console.warn(
-          '[chat] Worker creation failed or not supported - chat will be disabled'
+          '[chat] Worker creation failed or not supported - chat will work in basic mode'
         );
         setModelState({
           status: 'idle',
           progress: [],
         });
-        // Don't return early - let the component continue to work without worker
+        // Allow chat to work without worker
         return () => {}; // Return cleanup function
       }
       // Worker created successfully
@@ -639,6 +653,57 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     updateCachedModels();
   }, [selectedModel]); // Sync cache when model selection changes
+
+  // Handle navigation events to ensure worker stability
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleNavigation = () => {
+      // Check if worker is still alive and responsive
+      if (workerRef.current && USE_CHAT_WORKER) {
+        try {
+          // Send a ping to verify worker is responsive
+          workerRef.current.postMessage({ type: 'check' });
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            '[chat] Worker became unresponsive during navigation, reinitializing...',
+            err
+          );
+          // Force worker reinitialization
+          setWorkerInitKey(prev => prev + 1);
+        }
+      }
+    };
+
+    // Listen for Gatsby navigation events
+    const handleRouteChange = () => {
+      setTimeout(handleNavigation, 100); // Small delay to ensure navigation is complete
+    };
+
+    // Gatsby uses history API for navigation
+    window.addEventListener('popstate', handleRouteChange);
+
+    // Also listen for hash changes and pushstate events
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    window.history.pushState = function (...args) {
+      originalPushState.apply(window.history, args);
+      handleRouteChange();
+    };
+
+    window.history.replaceState = function (...args) {
+      originalReplaceState.apply(window.history, args);
+      handleRouteChange();
+    };
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
+  }, [USE_CHAT_WORKER]);
 
   return (
     <ChatContext.Provider

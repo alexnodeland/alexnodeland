@@ -3,8 +3,15 @@ import { chatConfig } from '../../config/chat';
 import { useChat } from './ChatContext';
 
 const WelcomeScreen: React.FC = () => {
-  const { selectedModel, availableModels, loadModel } = useChat();
+  const {
+    selectedModel,
+    availableModels,
+    loadModel,
+    modelState,
+    webGPUSupported,
+  } = useChat();
   const [showInfoPopover, setShowInfoPopover] = useState(false);
+  const [attemptedWorkerInit, setAttemptedWorkerInit] = useState(false);
 
   const currentModel = availableModels.find(m => m.id === selectedModel);
   const modelName = currentModel?.name || 'AI Model';
@@ -12,10 +19,17 @@ const WelcomeScreen: React.FC = () => {
   const modelDescription = currentModel?.description || 'A local AI model';
 
   const handleStartDownload = () => {
+    setAttemptedWorkerInit(true);
     if (loadModel) {
       loadModel(selectedModel);
     }
   };
+
+  // Check if worker initialization has failed after an attempt
+  const workerInitFailed =
+    attemptedWorkerInit &&
+    modelState?.status === 'idle' &&
+    webGPUSupported === null;
 
   const getHuggingFaceUrl = (modelId: string) => {
     return `https://huggingface.co/${modelId}`;
@@ -49,6 +63,26 @@ const WelcomeScreen: React.FC = () => {
         </div>
 
         <div className="welcome-body">
+          {workerInitFailed && (
+            <div
+              className="error-notice"
+              style={{
+                background: 'rgba(255, 193, 7, 0.1)',
+                border: '1px solid rgba(255, 193, 7, 0.3)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1rem',
+                marginBottom: '1rem',
+                color: 'var(--text-primary)',
+                fontSize: '0.875rem',
+              }}
+            >
+              <strong>⚠️ Worker initialization failed</strong>
+              <br />
+              Chat is available in basic mode. Try refreshing the page to
+              restore full functionality.
+            </div>
+          )}
+
           <div className="welcome-features">
             <div className="feature-item">
               <div className="feature-icon">🔒</div>

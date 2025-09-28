@@ -51,8 +51,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
   }, [inputValue, onValueChange]);
 
   const isModelReady = modelState?.status === 'ready';
-  const isInputDisabled = isLoading || !isModelReady;
-  const isSendDisabled = !inputValue.trim() || isInputDisabled || isGenerating;
+  const isModelLoading = modelState?.status === 'loading';
+  // Allow input when model is idle (user can type and we'll show appropriate feedback)
+  const isInputDisabled = isLoading && isModelLoading;
+  const isSendDisabled =
+    !inputValue.trim() ||
+    isLoading ||
+    isGenerating ||
+    (!isModelReady && !isModelLoading);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

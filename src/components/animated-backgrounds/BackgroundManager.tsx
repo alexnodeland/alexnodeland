@@ -1,183 +1,34 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import {
-  BackgroundManagerState,
-  BackgroundSettings,
-} from '../../types/animated-backgrounds';
-import BackgroundControls from './BackgroundControls';
-import { backgroundRegistry, getBackgroundById } from './index';
-// import SettingsPanel from './SettingsPanel';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { siteConfig } from '../../config';
+import { useBackground } from '../BackgroundProvider';
 import { useSettingsPanel } from '../SettingsPanelContext';
+import BackgroundControls from './BackgroundControls';
 
 interface BackgroundManagerProps {
   className?: string;
-  initialBackgroundId?: string;
 }
 
-// Function to get a random background ID
-const getRandomBackgroundId = (): string => {
-  const backgroundIds = backgroundRegistry.map(bg => bg.id);
-  const randomIndex = Math.floor(Math.random() * backgroundIds.length);
-  return backgroundIds[randomIndex];
-};
-
-const BackgroundManager: React.FC<BackgroundManagerProps> = ({
-  className,
-  initialBackgroundId,
-}) => {
-  // Use settings panel context
+const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
+  // Use contexts
+  const { isContentHidden, setContentHidden } = useSettingsPanel();
   const {
-    setSettingsPanelOpen,
-    setClosingSettingsPanel,
-    isContentHidden,
-    setContentHidden,
-  } = useSettingsPanel();
-
-  // Initialize state with default settings for all backgrounds
-  const [state, setState] = useState<BackgroundManagerState>(() => {
-    const initialSettings: Record<string, BackgroundSettings> = {};
-    backgroundRegistry.forEach(bg => {
-      initialSettings[bg.id] = { ...bg.defaultSettings };
-    });
-
-    // Use provided initialBackgroundId or select a random one
-    const selectedBackgroundId = initialBackgroundId || getRandomBackgroundId();
-
-    return {
-      currentBackgroundId: selectedBackgroundId,
-      settings: initialSettings,
-      showSettingsPanel: false,
-      closingSettingsPanel: false,
-    };
-  });
-
-  // Audio control functions for spectrogram-oscilloscope background
-  const [audioControls, setAudioControls] = useState<{
-    startAudio: (() => void) | null;
-    stopAudio: (() => void) | null;
-    isPlaying: boolean;
-  }>({ startAudio: null, stopAudio: null, isPlaying: false });
-
-  // Get current background configuration
-  const currentBackground = useMemo(() => {
-    return getBackgroundById(state.currentBackgroundId);
-  }, [state.currentBackgroundId]);
-
-  // Get current background settings
-  const currentSettings = useMemo(() => {
-    return state.settings[state.currentBackgroundId];
-  }, [state.settings, state.currentBackgroundId]);
-
-  // Switch to next background
-  const switchToNextBackground = useCallback(() => {
-    setState(prev => {
-      const currentIndex = backgroundRegistry.findIndex(
-        bg => bg.id === prev.currentBackgroundId
-      );
-      const nextIndex = (currentIndex + 1) % backgroundRegistry.length;
-      const nextBackgroundId = backgroundRegistry[nextIndex].id;
-      return {
-        ...prev,
-        currentBackgroundId: nextBackgroundId,
-      };
-    });
-  }, []);
-
-  // Switch to previous background
-  const switchToPreviousBackground = useCallback(() => {
-    setState(prev => {
-      const currentIndex = backgroundRegistry.findIndex(
-        bg => bg.id === prev.currentBackgroundId
-      );
-      const previousIndex =
-        currentIndex <= 0 ? backgroundRegistry.length - 1 : currentIndex - 1;
-      const previousBackgroundId = backgroundRegistry[previousIndex].id;
-      return {
-        ...prev,
-        currentBackgroundId: previousBackgroundId,
-      };
-    });
-  }, []);
-
-  // Close settings panel with animation
-  const closeSettingsPanel = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      closingSettingsPanel: true,
-    }));
-
-    // Start closing animation - keep panel "open" state until animation finishes
-    setClosingSettingsPanel(true);
-
-    // After animation completes, fully close everything
-    setTimeout(() => {
-      setState(prev => ({
-        ...prev,
-        showSettingsPanel: false,
-        closingSettingsPanel: false,
-      }));
-
-      // Update context - panel is now fully closed
-      setSettingsPanelOpen(false);
-      setClosingSettingsPanel(false);
-    }, 300);
-  }, [setSettingsPanelOpen, setClosingSettingsPanel]);
-
-  // Toggle settings panel
-  const toggleSettingsPanel = useCallback(() => {
-    if (state.showSettingsPanel) {
-      // If closing, use the close animation
-      closeSettingsPanel();
-    } else {
-      // If opening, show immediately
-      setState(prev => ({
-        ...prev,
-        showSettingsPanel: true,
-        closingSettingsPanel: false,
-      }));
-
-      // Update context to trigger layout changes
-      setSettingsPanelOpen(true);
-      setClosingSettingsPanel(false);
-    }
-  }, [
-    state.showSettingsPanel,
+    state,
+    switchToNextBackground,
+    switchToPreviousBackground,
+    updateCurrentSettings,
+    toggleSettingsPanel,
     closeSettingsPanel,
-    setSettingsPanelOpen,
-    setClosingSettingsPanel,
-  ]);
+    audioControls,
+    overlayOpacity,
+    setOverlayOpacity,
+    currentBackground,
+    currentSettings,
+  } = useBackground();
 
   // Toggle content visibility
   const toggleContentHidden = useCallback(() => {
     setContentHidden(!isContentHidden);
   }, [isContentHidden, setContentHidden]);
-
-  // Update settings for current background
-  const updateCurrentSettings = useCallback(
-    (newSettings: BackgroundSettings) => {
-      setState(prev => ({
-        ...prev,
-        settings: {
-          ...prev.settings,
-          [state.currentBackgroundId]: newSettings,
-        },
-      }));
-    },
-    [state.currentBackgroundId]
-  );
-
-  // Reset current background to default settings
-  // const resetToDefaults = useCallback(() => {
-  //   if (currentBackground) {
-  //     updateCurrentSettings({ ...currentBackground.defaultSettings });
-  //   }
-  // }, [currentBackground, updateCurrentSettings]);
 
   // Keyboard event handler
   const handleKeyDown = useCallback(
@@ -225,54 +76,18 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     };
   }, [handleKeyDown]);
 
-  // Save settings to localStorage
+  // Safety mechanism: ensure background is visible on mount
   useEffect(() => {
-    try {
-      localStorage.setItem('animatedBackgroundSettings', JSON.stringify(state));
-    } catch (error) {
-      console.warn(
-        'Failed to save background settings to localStorage:',
-        error
-      );
-    }
-  }, [state]);
-
-  // Load settings from localStorage on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('animatedBackgroundSettings');
-      if (saved) {
-        const parsedState = JSON.parse(saved);
-        // Validate that the saved background still exists
-        if (getBackgroundById(parsedState.currentBackgroundId)) {
-          setState(prev => ({
-            ...prev,
-            ...parsedState,
-            showSettingsPanel: false, // Never restore panel open state
-          }));
-        } else {
-          // If saved background doesn't exist, select a random one
-          setState(prev => ({
-            ...prev,
-            currentBackgroundId: getRandomBackgroundId(),
-            showSettingsPanel: false,
-          }));
-        }
+    // Set a short delay to ensure background is visible regardless of cycling state
+    const timer = setTimeout(() => {
+      if (overlayOpacity === 1) {
+        // If overlay is still black after 500ms, make background visible
+        setOverlayOpacity(0);
       }
-      // No need to do anything if no saved state - random background already selected in initial state
-    } catch (error) {
-      console.warn(
-        'Failed to load background settings from localStorage:',
-        error
-      );
-      // On error, select a random background
-      setState(prev => ({
-        ...prev,
-        currentBackgroundId: getRandomBackgroundId(),
-        showSettingsPanel: false,
-      }));
-    }
-  }, []);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []); // Only run once on mount
 
   // ===== Background cycling with fade to black overlay =====
   const playDurationMs =
@@ -280,35 +95,34 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
   const fadeDurationMs = siteConfig.animatedBackgrounds?.fadeDurationMs ?? 1200;
   const cycleEnabled = siteConfig.animatedBackgrounds?.cycleEnabled ?? true;
 
-  const [overlayOpacity, setOverlayOpacity] = useState<number>(1);
   const fadeInTimeoutRef = useRef<number | null>(null);
   const playTimeoutRef = useRef<number | null>(null);
   const fadeOutTimeoutRef = useRef<number | null>(null);
   const resumeFromVisibleRef = useRef<boolean>(false);
 
   const clearTimers = useCallback(() => {
-    if (fadeInTimeoutRef.current !== null) {
-      window.clearTimeout(fadeInTimeoutRef.current);
+    if (fadeInTimeoutRef.current) {
+      clearTimeout(fadeInTimeoutRef.current);
       fadeInTimeoutRef.current = null;
     }
-    if (playTimeoutRef.current !== null) {
-      window.clearTimeout(playTimeoutRef.current);
+    if (playTimeoutRef.current) {
+      clearTimeout(playTimeoutRef.current);
       playTimeoutRef.current = null;
     }
-    if (fadeOutTimeoutRef.current !== null) {
-      window.clearTimeout(fadeOutTimeoutRef.current);
+    if (fadeOutTimeoutRef.current) {
+      clearTimeout(fadeOutTimeoutRef.current);
       fadeOutTimeoutRef.current = null;
     }
   }, []);
 
+  // Background cycling effect
   useEffect(() => {
     // Disable cycling when panel is open or closing
     if (
-      !cycleEnabled ||
       state.showSettingsPanel ||
-      state.closingSettingsPanel
+      state.closingSettingsPanel ||
+      !cycleEnabled
     ) {
-      setOverlayOpacity(0);
       clearTimers();
       return;
     }
@@ -334,21 +148,18 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
         return;
       }
 
-      // Normal cycle: fade up from black, play, fade to black, switch
-      setOverlayOpacity(1);
-      fadeInTimeoutRef.current = window.setTimeout(() => {
+      // Normal cycle: show background immediately, then after play duration fade to black and switch
+      setOverlayOpacity(0); // Ensure background is visible
+      playTimeoutRef.current = window.setTimeout(() => {
         if (cancelled) return;
-        setOverlayOpacity(0);
-        playTimeoutRef.current = window.setTimeout(() => {
+        setOverlayOpacity(1); // Fade to black
+        fadeOutTimeoutRef.current = window.setTimeout(() => {
           if (cancelled) return;
-          setOverlayOpacity(1);
-          fadeOutTimeoutRef.current = window.setTimeout(() => {
-            if (cancelled) return;
-            switchToNextBackground();
-            startCycle();
-          }, fadeDurationMs);
-        }, playDurationMs + fadeDurationMs);
-      }, 20);
+          switchToNextBackground();
+          setOverlayOpacity(0); // Show new background immediately
+          startCycle(); // Continue cycle
+        }, fadeDurationMs);
+      }, playDurationMs);
     };
 
     startCycle();
@@ -363,6 +174,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
     fadeDurationMs,
     clearTimers,
     switchToNextBackground,
+    setOverlayOpacity,
     state.showSettingsPanel,
     state.closingSettingsPanel,
   ]);
@@ -377,31 +189,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
 
   // Render current background
   const renderCurrentBackground = () => {
-    if (!currentBackground || !currentSettings) {
-      return null;
-    }
+    if (!currentBackground) return null;
 
     const BackgroundComponent = currentBackground.component;
-
-    // Handle spectrogram-oscilloscope background with audio controls
-    if (currentBackground.id === 'spectrogram-oscilloscope') {
-      const handleAudioControlsReady = (
-        startAudio: () => void,
-        stopAudio: () => void,
-        isPlaying: boolean
-      ) => {
-        setAudioControls({ startAudio, stopAudio, isPlaying });
-      };
-
-      return (
-        <BackgroundComponent
-          className={className}
-          settings={currentSettings}
-          onAudioControlsReady={handleAudioControlsReady}
-        />
-      );
-    }
-
     return (
       <BackgroundComponent className={className} settings={currentSettings} />
     );
@@ -446,8 +236,6 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({
         onStopAudio={audioControls.stopAudio || undefined}
         isAudioPlaying={audioControls.isPlaying}
       />
-
-      {/* Settings panel moved into BackgroundControls anchor */}
     </>
   );
 };

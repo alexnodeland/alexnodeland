@@ -4,7 +4,7 @@ import { getAllSocialLinks, siteConfig } from '../config';
 import '../styles/layout.scss';
 import { useSettingsPanel } from './SettingsPanelContext';
 import ThemeToggle from './ThemeToggle';
-import { ChatIcon, ChatModal, ChatProvider, KeyboardShortcuts } from './chat';
+import { ChatIcon, ChatModal, KeyboardShortcuts } from './chat';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -71,7 +71,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
     .join(' ');
 
   return (
-    <ChatProvider>
+    <>
       {!isContentHidden && (
         <div className={headerContainerClasses}>
           <div className="rainbow-border-fixed"></div>
@@ -136,7 +136,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
       <ChatIcon />
       <ChatModal />
       <KeyboardShortcuts />
-    </ChatProvider>
+    </>
   );
 };
 

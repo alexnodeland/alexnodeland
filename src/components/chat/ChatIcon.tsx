@@ -9,6 +9,9 @@ const ChatIcon: React.FC = () => {
     setClosingChatPanel,
   } = useSettingsPanel();
 
+  // Chat is always available - even if worker fails, we show the interface
+  const isChatAvailable = true;
+
   const handleClick = () => {
     if (isChatPanelOpen && !isClosingChatPanel) {
       setClosingChatPanel(true);
@@ -32,6 +35,11 @@ const ChatIcon: React.FC = () => {
         className="chat-icon"
         onClick={handleClick}
         aria-label="Open chat"
+        disabled={!isChatAvailable}
+        style={{
+          opacity: isChatAvailable ? 1 : 0.5,
+          pointerEvents: isChatAvailable ? 'auto' : 'none',
+        }}
       >
         <div className="chat-icon-inner">
           <svg

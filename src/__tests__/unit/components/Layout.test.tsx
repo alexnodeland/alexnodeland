@@ -1,4 +1,7 @@
 import { render, screen } from '@testing-library/react';
+import React from 'react';
+import { SettingsPanelProvider } from '../../../components/SettingsPanelContext';
+import { ChatProvider } from '../../../components/chat';
 import Layout from '../../../components/layout';
 import { getAllSocialLinks } from '../../../config';
 
@@ -33,15 +36,35 @@ jest.mock('../../../components/ThemeToggle', () => {
   };
 });
 
-// Mock the SettingsPanel hook
-jest.mock('../../../components/SettingsPanelContext', () => ({
-  useSettingsPanel: () => ({
-    isSettingsPanelOpen: false,
-    isClosingSettingsPanel: false,
-    setSettingsPanelOpen: jest.fn(),
-    setClosingSettingsPanel: jest.fn(),
-  }),
-}));
+// Mock the chat components to avoid complex setup
+jest.mock('../../../components/chat/ChatIcon', () => {
+  return function MockChatIcon() {
+    return <div data-testid="chat-icon">Chat Icon</div>;
+  };
+});
+
+jest.mock('../../../components/chat/ChatModal', () => {
+  return function MockChatModal() {
+    return <div data-testid="chat-modal">Chat Modal</div>;
+  };
+});
+
+jest.mock('../../../components/chat/KeyboardShortcuts', () => {
+  return function MockKeyboardShortcuts() {
+    return <div data-testid="keyboard-shortcuts">Keyboard Shortcuts</div>;
+  };
+});
+
+// Test wrapper component to provide necessary contexts
+const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <SettingsPanelProvider>
+      <ChatProvider>
+        <Layout>{children}</Layout>
+      </ChatProvider>
+    </SettingsPanelProvider>
+  );
+};
 
 describe('Layout Component', () => {
   const mockChildren = <div data-testid="test-children">Test Content</div>;
@@ -51,7 +74,7 @@ describe('Layout Component', () => {
   });
 
   it('should render children correctly', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     expect(screen.getByTestId('test-children')).toBeInTheDocument();
     expect(screen.getByText('Test Content')).toBeInTheDocument();
@@ -66,7 +89,7 @@ describe('Layout Component', () => {
       writable: true,
     });
 
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     const siteNameLink = screen.getByText('Test Site');
     expect(siteNameLink).toBeInTheDocument();
@@ -83,13 +106,13 @@ describe('Layout Component', () => {
       writable: true,
     });
 
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     expect(screen.queryByText('Test Site')).not.toBeInTheDocument();
   });
 
   it('should render navigation links', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('About')).toBeInTheDocument();
@@ -98,7 +121,7 @@ describe('Layout Component', () => {
   });
 
   it('should have correct href attributes for navigation links', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     const homeLink = screen.getByText('Home');
     const aboutLink = screen.getByText('About');
@@ -112,13 +135,13 @@ describe('Layout Component', () => {
   });
 
   it('should render theme toggle in navigation', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     expect(screen.getByTestId('theme-toggle')).toBeInTheDocument();
   });
 
   it('should render email link in footer', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     const emailLink = document.querySelector(
       'a.footer-link[data-platform="email"]'
@@ -129,7 +152,7 @@ describe('Layout Component', () => {
   });
 
   it('should render social links in footer', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     const socialLinks = screen.getAllByRole('link');
     const socialLinkElements = socialLinks.filter(
@@ -159,7 +182,7 @@ describe('Layout Component', () => {
   });
 
   it('should have correct target and rel attributes for social links', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     const socialLinks = screen.getAllByRole('link');
     const externalLinks = socialLinks.filter(
@@ -175,7 +198,7 @@ describe('Layout Component', () => {
   });
 
   it('should render copyright notice in footer', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     expect(
       screen.getByText('© 2025 all rights reserved, test author')
@@ -183,7 +206,7 @@ describe('Layout Component', () => {
   });
 
   it('should have proper HTML structure', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     // Check main layout structure
     expect(screen.getByRole('banner')).toBeInTheDocument(); // header
@@ -197,7 +220,7 @@ describe('Layout Component', () => {
   });
 
   it('should have correct CSS classes', () => {
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     expect(screen.getByRole('banner')).toHaveClass('header-fixed');
     expect(screen.getByRole('main')).toHaveClass('main');
@@ -205,7 +228,7 @@ describe('Layout Component', () => {
   });
 
   it('should handle empty children', () => {
-    render(<Layout>{null}</Layout>);
+    render(<TestWrapper>{null}</TestWrapper>);
 
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeEmptyDOMElement();
@@ -220,7 +243,7 @@ describe('Layout Component', () => {
       </>
     );
 
-    render(<Layout>{multipleChildren}</Layout>);
+    render(<TestWrapper>{multipleChildren}</TestWrapper>);
 
     expect(screen.getByTestId('child-1')).toBeInTheDocument();
     expect(screen.getByTestId('child-2')).toBeInTheDocument();
@@ -231,7 +254,7 @@ describe('Layout Component', () => {
     // Clear previous calls from other tests
     (getAllSocialLinks as jest.Mock).mockClear();
 
-    render(<Layout>{mockChildren}</Layout>);
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     // The function should be called at least once (React StrictMode may cause double calls)
     expect(getAllSocialLinks).toHaveBeenCalledWith();
