@@ -1,12 +1,10 @@
 import {
-  getFullUrl,
-  getSocialUrl,
-  getContactInfo,
-  getNavigationItems,
-  getSEODefaults,
   formatSocialHandle,
   getAllSocialLinks,
   getCTAButtonURL,
+  getFullUrl,
+  getNavigationItems,
+  getSocialUrl,
 } from '../../../config/helpers';
 import { siteConfig } from '../../../config/site';
 
@@ -59,25 +57,6 @@ describe('Configuration Helper Functions', () => {
     });
   });
 
-  describe('getContactInfo', () => {
-    it('should return contact information', () => {
-      const contactInfo = getContactInfo();
-
-      expect(contactInfo).toEqual({
-        email: 'alex@ournature.studio',
-        location: 'Upstate, New York, USA',
-        website: 'alexnodeland.com',
-      });
-    });
-
-    it('should return the same object reference', () => {
-      const contactInfo1 = getContactInfo();
-      const contactInfo2 = getContactInfo();
-
-      expect(contactInfo1).toBe(contactInfo2);
-    });
-  });
-
   describe('getNavigationItems', () => {
     it('should return navigation items', () => {
       const navItems = getNavigationItems();
@@ -93,26 +72,6 @@ describe('Configuration Helper Functions', () => {
       const navItems2 = getNavigationItems();
 
       expect(navItems1).toBe(navItems2);
-    });
-  });
-
-  describe('getSEODefaults', () => {
-    it('should return SEO defaults', () => {
-      const seoDefaults = getSEODefaults();
-
-      expect(seoDefaults).toEqual({
-        defaultTitle: 'alex nodeland',
-        defaultDescription:
-          'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.',
-        defaultImage: '/images/icon.png',
-      });
-    });
-
-    it('should return the same object reference', () => {
-      const seoDefaults1 = getSEODefaults();
-      const seoDefaults2 = getSEODefaults();
-
-      expect(seoDefaults1).toBe(seoDefaults2);
     });
   });
 
