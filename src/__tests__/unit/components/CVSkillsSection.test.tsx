@@ -98,10 +98,9 @@ describe('CVSkillsSection Component', () => {
     const section = container.querySelector('section');
     expect(section).toHaveClass('skills-section');
 
-    const skillsGrid = container.querySelector('.skills-grid');
-    expect(skillsGrid).toBeInTheDocument();
-
-    const skillCategories = container.querySelectorAll('.skill-category');
+    const skillCategories = container.querySelectorAll(
+      '.skill-category-direct'
+    );
     expect(skillCategories).toHaveLength(3); // technical, soft, languages
   });
 

@@ -13,6 +13,21 @@ jest.mock('../../../components', () => ({
   ExportButtons: ({ className }: { className?: string }) => (
     <div data-testid="export-buttons" className={className} />
   ),
+  CVSectionNav: ({
+    className,
+    sections,
+  }: {
+    className?: string;
+    sections: any[];
+  }) => (
+    <nav data-testid="cv-section-nav" className={className}>
+      {sections.map((section, index) => (
+        <div key={index} data-section-id={section.id}>
+          {section.label}
+        </div>
+      ))}
+    </nav>
+  ),
   ExperienceSection: () => <section id="experience-section" />,
   EducationSection: () => <section id="education-section" />,
   SkillsSection: () => <section id="skills-section" />,

@@ -60,8 +60,10 @@ describe('CVExperienceSection Component', () => {
     });
 
     // Check skills
-    expect(screen.getByText('Key Skills:')).toBeInTheDocument();
-    expect(screen.getByText('JavaScript, React, Node.js')).toBeInTheDocument();
+    expect(screen.getByText('key skills:')).toBeInTheDocument();
+    expect(
+      screen.getByText('JavaScript • React • Node.js')
+    ).toBeInTheDocument();
   });
 
   it('should not render description when not provided', () => {
@@ -86,7 +88,7 @@ describe('CVExperienceSection Component', () => {
 
     render(<CVExperienceSection experiences={experienceWithoutSkills} />);
 
-    expect(screen.queryByText('Key Skills:')).not.toBeInTheDocument();
+    expect(screen.queryByText('key skills:')).not.toBeInTheDocument();
   });
 
   it('should not render skills when empty array', () => {
@@ -103,7 +105,7 @@ describe('CVExperienceSection Component', () => {
 
     render(<CVExperienceSection experiences={experienceWithEmptySkills} />);
 
-    expect(screen.queryByText('Key Skills:')).not.toBeInTheDocument();
+    expect(screen.queryByText('key skills:')).not.toBeInTheDocument();
   });
 
   it('should apply custom className', () => {
@@ -129,7 +131,7 @@ describe('CVExperienceSection Component', () => {
     const section = container.querySelector('section');
     expect(section).toHaveClass('experience-section');
 
-    const experienceItems = container.querySelectorAll('.experience-item');
+    const experienceItems = container.querySelectorAll('.cv-card.cv-collapse');
     expect(experienceItems).toHaveLength(mockExperiences.length);
 
     const experienceHeaders = container.querySelectorAll('.experience-header');
@@ -150,7 +152,7 @@ describe('CVExperienceSection Component', () => {
 
     // Should not have any experience items
     const { container } = render(<CVExperienceSection experiences={[]} />);
-    const experienceItems = container.querySelectorAll('.experience-item');
+    const experienceItems = container.querySelectorAll('.cv-card.cv-collapse');
     expect(experienceItems).toHaveLength(0);
   });
 
@@ -195,7 +197,7 @@ describe('CVExperienceSection Component', () => {
       screen.getByText('Managed €1B+ in daily transactions')
     ).toBeInTheDocument();
     expect(
-      screen.getByText('C++, Python, Low-latency systems')
+      screen.getByText('C++ • Python • Low-latency systems')
     ).toBeInTheDocument();
   });
 
@@ -232,7 +234,7 @@ describe('CVExperienceSection Component', () => {
     expect(screen.getByText('Did development work')).toBeInTheDocument();
 
     // Should not render optional fields
-    expect(screen.queryByText('Key Skills:')).not.toBeInTheDocument();
+    expect(screen.queryByText('key skills:')).not.toBeInTheDocument();
 
     // Check that description paragraph is not rendered
     const { container } = render(
