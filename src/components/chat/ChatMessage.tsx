@@ -138,7 +138,11 @@ const ChatMessage: React.FC = () => {
                 (hasThinking || isThinkingIncomplete) && (
                   <ThinkingBlock
                     content={thinkingContent}
-                    isExpanded={expandedThinking[message.id] || false}
+                    isExpanded={
+                      expandedThinking[message.id] !== undefined
+                        ? expandedThinking[message.id]
+                        : true
+                    }
                     isTyping={isThinkingIncomplete}
                     onToggle={() => toggleThinking(message.id)}
                   />
