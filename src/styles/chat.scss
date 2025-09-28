@@ -337,10 +337,10 @@
   .chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem 1.5rem;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0;
 
     // Custom scrollbar styling
     &::-webkit-scrollbar {
@@ -769,60 +769,87 @@
 // Message Styles
 .chat-message {
   display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
+  flex-direction: column;
+  width: 100%;
 
   &.user {
-    flex-direction: row-reverse;
+    background: rgba(0, 0, 0, 0.03);
+    align-items: flex-end;
 
     .message-content {
-      background: var(--primary-color);
-      color: var(--bg-primary);
+      text-align: right;
+
+      p,
+      .markdown-p {
+        text-align: right;
+      }
+
+      .message-timestamp {
+        text-align: right;
+      }
+
+      // Adjust lists for right alignment
+      .markdown-ul,
+      .markdown-ol {
+        padding-left: 0;
+        padding-right: 1.5rem;
+        direction: rtl;
+
+        .markdown-li {
+          direction: ltr;
+          text-align: right;
+        }
+      }
+
+      // Keep code blocks left-aligned for readability
+      .markdown-pre,
+      .markdown-code-inline {
+        text-align: left;
+        direction: ltr;
+      }
     }
   }
 
   &.assistant {
+    background: rgba(0, 0, 0, 0.06);
+    align-items: flex-start;
+
     .message-content {
-      background: var(--bg-hover);
-      color: var(--text-primary);
-      border: 1px solid var(--border-color);
+      text-align: left;
+
+      p,
+      .markdown-p {
+        text-align: left;
+      }
+
+      .message-timestamp {
+        text-align: left;
+      }
     }
   }
 
   .message-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    flex-shrink: 0;
-
-    &.user {
-      background: var(--accent-color);
-      color: var(--text-primary);
-    }
-
-    &.assistant {
-      background: var(--accent-cyan);
-      color: var(--bg-primary);
-    }
+    display: none; // Hide avatars for cleaner look
   }
 
   .message-content {
-    max-width: 80%;
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius-md);
+    width: 100%;
+    max-width: 100%;
+    padding: 1.5rem;
     font-size: 0.875rem;
-    line-height: 1.4;
+    line-height: 1.6;
     word-wrap: break-word;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    color: var(--text-primary);
 
     .message-timestamp {
-      font-size: 0.75rem;
-      opacity: 0.7;
-      margin-top: 0.25rem;
+      font-size: 0.625rem;
+      opacity: 0.5;
+      margin-top: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
   }
 }
@@ -834,7 +861,13 @@
   gap: 0.5rem;
   color: var(--text-muted);
   font-size: 0.875rem;
-  padding: 0.75rem 1rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.06);
+  width: 100%;
+
+  .message-avatar {
+    display: none; // Hide avatar for consistency
+  }
 
   .loading-dots {
     display: flex;
@@ -1382,17 +1415,16 @@
 
 // Thinking Block Styles
 .thinking-block {
-  margin: 0.75rem 0 0.5rem 0;
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  border-radius: 8px;
-  background: rgba(139, 92, 246, 0.05);
+  margin: 0 -1.5rem 1rem -1.5rem; // Negative margins to span full width
+  border: none;
+  border-radius: 0;
+  background: rgba(139, 92, 246, 0.08);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(139, 92, 246, 0.1);
+  box-shadow: none;
   transition: all var(--transition-fast);
 
   &:hover {
-    border-color: rgba(139, 92, 246, 0.3);
-    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
+    background: rgba(139, 92, 246, 0.1);
   }
 
   .thinking-toggle {
@@ -1418,41 +1450,46 @@
   .thinking-header {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 1rem;
+    gap: 0.5rem;
+    padding: 0.5rem 1.5rem;
     transition: background-color var(--transition-fast);
 
     .thinking-icon {
       color: #8b5cf6;
       display: flex;
       align-items: center;
-      opacity: 0.8;
+      opacity: 0.7;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
     }
 
     .thinking-label {
-      font-size: 0.8rem;
+      font-size: 0.625rem;
       font-weight: 500;
       color: #8b5cf6;
-      opacity: 0.9;
+      opacity: 0.8;
       flex: 1;
       text-align: left;
       text-transform: uppercase;
-      letter-spacing: 0.025em;
+      letter-spacing: 0.05em;
     }
 
     .thinking-typing-indicator {
       display: flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.2rem;
       margin-left: auto;
-      margin-right: 0.5rem;
+      margin-right: 0.25rem;
 
       .typing-dot {
-        width: 3px;
-        height: 3px;
+        width: 2px;
+        height: 2px;
         background: #8b5cf6;
         border-radius: 50%;
-        opacity: 0.6;
+        opacity: 0.5;
         animation: thinkingTyping 1.2s infinite ease-in-out;
 
         &:nth-child(1) {
@@ -1471,29 +1508,34 @@
 
     .thinking-chevron {
       color: #8b5cf6;
-      opacity: 0.7;
+      opacity: 0.6;
       transition: all var(--transition-fast);
       display: flex;
       align-items: center;
 
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+
       &.expanded {
         transform: rotate(180deg);
-        opacity: 1;
+        opacity: 0.8;
       }
     }
   }
 
   .thinking-content {
-    border-top: 1px solid rgba(139, 92, 246, 0.15);
-    padding: 1rem;
+    border-top: 1px solid rgba(139, 92, 246, 0.1);
+    padding: 1rem 1.5rem;
     background: transparent;
     position: relative;
     animation: slideDown 0.25s ease-out;
 
     .thinking-text {
-      font-size: 0.8rem;
-      line-height: 1.6;
-      color: rgba(139, 92, 246, 0.8);
+      font-size: 0.75rem;
+      line-height: 1.5;
+      color: rgba(139, 92, 246, 0.7);
       font-family:
         ui-monospace, 'SF Mono', 'Monaco', 'Menlo', 'Roboto Mono',
         'Courier New', monospace;
@@ -1501,6 +1543,7 @@
       word-break: break-word;
       margin: 0;
       font-style: italic;
+      opacity: 0.9;
     }
 
     .thinking-cursor {
@@ -1509,7 +1552,8 @@
       animation: blink 0.8s infinite;
       font-family: monospace;
       margin-left: 1px;
-      font-weight: bold;
+      font-weight: normal;
+      opacity: 0.8;
     }
   }
 }
@@ -1981,6 +2025,9 @@
 .markdown-content {
   line-height: 1.6;
 
+  // Inherit text alignment from parent
+  text-align: inherit;
+
   // Headings
   .markdown-h1,
   .markdown-h2,
@@ -1992,6 +2039,7 @@
     font-weight: 600;
     margin: 1.5rem 0 0.75rem 0;
     line-height: 1.3;
+    text-align: inherit;
 
     &:first-child {
       margin-top: 0;
@@ -2033,9 +2081,11 @@
     color: var(--text-primary);
     margin: 0.75rem 0;
     padding-left: 1.5rem;
+    text-align: inherit;
 
     .markdown-li {
       margin-bottom: 0.25rem;
+      text-align: inherit;
 
       &:last-child {
         margin-bottom: 0;
