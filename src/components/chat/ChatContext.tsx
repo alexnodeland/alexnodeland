@@ -231,6 +231,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       return;
     }
 
+    // Set loading state to show animated dots during time-to-first-token
+    setIsLoading(true);
+
     try {
       // Apply rolling context window management using config
       const contextWindow = chatConfig.behavior.contextWindow;
@@ -518,6 +521,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           }
           case 'start':
             setIsGenerating(true);
+            setIsLoading(false); // Hide loading dots when streaming starts
             addMessage({ role: 'assistant', content: '' });
             break;
           case 'update':
