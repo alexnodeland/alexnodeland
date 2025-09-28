@@ -8,7 +8,7 @@
 .cv-page-header {
   text-align: center;
   margin-bottom: 3rem;
-  padding: 3.5rem 0 2rem; // Extra top space to match homepage under fixed header
+  padding: calc(var(--header-height) + 0.5rem) 0 2rem; // Dynamic padding based on header height
   position: relative;
 
   h1 {
@@ -58,7 +58,7 @@
   gap: 2rem;
   align-items: start;
   position: relative;
-  
+
   // Add subtle gradient border on hover
   &::before {
     content: '';
@@ -149,11 +149,11 @@
 #resume-content {
   // Remove container styling - sections will have their own
   margin-bottom: 2rem;
-  
+
   // Add spacing between major sections
   > div {
     margin-bottom: 3rem;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
@@ -209,7 +209,7 @@
   border: 1px solid var(--border-color);
   margin-bottom: 2rem;
   position: relative;
-  
+
   // Add accent top border
   &::before {
     content: '';
@@ -336,7 +336,7 @@
   border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
   position: relative;
-  
+
   // Add colorful left accent border
   &::before {
     content: '';
@@ -436,7 +436,7 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   position: relative;
-  
+
   // Add gradient top accent
   &::before {
     content: '';
@@ -509,7 +509,7 @@
   border: 1px solid var(--border-color);
   margin-bottom: 2rem;
   position: relative;
-  
+
   // Add cyan accent top
   &::before {
     content: '';
@@ -538,7 +538,7 @@
     border: 1px solid var(--border-color);
     transition: all var(--transition-normal);
     position: relative;
-    
+
     // Subtle left accent
     &::before {
       content: '';
@@ -557,7 +557,7 @@
       box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
       transform: translateY(-1px);
       border-color: var(--border-active);
-      
+
       &::before {
         opacity: 1;
       }
@@ -639,7 +639,7 @@
   border: 1px solid var(--border-color);
   margin-bottom: 2rem;
   position: relative;
-  
+
   // Add green accent top
   &::before {
     content: '';
@@ -668,7 +668,7 @@
     border: 1px solid var(--border-color);
     transition: all var(--transition-normal);
     position: relative;
-    
+
     // Subtle left accent
     &::before {
       content: '';
@@ -687,7 +687,7 @@
       box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
       transform: translateY(-1px);
       border-color: var(--border-active);
-      
+
       &::before {
         opacity: 1;
       }
@@ -772,7 +772,7 @@
   border: 1px solid var(--border-color);
   margin-bottom: 2rem;
   position: relative;
-  
+
   // Add purple accent top
   &::before {
     content: '';
@@ -821,19 +821,31 @@
     transition: all var(--transition-normal);
 
     &.technical {
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      background: linear-gradient(
+        135deg,
+        var(--accent-cyan),
+        var(--accent-blue)
+      );
       color: white;
       border: 1px solid transparent;
     }
 
     &.soft {
-      background: linear-gradient(135deg, var(--primary-color), var(--accent-cyan));
+      background: linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--accent-cyan)
+      );
       color: white;
       border: 1px solid transparent;
     }
 
     &.language {
-      background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+      background: linear-gradient(
+        135deg,
+        var(--accent-pink),
+        var(--accent-purple)
+      );
       color: white;
       border: 1px solid transparent;
     }
@@ -874,10 +886,15 @@
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     animation: gradient-shift 3s ease-in-out infinite;
   }
-  
+
   @keyframes gradient-shift {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
   }
 
   .search-section {
@@ -1158,7 +1175,7 @@
 
 @media (max-width: 768px) {
   .cv-page-header {
-    padding: 2.5rem 0 1.5rem; // Maintain proportional spacing on tablet/mobile
+    padding: calc(var(--header-height) + 0.5rem) 0 1.5rem; // Dynamic padding with responsive header height
     margin-bottom: 2rem;
 
     h1 {
@@ -1319,148 +1336,148 @@
     h1 {
       color: white;
       text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-      
+
       &::after {
         background: var(--accent-color);
         box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
       }
     }
-    
+
     p {
       color: rgba(255, 255, 255, 0.8);
     }
   }
-  
+
   .cv-overview-contact {
     background: var(--bg-card);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-    
+
     .contact-value {
       &:hover {
         color: var(--accent-blue);
       }
     }
   }
-  
+
   .cv-section {
     background: var(--bg-card);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    
+
     &::before {
       background: var(--accent-pink);
     }
-    
+
     h2 {
       border-bottom-color: var(--accent-pink);
     }
   }
-  
+
   .experience-item,
   .education-item {
     background: var(--bg-hover);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-    
+
     &:hover {
       background: var(--bg-card);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
   }
-  
+
   .experience-duration,
   .education-duration {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
   }
-  
+
   .resume-header {
     background: var(--bg-card);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
   }
-  
+
   .experience-section {
     background: var(--bg-card);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    
+
     .experience-item {
       background: var(--bg-hover);
-      
+
       &:hover {
         background: var(--bg-card);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       }
     }
-    
+
     .experience-duration {
       background: var(--bg-card);
     }
   }
-  
+
   .education-section {
     background: var(--bg-card);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    
+
     .education-item {
       background: var(--bg-hover);
-      
+
       &:hover {
         background: var(--bg-card);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       }
     }
-    
+
     .education-duration {
       background: var(--bg-card);
     }
   }
-  
+
   .skills-section {
     background: var(--bg-card);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    
+
     .skill-tag {
       &.technical {
         background: var(--accent-cyan);
         color: white;
         box-shadow: 0 2px 6px rgba(0, 172, 193, 0.3);
       }
-      
+
       &.soft {
         background: var(--primary-color);
         color: white;
         box-shadow: 0 2px 6px rgba(0, 168, 84, 0.3);
       }
-      
+
       &.language {
         background: var(--accent-pink);
         color: white;
         box-shadow: 0 2px 6px rgba(233, 30, 99, 0.3);
       }
-      
+
       &:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
       }
     }
   }
-  
+
   .cv-export {
     background: var(--bg-card);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-    
+
     .search-input {
       background: var(--bg-primary);
-      
+
       &:focus {
         background: var(--bg-card);
         border-color: var(--accent-blue);
         box-shadow: 0 0 15px rgba(33, 150, 243, 0.2);
       }
     }
-    
+
     .search-results {
       background: var(--bg-card);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      
+
       .search-result-item {
         &:hover {
           background: var(--bg-hover);
@@ -1468,30 +1485,30 @@
         }
       }
     }
-    
+
     .export-button {
       &.pdf {
         background: var(--primary-color);
-        
+
         &:hover:not(:disabled) {
           background: var(--primary-dark);
           box-shadow: 0 4px 12px rgba(0, 168, 84, 0.3);
         }
       }
-      
+
       &.docx {
         background: var(--accent-cyan);
-        
+
         &:hover:not(:disabled) {
           background: var(--accent-blue);
           box-shadow: 0 4px 12px rgba(0, 172, 193, 0.3);
         }
       }
-      
+
       &.markdown {
         background: var(--bg-card);
         border: 2px solid var(--border-color);
-        
+
         &:hover:not(:disabled) {
           background: var(--bg-hover);
           border-color: var(--accent-blue);
@@ -1499,10 +1516,10 @@
         }
       }
     }
-    
+
     .latex-instructions {
       background: var(--bg-hover);
-      
+
       code {
         background: var(--bg-card);
         color: var(--accent-blue);
