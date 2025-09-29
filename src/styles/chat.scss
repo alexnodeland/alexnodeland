@@ -285,6 +285,7 @@
       }
     }
 
+    .chat-export-button,
     .chat-clear-button,
     .chat-close-button {
       background: transparent;
@@ -320,6 +321,13 @@
       svg {
         width: 16px;
         height: 16px;
+      }
+    }
+
+    .chat-export-button {
+      &:hover:not(:disabled) {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
       }
     }
 
@@ -1285,6 +1293,215 @@
   }
 }
 
+// Export Chat Dialog Styles
+.export-chat-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.export-chat-dialog {
+  background: rgba(
+    0,
+    0,
+    0,
+    0.7
+  ); // Match settings panel transparency for both light and dark modes
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl), var(--shadow-xl);
+  border: 1px solid var(--border-color);
+  max-width: 420px;
+  width: 90vw;
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+
+  .export-chat-header {
+    padding: 1.25rem 1.5rem;
+    background: transparent;
+    border-bottom: none;
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-align: center;
+    }
+  }
+
+  .export-chat-content {
+    padding: 0 1.5rem 1.5rem;
+    text-align: center;
+
+    .export-message {
+      margin: 0 0 1.5rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+
+      strong {
+        color: var(--primary-color);
+        font-weight: 500;
+      }
+    }
+
+    .thinking-toggle-checkbox {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+
+      input[type='checkbox'] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--primary-color);
+        cursor: pointer;
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      .checkbox-label {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+      }
+
+      &:hover .checkbox-label {
+        color: var(--text-primary);
+      }
+
+      &:has(input:disabled) {
+        cursor: not-allowed;
+
+        &:hover .checkbox-label {
+          color: var(--text-muted);
+        }
+      }
+    }
+  }
+
+  .export-chat-actions {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    background: transparent;
+    border-top: none;
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 90px;
+      backdrop-filter: blur(10px);
+
+      svg {
+        flex-shrink: 0;
+      }
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+      }
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+
+        &:hover {
+          transform: none;
+        }
+      }
+    }
+
+    .export-cancel-button {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+
+      &:hover:not(:disabled) {
+        background: var(--bg-hover);
+        border-color: var(--border-active);
+      }
+    }
+
+    .export-copy-button {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--primary-color);
+
+      &:hover:not(:disabled) {
+        background: rgba(139, 92, 246, 0.15);
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2);
+      }
+
+      &:active:not(:disabled) {
+        background: rgba(139, 92, 246, 0.1);
+      }
+    }
+
+    .export-download-button {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--primary-color);
+
+      &:hover:not(:disabled) {
+        background: rgba(139, 92, 246, 0.15);
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2);
+      }
+
+      &:active:not(:disabled) {
+        background: rgba(139, 92, 246, 0.1);
+      }
+    }
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 // Clear Confirmation Dialog Styles
 .clear-confirm-overlay {
   position: fixed;
@@ -2085,6 +2302,15 @@
     255,
     255,
     0.8
+  ); // White tint in light mode - matches settings panel
+}
+
+[data-theme='light'] .export-chat-dialog {
+  background: rgba(
+    255,
+    255,
+    255,
+    0.9
   ); // White tint in light mode - matches settings panel
 }
 
