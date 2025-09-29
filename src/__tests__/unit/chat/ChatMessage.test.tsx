@@ -64,9 +64,11 @@ describe('ChatMessage', () => {
     renderWithProvider(messages);
 
     expect(screen.getByText('Hello there!')).toBeInTheDocument();
-    // Check for SVG user icon instead of text
-    const userAvatar = document.querySelector('.message-avatar.user svg');
-    expect(userAvatar).toBeInTheDocument();
+    // Check that the message has correct structure
+    const messageElement = screen
+      .getByText('Hello there!')
+      .closest('.chat-message');
+    expect(messageElement).toHaveClass('chat-message', 'user');
   });
 
   it('renders assistant messages correctly', () => {
@@ -77,11 +79,11 @@ describe('ChatMessage', () => {
     renderWithProvider(messages);
 
     expect(screen.getByText('Hello! How can I help you?')).toBeInTheDocument();
-    // Check for SVG assistant/robot icon instead of text
-    const assistantAvatar = document.querySelector(
-      '.message-avatar.assistant svg'
-    );
-    expect(assistantAvatar).toBeInTheDocument();
+    // Check that the message has correct structure
+    const messageElement = screen
+      .getByText('Hello! How can I help you?')
+      .closest('.chat-message');
+    expect(messageElement).toHaveClass('chat-message', 'assistant');
   });
 
   it('renders multiple messages in correct order', () => {
@@ -108,8 +110,9 @@ describe('ChatMessage', () => {
       .closest('.chat-message');
     expect(messageElement).toHaveClass('chat-message', 'user');
 
-    const avatarElement = document.querySelector('.message-avatar.user');
-    expect(avatarElement).toHaveClass('message-avatar', 'user');
+    // Check that message content is present
+    const messageContent = messageElement?.querySelector('.message-content');
+    expect(messageContent).toBeInTheDocument();
   });
 
   it('applies correct CSS classes for assistant messages', () => {
@@ -124,8 +127,9 @@ describe('ChatMessage', () => {
       .closest('.chat-message');
     expect(messageElement).toHaveClass('chat-message', 'assistant');
 
-    const avatarElement = document.querySelector('.message-avatar.assistant');
-    expect(avatarElement).toHaveClass('message-avatar', 'assistant');
+    // Check that message content is present
+    const messageContent = messageElement?.querySelector('.message-content');
+    expect(messageContent).toBeInTheDocument();
   });
 
   it('displays timestamps for messages', () => {
@@ -144,12 +148,11 @@ describe('ChatMessage', () => {
   it('shows loading indicator when loading', () => {
     renderWithProvider([], true);
 
-    // Check for loading dots and assistant avatar
+    // Check for loading dots
     expect(document.querySelector('.chat-loading')).toBeInTheDocument();
     expect(document.querySelector('.loading-dots')).toBeInTheDocument();
-    expect(
-      document.querySelector('.chat-loading .message-avatar.assistant svg')
-    ).toBeInTheDocument();
+    // Check for individual loading dots
+    expect(document.querySelectorAll('.loading-dots .dot')).toHaveLength(3);
   });
 
   it('formats time correctly', () => {
@@ -163,9 +166,9 @@ describe('ChatMessage', () => {
       ?.querySelector('.message-timestamp');
     expect(timestampElement).toBeInTheDocument();
 
-    // Should contain time in H:MM AM/PM format
+    // Should contain role prefix and time in "ROLE • H:MM AM/PM" format
     const timeText = timestampElement?.textContent || '';
-    expect(timeText).toMatch(/^\d{1,2}:\d{2}\s?(AM|PM)$/i);
+    expect(timeText).toMatch(/^(USER|ASSISTANT)\s•\s\d{1,2}:\d{2}\s?(AM|PM)$/i);
   });
 
   it('handles empty content gracefully', () => {
@@ -174,13 +177,18 @@ describe('ChatMessage', () => {
     renderWithProvider(messages);
 
     // Should still render the message structure
-    const userAvatar = document.querySelector('.message-avatar.user svg');
-    expect(userAvatar).toBeInTheDocument();
+    const chatMessage = document.querySelector('.chat-message.user');
+    expect(chatMessage).toBeInTheDocument();
 
     const messageContent = document.querySelector(
       '.chat-message.user .message-content'
     );
     expect(messageContent).toBeInTheDocument();
+
+    // Should still have timestamp even with empty content
+    const timestampElement =
+      messageContent?.querySelector('.message-timestamp');
+    expect(timestampElement).toBeInTheDocument();
   });
 
   it('uses MarkdownRenderer for assistant messages', () => {
