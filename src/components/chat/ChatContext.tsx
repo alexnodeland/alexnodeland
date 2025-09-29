@@ -66,6 +66,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     chatConfig.models.default
   );
   const [isLoading, setIsLoading] = useState(false);
+  // Track whether we're waiting for the first token of the current generation
+  const awaitingFirstTokenRef = useRef(false);
   // New non-breaking state additions
   const [modelState, setModelState] = useState<ModelLoadingState>({
     status: 'idle', // Start as idle since we need to load QWEN model
@@ -540,10 +542,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           }
           case 'start':
             setIsGenerating(true);
-            setIsLoading(false); // Hide loading dots when streaming starts
+            // We're now awaiting the first token; keep dots visible
+            awaitingFirstTokenRef.current = true;
+            // Add an empty assistant message so we can stream into it
             addMessage({ role: 'assistant', content: '' });
             break;
           case 'update':
+            // On the first token, hide loading dots and begin streaming content
+            if (awaitingFirstTokenRef.current) {
+              awaitingFirstTokenRef.current = false;
+              setIsLoading(false);
+            }
             // Update the last assistant message with streaming content, handling thinking blocks
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
@@ -561,6 +570,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           case 'complete': {
             setIsGenerating(false);
             setIsLoading(false);
+            awaitingFirstTokenRef.current = false;
             const finalText = Array.isArray((data as any).output)
               ? (data as any).output.join('')
               : String((data as any).output || '');

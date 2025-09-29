@@ -102,6 +102,18 @@ const ChatMessage: React.FC = () => {
                   <p>{displayContent}</p>
                 ))}
 
+              {/* Inline loading dots for time-to-first-token inside assistant bubble */}
+              {!displayContent &&
+                message.role === 'assistant' &&
+                isLoading &&
+                index === messages.length - 1 && (
+                  <div className="message-loading">
+                    <div className="dot"></div>
+                    <div className="dot"></div>
+                    <div className="dot"></div>
+                  </div>
+                )}
+
               <div className="message-timestamp">
                 <span className="timestamp-text">
                   {message.role.toUpperCase()} • {formatTime(message.timestamp)}
@@ -156,15 +168,7 @@ const ChatMessage: React.FC = () => {
         );
       })}
 
-      {isLoading && (
-        <div className="chat-loading">
-          <div className="loading-dots">
-            <div className="dot"></div>
-            <div className="dot"></div>
-            <div className="dot"></div>
-          </div>
-        </div>
-      )}
+      {/* Removed global bottom loading indicator; dots now render inline in the assistant bubble */}
     </>
   );
 };
