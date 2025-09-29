@@ -35,6 +35,7 @@ interface ChatContextType {
   isGenerating?: boolean;
   cachedModels?: string[];
   isThinkingEnabled?: boolean;
+  currentDevice?: string | null;
   setChatOpen: (isOpen: boolean) => void;
   setClosing: (isClosing: boolean) => void;
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
@@ -73,6 +74,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [webGPUSupported, setWebGPUSupported] = useState<boolean | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [cachedModels, setCachedModels] = useState<string[]>([]);
+  const [currentDevice, setCurrentDevice] = useState<string | null>(null);
   const [isThinkingEnabled, setIsThinkingEnabled] = useState(() => {
     // Load thinking preference from localStorage
     if (typeof window !== 'undefined') {
@@ -228,6 +230,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       console.warn('Cannot generate response: model not ready');
       return;
     }
+
+    // Set loading state to show animated dots during time-to-first-token
+    setIsLoading(true);
 
     try {
       // Apply rolling context window management using config
@@ -476,13 +481,47 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             break;
           case 'loading': {
             const message = String(data.data ?? '');
+
+            // Track device based on loading messages
+            let detectedDevice: string | null = null;
+            if (message.includes('Loading model on WebGPU')) {
+              detectedDevice = 'webgpu';
+              setCurrentDevice('webgpu');
+            } else if (message.includes('Loading WASM backend')) {
+              detectedDevice = 'wasm';
+              setCurrentDevice('wasm');
+            } else if (
+              message.includes('Compiling shaders and warming up model')
+            ) {
+              detectedDevice = 'webgpu';
+              setCurrentDevice('webgpu');
+            } else if (message.includes('Warming up WASM backend')) {
+              detectedDevice = 'wasm';
+              setCurrentDevice('wasm');
+            } else if (message.includes('Falling back to WASM')) {
+              detectedDevice = 'wasm';
+              setCurrentDevice('wasm');
+            }
+
+            // Add compatibility mode info to the loading message when using WASM
+            let displayMessage = message;
+            if (
+              detectedDevice === 'wasm' &&
+              (message.includes('Loading WASM backend') ||
+                message.includes('Warming up WASM backend') ||
+                message.includes('Falling back to WASM'))
+            ) {
+              displayMessage = `${message}\n\n⚡ For faster responses, try a modern browser with WebGPU support, like Chrome or Safari.`;
+            }
+
             setModelState((prev: ModelLoadingState) => ({
               ...prev,
               status: 'loading',
-              loadingMessage: message,
+              loadingMessage: displayMessage,
               // Only clear progress on the initial model download start
               progress: message === 'Loading model...' ? [] : prev.progress,
             }));
+
             break;
           }
           case 'ready': {
@@ -501,6 +540,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           }
           case 'start':
             setIsGenerating(true);
+            setIsLoading(false); // Hide loading dots when streaming starts
             addMessage({ role: 'assistant', content: '' });
             break;
           case 'update':
@@ -719,6 +759,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         isGenerating,
         cachedModels,
         isThinkingEnabled,
+        currentDevice,
         setChatOpen,
         setClosing,
         addMessage,
