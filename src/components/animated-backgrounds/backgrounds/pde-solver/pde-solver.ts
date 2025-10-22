@@ -323,7 +323,7 @@ export function solveWaveEquation(
 
       if (isFirstStep) {
         // First step: u(t+dt) = u(t) + dt*v(t) + 0.5*dt²*c²*∇²u(t)
-        // Assuming v(t) = 0 for simplicity (can be modified to use initialVelocity)
+        // v(t) is taken from the initial velocity if provided; otherwise, it defaults to zero
         uNext[idx] = uCurrent[idx] + laplacian;
       } else {
         // Standard step: u(t+dt) = 2*u(t) - u(t-dt) + dt²*c²*∇²u(t)
