@@ -9,6 +9,7 @@ export { graphTopologyConfig } from './backgrounds/graph-topology/config';
 export { shortestPathLabConfig } from './backgrounds/shortest-path-lab/config';
 export { simpleWaveConfig } from './backgrounds/simple-waves/config';
 export { spectrogramOscilloscopeConfig } from './backgrounds/spectrogram-oscilloscope/config';
+export { pdeSolverConfig } from './backgrounds/pde-solver/config';
 
 // Background components
 export { default as CellularAutomatonBackground } from './backgrounds/cellular-automaton/CellularAutomatonBackground';
@@ -16,6 +17,7 @@ export { default as GraphTopologyBackground } from './backgrounds/graph-topology
 export { default as ShortestPathLabBackground } from './backgrounds/shortest-path-lab/ShortestPathLabBackground';
 export { default as SimpleWaveBackground } from './backgrounds/simple-waves/SimpleWaveBackground';
 export { default as SpectrogramOscilloscopeBackground } from './backgrounds/spectrogram-oscilloscope/SpectrogramOscilloscopeBackground';
+export { default as PDESolverBackground } from './backgrounds/pde-solver/PDESolverBackground';
 
 // Management components
 export { default as BackgroundControls } from './BackgroundControls';
@@ -28,6 +30,7 @@ import { graphTopologyConfig } from './backgrounds/graph-topology/config';
 import { shortestPathLabConfig } from './backgrounds/shortest-path-lab/config';
 import { simpleWaveConfig } from './backgrounds/simple-waves/config';
 import { spectrogramOscilloscopeConfig } from './backgrounds/spectrogram-oscilloscope/config';
+import { pdeSolverConfig } from './backgrounds/pde-solver/config';
 import { toLegacyConfig } from './core/baseConfig';
 import type { AnimatedBackgroundConfig } from './core/types';
 
@@ -38,6 +41,7 @@ export const backgroundConfigs = [
   graphTopologyConfig,
   spectrogramOscilloscopeConfig,
   shortestPathLabConfig,
+  pdeSolverConfig,
 ];
 
 // Legacy compatibility - convert new configs to old format for existing components
