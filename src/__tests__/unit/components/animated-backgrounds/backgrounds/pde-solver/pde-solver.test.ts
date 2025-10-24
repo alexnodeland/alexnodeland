@@ -11,7 +11,7 @@ import {
   solveHeatEquation,
   solveWaveEquation,
 } from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/pde-solver';
-import { PDESolverConfig, PDEState } from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/types';
+import { PDESolverConfig } from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/types';
 
 describe('PDE Solver', () => {
   describe('Helper Functions', () => {
