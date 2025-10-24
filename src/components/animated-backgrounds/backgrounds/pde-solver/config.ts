@@ -105,7 +105,6 @@ const customSettingsSchema: SettingsSchema[] = [
     max: 0.5,
     step: 0.01,
     category: 'Physical Parameters',
-    description: 'Controls heat diffusion rate',
   },
   {
     key: 'waveSpeed',
@@ -115,7 +114,6 @@ const customSettingsSchema: SettingsSchema[] = [
     max: 3.0,
     step: 0.1,
     category: 'Physical Parameters',
-    description: 'Controls wave propagation speed',
   },
   {
     key: 'damping',
@@ -125,7 +123,6 @@ const customSettingsSchema: SettingsSchema[] = [
     max: 0.05,
     step: 0.001,
     category: 'Physical Parameters',
-    description: 'Energy dissipation rate',
   },
 
   // Grid parameters
@@ -191,7 +188,6 @@ const customSettingsSchema: SettingsSchema[] = [
     max: 8,
     step: 1,
     category: 'Initial Conditions',
-    description: 'For interference patterns',
   },
 
   // Boundary conditions
@@ -239,7 +235,6 @@ const customSettingsSchema: SettingsSchema[] = [
     max: 0.5,
     step: 0.01,
     category: 'Visualization',
-    description: 'Vertical displacement amount',
   },
   {
     key: 'showWireframe',

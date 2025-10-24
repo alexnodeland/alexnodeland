@@ -131,7 +131,7 @@ const PDESolverBackground: React.FC<AnimatedBackgroundProps<PDESolverSettings>> 
       if (meshRef.current) {
         meshRef.current.geometry.dispose();
         if (Array.isArray(meshRef.current.material)) {
-          meshRef.current.material.forEach(m => m.dispose());
+          meshRef.current.material.forEach((m: THREE.Material) => m.dispose());
         } else {
           meshRef.current.material.dispose();
         }
