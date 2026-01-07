@@ -70,9 +70,18 @@ u[i,j]^(n+1) = 2u[i,j]^n - u[i,j]^(n-1) + (c*dt/dx)²(u[i+1,j]^n - 2u[i,j]^n + u
 ```
 
 **Stability Condition (CFL):**
+
+The implementation uses a conservative stability check:
 ```
-c*dt/√(dx² + dy²) ≤ 1
+√((c*dt/dx)² + (c*dt/dy)²) ≤ 1/√2 ≈ 0.707
 ```
+
+For square grids (dx = dy), this simplifies to:
+```
+c*dt/dx ≤ 1/2 ≈ 0.5
+```
+
+Note: The standard CFL condition for 2D is c*dt/dx ≤ 1/√2 ≈ 0.707, but this implementation uses a more conservative bound to ensure stability across all grid configurations.
 
 The solver automatically checks this condition and warns if violated.
 
