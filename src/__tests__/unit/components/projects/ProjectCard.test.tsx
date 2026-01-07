@@ -101,7 +101,7 @@ describe('ProjectCard Component', () => {
   it('should call onClick when card is clicked', () => {
     render(<ProjectCard project={mockProject} onClick={mockOnClick} />);
 
-    const card = screen.getByRole('button');
+    const card = screen.getByTestId('project-card');
     fireEvent.click(card);
 
     expect(mockOnClick).toHaveBeenCalledTimes(1);
@@ -116,14 +116,14 @@ describe('ProjectCard Component', () => {
       />
     );
 
-    const card = screen.getByRole('button');
+    const card = screen.getByTestId('project-card');
     expect(card).toHaveClass('featured');
   });
 
   it('should apply archived class for archived projects', () => {
     render(<ProjectCard project={mockArchivedProject} onClick={mockOnClick} />);
 
-    const card = screen.getByRole('button');
+    const card = screen.getByTestId('project-card');
     expect(card).toHaveClass('archived');
   });
 
@@ -139,7 +139,7 @@ describe('ProjectCard Component', () => {
   it('should be keyboard accessible', () => {
     render(<ProjectCard project={mockProject} onClick={mockOnClick} />);
 
-    const card = screen.getByRole('button');
+    const card = screen.getByTestId('project-card');
 
     // Test Enter key
     fireEvent.keyDown(card, { key: 'Enter' });

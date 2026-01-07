@@ -77,6 +77,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       onClick={onClick}
       role="button"
       tabIndex={0}
+      data-testid="project-card"
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();

@@ -3,17 +3,17 @@ import * as ProjectsExports from '../../../../components/projects';
 describe('Projects Components Index', () => {
   it('should export ProjectCard', () => {
     expect(ProjectsExports.ProjectCard).toBeDefined();
-    expect(typeof ProjectsExports.ProjectCard).toBe('object');
+    expect(typeof ProjectsExports.ProjectCard).toBe('function');
   });
 
   it('should export ProjectModal', () => {
     expect(ProjectsExports.ProjectModal).toBeDefined();
-    expect(typeof ProjectsExports.ProjectModal).toBe('object');
+    expect(typeof ProjectsExports.ProjectModal).toBe('function');
   });
 
   it('should export ProjectFilters', () => {
     expect(ProjectsExports.ProjectFilters).toBeDefined();
-    expect(typeof ProjectsExports.ProjectFilters).toBe('object');
+    expect(typeof ProjectsExports.ProjectFilters).toBe('function');
   });
 
   it('should export exactly 3 components', () => {
