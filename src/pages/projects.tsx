@@ -1,110 +1,210 @@
-import React from 'react';
-import { Layout, SEO } from '../components';
-import { projectsConfig, getLanguageColor } from '../config';
-import type { GitHubProject } from '../config';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Layout, SEO, ProjectCard, ProjectModal, ProjectFilters } from '../components';
+import {
+  projectsConfig,
+  getProjectCategories,
+  getProjectStatuses,
+} from '../config';
+import type { Project, ProjectCategory, ProjectStatus } from '../config';
 import '../styles/projects.scss';
 
-const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
-  const languageColor = getLanguageColor(project.language);
-
-  return (
-    <a
-      href={project.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`project-card ${project.featured ? 'featured' : ''}`}
-    >
-      <div className="project-card-content">
-        <div className="project-header">
-          <div className="project-icon">
-            <svg
-              viewBox="0 0 16 16"
-              width="16"
-              height="16"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z" />
-            </svg>
-          </div>
-          <h3 className="project-name">{project.name}</h3>
-          {project.featured && <span className="featured-badge">featured</span>}
-        </div>
-
-        <p className="project-description">{project.description}</p>
-
-        <div className="project-tags">
-          {project.tags.map(tag => (
-            <span key={tag} className="project-tag">
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        <div className="project-footer">
-          <div className="project-language">
-            <span
-              className="language-dot"
-              style={{ backgroundColor: languageColor }}
-            />
-            <span className="language-name">{project.language}</span>
-          </div>
-          <div className="project-link-indicator">
-            <span>view on github</span>
-            <svg
-              viewBox="0 0 16 16"
-              width="14"
-              height="14"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-2.19l5.22 5.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L4 4.81v2.19a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 3.25 2.75Zm6.5-1h4.25a.75.75 0 0 1 .75.75v4.25a.75.75 0 0 1-1.5 0V3.56l-5.22 5.22a.749.749 0 0 1-1.06-1.06L12.69 2.5h-2.44a.75.75 0 0 1 0-1.5Z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </a>
-  );
-};
-
 const ProjectsPage: React.FC = () => {
-  const featuredProjects = projectsConfig.projects.filter(p => p.featured);
-  const otherProjects = projectsConfig.projects.filter(p => !p.featured);
+  // Filter state
+  const [selectedCategory, setSelectedCategory] =
+    useState<ProjectCategory | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<ProjectStatus | null>(
+    null
+  );
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Modal state
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Get available categories and statuses
+  const availableCategories = useMemo(() => getProjectCategories(), []);
+  const availableStatuses = useMemo(() => getProjectStatuses(), []);
+
+  // Featured projects (unaffected by filters)
+  const featuredProjects = useMemo(
+    () => projectsConfig.projects.filter(p => p.featured),
+    []
+  );
+
+  // Non-featured projects (for catalog)
+  const catalogProjects = useMemo(
+    () => projectsConfig.projects.filter(p => !p.featured),
+    []
+  );
+
+  // Filtered catalog projects
+  const filteredProjects = useMemo(() => {
+    return catalogProjects.filter(project => {
+      // Category filter
+      if (selectedCategory && project.category !== selectedCategory) {
+        return false;
+      }
+
+      // Status filter
+      if (selectedStatus && project.status !== selectedStatus) {
+        return false;
+      }
+
+      // Search filter
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        const matchesName = project.name.toLowerCase().includes(search);
+        const matchesTagline = project.tagline.toLowerCase().includes(search);
+        const matchesTags = project.tags.some(tag =>
+          tag.toLowerCase().includes(search)
+        );
+        if (!matchesName && !matchesTagline && !matchesTags) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [catalogProjects, selectedCategory, selectedStatus, searchTerm]);
+
+  // Sort filtered projects: active first, then stable, then archived, then alphabetically
+  const sortedProjects = useMemo(() => {
+    const statusOrder: Record<ProjectStatus, number> = {
+      active: 0,
+      stable: 1,
+      archived: 2,
+    };
+
+    return [...filteredProjects].sort((a, b) => {
+      const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+      if (statusDiff !== 0) return statusDiff;
+      return a.name.localeCompare(b.name);
+    });
+  }, [filteredProjects]);
+
+  // URL params handling
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const category = params.get('category') as ProjectCategory | null;
+      const status = params.get('status') as ProjectStatus | null;
+      const search = params.get('search');
+
+      if (category && availableCategories.includes(category)) {
+        setSelectedCategory(category);
+      }
+      if (status && availableStatuses.includes(status)) {
+        setSelectedStatus(status);
+      }
+      if (search) {
+        setSearchTerm(search);
+      }
+    }
+  }, [availableCategories, availableStatuses]);
+
+  // Update URL params when filters change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams();
+      if (selectedCategory) params.set('category', selectedCategory);
+      if (selectedStatus) params.set('status', selectedStatus);
+      if (searchTerm) params.set('search', searchTerm);
+
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [selectedCategory, selectedStatus, searchTerm]);
+
+  const handleClearFilters = () => {
+    setSelectedCategory(null);
+    setSelectedStatus(null);
+    setSearchTerm('');
+  };
+
+  const handleProjectClick = (project: Project) => {
+    setSelectedProject(project);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProject(null);
+  };
 
   return (
     <Layout>
       <SEO
         title="projects"
-        description="open source projects, experiments, and tools by alex nodeland"
+        description="technical projects and open source work by alex nodeland — probabilistic programming, agent frameworks, audio synthesis, and development infrastructure."
       />
       <div className="projects-page">
+        {/* Header */}
         <header className="projects-header">
           <h1>{projectsConfig.title}</h1>
           <p>{projectsConfig.subtitle}</p>
         </header>
 
+        {/* Featured Section */}
         {featuredProjects.length > 0 && (
-          <section className="projects-section">
+          <section className="projects-section featured-section">
             <h2 className="section-title">featured</h2>
             <div className="projects-grid featured-grid">
               {featuredProjects.map(project => (
-                <ProjectCard key={project.name} project={project} />
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  featured
+                  onClick={() => handleProjectClick(project)}
+                />
               ))}
             </div>
           </section>
         )}
 
-        {otherProjects.length > 0 && (
-          <section className="projects-section">
-            <h2 className="section-title">more projects</h2>
-            <div className="projects-grid">
-              {otherProjects.map(project => (
-                <ProjectCard key={project.name} project={project} />
+        {/* Catalog Section */}
+        <section className="projects-section catalog-section">
+          <h2 className="section-title">catalog</h2>
+
+          {/* Filters */}
+          <ProjectFilters
+            selectedCategory={selectedCategory}
+            selectedStatus={selectedStatus}
+            searchTerm={searchTerm}
+            onCategoryChange={setSelectedCategory}
+            onStatusChange={setSelectedStatus}
+            onSearchChange={setSearchTerm}
+            onClearFilters={handleClearFilters}
+            availableCategories={availableCategories}
+            availableStatuses={availableStatuses}
+            resultCount={sortedProjects.length}
+            totalCount={catalogProjects.length}
+          />
+
+          {/* Projects Grid */}
+          {sortedProjects.length > 0 ? (
+            <div className="projects-grid catalog-grid">
+              {sortedProjects.map(project => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onClick={() => handleProjectClick(project)}
+                />
               ))}
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="no-results">
+              <p>no projects match your current filters.</p>
+              <button className="clear-filters-btn" onClick={handleClearFilters}>
+                clear filters
+              </button>
+            </div>
+          )}
+        </section>
 
+        {/* GitHub CTA */}
         <div className="github-cta">
           <p>want to see more?</p>
           <a
@@ -126,6 +226,13 @@ const ProjectsPage: React.FC = () => {
           </a>
         </div>
       </div>
+
+      {/* Project Modal */}
+      <ProjectModal
+        project={selectedProject}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </Layout>
   );
 };
