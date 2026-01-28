@@ -1,22 +1,13 @@
-### Hi there 👋
+simple parts, explicit rules, emergent wholes ✨
 
-I'm Alex.
+-----
 
-I bring together engineering, mathematics, and the arts to turn ideas into scalable, creative, and practical solutions.  
-I love analyzing systems, uncovering their governing rules, and sharing insights in ways that spark clarity.
+i’m alex, an ai systems engineer who loves building foundational infrastructure.
 
-👨‍💻 Engineer — modeling systems and building scalable software  
-🧙‍♂️ Mathematician — exploring the rules that govern complexity  
-🎨 Artist — communicating ideas simply and creatively  
+currently at [perch](https://perchinsights.com) working on agent orchestration, dsls, and ontological modeling. also run [our nature](https://ournature.studio) with my partner, a creative studio where we explore composition as emergence 🌿
 
----
+i work mostly in python, learning rust. into probabilistic programming, agent system design, category theory, graphs, human-computer interaction, evolutionary algorithms, audio synthesis. math background (applied math, partial phd in computational methods). built a couple startups before this.
 
-🔭 Currently exploring:  
+learning cantonese 🀄, watching birds 🐦, constructing sounds 🎹
 
-- Language models, categories, and graphs  
-- Human-computer interaction and automation  
-- Synthesizers and sound design  
-
----
-
-Feel free to reach out to me via [email](mailto:alex@ournature.studio) or connect with me on [LinkedIn](https://linkedin.com/in/alexnodeland).
+[alexnodeland.com](https://alexnodeland.com) · [alex@ournature.studio](mailto:alex@ournature.studio)
