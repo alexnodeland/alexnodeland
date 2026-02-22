@@ -20,6 +20,7 @@ each visualization connects directly to my experience:
 - **graph theory job scheduling** → distributed systems architecture
 - **fm synthesis** → music technology and creative coding
 - **pathfinding algorithms** → optimization concepts i use daily
+- **pde solver** → numerical methods and physical simulation
 
 ## the intersection of art and science
 
@@ -34,6 +35,7 @@ this reflects my broader philosophy - the best technical solutions have inherent
 - [graph theory job scheduling: distributed computing](#job-scheduling)
 - [fm synthesis: mathematical music](#fm-synthesis)
 - [pathfinding algorithms: routing intelligence](#pathfinding)
+- [pde solver: simulating the physical world](#pde-solver)
 
 ---
 
@@ -84,6 +86,16 @@ optimization problems define so much of what i do - finding the best path throug
 these algorithms represent different philosophies i encounter constantly: the perfectionist approach that guarantees optimal solutions but demands computational resources, the intelligent balance that uses smart heuristics to achieve optimality efficiently, and the pragmatic speedster that sacrifices some optimality for real-time performance.
 
 i chose to visualize pathfinding because it makes visible the invisible trade-offs that shape every technical decision - thoroughness versus speed, optimality versus practicality, perfection versus "good enough." it's the fundamental tension in all engineering work.
+
+---
+
+## <a id="pde-solver"></a>pde solver: simulating the physical world
+
+partial differential equations sit at the heart of how we model the physical world - heat flowing through materials, waves propagating across surfaces, quantum particles evolving in time. they're the mathematical language nature uses to describe change across space and time simultaneously.
+
+i've always been drawn to numerical methods because they turn continuous mathematics into something a computer can actually compute. finite difference schemes, stability conditions, cfl constraints - these aren't just academic exercises. they're the same techniques used in weather forecasting, structural engineering, and fluid dynamics simulations.
+
+this visualization solves the heat equation and wave equation in real time using explicit finite difference methods. watching thermal diffusion smooth out an initial temperature distribution, or seeing waves reflect off boundaries and interfere with themselves, makes the underlying mathematics tangible in a way that equations on paper never quite achieve.
 
 ---
 

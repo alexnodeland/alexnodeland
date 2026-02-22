@@ -300,4 +300,5 @@ export const pdeSolverConfig = createBackgroundConfig({
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  blogPostSection: '#pde-solver',
 });
