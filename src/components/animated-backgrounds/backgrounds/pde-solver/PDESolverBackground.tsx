@@ -9,17 +9,12 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { PDESolverSettings } from './config';
-import {
-  createInitialState,
-  stepPDESolver,
-  index,
-} from './pde-solver';
+import { createInitialState, stepPDESolver, index } from './pde-solver';
 import { PDEState, PDESolverConfig } from './types';
 
-const PDESolverBackground: React.FC<AnimatedBackgroundProps<PDESolverSettings>> = ({
-  className,
-  settings,
-}) => {
+const PDESolverBackground: React.FC<
+  AnimatedBackgroundProps<PDESolverSettings>
+> = ({ className, settings }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -91,7 +86,11 @@ const PDESolverBackground: React.FC<AnimatedBackgroundProps<PDESolverSettings>> 
         const stepsPerFrame = 5; // Run multiple solver steps per visual frame
 
         for (let i = 0; i < stepsPerFrame; i++) {
-          stepPDESolver(stateRef.current, configRef.current, settings.equationType);
+          stepPDESolver(
+            stateRef.current,
+            configRef.current,
+            settings.equationType
+          );
         }
 
         // Update mesh geometry
@@ -99,7 +98,8 @@ const PDESolverBackground: React.FC<AnimatedBackgroundProps<PDESolverSettings>> 
 
         // Auto-rotate camera
         if (settings.autoRotate && meshRef.current) {
-          meshRef.current.rotation.z += settings.rotationSpeed * 0.001 * deltaTime * 60;
+          meshRef.current.rotation.z +=
+            settings.rotationSpeed * 0.001 * deltaTime * 60;
         }
       }
 
@@ -146,6 +146,10 @@ const PDESolverBackground: React.FC<AnimatedBackgroundProps<PDESolverSettings>> 
     settings.equationType,
     settings.gridSize,
     settings.initialConditionType,
+    settings.initialAmplitude,
+    settings.initialFrequency,
+    settings.initialWidth,
+    settings.numSources,
     settings.boundaryConditionX,
     settings.boundaryConditionY,
   ]);
@@ -156,22 +160,8 @@ const PDESolverBackground: React.FC<AnimatedBackgroundProps<PDESolverSettings>> 
       configRef.current.alpha = settings.alpha;
       configRef.current.c = settings.waveSpeed;
       configRef.current.damping = settings.damping;
-      configRef.current.dt = settings.timeStep;
-      configRef.current.initialCondition.amplitude = settings.initialAmplitude;
-      configRef.current.initialCondition.frequency = settings.initialFrequency;
-      configRef.current.initialCondition.width = settings.initialWidth;
-      configRef.current.initialCondition.numSources = settings.numSources;
     }
-  }, [
-    settings.alpha,
-    settings.waveSpeed,
-    settings.damping,
-    settings.timeStep,
-    settings.initialAmplitude,
-    settings.initialFrequency,
-    settings.initialWidth,
-    settings.numSources,
-  ]);
+  }, [settings.alpha, settings.waveSpeed, settings.damping]);
 
   // Update visualization settings
   useEffect(() => {
@@ -202,16 +192,19 @@ const PDESolverBackground: React.FC<AnimatedBackgroundProps<PDESolverSettings>> 
 /**
  * Create PDE solver configuration from settings
  */
+// Internal constants for spatial/temporal discretization
+const SPATIAL_STEP = 0.01;
+const TIME_STEP = 0.0001;
+
 function createPDEConfig(settings: PDESolverSettings): PDESolverConfig {
   const gridSize = settings.gridSize;
-  const spatialStep = settings.spatialStep;
 
   return {
     gridSizeX: gridSize,
     gridSizeY: gridSize,
-    dx: spatialStep,
-    dy: spatialStep,
-    dt: settings.timeStep,
+    dx: SPATIAL_STEP,
+    dy: SPATIAL_STEP,
+    dt: TIME_STEP,
     alpha: settings.alpha,
     c: settings.waveSpeed,
     damping: settings.damping,
@@ -247,12 +240,7 @@ function createVisualizationMesh(
   const { gridSizeX, gridSizeY } = state;
 
   // Create plane geometry
-  const geometry = new THREE.PlaneGeometry(
-    2,
-    2,
-    gridSizeX - 1,
-    gridSizeY - 1
-  );
+  const geometry = new THREE.PlaneGeometry(2, 2, gridSizeX - 1, gridSizeY - 1);
 
   // Create material
   const material = new THREE.MeshStandardMaterial({
@@ -290,10 +278,9 @@ function updateGeometryFromState(
 ): void {
   const { u, gridSizeX, gridSizeY } = state;
   const positions = geometry.attributes.position;
-  const colors = geometry.attributes.color || new THREE.BufferAttribute(
-    new Float32Array(positions.count * 3),
-    3
-  );
+  const colors =
+    geometry.attributes.color ||
+    new THREE.BufferAttribute(new Float32Array(positions.count * 3), 3);
 
   if (!geometry.attributes.color) {
     geometry.setAttribute('color', colors);

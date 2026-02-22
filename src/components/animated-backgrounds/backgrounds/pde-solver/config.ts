@@ -1,7 +1,11 @@
 import { createBackgroundConfig } from '../../core/baseConfig';
 import { SettingsSchema, StandardSettings } from '../../core/types';
 import PDESolverBackground from './PDESolverBackground';
-import { EquationType, BoundaryConditionType, InitialConditionType } from './types';
+import {
+  EquationType,
+  BoundaryConditionType,
+  InitialConditionType,
+} from './types';
 
 // Custom settings specific to PDE solver
 export interface PDESolverCustomSettings {
@@ -9,14 +13,12 @@ export interface PDESolverCustomSettings {
   equationType: EquationType;
 
   // Physical parameters
-  alpha: number;  // Thermal diffusivity (heat equation)
-  waveSpeed: number;  // Wave speed (wave equation)
-  damping: number;  // Energy dissipation
+  alpha: number; // Thermal diffusivity (heat equation)
+  waveSpeed: number; // Wave speed (wave equation)
+  damping: number; // Energy dissipation
 
   // Grid parameters
   gridSize: number;
-  spatialStep: number;
-  timeStep: number;
 
   // Initial conditions
   initialConditionType: InitialConditionType;
@@ -41,7 +43,6 @@ export interface PDESolverCustomSettings {
     positive: [number, number, number];
     negative: [number, number, number];
     zero: [number, number, number];
-    background: [number, number, number];
   };
 }
 
@@ -54,8 +55,6 @@ const defaultCustomSettings: PDESolverCustomSettings = {
   waveSpeed: 1.0,
   damping: 0.001,
   gridSize: 128,
-  spatialStep: 0.01,
-  timeStep: 0.0001,
   initialConditionType: 'interference',
   initialAmplitude: 1.0,
   initialFrequency: 3.0,
@@ -69,10 +68,9 @@ const defaultCustomSettings: PDESolverCustomSettings = {
   autoRotate: true,
   rotationSpeed: 0.3,
   colors: {
-    positive: [0.1, 0.6, 1.0],  // Cyan-blue
-    negative: [1.0, 0.3, 0.4],  // Red-pink
-    zero: [0.1, 0.1, 0.15],     // Dark blue-gray
-    background: [0.05, 0.05, 0.1],
+    positive: [0.1, 0.6, 1.0], // Cyan-blue
+    negative: [1.0, 0.3, 0.4], // Red-pink
+    zero: [0.1, 0.1, 0.15], // Dark blue-gray
   },
 };
 
@@ -282,12 +280,6 @@ const customSettingsSchema: SettingsSchema[] = [
   {
     key: 'colors.zero',
     label: 'Zero Value Color',
-    type: 'color',
-    category: 'Colors',
-  },
-  {
-    key: 'colors.background',
-    label: 'Background Color',
     type: 'color',
     category: 'Colors',
   },

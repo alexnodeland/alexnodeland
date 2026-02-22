@@ -47,13 +47,17 @@ export function generateInitialCondition(
           const cy = condition.centerY ?? 0.5;
           const width = condition.width ?? 0.1;
           const distSq = Math.pow(x - cx, 2) + Math.pow(y - cy, 2);
-          u[idx] = condition.amplitude * Math.exp(-distSq / (2 * width * width));
+          u[idx] =
+            condition.amplitude * Math.exp(-distSq / (2 * width * width));
           break;
         }
 
         case 'sine': {
           const freq = condition.frequency ?? 2;
-          u[idx] = condition.amplitude * Math.sin(freq * Math.PI * x) * Math.sin(freq * Math.PI * y);
+          u[idx] =
+            condition.amplitude *
+            Math.sin(freq * Math.PI * x) *
+            Math.sin(freq * Math.PI * y);
           break;
         }
 
@@ -99,7 +103,7 @@ export function generateInitialCondition(
             value += Math.cos(freq * Math.PI * dist);
           }
 
-          u[idx] = condition.amplitude * value / numSources;
+          u[idx] = (condition.amplitude * value) / numSources;
           break;
         }
 
@@ -130,7 +134,16 @@ export function applyBoundaryConditions(
   // Apply boundary conditions on Y boundaries (top and bottom)
   for (let i = 0; i < gridSizeX; i++) {
     applyBoundaryY(u, i, 0, gridSizeX, gridSizeY, boundaryY, dy, 'bottom');
-    applyBoundaryY(u, i, gridSizeY - 1, gridSizeX, gridSizeY, boundaryY, dy, 'top');
+    applyBoundaryY(
+      u,
+      i,
+      gridSizeY - 1,
+      gridSizeX,
+      gridSizeY,
+      boundaryY,
+      dy,
+      'top'
+    );
   }
 }
 
@@ -210,29 +223,37 @@ function applyBoundaryY(
 }
 
 /**
+ * Compute the maximum stable time step for the heat equation.
+ * Stability condition (FTCS, 2D): α·dt·(1/dx² + 1/dy²) ≤ 0.5
+ */
+export function maxStableDtHeat(alpha: number, dx: number, dy: number): number {
+  return 0.5 / (alpha * (1 / (dx * dx) + 1 / (dy * dy)));
+}
+
+/**
+ * Compute the maximum stable time step for the wave equation.
+ * CFL condition (2D): c·dt·√(1/dx² + 1/dy²) ≤ 1
+ */
+export function maxStableDtWave(c: number, dx: number, dy: number): number {
+  return 1 / (c * Math.sqrt(1 / (dx * dx) + 1 / (dy * dy)));
+}
+
+/**
  * Solve Heat Equation: ∂u/∂t = α∇²u
  * Uses explicit FTCS (Forward-Time Central-Space) scheme
  *
- * Stability condition: α*dt/(dx²) <= 0.25 for 2D
+ * Stability condition: α*dt*(1/dx² + 1/dy²) <= 0.5 for 2D
+ * dt is automatically clamped to the maximum stable value.
  */
 export function solveHeatEquation(
   state: PDEState,
   config: PDESolverConfig
 ): PDESolveResult {
-  const { gridSizeX, gridSizeY, dx, dy, dt, damping = 0 } = config;
+  const { gridSizeX, gridSizeY, dx, dy, damping = 0 } = config;
   const alpha = config.alpha ?? 0.1;
 
-  // Check stability condition
-  const stabilityX = alpha * dt / (dx * dx);
-  const stabilityY = alpha * dt / (dy * dy);
-  const totalStability = stabilityX + stabilityY;
-
-  if (totalStability > 0.5) {
-    console.warn(
-      `Heat equation may be unstable: r = ${totalStability.toFixed(4)} > 0.5. ` +
-      `Reduce dt or increase dx/dy.`
-    );
-  }
+  // Clamp dt to the maximum stable value
+  const dt = Math.min(config.dt, maxStableDtHeat(alpha, dx, dy));
 
   const uOld = state.u;
   const uNew = new Float32Array(gridSizeX * gridSizeY);
@@ -247,7 +268,8 @@ export function solveHeatEquation(
       const idxUp = index(i, j + 1, gridSizeX);
 
       // Second derivatives using central differences
-      const d2u_dx2 = (uOld[idxRight] - 2 * uOld[idx] + uOld[idxLeft]) / (dx * dx);
+      const d2u_dx2 =
+        (uOld[idxRight] - 2 * uOld[idx] + uOld[idxLeft]) / (dx * dx);
       const d2u_dy2 = (uOld[idxUp] - 2 * uOld[idx] + uOld[idxDown]) / (dy * dy);
 
       // FTCS update: u(t+dt) = u(t) + α*dt*∇²u
@@ -256,7 +278,7 @@ export function solveHeatEquation(
 
       // Apply damping (energy dissipation)
       if (damping > 0) {
-        uNew[idx] *= (1 - damping * dt);
+        uNew[idx] *= 1 - damping * dt;
       }
     }
   }
@@ -265,7 +287,7 @@ export function solveHeatEquation(
   state.u = uNew;
   applyBoundaryConditions(state.u, config);
 
-  // Update time
+  // Update time (use the clamped dt)
   state.time += dt;
   state.step += 1;
 
@@ -276,33 +298,25 @@ export function solveHeatEquation(
  * Solve Wave Equation: ∂²u/∂t² = c²∇²u
  * Uses second-order central difference in time
  *
- * Stability condition (CFL): c*dt/dx <= 1/√2 for 2D
+ * Stability condition (CFL): c·dt·√(1/dx² + 1/dy²) ≤ 1 for 2D
+ * dt is automatically clamped to the maximum stable value.
  */
 export function solveWaveEquation(
   state: PDEState,
   config: PDESolverConfig
 ): PDESolveResult {
-  const { gridSizeX, gridSizeY, dx, dy, dt, damping = 0 } = config;
+  const { gridSizeX, gridSizeY, dx, dy, damping = 0 } = config;
   const c = config.c ?? 1.0;
 
-  // Check CFL condition
-  const cflX = c * dt / dx;
-  const cflY = c * dt / dy;
-  const cflCondition = Math.sqrt(cflX * cflX + cflY * cflY);
-
-  if (cflCondition > 1 / Math.sqrt(2)) {
-    console.warn(
-      `Wave equation may be unstable: CFL = ${cflCondition.toFixed(4)} > ${(1 / Math.sqrt(2)).toFixed(4)}. ` +
-      `Reduce dt or increase dx/dy.`
-    );
-  }
+  // Clamp dt to the maximum stable value (CFL condition)
+  const dt = Math.min(config.dt, maxStableDtWave(c, dx, dy));
 
   const uCurrent = state.u;
   const uPrev = state.uPrev!;
   const uNext = new Float32Array(gridSizeX * gridSizeY);
 
-  const rxSq = (c * dt / dx) ** 2;
-  const rySq = (c * dt / dy) ** 2;
+  const rxSq = ((c * dt) / dx) ** 2;
+  const rySq = ((c * dt) / dy) ** 2;
 
   // Special case for first time step (use initial velocity)
   const isFirstStep = state.step === 0;
