@@ -4,13 +4,9 @@ import { useChat } from './ChatContext';
 
 interface ChatInputProps {
   initialValue?: string;
-  onValueChange?: (value: string) => void;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({
-  initialValue,
-  onValueChange,
-}) => {
+const ChatInput: React.FC<ChatInputProps> = ({ initialValue }) => {
   const {
     addMessage,
     isLoading,
@@ -43,11 +39,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-    // Notify parent of value changes if callback provided
-    if (onValueChange) {
-      onValueChange(inputValue);
-    }
-  }, [inputValue, onValueChange]);
+  }, [inputValue]);
 
   const isModelReady = modelState?.status === 'ready';
   const isModelLoading = modelState?.status === 'loading';

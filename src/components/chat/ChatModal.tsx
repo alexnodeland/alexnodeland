@@ -255,10 +255,7 @@ const ChatModal: React.FC = () => {
               }
             />
 
-            <ChatInput
-              initialValue={promptValue}
-              onValueChange={() => {}} // We don't need to track changes from input
-            />
+            <ChatInput initialValue={promptValue} />
           </div>
         </>
       )}

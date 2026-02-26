@@ -89,6 +89,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     null
   );
   const isGeneratingRef = useRef(false); // Synchronous guard for concurrent generation
+  const selectedModelRef = useRef(selectedModel); // Latest model for worker callbacks
+
+  // Keep selectedModel ref in sync for worker callbacks
+  useEffect(() => {
+    selectedModelRef.current = selectedModel;
+  }, [selectedModel]);
 
   // Feature flag for worker connection - controllable via environment
   // Set GATSBY_CHAT_WORKER=true to enable real model
@@ -330,6 +336,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                 lastMessage.content ||
                 'Generation timed out. Please try again.',
             };
+          } else {
+            // 'start' event never fired — add a visible error message
+            newMessages.push({
+              id: Math.random().toString(36).substr(2, 9),
+              role: 'assistant',
+              content: 'Generation timed out. Please try again.',
+              timestamp: new Date(),
+            });
           }
           return newMessages;
         });
@@ -514,7 +528,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             // Mark the model as cached when it's ready
             const deviceInfo =
               typeof data.data === 'string' ? data.data : 'unknown';
-            ModelCache.setModelReady(selectedModel, deviceInfo);
+            ModelCache.setModelReady(selectedModelRef.current, deviceInfo);
             // Update cached models list to reflect the change
             setCachedModels(
               ModelCache.getCachedModels().map(entry => entry.modelId)
@@ -682,7 +696,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       });
       // Don't throw the error - let the app continue to work without chat
     }
-  }, [USE_CHAT_WORKER, selectedModel, workerInitKey]);
+  }, [USE_CHAT_WORKER, workerInitKey]);
 
   // Sync cached models state with ModelCache on mount and when selected model changes
   useEffect(() => {
@@ -700,57 +714,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     updateCachedModels();
   }, [selectedModel]); // Sync cache when model selection changes
-
-  // Handle navigation events to ensure worker stability
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleNavigation = () => {
-      // Check if worker is still alive and responsive
-      if (workerRef.current && USE_CHAT_WORKER) {
-        try {
-          // Send a ping to verify worker is responsive
-          workerRef.current.postMessage({ type: 'check' });
-        } catch (err) {
-          // eslint-disable-next-line no-console
-          console.warn(
-            '[chat] Worker became unresponsive during navigation, reinitializing...',
-            err
-          );
-          // Force worker reinitialization
-          setWorkerInitKey(prev => prev + 1);
-        }
-      }
-    };
-
-    // Listen for Gatsby navigation events
-    const handleRouteChange = () => {
-      setTimeout(handleNavigation, 100); // Small delay to ensure navigation is complete
-    };
-
-    // Gatsby uses history API for navigation
-    window.addEventListener('popstate', handleRouteChange);
-
-    // Also listen for hash changes and pushstate events
-    const originalPushState = window.history.pushState;
-    const originalReplaceState = window.history.replaceState;
-
-    window.history.pushState = function (...args) {
-      originalPushState.apply(window.history, args);
-      handleRouteChange();
-    };
-
-    window.history.replaceState = function (...args) {
-      originalReplaceState.apply(window.history, args);
-      handleRouteChange();
-    };
-
-    return () => {
-      window.removeEventListener('popstate', handleRouteChange);
-      window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
-    };
-  }, [USE_CHAT_WORKER]);
 
   return (
     <ChatContext.Provider
