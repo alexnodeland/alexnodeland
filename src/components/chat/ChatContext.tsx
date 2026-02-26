@@ -176,9 +176,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       });
 
       ModelCache.setModelLoading(modelId);
+      const modelDef =
+        availableModels.find(m => m.id === modelId) ||
+        AVAILABLE_MODELS.find(m => m.id === modelId);
       workerRef.current.postMessage({
         type: 'load',
-        data: { modelId },
+        data: {
+          modelId,
+          modelConfig: modelDef
+            ? { dtype: modelDef.dtype, dtypeWasm: modelDef.dtypeWasm }
+            : {},
+        },
       });
     } else {
       // Worker not available, set to idle
@@ -198,9 +206,16 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         progress: [],
         loadingMessage: 'Loading model...',
       });
+      const targetId = modelId ?? selectedModel;
+      const modelDef = AVAILABLE_MODELS.find(m => m.id === targetId);
       const req: WorkerRequest = {
         type: 'load',
-        data: { modelId: modelId ?? selectedModel },
+        data: {
+          modelId: targetId,
+          modelConfig: modelDef
+            ? { dtype: modelDef.dtype, dtypeWasm: modelDef.dtypeWasm }
+            : {},
+        },
       } as any;
       workerRef.current.postMessage(req);
       return;
@@ -243,13 +258,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         );
       }
 
+      // Look up the full model definition from AVAILABLE_MODELS
+      const modelDef = AVAILABLE_MODELS.find(m => m.id === selectedModel);
+
+      // Compute system prompt dynamically for this model
+      const systemPrompt = chatConfig.generation.getSystemPrompt(selectedModel);
+
+      // If model always thinks, force reasonEnabled true regardless of toggle
+      const effectiveReasonEnabled = modelDef?.alwaysThinks
+        ? true
+        : isThinkingEnabled;
+
       const req: WorkerRequest = {
         type: 'generate',
         data: {
           messages: contextMessages,
           modelId: selectedModel,
-          reasonEnabled: isThinkingEnabled,
-          systemPrompt: chatConfig.generation.systemPrompt,
+          reasonEnabled: effectiveReasonEnabled,
+          systemPrompt,
           generationConfig: {
             maxTokens: chatConfig.generation.maxTokens,
             temperature: chatConfig.generation.temperature,
@@ -257,6 +283,16 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             topP: chatConfig.generation.topP,
             repetitionPenalty: chatConfig.generation.repetitionPenalty,
           },
+          modelConfig: modelDef
+            ? {
+                generationProfile: modelDef.generationProfile,
+                templateOptions: modelDef.templateOptions,
+                alwaysThinks: modelDef.alwaysThinks,
+                supportsThinking: modelDef.supportsThinking,
+                dtype: modelDef.dtype,
+                dtypeWasm: modelDef.dtypeWasm,
+              }
+            : {},
         },
       } as any;
       workerRef.current.postMessage(req);

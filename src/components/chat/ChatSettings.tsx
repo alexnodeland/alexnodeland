@@ -11,7 +11,7 @@ const ChatSettings: React.FC<ChatSettingsProps> = ({
   onSettingChange,
 }) => {
   const [systemPrompt, setSystemPrompt] = useState(
-    chatConfig.generation.systemPrompt
+    chatConfig.generation.defaultSystemPromptText
   );
   const [enableThinking, setEnableThinking] = useState(
     chatConfig.interface.enableThinking
@@ -56,16 +56,19 @@ const ChatSettings: React.FC<ChatSettingsProps> = ({
   };
 
   const resetToDefaults = () => {
-    setSystemPrompt(chatConfig.generation.systemPrompt);
+    setSystemPrompt(chatConfig.generation.defaultSystemPromptText);
     setEnableThinking(chatConfig.interface.enableThinking);
     setMaxTokens(chatConfig.generation.maxTokens.default);
     setTemperature(chatConfig.generation.temperature.default);
 
     if (onSystemPromptChange) {
-      onSystemPromptChange(chatConfig.generation.systemPrompt);
+      onSystemPromptChange(chatConfig.generation.defaultSystemPromptText);
     }
     if (onSettingChange) {
-      onSettingChange('systemPrompt', chatConfig.generation.systemPrompt);
+      onSettingChange(
+        'systemPrompt',
+        chatConfig.generation.defaultSystemPromptText
+      );
       onSettingChange('enableThinking', chatConfig.interface.enableThinking);
       onSettingChange('maxTokens', chatConfig.generation.maxTokens.default);
       onSettingChange('temperature', chatConfig.generation.temperature.default);

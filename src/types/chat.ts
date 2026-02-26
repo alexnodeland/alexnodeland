@@ -1,5 +1,4 @@
 // Chat types for Transformers.js integration
-import { CVContextLevel } from '../lib/utils/cvFormatter';
 
 // Core chat types
 export interface ChatMessage {
@@ -16,6 +15,19 @@ export interface ChatMessage {
   _thinkingComplete?: boolean;
 }
 
+// Per-model generation parameters bundled in one flat object
+export interface ModelGenerationProfile {
+  maxTokens: number;
+  maxTokensWasm: number;
+  temperature: number;
+  temperatureWasm: number;
+  topK: number;
+  topKWasm: number;
+  topP?: number; // undefined means omit from generation call
+  repetitionPenalty: number;
+  cvTokenBudget: number; // max tokens for CV content in system prompt
+}
+
 export interface ChatModel {
   id: string;
   name: string;
@@ -25,9 +37,12 @@ export interface ChatModel {
   contextWindow?: number;
   device?: 'webgpu' | 'cpu';
   dtype?: string;
+  dtypeWasm?: string;
   fallbackDevice?: 'wasm' | 'cpu';
   supportsThinking?: boolean;
-  cvContextLevel?: CVContextLevel;
+  alwaysThinks?: boolean;
+  templateOptions?: Record<string, any>;
+  generationProfile?: ModelGenerationProfile;
 }
 
 // Model loading and progress tracking

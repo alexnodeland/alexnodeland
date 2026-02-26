@@ -1,144 +1,92 @@
 import { CVData } from '../../config/cv';
-
-export type CVContextLevel = 'concise' | 'medium' | 'full';
-
-/**
- * Formats CV data for inclusion in system prompts - CONCISE version
- * Minimal context for small models with limited context windows
- */
-export function formatCVConcise(cvData: CVData): string {
-  const sections: string[] = [];
-
-  // Essential personal info only
-  sections.push(`**Alex Nodeland** - ${cvData.personal.title}`);
-  sections.push(
-    `Location: ${cvData.personal.location} | Website: ${cvData.personal.website}`
-  );
-
-  // Only current position
-  const currentRole = cvData.experience[0];
-  sections.push(
-    `**Current Role:** ${currentRole.title} at ${currentRole.company} (${currentRole.duration})`
-  );
-
-  // Top 5 technical skills
-  const topSkills = cvData.skills.technical.slice(0, 5);
-  sections.push(`**Key Skills:** ${topSkills.join(', ')}`);
-
-  // Latest education only
-  sections.push(
-    `**Education:** ${cvData.education[0].degree} from ${cvData.education[0].institution}`
-  );
-
-  return sections.join('\n');
-}
+import { estimateTokens } from './chat';
 
 /**
- * Formats CV data for inclusion in system prompts - MEDIUM version
- * Balanced context for medium-sized models
+ * Formats CV data to fit within a token budget.
+ * Progressively includes sections in priority order:
+ *   1. Personal essentials (name, title, location, website)
+ *   2. Current role headline
+ *   3. Top 5 skills
+ *   4. Latest education
+ *   5. Personal summary
+ *   6. Additional experience (expanding from top to bottom)
+ *   7. Additional skills
+ *   8. Certifications
+ *
+ * Stops adding content once the next section would exceed the budget.
  */
-export function formatCVMedium(cvData: CVData): string {
-  const sections: string[] = [];
-
-  // Personal Information (brief)
-  sections.push(`**Personal Information:**
-- Name: ${cvData.personal.name}
-- Title: ${cvData.personal.title}
-- Location: ${cvData.personal.location}
-- Website: ${cvData.personal.website}`);
-
-  // Recent experience (top 3 positions)
-  const recentExperience = cvData.experience.slice(0, 3);
-  sections.push(`**Recent Experience:**`);
-  recentExperience.forEach(exp => {
-    // Limit achievements to top 2 for medium version
-    const topAchievements = exp.achievements.slice(0, 2);
-    sections.push(`
-- **${exp.title}** at ${exp.company} (${exp.duration})
-  - Location: ${exp.location}
-  - Key achievements: ${topAchievements.map(a => `• ${a}`).join('\n    ')}`);
-  });
-
-  // Skills (limited)
-  const topTechnicalSkills = cvData.skills.technical.slice(0, 10);
-  const topSoftSkills = cvData.skills.soft.slice(0, 5);
-  sections.push(`**Technical Skills:** ${topTechnicalSkills.join(', ')}`);
-  sections.push(`**Leadership Skills:** ${topSoftSkills.join(', ')}`);
-
-  // Education
-  sections.push(`**Education:**`);
-  cvData.education.forEach(edu => {
-    sections.push(`- ${edu.degree} from ${edu.institution} (${edu.duration})`);
-  });
-
-  return sections.join('\n\n');
-}
-
-/**
- * Formats CV data for inclusion in system prompts - FULL version
- * Complete context for large models with extensive context windows
- */
-export function formatCVFull(cvData: CVData): string {
-  const sections: string[] = [];
-
-  // Personal Information
-  sections.push(`**Personal Information:**
-- Name: ${cvData.personal.name}
-- Title: ${cvData.personal.title}
-- Email: ${cvData.personal.email}
-- Location: ${cvData.personal.location}
-- Website: ${cvData.personal.website}
-- Summary: ${cvData.personal.summary}`);
-
-  // Experience (include all positions)
-  sections.push(`**Experience:**`);
-  cvData.experience.forEach(exp => {
-    sections.push(`
-- **${exp.title}** at ${exp.company} (${exp.duration})
-  - Location: ${exp.location}
-  - Key achievements: ${exp.achievements.map(a => `• ${a}`).join('\n    ')}`);
-  });
-
-  // Skills
-  sections.push(`**Technical Skills:**
-- ${cvData.skills.technical.join(', ')}`);
-
-  sections.push(`**Soft Skills:**
-- ${cvData.skills.soft.join(', ')}`);
-
-  // Education
-  sections.push(`**Education:**`);
-  cvData.education.forEach(edu => {
-    sections.push(`- ${edu.degree} from ${edu.institution} (${edu.duration})`);
-  });
-
-  // Certifications
-  if (cvData.certifications.length > 0) {
-    sections.push(`**Certifications:**`);
-    cvData.certifications.forEach(cert => {
-      sections.push(`- ${cert.name} from ${cert.issuer} (${cert.date})`);
-    });
-  }
-
-  return sections.join('\n\n');
-}
-
-/**
- * Main CV formatting function that delegates to appropriate level
- */
-export function formatCVForSystemPrompt(
+export function formatCVWithBudget(
   cvData: CVData,
-  level: CVContextLevel = 'full'
+  tokenBudget: number
 ): string {
-  switch (level) {
-    case 'concise':
-      return formatCVConcise(cvData);
-    case 'medium':
-      return formatCVMedium(cvData);
-    case 'full':
-    default:
-      return formatCVFull(cvData);
+  const sections: string[] = [];
+  let currentTokens = 0;
+
+  const tryAdd = (text: string): boolean => {
+    const tokens = estimateTokens(text);
+    if (currentTokens + tokens > tokenBudget) {
+      return false;
+    }
+    sections.push(text);
+    currentTokens += tokens;
+    return true;
+  };
+
+  // Priority 1: Personal essentials (always include)
+  tryAdd(
+    `**Alex Nodeland** - ${cvData.personal.title}\nLocation: ${cvData.personal.location} | Website: ${cvData.personal.website}`
+  );
+
+  // Priority 2: Current role headline
+  const currentRole = cvData.experience[0];
+  if (currentRole) {
+    tryAdd(
+      `**Current Role:** ${currentRole.title} at ${currentRole.company} (${currentRole.duration})`
+    );
   }
+
+  // Priority 3: Top 5 technical skills
+  const topSkills = cvData.skills.technical.slice(0, 5);
+  tryAdd(`**Key Skills:** ${topSkills.join(', ')}`);
+
+  // Priority 4: Latest education
+  if (cvData.education[0]) {
+    tryAdd(
+      `**Education:** ${cvData.education[0].degree} from ${cvData.education[0].institution}`
+    );
+  }
+
+  // Priority 5: Personal summary
+  if (cvData.personal.summary) {
+    tryAdd(`**Summary:** ${cvData.personal.summary}`);
+  }
+
+  // Priority 6: Additional experience (positions 1..N, each with top 2 achievements)
+  for (let i = 1; i < cvData.experience.length; i++) {
+    const exp = cvData.experience[i];
+    const topAchievements = exp.achievements.slice(0, 2);
+    const expText = `- **${exp.title}** at ${exp.company} (${exp.duration})\n  Location: ${exp.location}\n  ${topAchievements.map(a => `- ${a}`).join('\n  ')}`;
+    if (!tryAdd(expText)) break;
+  }
+
+  // Priority 7: Remaining technical + soft skills
+  const remainingTechnical = cvData.skills.technical.slice(5);
+  if (remainingTechnical.length > 0) {
+    tryAdd(`**Additional Technical Skills:** ${remainingTechnical.join(', ')}`);
+  }
+  if (cvData.skills.soft.length > 0) {
+    tryAdd(`**Leadership Skills:** ${cvData.skills.soft.join(', ')}`);
+  }
+
+  // Priority 8: Certifications
+  if (cvData.certifications.length > 0) {
+    const certText = cvData.certifications
+      .map(c => `- ${c.name} (${c.issuer}, ${c.date})`)
+      .join('\n');
+    tryAdd(`**Certifications:**\n${certText}`);
+  }
+
+  return sections.join('\n\n');
 }
 
 /**
@@ -147,9 +95,9 @@ export function formatCVForSystemPrompt(
  */
 export function createCVContextBlock(
   cvData: CVData,
-  level: CVContextLevel = 'full'
+  tokenBudget: number = 1200
 ): string {
-  const formattedCV = formatCVForSystemPrompt(cvData, level);
+  const formattedCV = formatCVWithBudget(cvData, tokenBudget);
 
   return `<alexs_cv>
 ${formattedCV}
@@ -163,11 +111,44 @@ ${formattedCV}
 export function combineSystemPromptWithCV(
   systemPrompt: string,
   cvData: CVData,
-  level: CVContextLevel = 'full'
+  tokenBudget: number = 1200
 ): string {
-  const cvContext = createCVContextBlock(cvData, level);
+  const cvContext = createCVContextBlock(cvData, tokenBudget);
 
   return `${cvContext}
 
 ${systemPrompt}`;
+}
+
+// --- Deprecated wrappers for backward compatibility ---
+
+/** @deprecated Use formatCVWithBudget instead */
+export type CVContextLevel = 'concise' | 'medium' | 'full';
+
+/** @deprecated Use formatCVWithBudget instead */
+export function formatCVConcise(cvData: CVData): string {
+  return formatCVWithBudget(cvData, 200);
+}
+
+/** @deprecated Use formatCVWithBudget instead */
+export function formatCVMedium(cvData: CVData): string {
+  return formatCVWithBudget(cvData, 800);
+}
+
+/** @deprecated Use formatCVWithBudget instead */
+export function formatCVFull(cvData: CVData): string {
+  return formatCVWithBudget(cvData, 3000);
+}
+
+/** @deprecated Use formatCVWithBudget instead */
+export function formatCVForSystemPrompt(
+  cvData: CVData,
+  level: CVContextLevel = 'full'
+): string {
+  const budgetMap: Record<CVContextLevel, number> = {
+    concise: 200,
+    medium: 800,
+    full: 3000,
+  };
+  return formatCVWithBudget(cvData, budgetMap[level]);
 }

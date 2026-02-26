@@ -3,6 +3,7 @@ import {
   ChatModel,
   ExtendedChatContextType,
   GenerationConfig,
+  ModelGenerationProfile,
   ModelLoadingState,
   ProgressItem,
   WorkerRequest,
@@ -37,6 +38,41 @@ describe('Chat Types', () => {
     });
   });
 
+  describe('ModelGenerationProfile', () => {
+    it('should validate ModelGenerationProfile interface', () => {
+      const profile: ModelGenerationProfile = {
+        maxTokens: 4096,
+        maxTokensWasm: 2048,
+        temperature: 0.05,
+        temperatureWasm: 0.0,
+        topK: 40,
+        topKWasm: 20,
+        topP: 0.1,
+        repetitionPenalty: 1.05,
+        cvTokenBudget: 1200,
+      };
+
+      expect(profile.maxTokens).toBe(4096);
+      expect(profile.cvTokenBudget).toBe(1200);
+      expect(profile.topP).toBe(0.1);
+    });
+
+    it('should allow topP to be undefined', () => {
+      const profile: ModelGenerationProfile = {
+        maxTokens: 4096,
+        maxTokensWasm: 2048,
+        temperature: 0.3,
+        temperatureWasm: 0.0,
+        topK: 40,
+        topKWasm: 20,
+        repetitionPenalty: 1.05,
+        cvTokenBudget: 600,
+      };
+
+      expect(profile.topP).toBeUndefined();
+    });
+  });
+
   describe('ChatModel', () => {
     it('should validate basic ChatModel interface', () => {
       const model: ChatModel = {
@@ -59,12 +95,29 @@ describe('Chat Types', () => {
         contextWindow: 16384,
         device: 'webgpu',
         dtype: 'q4',
+        dtypeWasm: 'auto',
+        alwaysThinks: true,
+        templateOptions: {},
+        generationProfile: {
+          maxTokens: 4096,
+          maxTokensWasm: 2048,
+          temperature: 0.05,
+          temperatureWasm: 0.0,
+          topK: 40,
+          topKWasm: 20,
+          topP: 0.1,
+          repetitionPenalty: 1.05,
+          cvTokenBudget: 1200,
+        },
       };
 
       expect(model.size).toBe('~1.2GB');
       expect(model.contextWindow).toBe(16384);
       expect(model.device).toBe('webgpu');
       expect(model.dtype).toBe('q4');
+      expect(model.dtypeWasm).toBe('auto');
+      expect(model.alwaysThinks).toBe(true);
+      expect(model.generationProfile?.cvTokenBudget).toBe(1200);
     });
 
     it('should allow cpu device option', () => {
@@ -249,7 +302,6 @@ describe('Chat Types', () => {
 
   describe('ExtendedChatContextType', () => {
     it('should include all required properties', () => {
-      // This is more of a compile-time check, but we can verify the interface exists
       const mockContext: Partial<ExtendedChatContextType> = {
         isChatOpen: false,
         isClosing: false,

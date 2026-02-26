@@ -105,10 +105,7 @@ export async function detectWebGPUSupport(): Promise<boolean> {
 
 /**
  * Available AI models for the chat interface
- * This will be the source of truth for model selection
- *
- * Currently using LiquidAI LFM 1.2B for optimal quality and in-browser reasoning.
- * Architecture is designed to easily support additional models in the future.
+ * This is the source of truth for model selection and per-model configuration.
  */
 export const AVAILABLE_MODELS: ChatModel[] = [
   {
@@ -120,8 +117,46 @@ export const AVAILABLE_MODELS: ChatModel[] = [
     contextWindow: 16384,
     device: 'webgpu',
     dtype: 'q4',
+    dtypeWasm: 'auto',
     fallbackDevice: 'wasm',
     supportsThinking: true,
+    alwaysThinks: true,
+    templateOptions: {},
+    generationProfile: {
+      maxTokens: 4096,
+      maxTokensWasm: 2048,
+      temperature: 0.05,
+      temperatureWasm: 0.0,
+      topK: 40,
+      topKWasm: 20,
+      topP: 0.1,
+      repetitionPenalty: 1.05,
+      cvTokenBudget: 1200,
+    },
+  },
+  {
+    id: 'onnx-community/Qwen3-0.6B-ONNX',
+    name: 'qwen-0.6b',
+    description: 'lightweight reasoning model, smaller and faster',
+    size: '~600MB',
+    contextWindow: 16384,
+    device: 'webgpu',
+    dtype: 'q4f16',
+    dtypeWasm: 'auto',
+    fallbackDevice: 'wasm',
+    supportsThinking: true,
+    alwaysThinks: false,
+    templateOptions: { add_special_tokens: false },
+    generationProfile: {
+      maxTokens: 4096,
+      maxTokensWasm: 2048,
+      temperature: 0.3,
+      temperatureWasm: 0.0,
+      topK: 40,
+      topKWasm: 20,
+      repetitionPenalty: 1.05,
+      cvTokenBudget: 600,
+    },
   },
 ];
 

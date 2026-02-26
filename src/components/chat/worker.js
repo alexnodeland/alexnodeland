@@ -61,6 +61,8 @@ class TextGenerationPipeline {
   // Model cache - stores multiple loaded models
   static modelCache = new Map(); // modelId -> { tokenizer, model, device }
   static currentModelId = null;
+  // Pending model config set before loading, used for dtype selection
+  static _pendingModelConfig = null;
 
   static async getInstance(
     modelId,
@@ -71,7 +73,7 @@ class TextGenerationPipeline {
     const cached = this.modelCache.get(modelId);
     if (cached) {
       this.currentModelId = modelId;
-      return [cached.tokenizer, cached.model];
+      return [cached.tokenizer, cached.model, cached.device];
     }
 
     // Load new model
@@ -86,10 +88,15 @@ class TextGenerationPipeline {
 
     let model, device;
 
+    // Model-specific dtype from pending config
+    const modelConfig = this._pendingModelConfig || {};
+    const gpuDtype = modelConfig.dtype || 'q4';
+    const wasmDtype = modelConfig.dtypeWasm || 'auto';
+
     // Attempt preferred device first, then gracefully fall back to CPU
     try {
       model = await AutoModelForCausalLM.from_pretrained(modelId, {
-        dtype: supportsWebGPU ? 'q4' : 'auto',
+        dtype: supportsWebGPU ? gpuDtype : wasmDtype,
         device: supportsWebGPU ? 'webgpu' : 'wasm',
         progress_callback,
       });
@@ -98,7 +105,7 @@ class TextGenerationPipeline {
       // If WebGPU path fails at runtime (common on Firefox with partial support),
       // retry with a safe CPU configuration.
       model = await AutoModelForCausalLM.from_pretrained(modelId, {
-        dtype: 'auto',
+        dtype: wasmDtype,
         device: 'wasm',
         progress_callback,
       });
@@ -116,7 +123,8 @@ class TextGenerationPipeline {
     });
 
     this.currentModelId = modelId;
-    return [resolvedTokenizer, resolvedModel];
+    this._pendingModelConfig = null;
+    return [resolvedTokenizer, resolvedModel, device];
   }
 
   // Reset the pipeline (useful for switching models or debugging)
@@ -160,6 +168,7 @@ async function generate({
   reasonEnabled = false,
   systemPrompt = null,
   generationConfig = {},
+  modelConfig = {},
 }) {
   try {
     // Debug logging for thinking integration
@@ -172,7 +181,7 @@ async function generate({
     const modelId =
       TextGenerationPipeline.currentModelId ||
       'LiquidAI/LFM2.5-1.2B-Thinking-ONNX';
-    const [tokenizer, model] =
+    const [tokenizer, model, device] =
       await TextGenerationPipeline.getInstance(modelId);
 
     // Prepare messages with system prompt following Hugging Face chat template standards
@@ -214,30 +223,45 @@ async function generate({
       console.log('[worker] Thinking enabled:', reasonEnabled);
     }
 
+    // Build template options from modelConfig
+    const templateOptions = {
+      add_generation_prompt: true,
+      return_dict: true,
+    };
+
+    // Apply model-specific template options (e.g., add_special_tokens for Qwen)
+    if (modelConfig.templateOptions) {
+      if ('add_special_tokens' in modelConfig.templateOptions) {
+        templateOptions.add_special_tokens =
+          modelConfig.templateOptions.add_special_tokens;
+      }
+    }
+
+    // For models that support optional thinking (not alwaysThinks), pass enable_thinking
+    if (modelConfig.alwaysThinks === false && modelConfig.supportsThinking) {
+      templateOptions.enable_thinking = reasonEnabled;
+    }
+
     // Apply Hugging Face chat template to format messages correctly
     let inputs;
     try {
-      inputs = tokenizer.apply_chat_template(processedMessages, {
-        add_generation_prompt: true,
-        return_dict: true,
-      });
+      inputs = tokenizer.apply_chat_template(
+        processedMessages,
+        templateOptions
+      );
 
       if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
         // eslint-disable-next-line no-console
         console.log('[worker] Chat template applied successfully');
       }
     } catch (templateError) {
-      // Chat template error, attempting fallback
-
-      // Fallback: try without thinking enabled
+      // Chat template error, attempting fallback without model-specific options
       try {
         inputs = tokenizer.apply_chat_template(processedMessages, {
           add_generation_prompt: true,
           return_dict: true,
         });
-        // Chat template applied without thinking mode
       } catch (fallbackError) {
-        // Chat template fallback failed
         throw new Error(
           'Failed to apply chat template: ' + fallbackError.message
         );
@@ -313,44 +337,57 @@ async function generate({
     // Tell main thread we're starting generation
     self.postMessage({ status: 'start' });
 
+    // Build generation params from the model's profile, falling back to generationConfig
+    const profile = modelConfig.generationProfile || {};
+    const isWasm = device === 'wasm';
+
+    const genParams = {
+      do_sample: true,
+      top_k: isWasm
+        ? (profile.topKWasm ?? generationConfig.topK?.wasm ?? 20)
+        : (profile.topK ?? generationConfig.topK?.default ?? 40),
+      temperature: isWasm
+        ? (profile.temperatureWasm ?? generationConfig.temperature?.wasm ?? 0.0)
+        : (profile.temperature ??
+          generationConfig.temperature?.default ??
+          0.05),
+      repetition_penalty:
+        profile.repetitionPenalty ?? generationConfig.repetitionPenalty ?? 1.05,
+      max_new_tokens: isWasm
+        ? (profile.maxTokensWasm ??
+          generationConfig.maxTokens?.wasmThinking ??
+          2048)
+        : (profile.maxTokens ?? generationConfig.maxTokens?.default ?? 4096),
+    };
+
+    // Only include top_p if the model uses it (e.g., LFM yes, Qwen no)
+    if (profile.topP !== undefined) {
+      genParams.top_p = profile.topP;
+    } else if (generationConfig.topP !== undefined) {
+      genParams.top_p = generationConfig.topP;
+    }
+
     // Generate response with the model
     let past_key_values, sequences;
     try {
       ({ past_key_values, sequences } = await model.generate({
         ...inputs,
         past_key_values: past_key_values_cache,
-
-        // Generation parameters from config with fallbacks for device optimization
-        do_sample: true,
-        top_k:
-          TextGenerationPipeline.device === 'wasm'
-            ? generationConfig.topK?.wasm || 20
-            : generationConfig.topK?.default || 40,
-        top_p: generationConfig.topP || 0.1,
-        temperature:
-          TextGenerationPipeline.device === 'wasm'
-            ? generationConfig.temperature?.wasm || 0.0
-            : generationConfig.temperature?.default || 0.05,
-        repetition_penalty: generationConfig.repetitionPenalty || 1.05,
-
-        // Use config-based token limits with device optimization
-        max_new_tokens:
-          TextGenerationPipeline.device === 'wasm'
-            ? generationConfig.maxTokens?.wasmThinking || 2048
-            : generationConfig.maxTokens?.default || 4096,
+        ...genParams,
         streamer,
         stopping_criteria,
         return_dict_in_generate: true,
       }));
     } catch (genErr) {
       // If generation fails and we were on WebGPU, fall back to CPU and retry once
-      if (TextGenerationPipeline.device === 'webgpu') {
+      if (device === 'webgpu') {
         self.postMessage({
           status: 'loading',
           data: 'WebGPU failed during generation. Falling back to WASM...',
         });
         TextGenerationPipeline.reset();
         const [, modelCPU] = await TextGenerationPipeline.getInstance(
+          modelId,
           null,
           'wasm'
         );
@@ -358,10 +395,17 @@ async function generate({
           ...inputs,
           past_key_values: null, // reset context on fallback
           do_sample: false,
-          top_k: generationConfig.topK?.wasm || 20,
-          temperature: generationConfig.temperature?.wasm || 0.0,
-          repetition_penalty: generationConfig.repetitionPenalty || 1.05,
-          max_new_tokens: generationConfig.maxTokens?.wasm || 2048,
+          top_k: profile.topKWasm ?? generationConfig.topK?.wasm ?? 20,
+          temperature:
+            profile.temperatureWasm ??
+            generationConfig.temperature?.wasm ??
+            0.0,
+          repetition_penalty:
+            profile.repetitionPenalty ??
+            generationConfig.repetitionPenalty ??
+            1.05,
+          max_new_tokens:
+            profile.maxTokensWasm ?? generationConfig.maxTokens?.wasm ?? 2048,
           streamer,
           stopping_criteria,
           return_dict_in_generate: true,
@@ -396,7 +440,7 @@ async function generate({
 /**
  * Load the model and notify main thread of progress
  */
-async function load() {
+async function load(modelId, modelConfig = {}) {
   try {
     // Announce device and fallback strategy upfront
     const supportsWebGPU = await checkWebGPUSupport();
@@ -421,9 +465,11 @@ async function load() {
       total: 1,
     });
 
+    // Set model config before loading so getInstance can use it for dtype
+    TextGenerationPipeline._pendingModelConfig = modelConfig;
+
     // Load the pipeline with progress tracking
-    const modelId = 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'; // Default model
-    const [tokenizer, model] = await TextGenerationPipeline.getInstance(
+    const [tokenizer, model, device] = await TextGenerationPipeline.getInstance(
       modelId,
       progress => {
         // Handle initiation, progress, and completion for each file
@@ -458,7 +504,7 @@ async function load() {
     self.postMessage({
       status: 'loading',
       data:
-        TextGenerationPipeline.device === 'webgpu'
+        device === 'webgpu'
           ? 'Compiling shaders and warming up model...'
           : 'Warming up WASM backend for generation...',
     });
@@ -479,6 +525,7 @@ async function load() {
       });
       TextGenerationPipeline.reset();
       const [, modelCPU] = await TextGenerationPipeline.getInstance(
+        modelId,
         null,
         'wasm'
       );
@@ -489,10 +536,9 @@ async function load() {
       });
     }
 
-    // Model is ready for use
-    self.postMessage({ status: 'ready' });
+    // Model is ready for use — report the device
+    self.postMessage({ status: 'ready', data: device });
   } catch (error) {
-    // console.error('Model loading error:', error);
     self.postMessage({
       status: 'error',
       data: error.message || 'Failed to load model',
@@ -539,9 +585,10 @@ self.addEventListener('message', async event => {
       }
 
       case 'load': {
-        // Load the model with specified ID
+        // Load the model with specified ID and config
         const modelId = data?.modelId || 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX';
-        await load(modelId);
+        const modelConfig = data?.modelConfig || {};
+        await load(modelId, modelConfig);
         break;
       }
 

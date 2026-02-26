@@ -1,9 +1,8 @@
 // Chat configuration for Transformers.js integration
-import {
-  combineSystemPromptWithCV,
-  CVContextLevel,
-} from '../lib/utils/cvFormatter';
+import { combineSystemPromptWithCV } from '../lib/utils/cvFormatter';
 import { cvData } from './cv';
+import { getModelById } from '../lib/utils/chat';
+
 export interface ChatConfig {
   models: {
     default: string;
@@ -14,11 +13,11 @@ export interface ChatConfig {
       size?: string;
       contextWindow?: number;
       supportsThinking?: boolean;
-      cvContextLevel?: CVContextLevel;
     }>;
   };
   generation: {
-    systemPrompt: string;
+    getSystemPrompt: (modelId: string) => string;
+    defaultSystemPromptText: string;
     maxTokens: {
       default: number;
       thinking: number;
@@ -57,20 +56,7 @@ export interface ChatConfig {
   };
 }
 
-/**
- * Gets the appropriate CV context level for a given model
- */
-function getCVContextLevelForModel(_modelId: string): CVContextLevel {
-  return 'medium';
-}
-
-/**
- * Generates a system prompt for a specific model using appropriate CV context level
- */
-function getSystemPromptForModel(modelId: string): string {
-  const cvLevel = getCVContextLevelForModel(modelId);
-
-  const basePrompt = `You are "chat", Alex Nodeland's AI assistant on his personal website. You help visitors learn about Alex using only the CV data provided above.
+export const BASE_SYSTEM_PROMPT = `You are "chat", Alex Nodeland's AI assistant on his personal website. You help visitors learn about Alex using only the CV data provided above.
 
 Rules:
 - Answer only from the CV data above. Do not invent or assume information.
@@ -78,7 +64,13 @@ Rules:
 - Be concise, friendly, and specific. Reference concrete details (roles, companies, dates, skills) from the CV.
 - When asked who you are, say: "I'm chat, an AI assistant running entirely in your browser to help you learn about Alex Nodeland."`;
 
-  return combineSystemPromptWithCV(basePrompt, cvData, cvLevel);
+/**
+ * Generates a system prompt for a specific model using its token budget for CV context
+ */
+export function getSystemPromptForModel(modelId: string): string {
+  const model = getModelById(modelId);
+  const budget = model?.generationProfile?.cvTokenBudget ?? 1200;
+  return combineSystemPromptWithCV(BASE_SYSTEM_PROMPT, cvData, budget);
 }
 
 export const chatConfig: ChatConfig = {
@@ -93,12 +85,20 @@ export const chatConfig: ChatConfig = {
         size: '1.2B parameters',
         contextWindow: 32768,
         supportsThinking: true,
-        cvContextLevel: 'medium',
+      },
+      {
+        id: 'onnx-community/Qwen3-0.6B-ONNX',
+        name: 'Qwen 0.6B',
+        description: 'lightweight reasoning model, smaller and faster',
+        size: '0.6B parameters',
+        contextWindow: 32768,
+        supportsThinking: true,
       },
     ],
   },
   generation: {
-    systemPrompt: getSystemPromptForModel('LiquidAI/LFM2.5-1.2B-Thinking-ONNX'),
+    getSystemPrompt: getSystemPromptForModel,
+    defaultSystemPromptText: BASE_SYSTEM_PROMPT,
     maxTokens: {
       default: 4096,
       thinking: 4096,

@@ -23,13 +23,15 @@ describe('Phase 4A: Model Switching with Cache', () => {
   });
 
   describe('AVAILABLE_MODELS', () => {
-    it('should include LFM 1.2B model', () => {
-      expect(AVAILABLE_MODELS).toHaveLength(1);
+    it('should include both LFM and Qwen models', () => {
+      expect(AVAILABLE_MODELS).toHaveLength(2);
 
       const modelIds = AVAILABLE_MODELS.map(m => m.id);
       expect(modelIds).toContain('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
+      expect(modelIds).toContain('onnx-community/Qwen3-0.6B-ONNX');
+    });
 
-      // Verify the model has all required properties
+    it('should have correct LFM model properties', () => {
       const lfmModel = AVAILABLE_MODELS.find(
         m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
@@ -37,6 +39,19 @@ describe('Phase 4A: Model Switching with Cache', () => {
       expect(lfmModel?.name).toBe('lfm-1.2b');
       expect(lfmModel?.contextWindow).toBe(16384);
       expect(lfmModel?.device).toBe('webgpu');
+      expect(lfmModel?.alwaysThinks).toBe(true);
+      expect(lfmModel?.generationProfile?.cvTokenBudget).toBe(1200);
+    });
+
+    it('should have correct Qwen model properties', () => {
+      const qwenModel = AVAILABLE_MODELS.find(
+        m => m.id === 'onnx-community/Qwen3-0.6B-ONNX'
+      );
+      expect(qwenModel).toBeDefined();
+      expect(qwenModel?.name).toBe('qwen-0.6b');
+      expect(qwenModel?.dtype).toBe('q4f16');
+      expect(qwenModel?.alwaysThinks).toBe(false);
+      expect(qwenModel?.generationProfile?.cvTokenBudget).toBe(600);
     });
 
     it('should have valid model properties', () => {
@@ -114,6 +129,12 @@ describe('Phase 4A: Model Switching with Cache', () => {
       expect(model?.name).toBe('lfm-1.2b');
     });
 
+    it('should return correct Qwen model', () => {
+      const model = getModelById('onnx-community/Qwen3-0.6B-ONNX');
+      expect(model).toBeDefined();
+      expect(model?.name).toBe('qwen-0.6b');
+    });
+
     it('should return undefined for invalid ID', () => {
       const model = getModelById('nonexistent-model');
       expect(model).toBeUndefined();
@@ -121,19 +142,18 @@ describe('Phase 4A: Model Switching with Cache', () => {
   });
 
   describe('getRecommendedContextWindow', () => {
-    it('should return model context window for normal models', () => {
+    it('should return model context window for LFM', () => {
       const contextWindow = getRecommendedContextWindow(
         'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
       expect(contextWindow).toBe(16384);
     });
 
-    it('should reduce context for large CPU models', () => {
+    it('should return model context window for Qwen', () => {
       const contextWindow = getRecommendedContextWindow(
-        'onnx-community/Phi-3.5-mini-instruct-onnx-web'
+        'onnx-community/Qwen3-0.6B-ONNX'
       );
-      // Phi-3.5 is large (2.3GB) and prefers WebGPU, but if running on CPU would be reduced
-      expect(contextWindow).toBeLessThanOrEqual(4096);
+      expect(contextWindow).toBe(16384);
     });
 
     it('should return safe default for unknown models', () => {
@@ -186,13 +206,11 @@ describe('Phase 4B: Context Window Management', () => {
     });
 
     it('should return empty when token limit is too small for any message', () => {
-      // "Fourth message" is ~4 tokens, so limit of 1 token returns empty
       const result = createRollingContext(messages, 1);
       expect(result).toHaveLength(0);
     });
 
     it('should include messages within token limit', () => {
-      // Each message is roughly 3-4 tokens, so 20 tokens should fit ~5 messages
       const result = createRollingContext(messages, 20);
       expect(result.length).toBeGreaterThan(0);
       expect(result.length).toBeLessThanOrEqual(4);
@@ -210,7 +228,6 @@ describe('Phase 4B: Context Window Management', () => {
       const messagesWithLong = [...messages, longMessage];
 
       const result = createRollingContext(messagesWithLong, 30);
-      // Should include the long message and maybe one more
       expect(result.length).toBeLessThanOrEqual(2);
       expect(result[result.length - 1].content).toBe('a'.repeat(100));
     });
@@ -246,7 +263,7 @@ describe('Phase 4B: Context Window Management', () => {
         isValidChatMessage({
           id: 'test',
           content: 'hello',
-          role: 'invalid-role', // Invalid role
+          role: 'invalid-role',
           timestamp: new Date(),
         })
       ).toBe(false);
@@ -265,9 +282,9 @@ describe('Phase 4B: Context Window Management', () => {
     it('should filter out invalid messages from arrays', () => {
       const mixedMessages = [
         createTestMessage('Valid message'),
-        { invalid: 'message' }, // Invalid
+        { invalid: 'message' },
         createTestMessage('Another valid message'),
-        null, // Invalid
+        null,
       ];
 
       const result = validateChatMessages(mixedMessages as any);
@@ -283,7 +300,7 @@ describe('Phase 4B: Context Window Management', () => {
       expect(formatBytes(1024)).toBe('1 KB');
       expect(formatBytes(1024 * 1024)).toBe('1 MB');
       expect(formatBytes(1024 * 1024 * 1024)).toBe('1 GB');
-      expect(formatBytes(1536)).toBe('1.5 KB'); // 1.5 KB
+      expect(formatBytes(1536)).toBe('1.5 KB');
     });
   });
 });

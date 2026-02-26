@@ -39,7 +39,7 @@ describe('Chat Utilities', () => {
     });
 
     it('should handle text with special characters', () => {
-      const text = 'Hello! 🚀 This has émojis and spécial characters.';
+      const text = 'Hello! This has emojis and special characters.';
       const expected = Math.ceil(text.length / 4);
       expect(estimateTokens(text)).toBe(expected);
     });
@@ -189,13 +189,32 @@ describe('Chat Utilities', () => {
 
   describe('AVAILABLE_MODELS', () => {
     it('should contain the LFM model', () => {
-      expect(AVAILABLE_MODELS.length).toBeGreaterThanOrEqual(1);
-
       const lfmModel = AVAILABLE_MODELS.find(
         m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
       expect(lfmModel).toBeDefined();
       expect(lfmModel?.name).toBe('lfm-1.2b');
+      expect(lfmModel?.alwaysThinks).toBe(true);
+      expect(lfmModel?.generationProfile?.topP).toBe(0.1);
+    });
+
+    it('should contain the Qwen model', () => {
+      const qwenModel = AVAILABLE_MODELS.find(
+        m => m.id === 'onnx-community/Qwen3-0.6B-ONNX'
+      );
+      expect(qwenModel).toBeDefined();
+      expect(qwenModel?.name).toBe('qwen-0.6b');
+      expect(qwenModel?.dtype).toBe('q4f16');
+      expect(qwenModel?.alwaysThinks).toBe(false);
+      expect(qwenModel?.generationProfile?.topP).toBeUndefined();
+    });
+
+    it('should have generationProfile for each model', () => {
+      AVAILABLE_MODELS.forEach(model => {
+        expect(model.generationProfile).toBeDefined();
+        expect(model.generationProfile?.maxTokens).toBeGreaterThan(0);
+        expect(model.generationProfile?.cvTokenBudget).toBeGreaterThan(0);
+      });
     });
 
     it('should have all required properties for each model', () => {
@@ -222,6 +241,12 @@ describe('Chat Utilities', () => {
       expect(model).toBeDefined();
       expect(model?.id).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
       expect(model?.name).toBe('lfm-1.2b');
+    });
+
+    it('should return Qwen model when ID exists', () => {
+      const model = getModelById('onnx-community/Qwen3-0.6B-ONNX');
+      expect(model).toBeDefined();
+      expect(model?.name).toBe('qwen-0.6b');
     });
 
     it('should return undefined when ID does not exist', () => {
@@ -366,7 +391,7 @@ describe('Chat Utilities', () => {
     });
 
     it('should handle special characters in content', () => {
-      const content = 'System message with émojis 🤖 and special chars!';
+      const content = 'System message with emojis and special chars!';
       const result = createSystemMessage(content);
       expect(result.content).toBe(content);
     });

@@ -21,6 +21,11 @@ const createMockContextWithWorker = (
       name: 'lfm-1.2b',
       description: 'Real model',
     },
+    {
+      id: 'onnx-community/Qwen3-0.6B-ONNX',
+      name: 'qwen-0.6b',
+      description: 'Lightweight model',
+    },
   ],
   isLoading: false,
   setChatOpen: jest.fn(),
@@ -159,9 +164,12 @@ describe('ChatContext Real Model Integration (Step 3C)', () => {
     it('should support multiple models', () => {
       const context = createMockContextWithWorker('idle', true);
 
-      expect(context.availableModels).toHaveLength(1);
+      expect(context.availableModels).toHaveLength(2);
       expect(context.availableModels[0].id).toBe(
         'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
+      expect(context.availableModels[1].id).toBe(
+        'onnx-community/Qwen3-0.6B-ONNX'
       );
       expect(context.selectedModel).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
     });
