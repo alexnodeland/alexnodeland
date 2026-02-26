@@ -1,7 +1,6 @@
 // Chat configuration for Transformers.js integration
 import { combineSystemPromptWithCV } from '../lib/utils/cvFormatter';
 import { cvData } from './cv';
-import { getModelById } from '../lib/utils/chat';
 
 export interface ChatConfig {
   models: {
@@ -65,12 +64,11 @@ Rules:
 - When asked who you are, say: "I'm chat, an AI assistant running entirely in your browser to help you learn about Alex Nodeland."`;
 
 /**
- * Generates a system prompt for a specific model using its token budget for CV context
+ * Generates the system prompt with full CV context.
+ * The modelId parameter is kept for forward compatibility but the CV is always complete.
  */
-export function getSystemPromptForModel(modelId: string): string {
-  const model = getModelById(modelId);
-  const budget = model?.generationProfile?.cvTokenBudget ?? 1200;
-  return combineSystemPromptWithCV(BASE_SYSTEM_PROMPT, cvData, budget);
+export function getSystemPromptForModel(_modelId: string): string {
+  return combineSystemPromptWithCV(BASE_SYSTEM_PROMPT, cvData);
 }
 
 export const chatConfig: ChatConfig = {

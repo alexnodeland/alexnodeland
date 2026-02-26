@@ -49,11 +49,9 @@ describe('Chat Types', () => {
         topKWasm: 20,
         topP: 0.1,
         repetitionPenalty: 1.05,
-        cvTokenBudget: 1200,
       };
 
       expect(profile.maxTokens).toBe(4096);
-      expect(profile.cvTokenBudget).toBe(1200);
       expect(profile.topP).toBe(0.1);
     });
 
@@ -66,7 +64,6 @@ describe('Chat Types', () => {
         topK: 40,
         topKWasm: 20,
         repetitionPenalty: 1.05,
-        cvTokenBudget: 600,
       };
 
       expect(profile.topP).toBeUndefined();
@@ -107,7 +104,6 @@ describe('Chat Types', () => {
           topKWasm: 20,
           topP: 0.1,
           repetitionPenalty: 1.05,
-          cvTokenBudget: 1200,
         },
       };
 
@@ -117,7 +113,7 @@ describe('Chat Types', () => {
       expect(model.dtype).toBe('q4');
       expect(model.dtypeWasm).toBe('auto');
       expect(model.alwaysThinks).toBe(true);
-      expect(model.generationProfile?.cvTokenBudget).toBe(1200);
+      expect(model.generationProfile?.repetitionPenalty).toBe(1.05);
     });
 
     it('should allow cpu device option', () => {

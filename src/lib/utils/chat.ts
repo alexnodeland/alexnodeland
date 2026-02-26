@@ -131,7 +131,6 @@ export const AVAILABLE_MODELS: ChatModel[] = [
       topKWasm: 20,
       topP: 0.1,
       repetitionPenalty: 1.05,
-      cvTokenBudget: 1200,
     },
   },
   {
@@ -155,7 +154,6 @@ export const AVAILABLE_MODELS: ChatModel[] = [
       topK: 40,
       topKWasm: 20,
       repetitionPenalty: 1.05,
-      cvTokenBudget: 600,
     },
   },
 ];

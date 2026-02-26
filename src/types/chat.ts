@@ -25,7 +25,6 @@ export interface ModelGenerationProfile {
   topKWasm: number;
   topP?: number; // undefined means omit from generation call
   repetitionPenalty: number;
-  cvTokenBudget: number; // max tokens for CV content in system prompt
 }
 
 export interface ChatModel {

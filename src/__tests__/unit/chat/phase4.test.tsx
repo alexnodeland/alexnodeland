@@ -40,7 +40,7 @@ describe('Phase 4A: Model Switching with Cache', () => {
       expect(lfmModel?.contextWindow).toBe(16384);
       expect(lfmModel?.device).toBe('webgpu');
       expect(lfmModel?.alwaysThinks).toBe(true);
-      expect(lfmModel?.generationProfile?.cvTokenBudget).toBe(1200);
+      expect(lfmModel?.generationProfile?.repetitionPenalty).toBe(1.05);
     });
 
     it('should have correct Qwen model properties', () => {
@@ -51,7 +51,7 @@ describe('Phase 4A: Model Switching with Cache', () => {
       expect(qwenModel?.name).toBe('qwen-0.6b');
       expect(qwenModel?.dtype).toBe('q4f16');
       expect(qwenModel?.alwaysThinks).toBe(false);
-      expect(qwenModel?.generationProfile?.cvTokenBudget).toBe(600);
+      expect(qwenModel?.generationProfile?.repetitionPenalty).toBe(1.05);
     });
 
     it('should have valid model properties', () => {

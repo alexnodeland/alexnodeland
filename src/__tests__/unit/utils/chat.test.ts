@@ -213,7 +213,6 @@ describe('Chat Utilities', () => {
       AVAILABLE_MODELS.forEach(model => {
         expect(model.generationProfile).toBeDefined();
         expect(model.generationProfile?.maxTokens).toBeGreaterThan(0);
-        expect(model.generationProfile?.cvTokenBudget).toBeGreaterThan(0);
       });
     });
 
