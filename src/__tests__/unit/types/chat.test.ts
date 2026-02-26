@@ -1,8 +1,6 @@
 import {
   ChatMessage,
   ChatModel,
-  ExtendedChatContextType,
-  GenerationConfig,
   ModelGenerationProfile,
   ModelLoadingState,
   ProgressItem,
@@ -271,50 +269,6 @@ describe('Chat Types', () => {
 
       expect(response.status).toBe('error');
       expect(response.data).toBe('Model loading failed');
-    });
-  });
-
-  describe('GenerationConfig', () => {
-    it('should validate default generation config', () => {
-      const config: GenerationConfig = {};
-
-      expect(config).toBeDefined();
-    });
-
-    it('should validate full generation config', () => {
-      const config: GenerationConfig = {
-        maxTokens: 2048,
-        temperature: 0.7,
-        topK: 40,
-        doSample: true,
-      };
-
-      expect(config.maxTokens).toBe(2048);
-      expect(config.temperature).toBe(0.7);
-      expect(config.topK).toBe(40);
-      expect(config.doSample).toBe(true);
-    });
-  });
-
-  describe('ExtendedChatContextType', () => {
-    it('should include all required properties', () => {
-      const mockContext: Partial<ExtendedChatContextType> = {
-        isChatOpen: false,
-        isClosing: false,
-        messages: [],
-        selectedModel: 'test-model',
-        availableModels: [],
-        isLoading: false,
-        modelState: { status: 'idle', progress: [] },
-        webGPUSupported: null,
-        isGenerating: false,
-        generationConfig: {},
-      };
-
-      expect(mockContext.isChatOpen).toBe(false);
-      expect(mockContext.modelState?.status).toBe('idle');
-      expect(mockContext.webGPUSupported).toBeNull();
-      expect(mockContext.isGenerating).toBe(false);
     });
   });
 });

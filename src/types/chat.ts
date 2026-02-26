@@ -88,39 +88,3 @@ export interface WorkerResponse {
   numTokens?: number;
   state?: 'thinking' | 'answering';
 }
-
-// Generation parameters
-export interface GenerationConfig {
-  maxTokens?: number;
-  temperature?: number;
-  topK?: number;
-  topP?: number;
-  doSample?: boolean;
-}
-
-// Extended chat context type for future use
-export interface ExtendedChatContextType {
-  // Basic chat functionality (mirrors existing ChatContext)
-  isChatOpen: boolean;
-  isClosing: boolean;
-  messages: ChatMessage[];
-  selectedModel: string;
-  availableModels: ChatModel[];
-  isLoading: boolean;
-  setChatOpen: (isOpen: boolean) => void;
-  setClosing: (isClosing: boolean) => void;
-  addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
-  setSelectedModel: (modelId: string) => void;
-  setLoading: (loading: boolean) => void;
-  clearMessages: () => void;
-
-  // Extended functionality for LLM integration
-  modelState: ModelLoadingState;
-  webGPUSupported: boolean | null;
-  isGenerating: boolean;
-  generationConfig: GenerationConfig;
-  loadModel: (modelId: string) => Promise<void>;
-  generateResponse: (messages: ChatMessage[]) => Promise<void>;
-  interruptGeneration: () => void;
-  resetConversation: () => void;
-}

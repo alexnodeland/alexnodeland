@@ -5,36 +5,9 @@ import { cvData } from './cv';
 export interface ChatConfig {
   models: {
     default: string;
-    available: Array<{
-      id: string;
-      name: string;
-      description: string;
-      size?: string;
-      contextWindow?: number;
-      supportsThinking?: boolean;
-    }>;
   };
   generation: {
     getSystemPrompt: (modelId: string) => string;
-    defaultSystemPromptText: string;
-    maxTokens: {
-      default: number;
-      thinking: number;
-      wasm: number;
-      wasmThinking: number;
-    };
-    temperature: {
-      default: number;
-      thinking: number;
-      wasm: number;
-    };
-    topK: {
-      default: number;
-      thinking: number;
-      wasm: number;
-    };
-    topP: number;
-    repetitionPenalty: number;
   };
   interface: {
     welcomeMessage: string;
@@ -48,10 +21,6 @@ export interface ChatConfig {
   };
   behavior: {
     contextWindow: number;
-    enableWebGPU: boolean;
-    fallbackToWasm: boolean;
-    persistConversation: boolean;
-    autoLoadModel: boolean;
   };
 }
 
@@ -74,47 +43,9 @@ export function getSystemPromptForModel(_modelId: string): string {
 export const chatConfig: ChatConfig = {
   models: {
     default: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
-    available: [
-      {
-        id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
-        name: 'LFM 1.2B',
-        description:
-          'efficient reasoning model with hybrid state-space architecture',
-        size: '1.2B parameters',
-        contextWindow: 32768,
-        supportsThinking: true,
-      },
-      {
-        id: 'onnx-community/Qwen3-0.6B-ONNX',
-        name: 'Qwen 0.6B',
-        description: 'lightweight reasoning model, smaller and faster',
-        size: '0.6B parameters',
-        contextWindow: 32768,
-        supportsThinking: true,
-      },
-    ],
   },
   generation: {
     getSystemPrompt: getSystemPromptForModel,
-    defaultSystemPromptText: BASE_SYSTEM_PROMPT,
-    maxTokens: {
-      default: 4096,
-      thinking: 4096,
-      wasm: 2048,
-      wasmThinking: 2048,
-    },
-    temperature: {
-      default: 0.05,
-      thinking: 0.05,
-      wasm: 0.0,
-    },
-    topK: {
-      default: 40,
-      thinking: 40,
-      wasm: 20,
-    },
-    topP: 0.1,
-    repetitionPenalty: 1.05,
   },
   interface: {
     welcomeMessage:
@@ -133,9 +64,5 @@ export const chatConfig: ChatConfig = {
   },
   behavior: {
     contextWindow: 16384,
-    enableWebGPU: true,
-    fallbackToWasm: true,
-    persistConversation: true,
-    autoLoadModel: false,
   },
 };

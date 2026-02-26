@@ -183,7 +183,6 @@ async function generate({
   messages,
   reasonEnabled = false,
   systemPrompt = null,
-  generationConfig = {},
   modelConfig = {},
 }) {
   try {
@@ -353,34 +352,25 @@ async function generate({
     // Tell main thread we're starting generation
     self.postMessage({ status: 'start' });
 
-    // Build generation params from the model's profile, falling back to generationConfig
+    // Build generation params from the model's profile
     const profile = modelConfig.generationProfile || {};
     const isWasm = device === 'wasm';
 
     const genParams = {
       do_sample: true,
-      top_k: isWasm
-        ? (profile.topKWasm ?? generationConfig.topK?.wasm ?? 20)
-        : (profile.topK ?? generationConfig.topK?.default ?? 40),
+      top_k: isWasm ? (profile.topKWasm ?? 20) : (profile.topK ?? 40),
       temperature: isWasm
-        ? (profile.temperatureWasm ?? generationConfig.temperature?.wasm ?? 0.0)
-        : (profile.temperature ??
-          generationConfig.temperature?.default ??
-          0.05),
-      repetition_penalty:
-        profile.repetitionPenalty ?? generationConfig.repetitionPenalty ?? 1.05,
+        ? (profile.temperatureWasm ?? 0.0)
+        : (profile.temperature ?? 0.05),
+      repetition_penalty: profile.repetitionPenalty ?? 1.05,
       max_new_tokens: isWasm
-        ? (profile.maxTokensWasm ??
-          generationConfig.maxTokens?.wasmThinking ??
-          2048)
-        : (profile.maxTokens ?? generationConfig.maxTokens?.default ?? 4096),
+        ? (profile.maxTokensWasm ?? 2048)
+        : (profile.maxTokens ?? 4096),
     };
 
     // Only include top_p if the model uses it (e.g., LFM yes, Qwen no)
     if (profile.topP !== undefined) {
       genParams.top_p = profile.topP;
-    } else if (generationConfig.topP !== undefined) {
-      genParams.top_p = generationConfig.topP;
     }
 
     // Generate response with the model
@@ -411,17 +401,10 @@ async function generate({
           ...inputs,
           past_key_values: null, // reset context on fallback
           do_sample: false,
-          top_k: profile.topKWasm ?? generationConfig.topK?.wasm ?? 20,
-          temperature:
-            profile.temperatureWasm ??
-            generationConfig.temperature?.wasm ??
-            0.0,
-          repetition_penalty:
-            profile.repetitionPenalty ??
-            generationConfig.repetitionPenalty ??
-            1.05,
-          max_new_tokens:
-            profile.maxTokensWasm ?? generationConfig.maxTokens?.wasm ?? 2048,
+          top_k: profile.topKWasm ?? 20,
+          temperature: profile.temperatureWasm ?? 0.0,
+          repetition_penalty: profile.repetitionPenalty ?? 1.05,
+          max_new_tokens: profile.maxTokensWasm ?? 2048,
           streamer,
           stopping_criteria,
           return_dict_in_generate: true,

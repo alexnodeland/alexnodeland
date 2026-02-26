@@ -293,13 +293,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           modelId: selectedModel,
           reasonEnabled: effectiveReasonEnabled,
           systemPrompt,
-          generationConfig: {
-            maxTokens: chatConfig.generation.maxTokens,
-            temperature: chatConfig.generation.temperature,
-            topK: chatConfig.generation.topK,
-            topP: chatConfig.generation.topP,
-            repetitionPenalty: chatConfig.generation.repetitionPenalty,
-          },
           modelConfig: modelDef
             ? {
                 generationProfile: modelDef.generationProfile,
