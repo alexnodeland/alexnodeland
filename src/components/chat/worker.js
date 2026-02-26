@@ -89,7 +89,7 @@ class TextGenerationPipeline {
     // Attempt preferred device first, then gracefully fall back to CPU
     try {
       model = await AutoModelForCausalLM.from_pretrained(modelId, {
-        dtype: supportsWebGPU ? 'q4f16' : 'auto',
+        dtype: supportsWebGPU ? 'q4' : 'auto',
         device: supportsWebGPU ? 'webgpu' : 'wasm',
         progress_callback,
       });
@@ -170,7 +170,8 @@ async function generate({
 
     // Retrieve the text-generation pipeline
     const modelId =
-      TextGenerationPipeline.currentModelId || 'onnx-community/Qwen3-0.6B-ONNX';
+      TextGenerationPipeline.currentModelId ||
+      'LiquidAI/LFM2.5-1.2B-Thinking-ONNX';
     const [tokenizer, model] =
       await TextGenerationPipeline.getInstance(modelId);
 
@@ -219,9 +220,6 @@ async function generate({
       inputs = tokenizer.apply_chat_template(processedMessages, {
         add_generation_prompt: true,
         return_dict: true,
-        enable_thinking: reasonEnabled,
-        // Ensure we don't add special tokens twice
-        add_special_tokens: false,
       });
 
       if (typeof self !== 'undefined' && self.CHAT_DEBUG) {
@@ -236,7 +234,6 @@ async function generate({
         inputs = tokenizer.apply_chat_template(processedMessages, {
           add_generation_prompt: true,
           return_dict: true,
-          add_special_tokens: false,
         });
         // Chat template applied without thinking mode
       } catch (fallbackError) {
@@ -324,30 +321,23 @@ async function generate({
         past_key_values: past_key_values_cache,
 
         // Generation parameters from config with fallbacks for device optimization
-        do_sample: TextGenerationPipeline.device !== 'wasm',
+        do_sample: true,
         top_k:
           TextGenerationPipeline.device === 'wasm'
             ? generationConfig.topK?.wasm || 20
-            : reasonEnabled
-              ? generationConfig.topK?.thinking || 20
-              : generationConfig.topK?.default || 40,
+            : generationConfig.topK?.default || 40,
+        top_p: generationConfig.topP || 0.1,
         temperature:
           TextGenerationPipeline.device === 'wasm'
             ? generationConfig.temperature?.wasm || 0.0
-            : reasonEnabled
-              ? generationConfig.temperature?.thinking || 0.6
-              : generationConfig.temperature?.default || 0.7,
+            : generationConfig.temperature?.default || 0.05,
         repetition_penalty: generationConfig.repetitionPenalty || 1.05,
 
         // Use config-based token limits with device optimization
         max_new_tokens:
           TextGenerationPipeline.device === 'wasm'
-            ? reasonEnabled
-              ? generationConfig.maxTokens?.wasmThinking || 192
-              : generationConfig.maxTokens?.wasm || 96
-            : reasonEnabled
-              ? generationConfig.maxTokens?.thinking || 1024
-              : generationConfig.maxTokens?.default || 512,
+            ? generationConfig.maxTokens?.wasmThinking || 2048
+            : generationConfig.maxTokens?.default || 4096,
         streamer,
         stopping_criteria,
         return_dict_in_generate: true,
@@ -371,9 +361,7 @@ async function generate({
           top_k: generationConfig.topK?.wasm || 20,
           temperature: generationConfig.temperature?.wasm || 0.0,
           repetition_penalty: generationConfig.repetitionPenalty || 1.05,
-          max_new_tokens: reasonEnabled
-            ? generationConfig.maxTokens?.wasmThinking || 192
-            : generationConfig.maxTokens?.wasm || 96,
+          max_new_tokens: generationConfig.maxTokens?.wasm || 2048,
           streamer,
           stopping_criteria,
           return_dict_in_generate: true,
@@ -434,7 +422,7 @@ async function load() {
     });
 
     // Load the pipeline with progress tracking
-    const modelId = 'onnx-community/Qwen3-0.6B-ONNX'; // Default model
+    const modelId = 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'; // Default model
     const [tokenizer, model] = await TextGenerationPipeline.getInstance(
       modelId,
       progress => {
@@ -552,7 +540,7 @@ self.addEventListener('message', async event => {
 
       case 'load': {
         // Load the model with specified ID
-        const modelId = data?.modelId || 'onnx-community/Qwen3-0.6B-ONNX';
+        const modelId = data?.modelId || 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX';
         await load(modelId);
         break;
       }

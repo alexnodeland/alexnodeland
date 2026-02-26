@@ -188,14 +188,14 @@ describe('Chat Utilities', () => {
   });
 
   describe('AVAILABLE_MODELS', () => {
-    it('should contain the Qwen3 model', () => {
+    it('should contain the LFM model', () => {
       expect(AVAILABLE_MODELS.length).toBeGreaterThanOrEqual(1);
 
-      const qwenModel = AVAILABLE_MODELS.find(
-        m => m.id === 'onnx-community/Qwen3-0.6B-ONNX'
+      const lfmModel = AVAILABLE_MODELS.find(
+        m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
-      expect(qwenModel).toBeDefined();
-      expect(qwenModel?.name).toBe('qwen3-0.6b');
+      expect(lfmModel).toBeDefined();
+      expect(lfmModel?.name).toBe('lfm-1.2b');
     });
 
     it('should have all required properties for each model', () => {
@@ -218,10 +218,10 @@ describe('Chat Utilities', () => {
 
   describe('getModelById', () => {
     it('should return model when ID exists', () => {
-      const model = getModelById('onnx-community/Qwen3-0.6B-ONNX');
+      const model = getModelById('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
       expect(model).toBeDefined();
-      expect(model?.id).toBe('onnx-community/Qwen3-0.6B-ONNX');
-      expect(model?.name).toBe('qwen3-0.6b');
+      expect(model?.id).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
+      expect(model?.name).toBe('lfm-1.2b');
     });
 
     it('should return undefined when ID does not exist', () => {

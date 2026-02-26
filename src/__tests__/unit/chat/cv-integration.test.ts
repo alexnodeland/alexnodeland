@@ -228,26 +228,21 @@ describe('CV Integration in Chat', () => {
     it('should include refusal instructions in system prompt', () => {
       const systemPrompt = chatConfig.generation.systemPrompt;
 
-      expect(systemPrompt).toContain('CRITICAL INSTRUCTIONS');
-      expect(systemPrompt).toContain(
-        'You ONLY have access to information provided in the CV data above'
-      );
-      expect(systemPrompt).toContain(
-        "I don't have that information in Alex's CV"
-      );
-      expect(systemPrompt).toContain('Do NOT make up or infer information');
+      expect(systemPrompt).toContain('Rules:');
+      expect(systemPrompt).toContain('Answer only from the CV data above');
+      expect(systemPrompt).toContain("not covered in Alex's CV");
+      expect(systemPrompt).toContain('Do not invent or assume information');
     });
 
-    it('should use concise CV level for small models', () => {
+    it('should use medium CV level for the default model', () => {
       const systemPrompt = chatConfig.generation.systemPrompt;
 
-      // The default model is set to use concise level
-      // Verify the CV context is shorter (concise version)
+      // The default model uses medium CV context level
       expect(systemPrompt).toContain('<alexs_cv>');
       expect(systemPrompt).toContain(cvData.personal.name);
       expect(systemPrompt).toContain(cvData.experience[0].title);
 
-      // Concise version should not include personal summary or email
+      // Medium version should not include personal summary or email
       expect(systemPrompt).not.toContain(cvData.personal.summary);
       expect(systemPrompt).not.toContain(cvData.personal.email);
     });
@@ -257,13 +252,10 @@ describe('CV Integration in Chat', () => {
     it('should configure models with appropriate CV context levels', () => {
       const models = chatConfig.models.available;
 
-      // Small models should use concise
-      const smallModels = models.filter(
-        m => m.id.includes('0.5B') || m.id.includes('0.6B')
-      );
-      smallModels.forEach(model => {
-        expect(model.cvContextLevel).toBe('concise');
-      });
+      // LFM 1.2B model should use medium context level
+      const lfmModel = models.find(m => m.id.includes('LFM2.5-1.2B-Thinking'));
+      expect(lfmModel).toBeDefined();
+      expect(lfmModel?.cvContextLevel).toBe('medium');
     });
 
     it('should provide fallback CV context levels', () => {

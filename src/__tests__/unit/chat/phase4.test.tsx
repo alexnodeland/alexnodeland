@@ -23,20 +23,20 @@ describe('Phase 4A: Model Switching with Cache', () => {
   });
 
   describe('AVAILABLE_MODELS', () => {
-    it('should include QWEN 0.6B model', () => {
+    it('should include LFM 1.2B model', () => {
       expect(AVAILABLE_MODELS).toHaveLength(1);
 
       const modelIds = AVAILABLE_MODELS.map(m => m.id);
-      expect(modelIds).toContain('onnx-community/Qwen3-0.6B-ONNX');
+      expect(modelIds).toContain('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
 
       // Verify the model has all required properties
-      const qwenModel = AVAILABLE_MODELS.find(
-        m => m.id === 'onnx-community/Qwen3-0.6B-ONNX'
+      const lfmModel = AVAILABLE_MODELS.find(
+        m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
-      expect(qwenModel).toBeDefined();
-      expect(qwenModel?.name).toBe('qwen3-0.6b');
-      expect(qwenModel?.contextWindow).toBe(4096);
-      expect(qwenModel?.device).toBe('webgpu');
+      expect(lfmModel).toBeDefined();
+      expect(lfmModel?.name).toBe('lfm-1.2b');
+      expect(lfmModel?.contextWindow).toBe(16384);
+      expect(lfmModel?.device).toBe('webgpu');
     });
 
     it('should have valid model properties', () => {
@@ -109,9 +109,9 @@ describe('Phase 4A: Model Switching with Cache', () => {
 
   describe('getModelById', () => {
     it('should return correct model for valid ID', () => {
-      const model = getModelById('onnx-community/Qwen3-0.6B-ONNX');
+      const model = getModelById('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
       expect(model).toBeDefined();
-      expect(model?.name).toBe('qwen3-0.6b');
+      expect(model?.name).toBe('lfm-1.2b');
     });
 
     it('should return undefined for invalid ID', () => {
@@ -123,9 +123,9 @@ describe('Phase 4A: Model Switching with Cache', () => {
   describe('getRecommendedContextWindow', () => {
     it('should return model context window for normal models', () => {
       const contextWindow = getRecommendedContextWindow(
-        'onnx-community/Qwen3-0.6B-ONNX'
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
-      expect(contextWindow).toBe(4096);
+      expect(contextWindow).toBe(16384);
     });
 
     it('should reduce context for large CPU models', () => {
@@ -294,22 +294,22 @@ describe('Integration Tests', () => {
     expect(ModelCache.getCachedModels()).toHaveLength(0);
 
     // Set a model as loading
-    ModelCache.setModelLoading('onnx-community/Qwen3-0.6B-ONNX', 'webgpu');
-    expect(ModelCache.isModelCached('onnx-community/Qwen3-0.6B-ONNX')).toBe(
+    ModelCache.setModelLoading('LiquidAI/LFM2.5-1.2B-Thinking-ONNX', 'webgpu');
+    expect(ModelCache.isModelCached('LiquidAI/LFM2.5-1.2B-Thinking-ONNX')).toBe(
       false
     );
 
     // Mark as ready
-    ModelCache.setModelReady('onnx-community/Qwen3-0.6B-ONNX', 'webgpu');
-    expect(ModelCache.isModelCached('onnx-community/Qwen3-0.6B-ONNX')).toBe(
+    ModelCache.setModelReady('LiquidAI/LFM2.5-1.2B-Thinking-ONNX', 'webgpu');
+    expect(ModelCache.isModelCached('LiquidAI/LFM2.5-1.2B-Thinking-ONNX')).toBe(
       true
     );
 
     // Get recommended context for this model
     const contextWindow = getRecommendedContextWindow(
-      'onnx-community/Qwen3-0.6B-ONNX'
+      'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
     );
-    expect(contextWindow).toBe(4096);
+    expect(contextWindow).toBe(16384);
 
     // Create some test messages and apply rolling context
     const messages = Array.from(

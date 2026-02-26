@@ -52,19 +52,19 @@ describe('Chat Types', () => {
 
     it('should allow extended properties', () => {
       const model: ChatModel = {
-        id: 'onnx-community/Qwen3-0.6B-ONNX',
-        name: 'qwen3-0.6b',
-        description: 'fast reasoning model',
-        size: '~600MB',
-        contextWindow: 4096,
+        id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+        name: 'lfm-1.2b',
+        description: 'efficient reasoning model',
+        size: '~1.2GB',
+        contextWindow: 16384,
         device: 'webgpu',
-        dtype: 'q4f16',
+        dtype: 'q4',
       };
 
-      expect(model.size).toBe('~600MB');
-      expect(model.contextWindow).toBe(4096);
+      expect(model.size).toBe('~1.2GB');
+      expect(model.contextWindow).toBe(16384);
       expect(model.device).toBe('webgpu');
-      expect(model.dtype).toBe('q4f16');
+      expect(model.dtype).toBe('q4');
     });
 
     it('should allow cpu device option', () => {
@@ -163,11 +163,11 @@ describe('Chat Types', () => {
     it('should validate load request with data', () => {
       const request: WorkerRequest = {
         type: 'load',
-        data: { modelId: 'onnx-community/Qwen3-0.6B-ONNX' },
+        data: { modelId: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX' },
       };
 
       expect(request.type).toBe('load');
-      expect(request.data.modelId).toBe('onnx-community/Qwen3-0.6B-ONNX');
+      expect(request.data.modelId).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
     });
 
     it('should validate generate request', () => {

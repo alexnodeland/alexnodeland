@@ -67,7 +67,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   // New non-breaking state additions
   const [modelState, setModelState] = useState<ModelLoadingState>({
-    status: 'idle', // Start as idle since we need to load QWEN model
+    status: 'idle', // Start as idle since we need to load LFM model
     progress: [],
   });
   const [webGPUSupported, setWebGPUSupported] = useState<boolean | null>(null);
@@ -254,6 +254,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             maxTokens: chatConfig.generation.maxTokens,
             temperature: chatConfig.generation.temperature,
             topK: chatConfig.generation.topK,
+            topP: chatConfig.generation.topP,
             repetitionPenalty: chatConfig.generation.repetitionPenalty,
           },
         },
@@ -613,7 +614,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       // Checking WebGPU support...
       workerRef.current.postMessage({ type: 'check' });
 
-      // Don't auto-load any model - only load when user selects Qwen
+      // Don't auto-load model - only load when user clicks download
       // Worker initialized, modelState should be idle
 
       return () => {

@@ -35,6 +35,7 @@ export interface ChatConfig {
       thinking: number;
       wasm: number;
     };
+    topP: number;
     repetitionPenalty: number;
   };
   interface: {
@@ -59,37 +60,8 @@ export interface ChatConfig {
 /**
  * Gets the appropriate CV context level for a given model
  */
-function getCVContextLevelForModel(modelId: string): CVContextLevel {
-  // Define available models inline to avoid circular reference
-  const availableModels = [
-    {
-      id: 'onnx-community/Qwen3-0.6B-ONNX',
-      cvContextLevel: 'concise' as CVContextLevel,
-    },
-    {
-      id: 'onnx-community/Qwen2.5-0.5B-Instruct',
-      cvContextLevel: 'concise' as CVContextLevel,
-    },
-  ];
-
-  // First, try to find the model in the available models
-  const model = availableModels.find(m => m.id === modelId);
-  if (model?.cvContextLevel) {
-    return model.cvContextLevel;
-  }
-
-  // Fallback based on model ID patterns
-  if (modelId.includes('0.5B') || modelId.includes('0.6B')) {
-    return 'concise';
-  } else if (
-    modelId.includes('1B') ||
-    modelId.includes('1.5B') ||
-    modelId.includes('3B')
-  ) {
-    return 'medium';
-  } else {
-    return 'full';
-  }
+function getCVContextLevelForModel(_modelId: string): CVContextLevel {
+  return 'medium';
 }
 
 /**
@@ -98,70 +70,52 @@ function getCVContextLevelForModel(modelId: string): CVContextLevel {
 function getSystemPromptForModel(modelId: string): string {
   const cvLevel = getCVContextLevelForModel(modelId);
 
-  const basePrompt = `You are "chat", Alex Nodeland's AI assistant designed to help visitors to his personal website get to know him better.
+  const basePrompt = `You are "chat", Alex Nodeland's AI assistant on his personal website. You help visitors learn about Alex using only the CV data provided above.
 
-CRITICAL INSTRUCTIONS:
-- You ONLY have access to information provided in the CV data above
-- If asked about information NOT in the CV, respond: "I don't have that information in Alex's CV. Please ask about his professional experience, skills, education, or achievements that are documented above."
-- Do NOT make up or infer information beyond what's explicitly stated in the CV
-- Be accurate and concise in your responses
-
-Key characteristics:
-- Help visitors understand Alex's background, experience, and expertise based ONLY on the CV information provided
-- Provide insights into his technical skills and career journey as documented
-- Answer questions about his work in AI engineering, technical leadership, and startups using only CV data
-- Reference specific experiences and achievements from the CV when relevant
-- Be knowledgeable about his documented projects, roles, and technical capabilities
-
-If someone asks who you are or what this is, say: "I'm chat, an AI assistant running entirely in your browser designed to help you get to know Alex Nodeland."
-
-Use ONLY the CV information above to provide concise, accurate responses about Alex's professional background, skills, and achievements. Do not speculate or provide information not explicitly contained in the CV.`;
+Rules:
+- Answer only from the CV data above. Do not invent or assume information.
+- If the answer is not in the CV, say: "That's not covered in Alex's CV. Try asking about his experience, skills, or education."
+- Be concise, friendly, and specific. Reference concrete details (roles, companies, dates, skills) from the CV.
+- When asked who you are, say: "I'm chat, an AI assistant running entirely in your browser to help you learn about Alex Nodeland."`;
 
   return combineSystemPromptWithCV(basePrompt, cvData, cvLevel);
 }
 
 export const chatConfig: ChatConfig = {
   models: {
-    default: 'onnx-community/Qwen3-0.6B-ONNX',
+    default: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
     available: [
       {
-        id: 'onnx-community/Qwen3-0.6B-ONNX',
-        name: 'Qwen 3 0.6B',
-        description: 'fast, lightweight model perfect for quick responses',
-        size: '0.6b parameters',
-        contextWindow: 16384,
+        id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+        name: 'LFM 1.2B',
+        description:
+          'efficient reasoning model with hybrid state-space architecture',
+        size: '1.2B parameters',
+        contextWindow: 32768,
         supportsThinking: true,
-        cvContextLevel: 'concise',
-      },
-      {
-        id: 'onnx-community/Qwen2.5-0.5B-Instruct',
-        name: 'Qwen 2.5 0.5B',
-        description: 'Optimized instruction-following model',
-        size: '0.5B parameters',
-        contextWindow: 2048,
-        supportsThinking: false,
-        cvContextLevel: 'concise',
+        cvContextLevel: 'medium',
       },
     ],
   },
   generation: {
-    systemPrompt: getSystemPromptForModel('onnx-community/Qwen3-0.6B-ONNX'),
+    systemPrompt: getSystemPromptForModel('LiquidAI/LFM2.5-1.2B-Thinking-ONNX'),
     maxTokens: {
-      default: 2048,
+      default: 4096,
       thinking: 4096,
       wasm: 2048,
-      wasmThinking: 4096,
+      wasmThinking: 2048,
     },
     temperature: {
-      default: 0.3,
-      thinking: 0.3,
-      wasm: 0.3,
+      default: 0.05,
+      thinking: 0.05,
+      wasm: 0.0,
     },
     topK: {
       default: 40,
       thinking: 40,
-      wasm: 40,
+      wasm: 20,
     },
+    topP: 0.1,
     repetitionPenalty: 1.05,
   },
   interface: {

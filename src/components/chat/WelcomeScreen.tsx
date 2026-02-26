@@ -15,7 +15,7 @@ const WelcomeScreen: React.FC = () => {
 
   const currentModel = availableModels.find(m => m.id === selectedModel);
   const modelName = currentModel?.name || 'AI Model';
-  const modelSize = currentModel?.size || '~600MB';
+  const modelSize = currentModel?.size || '~1.2GB';
   const modelDescription = currentModel?.description || 'A local AI model';
 
   const handleStartDownload = () => {

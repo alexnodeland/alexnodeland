@@ -107,33 +107,22 @@ export async function detectWebGPUSupport(): Promise<boolean> {
  * Available AI models for the chat interface
  * This will be the source of truth for model selection
  *
- * Currently focused on QWEN 0.6B for optimal performance and user experience.
+ * Currently using LiquidAI LFM 1.2B for optimal quality and in-browser reasoning.
  * Architecture is designed to easily support additional models in the future.
  */
 export const AVAILABLE_MODELS: ChatModel[] = [
   {
-    id: 'onnx-community/Qwen3-0.6B-ONNX',
-    name: 'qwen3-0.6b',
-    description: 'fast reasoning model optimized for in-browser inference',
-    size: '~600MB',
-    contextWindow: 4096,
+    id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+    name: 'lfm-1.2b',
+    description:
+      'efficient reasoning model with hybrid state-space architecture',
+    size: '~1.2GB',
+    contextWindow: 16384,
     device: 'webgpu',
-    dtype: 'q4f16',
+    dtype: 'q4',
     fallbackDevice: 'wasm',
     supportsThinking: true,
   },
-  // Additional models can be easily added here in the future
-  // Example:
-  // {
-  //   id: 'onnx-community/NewModel-ONNX',
-  //   name: 'New Model Name',
-  //   description: 'Model description',
-  //   size: '~XMB',
-  //   contextWindow: XXXX,
-  //   device: 'webgpu',
-  //   dtype: 'q4f16',
-  //   supportsThinking: true,
-  // },
 ];
 
 /**

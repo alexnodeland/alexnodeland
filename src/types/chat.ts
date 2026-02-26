@@ -80,6 +80,7 @@ export interface GenerationConfig {
   maxTokens?: number;
   temperature?: number;
   topK?: number;
+  topP?: number;
   doSample?: boolean;
 }
 

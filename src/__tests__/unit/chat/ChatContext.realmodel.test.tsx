@@ -14,11 +14,11 @@ const createMockContextWithWorker = (
   messages: [
     { id: '1', content: 'Hello', role: 'user', timestamp: new Date() },
   ],
-  selectedModel: 'onnx-community/Qwen3-0.6B-ONNX',
+  selectedModel: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
   availableModels: [
     {
-      id: 'onnx-community/Qwen3-0.6B-ONNX',
-      name: 'qwen3-0.6b',
+      id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+      name: 'lfm-1.2b',
       description: 'Real model',
     },
   ],
@@ -161,9 +161,9 @@ describe('ChatContext Real Model Integration (Step 3C)', () => {
 
       expect(context.availableModels).toHaveLength(1);
       expect(context.availableModels[0].id).toBe(
-        'onnx-community/Qwen3-0.6B-ONNX'
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
-      expect(context.selectedModel).toBe('onnx-community/Qwen3-0.6B-ONNX');
+      expect(context.selectedModel).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
     });
 
     it('should handle model switching', () => {
