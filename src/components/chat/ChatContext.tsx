@@ -85,6 +85,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   });
   const [workerInitKey, setWorkerInitKey] = useState(0); // Force worker reinitialization
   const workerRef = useRef<Worker | null>(null);
+  const generationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const isGeneratingRef = useRef(false); // Synchronous guard for concurrent generation
 
   // Feature flag for worker connection - controllable via environment
   // Set GATSBY_CHAT_WORKER=true to enable real model
@@ -244,6 +248,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       return;
     }
 
+    // Prevent concurrent generations
+    if (isGeneratingRef.current) {
+      console.warn('Cannot generate: already generating');
+      return;
+    }
+    isGeneratingRef.current = true;
+
     try {
       // Apply rolling context window management using config
       const contextWindow = chatConfig.behavior.contextWindow;
@@ -296,8 +307,36 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         },
       } as any;
       workerRef.current.postMessage(req);
+
+      // Generation timeout — if worker doesn't respond within 30s, interrupt
+      if (generationTimeoutRef.current) {
+        clearTimeout(generationTimeoutRef.current);
+      }
+      generationTimeoutRef.current = setTimeout(() => {
+        console.warn('[chat] Generation timed out after 30s');
+        isGeneratingRef.current = false;
+        if (workerRef.current) {
+          workerRef.current.postMessage({ type: 'interrupt' });
+        }
+        setIsGenerating(false);
+        setIsLoading(false);
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage && lastMessage.role === 'assistant') {
+            newMessages[newMessages.length - 1] = {
+              ...lastMessage,
+              content:
+                lastMessage.content ||
+                'Generation timed out. Please try again.',
+            };
+          }
+          return newMessages;
+        });
+      }, 30000);
     } catch (error) {
       console.error('Worker generation failed:', error);
+      isGeneratingRef.current = false;
       setIsGenerating(false);
       setIsLoading(false);
       addMessage({
@@ -376,79 +415,26 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   // Helper function to create worker (environment-safe approach)
   const createWorker = () => {
-    if (typeof Worker === 'undefined') return null;
+    if (typeof Worker === 'undefined' || typeof window === 'undefined')
+      return null;
 
     try {
-      if (typeof window !== 'undefined') {
-        // Detect path prefix from the initial app base URL (navigation-independent)
-        const baseUrl = window.location.origin;
-        let pathPrefix = '';
+      // Detect subdirectory prefix for GitHub Pages deployments
+      const pathPrefix = window.location.href.includes('/alexnodeland/')
+        ? '/alexnodeland'
+        : '';
+      const workerUrl = `${window.location.origin}${pathPrefix}/worker.js`;
 
-        // For GitHub Pages deployment, check if we're in a subdirectory
-        // Use a more reliable detection method based on the initial load location
-        const href = window.location.href;
-        if (href.includes('/alexnodeland/')) {
-          pathPrefix = '/alexnodeland';
-        }
-
-        // Debug logging
-        if ((window as any).CHAT_DEBUG) {
-          // eslint-disable-next-line no-console
-          console.log('[chat] Base URL:', baseUrl);
-          // eslint-disable-next-line no-console
-          console.log('[chat] Detected pathPrefix:', pathPrefix || '(none)');
-        }
-
-        // Try multiple strategies for worker URL resolution (navigation-independent)
-        const workerPaths = [
-          `${baseUrl}${pathPrefix}/worker.js`, // Full absolute URL with prefix
-          `${pathPrefix}/worker.js`, // Relative path with prefix
-          '/worker.js', // Root fallback
-          `${baseUrl}/worker.js`, // Absolute root fallback
-        ];
-
-        if ((window as any).CHAT_DEBUG) {
-          // eslint-disable-next-line no-console
-          console.log('[chat] Will try worker URLs:', workerPaths);
-        }
-
-        for (const workerUrl of workerPaths) {
-          try {
-            if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-              // eslint-disable-next-line no-console
-              console.log('[chat] Attempting to load worker from:', workerUrl);
-            }
-            const worker = new Worker(workerUrl, { type: 'module' });
-            if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-              // eslint-disable-next-line no-console
-              console.log(
-                '[chat] Worker created successfully from:',
-                workerUrl
-              );
-            }
-            return worker;
-          } catch (urlErr) {
-            if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-              // eslint-disable-next-line no-console
-              console.warn(
-                '[chat] Worker creation failed for URL:',
-                workerUrl,
-                urlErr
-              );
-            }
-            continue; // Try next URL
-          }
-        }
-      }
-      return null;
-    } catch (err) {
-      // This is expected in test environment
-      if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
+      if ((window as any).CHAT_DEBUG) {
         // eslint-disable-next-line no-console
-        console.warn(
-          '[chat] Worker creation failed (expected in test environment):',
-          err
-        );
+        console.log('[chat] Loading worker from:', workerUrl);
+      }
+
+      return new Worker(workerUrl, { type: 'module' });
+    } catch (err) {
+      if ((window as any).CHAT_DEBUG) {
+        // eslint-disable-next-line no-console
+        console.warn('[chat] Worker creation failed:', err);
       }
       return null;
     }
@@ -556,6 +542,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             });
             break;
           case 'complete': {
+            if (generationTimeoutRef.current) {
+              clearTimeout(generationTimeoutRef.current);
+              generationTimeoutRef.current = null;
+            }
+            isGeneratingRef.current = false;
             setIsGenerating(false);
             setIsLoading(false);
             const finalText = Array.isArray((data as any).output)
@@ -595,12 +586,21 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             break;
           }
           case 'error': {
+            if (generationTimeoutRef.current) {
+              clearTimeout(generationTimeoutRef.current);
+              generationTimeoutRef.current = null;
+            }
+            const wasGenerating = isGeneratingRef.current;
+            isGeneratingRef.current = false;
             const errMsg = String(data.data ?? 'Worker error');
-            setModelState((prev: ModelLoadingState) => ({
-              ...prev,
-              status: 'error',
-              error: errMsg,
-            }));
+            // Only set model to 'error' for load failures, not generation failures.
+            // Generation errors leave the model 'ready' so users can retry.
+            setModelState((prev: ModelLoadingState) => {
+              if (prev.status === 'ready' || wasGenerating) {
+                return prev; // Keep 'ready' — model is still loaded
+              }
+              return { ...prev, status: 'error', error: errMsg };
+            });
             setIsGenerating(false);
             setIsLoading(false);
             // Surface an assistant message so users see feedback even on failure
@@ -628,6 +628,16 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
               }
               return newMessages;
             });
+            break;
+          }
+          case 'interrupted': {
+            if (generationTimeoutRef.current) {
+              clearTimeout(generationTimeoutRef.current);
+              generationTimeoutRef.current = null;
+            }
+            isGeneratingRef.current = false;
+            setIsGenerating(false);
+            setIsLoading(false);
             break;
           }
         }

@@ -76,6 +76,22 @@ class TextGenerationPipeline {
       return [cached.tokenizer, cached.model, cached.device];
     }
 
+    // Evict previous model to free memory (single-model policy)
+    if (this.modelCache.size > 0) {
+      for (const [, entry] of this.modelCache) {
+        try {
+          if (entry.model && typeof entry.model.dispose === 'function') {
+            entry.model.dispose();
+          }
+        } catch (e) {
+          // Disposal may fail, continue
+        }
+      }
+      this.modelCache.clear();
+      // KV cache belongs to the evicted model — clear it
+      past_key_values_cache = null;
+    }
+
     // Load new model
     const tokenizer = AutoTokenizer.from_pretrained(modelId, {
       progress_callback,

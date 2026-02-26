@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { chatConfig } from '../../config/chat';
-import { createRollingContext } from '../../lib/utils/chat';
 import { useChat } from './ChatContext';
 
 interface ChatInputProps {
@@ -79,7 +78,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
       role: 'user',
     });
 
-    // Generate response - model is guaranteed to be ready
+    // Generate response — pass all messages including the new one.
+    // Rolling context is applied once in generateResponse with the proper config window.
     if (generateResponse) {
       const allMessages = [
         ...messages,
@@ -90,8 +90,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           timestamp: new Date(),
         },
       ];
-      const contextMessages = createRollingContext(allMessages, 2048);
-      generateResponse(contextMessages);
+      generateResponse(allMessages);
     }
   };
 

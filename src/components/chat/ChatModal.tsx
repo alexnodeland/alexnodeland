@@ -39,6 +39,7 @@ const ChatModal: React.FC = () => {
     return false;
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track if we just opened the panel to trigger animation only on actual open transition
   const [justOpened, setJustOpened] = useState(false);
@@ -75,18 +76,23 @@ const ChatModal: React.FC = () => {
     }
   }, [isChatPanelOpen]);
 
-  const scrollToBottom = () => {
-    if (
-      messagesEndRef.current &&
-      typeof messagesEndRef.current.scrollIntoView === 'function'
-    ) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = useCallback(() => {
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
     }
-  };
+    scrollTimeoutRef.current = setTimeout(() => {
+      if (
+        messagesEndRef.current &&
+        typeof messagesEndRef.current.scrollIntoView === 'function'
+      ) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 50);
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [isChatPanelOpen, messages]);
+  }, [isChatPanelOpen, messages, scrollToBottom]);
 
   if (!isChatPanelOpen) return null;
 
