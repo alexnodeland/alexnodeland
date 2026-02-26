@@ -2,7 +2,7 @@ import { CVData } from '../../config/cv';
 
 /**
  * Formats complete CV data with XML section tags for structured model consumption.
- * Always includes the full CV — at ~1,053 tokens it fits easily in any model's context window.
+ * Includes all available data — the full CV fits easily in any model's context window.
  */
 export function formatCV(cvData: CVData): string {
   const sections: string[] = [];
@@ -14,27 +14,47 @@ Location: ${cvData.personal.location} | Website: ${cvData.personal.website}
 ${cvData.personal.summary}
 </personal>`);
 
-  // Experience (all positions, top 3 achievements each)
+  // Experience (all positions with achievements and skills)
   const expEntries = cvData.experience.map(exp => {
-    const achievements = exp.achievements
-      .slice(0, 3)
-      .map(a => `  - ${a}`)
-      .join('\n');
-    return `- **${exp.title}** at ${exp.company} (${exp.duration})\n${achievements}`;
+    const lines: string[] = [
+      `- **${exp.title}** at ${exp.company} (${exp.duration})`,
+    ];
+    const achievements = exp.achievements.slice(0, 3).map(a => `  - ${a}`);
+    lines.push(...achievements);
+    if (exp.skills && exp.skills.length > 0) {
+      lines.push(`  Skills: ${exp.skills.join(', ')}`);
+    }
+    return lines.join('\n');
   });
   sections.push(`<experience>\n${expEntries.join('\n\n')}\n</experience>`);
 
   // Skills
-  sections.push(`<skills>
-**Technical:** ${cvData.skills.technical.join(', ')}
-**Leadership:** ${cvData.skills.soft.join(', ')}
-</skills>`);
+  const skillLines = [
+    `**Technical:** ${cvData.skills.technical.join(', ')}`,
+    `**Leadership:** ${cvData.skills.soft.join(', ')}`,
+  ];
+  if (cvData.skills.languages && cvData.skills.languages.length > 0) {
+    skillLines.push(`**Languages:** ${cvData.skills.languages.join(', ')}`);
+  }
+  sections.push(`<skills>\n${skillLines.join('\n')}\n</skills>`);
 
-  // Education
-  const eduEntries = cvData.education.map(
-    edu => `- ${edu.degree} from ${edu.institution} (${edu.duration})`
-  );
-  sections.push(`<education>\n${eduEntries.join('\n')}\n</education>`);
+  // Education (with descriptions, coursework, and achievements)
+  const eduEntries = cvData.education.map(edu => {
+    const lines: string[] = [
+      `- ${edu.degree} from ${edu.institution} (${edu.duration})`,
+    ];
+    if (edu.description) {
+      lines.push(`  ${edu.description}`);
+    }
+    if (edu.relevantCoursework && edu.relevantCoursework.length > 0) {
+      lines.push(`  Coursework: ${edu.relevantCoursework.join(', ')}`);
+    }
+    if (edu.achievements && edu.achievements.length > 0) {
+      edu.achievements.forEach(a => lines.push(`  - ${a}`));
+    }
+    return lines.join('\n');
+  });
+  sections.push(`<education>\n${eduEntries.join('\n\n')}\n</education>`);
 
   // Certifications
   if (cvData.certifications.length > 0) {
@@ -59,7 +79,7 @@ export function createCVContextBlock(cvData: CVData): string {
 
 /**
  * Combines CV context with a system prompt.
- * Places CV data at the beginning for maximum context.
+ * Places CV data at the beginning, with instructions following.
  */
 export function combineSystemPromptWithCV(
   systemPrompt: string,
