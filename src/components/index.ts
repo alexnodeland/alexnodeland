@@ -16,3 +16,6 @@ export { default as SkillsSection } from './cv/CVSkillsSection';
 
 // Chat components
 export * from './chat';
+
+// Projects components
+export * from './projects';
