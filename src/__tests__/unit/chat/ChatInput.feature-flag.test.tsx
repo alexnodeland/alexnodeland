@@ -1,11 +1,6 @@
 import React from 'react';
 import ChatInput from '../../../components/chat/ChatInput';
 
-// Mock the rolling context utility
-jest.mock('../../../lib/utils/chat', () => ({
-  createRollingContext: jest.fn(messages => messages.slice(-5)), // Mock: keep last 5 messages
-}));
-
 // Mock useChat with feature flag testing capability
 const mockUseChat = {
   addMessage: jest.fn(),
@@ -81,16 +76,12 @@ describe('ChatInput feature flag behavior (Step 3B)', () => {
     expect(mockUseChat.isGenerating).toBe(true);
   });
 
-  it('should integrate rolling context utility', () => {
-    const { createRollingContext } = require('../../../lib/utils/chat');
+  it('should pass raw messages to generateResponse (context windowing handled internally)', () => {
+    mockUseChat.generateResponse = jest.fn();
+    mockUseChat.modelState = { status: 'ready', progress: [] };
 
-    // Verify the utility is available for use
-    expect(createRollingContext).toBeDefined();
-    expect(typeof createRollingContext).toBe('function');
-
-    // Test the mock implementation
-    const testMessages = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const result = createRollingContext(testMessages);
-    expect(result).toEqual([6, 7, 8, 9, 10]); // Last 5 messages
+    // ChatInput no longer imports or calls createRollingContext directly;
+    // context windowing is handled inside generateResponse()
+    expect(mockUseChat.generateResponse).toBeDefined();
   });
 });

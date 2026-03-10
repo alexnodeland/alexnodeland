@@ -170,7 +170,8 @@ async function generate({
 
     // Retrieve the text-generation pipeline
     const modelId =
-      TextGenerationPipeline.currentModelId || 'onnx-community/Qwen3-0.6B-ONNX';
+      TextGenerationPipeline.currentModelId ||
+      'LiquidAI/LFM2.5-1.2B-Thinking-ONNX';
     const [tokenizer, model] =
       await TextGenerationPipeline.getInstance(modelId);
 
@@ -395,6 +396,7 @@ async function generate({
     self.postMessage({
       status: 'complete',
       output: decoded,
+      state: reasonEnabled ? state : 'answering',
     });
   } catch (error) {
     // console.error('Generation error:', error);
@@ -434,7 +436,7 @@ async function load() {
     });
 
     // Load the pipeline with progress tracking
-    const modelId = 'onnx-community/Qwen3-0.6B-ONNX'; // Default model
+    const modelId = 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'; // Default model
     const [tokenizer, model] = await TextGenerationPipeline.getInstance(
       modelId,
       progress => {
@@ -552,7 +554,7 @@ self.addEventListener('message', async event => {
 
       case 'load': {
         // Load the model with specified ID
-        const modelId = data?.modelId || 'onnx-community/Qwen3-0.6B-ONNX';
+        const modelId = data?.modelId || 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX';
         await load(modelId);
         break;
       }

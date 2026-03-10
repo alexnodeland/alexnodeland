@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { ChatProvider } from '../../../components/chat/ChatContext';
 import ChatMessage from '../../../components/chat/ChatMessage';
 
 // Mock the child components to avoid dependency issues in tests
@@ -20,64 +19,56 @@ jest.mock('../../../components/chat/ThinkingBlock', () => {
   };
 });
 
-// We need to import useChat for the test component
-import { useChat } from '../../../components/chat/ChatContext';
+// Mock useChat directly for fine-grained control
+const mockUseChat = {
+  messages: [] as any[],
+  isLoading: false,
+  isGenerating: false,
+};
 
-const renderWithProvider = (initialMessages: any[] = [], loading = false) => {
-  const TestComponent = () => {
-    const { addMessage, setLoading } = useChat();
+jest.mock('../../../components/chat/ChatContext', () => ({
+  useChat: () => mockUseChat,
+}));
 
-    React.useEffect(() => {
-      initialMessages.forEach(msg => {
-        addMessage({
-          ...msg,
-          id: msg.id || `msg-${Date.now()}-${Math.random()}`,
-          timestamp: msg.timestamp || new Date(),
-        });
-      });
-      if (loading) {
-        setLoading(true);
-      }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    return <ChatMessage />;
-  };
-
-  return render(
-    <ChatProvider>
-      <TestComponent />
-    </ChatProvider>
-  );
+const renderChatMessage = (messages: any[] = [], isLoading = false) => {
+  mockUseChat.messages = messages.map((msg, i) => ({
+    id: msg.id || `msg-${i}`,
+    content: msg.content,
+    role: msg.role,
+    thinking: msg.thinking,
+    timestamp: msg.timestamp || new Date(),
+  }));
+  mockUseChat.isLoading = isLoading;
+  mockUseChat.isGenerating = false;
+  return render(<ChatMessage />);
 };
 
 describe('ChatMessage', () => {
-  it('renders empty when no messages exist', () => {
-    renderWithProvider();
+  beforeEach(() => {
+    mockUseChat.messages = [];
+    mockUseChat.isLoading = false;
+    mockUseChat.isGenerating = false;
+  });
 
-    // Component should render empty - no messages to display
+  it('renders empty when no messages exist', () => {
+    renderChatMessage();
     expect(screen.queryByText('Hello there!')).not.toBeInTheDocument();
   });
 
   it('renders user messages correctly', () => {
-    const messages = [{ content: 'Hello there!', role: 'user' as const }];
-
-    renderWithProvider(messages);
+    renderChatMessage([{ content: 'Hello there!', role: 'user' }]);
 
     expect(screen.getByText('Hello there!')).toBeInTheDocument();
-    // Check for SVG user icon instead of text
     const userAvatar = document.querySelector('.message-avatar.user svg');
     expect(userAvatar).toBeInTheDocument();
   });
 
   it('renders assistant messages correctly', () => {
-    const messages = [
-      { content: 'Hello! How can I help you?', role: 'assistant' as const },
-    ];
-
-    renderWithProvider(messages);
+    renderChatMessage([
+      { content: 'Hello! How can I help you?', role: 'assistant' },
+    ]);
 
     expect(screen.getByText('Hello! How can I help you?')).toBeInTheDocument();
-    // Check for SVG assistant/robot icon instead of text
     const assistantAvatar = document.querySelector(
       '.message-avatar.assistant svg'
     );
@@ -85,13 +76,11 @@ describe('ChatMessage', () => {
   });
 
   it('renders multiple messages in correct order', () => {
-    const messages = [
-      { content: 'First message', role: 'user' as const },
-      { content: 'Second message', role: 'assistant' as const },
-      { content: 'Third message', role: 'user' as const },
-    ];
-
-    renderWithProvider(messages);
+    renderChatMessage([
+      { content: 'First message', role: 'user' },
+      { content: 'Second message', role: 'assistant' },
+      { content: 'Third message', role: 'user' },
+    ]);
 
     expect(screen.getByText('First message')).toBeInTheDocument();
     expect(screen.getByText('Second message')).toBeInTheDocument();
@@ -99,9 +88,7 @@ describe('ChatMessage', () => {
   });
 
   it('applies correct CSS classes for user messages', () => {
-    const messages = [{ content: 'User message', role: 'user' as const }];
-
-    renderWithProvider(messages);
+    renderChatMessage([{ content: 'User message', role: 'user' }]);
 
     const messageElement = screen
       .getByText('User message')
@@ -113,11 +100,7 @@ describe('ChatMessage', () => {
   });
 
   it('applies correct CSS classes for assistant messages', () => {
-    const messages = [
-      { content: 'Assistant message', role: 'assistant' as const },
-    ];
-
-    renderWithProvider(messages);
+    renderChatMessage([{ content: 'Assistant message', role: 'assistant' }]);
 
     const messageElement = screen
       .getByText('Assistant message')
@@ -129,11 +112,8 @@ describe('ChatMessage', () => {
   });
 
   it('displays timestamps for messages', () => {
-    const messages = [{ content: 'Test message', role: 'user' as const }];
+    renderChatMessage([{ content: 'Test message', role: 'user' }]);
 
-    renderWithProvider(messages);
-
-    // Check that timestamp is displayed (format may vary)
     const timestampElement = screen
       .getByText('Test message')
       .closest('.message-content')
@@ -142,9 +122,8 @@ describe('ChatMessage', () => {
   });
 
   it('shows loading indicator when loading', () => {
-    renderWithProvider([], true);
+    renderChatMessage([], true);
 
-    // Check for loading dots and assistant avatar
     expect(document.querySelector('.chat-loading')).toBeInTheDocument();
     expect(document.querySelector('.loading-dots')).toBeInTheDocument();
     expect(
@@ -153,9 +132,7 @@ describe('ChatMessage', () => {
   });
 
   it('formats time correctly', () => {
-    const messages = [{ content: 'Test message', role: 'user' as const }];
-
-    renderWithProvider(messages);
+    renderChatMessage([{ content: 'Test message', role: 'user' }]);
 
     const timestampElement = screen
       .getByText('Test message')
@@ -163,17 +140,13 @@ describe('ChatMessage', () => {
       ?.querySelector('.message-timestamp');
     expect(timestampElement).toBeInTheDocument();
 
-    // Should contain time in H:MM AM/PM format
     const timeText = timestampElement?.textContent || '';
     expect(timeText).toMatch(/^\d{1,2}:\d{2}\s?(AM|PM)$/i);
   });
 
   it('handles empty content gracefully', () => {
-    const messages = [{ content: '', role: 'user' as const }];
+    renderChatMessage([{ content: '', role: 'user' }]);
 
-    renderWithProvider(messages);
-
-    // Should still render the message structure
     const userAvatar = document.querySelector('.message-avatar.user svg');
     expect(userAvatar).toBeInTheDocument();
 
@@ -184,23 +157,17 @@ describe('ChatMessage', () => {
   });
 
   it('uses MarkdownRenderer for assistant messages', () => {
-    const messages = [
-      { content: 'Assistant **bold** message', role: 'assistant' as const },
-    ];
+    renderChatMessage([
+      { content: 'Assistant **bold** message', role: 'assistant' },
+    ]);
 
-    renderWithProvider(messages);
-
-    // Should use MarkdownRenderer for assistant messages
     expect(document.querySelector('.markdown-content')).toBeInTheDocument();
     expect(screen.getByText('Assistant **bold** message')).toBeInTheDocument();
   });
 
   it('uses plain paragraph for user messages', () => {
-    const messages = [{ content: 'User message', role: 'user' as const }];
+    renderChatMessage([{ content: 'User message', role: 'user' }]);
 
-    renderWithProvider(messages);
-
-    // Should use plain <p> tag for user messages
     const userMessage = screen.getByText('User message');
     expect(userMessage.tagName).toBe('P');
   });

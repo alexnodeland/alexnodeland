@@ -103,38 +103,9 @@ export async function detectWebGPUSupport(): Promise<boolean> {
   }
 }
 
-/**
- * Available AI models for the chat interface
- * This will be the source of truth for model selection
- *
- * Currently focused on QWEN 0.6B for optimal performance and user experience.
- * Architecture is designed to easily support additional models in the future.
- */
-export const AVAILABLE_MODELS: ChatModel[] = [
-  {
-    id: 'onnx-community/Qwen3-0.6B-ONNX',
-    name: 'qwen3-0.6b',
-    description: 'fast reasoning model optimized for in-browser inference',
-    size: '~600MB',
-    contextWindow: 4096,
-    device: 'webgpu',
-    dtype: 'q4f16',
-    fallbackDevice: 'wasm',
-    supportsThinking: true,
-  },
-  // Additional models can be easily added here in the future
-  // Example:
-  // {
-  //   id: 'onnx-community/NewModel-ONNX',
-  //   name: 'New Model Name',
-  //   description: 'Model description',
-  //   size: '~XMB',
-  //   contextWindow: XXXX,
-  //   device: 'webgpu',
-  //   dtype: 'q4f16',
-  //   supportsThinking: true,
-  // },
-];
+// Re-export AVAILABLE_MODELS from config — single source of truth
+import { AVAILABLE_MODELS } from '../../config/chat';
+export { AVAILABLE_MODELS };
 
 /**
  * Gets a model by ID from the available models
@@ -251,38 +222,31 @@ export function parseThinkingBlocks(text: string): ThinkingBlockParseResult {
 }
 
 /**
- * Updates an existing message with new thinking or content based on streaming text
+ * @deprecated Thinking block routing is now handled by the worker state.
+ * Kept for backward compatibility with tests. Use worker state-based routing instead.
  */
 export function updateMessageWithThinking(
   existingMessage: ChatMessage,
   newText: string
 ): ChatMessage {
-  // If message already has thinking and no raw content (meaning it was pre-parsed),
-  // and we're not adding thinking tags, just append to regular content
-  const hasPreParsedThinking =
-    existingMessage.thinking && !existingMessage._rawContent;
-  const isThinkingComplete =
-    existingMessage._thinkingComplete || hasPreParsedThinking;
+  const hasPreParsedThinking = !!existingMessage.thinking;
 
-  if (isThinkingComplete && !newText.includes('<think>')) {
+  if (hasPreParsedThinking && !newText.includes('<think>')) {
     return {
       ...existingMessage,
       content: (existingMessage.content || '') + newText,
-      thinking: existingMessage.thinking, // Preserve existing thinking
-      _thinkingComplete: true,
+      thinking: existingMessage.thinking,
     };
   }
 
-  // For streaming with thinking tags or incomplete thinking, use raw content accumulation
-  const rawContent = (existingMessage._rawContent || '') + newText;
+  // Fallback: accumulate raw text and re-parse
+  const rawContent = (existingMessage.content || '') + newText;
   const parsed = parseThinkingBlocks(rawContent);
 
   return {
     ...existingMessage,
     content: parsed.content,
     thinking: parsed.thinking || undefined,
-    _rawContent: rawContent,
-    _thinkingComplete: parsed.isThinkingComplete,
   };
 }
 

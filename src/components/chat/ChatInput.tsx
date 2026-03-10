@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { chatConfig } from '../../config/chat';
-import { createRollingContext } from '../../lib/utils/chat';
 import { useChat } from './ChatContext';
 
 interface ChatInputProps {
@@ -53,7 +52,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const isModelReady = modelState?.status === 'ready';
   const isModelLoading = modelState?.status === 'loading';
   // Allow input when model is idle (user can type and we'll show appropriate feedback)
-  const isInputDisabled = isLoading && isModelLoading;
+  const isInputDisabled = isModelLoading;
   const isSendDisabled =
     !inputValue.trim() ||
     isLoading ||
@@ -80,6 +79,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     });
 
     // Generate response - model is guaranteed to be ready
+    // Context windowing is handled inside generateResponse() using chatConfig
     if (generateResponse) {
       const allMessages = [
         ...messages,
@@ -90,8 +90,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           timestamp: new Date(),
         },
       ];
-      const contextMessages = createRollingContext(allMessages, 2048);
-      generateResponse(contextMessages);
+      generateResponse(allMessages);
     }
   };
 

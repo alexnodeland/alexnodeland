@@ -3,19 +3,12 @@ import {
   combineSystemPromptWithCV,
   CVContextLevel,
 } from '../lib/utils/cvFormatter';
+import { ChatModel } from '../types/chat';
 import { cvData } from './cv';
 export interface ChatConfig {
   models: {
     default: string;
-    available: Array<{
-      id: string;
-      name: string;
-      description: string;
-      size?: string;
-      contextWindow?: number;
-      supportsThinking?: boolean;
-      cvContextLevel?: CVContextLevel;
-    }>;
+    available: ChatModel[];
   };
   generation: {
     systemPrompt: string;
@@ -63,8 +56,8 @@ function getCVContextLevelForModel(modelId: string): CVContextLevel {
   // Define available models inline to avoid circular reference
   const availableModels = [
     {
-      id: 'onnx-community/Qwen3-0.6B-ONNX',
-      cvContextLevel: 'concise' as CVContextLevel,
+      id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+      cvContextLevel: 'full' as CVContextLevel,
     },
     {
       id: 'onnx-community/Qwen2.5-0.5B-Instruct',
@@ -122,16 +115,19 @@ Use ONLY the CV information above to provide concise, accurate responses about A
 
 export const chatConfig: ChatConfig = {
   models: {
-    default: 'onnx-community/Qwen3-0.6B-ONNX',
+    default: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
     available: [
       {
-        id: 'onnx-community/Qwen3-0.6B-ONNX',
-        name: 'Qwen 3 0.6B',
-        description: 'fast, lightweight model perfect for quick responses',
-        size: '0.6b parameters',
-        contextWindow: 16384,
+        id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+        name: 'LFM2.5 1.2B',
+        description: 'fast reasoning model optimized for in-browser inference',
+        size: '1.2B parameters',
+        contextWindow: 32768,
+        device: 'webgpu',
+        dtype: 'q4f16',
+        fallbackDevice: 'wasm',
         supportsThinking: true,
-        cvContextLevel: 'concise',
+        cvContextLevel: 'full',
       },
       {
         id: 'onnx-community/Qwen2.5-0.5B-Instruct',
@@ -139,30 +135,33 @@ export const chatConfig: ChatConfig = {
         description: 'Optimized instruction-following model',
         size: '0.5B parameters',
         contextWindow: 2048,
+        device: 'webgpu',
+        dtype: 'q4f16',
+        fallbackDevice: 'wasm',
         supportsThinking: false,
         cvContextLevel: 'concise',
       },
     ],
   },
   generation: {
-    systemPrompt: getSystemPromptForModel('onnx-community/Qwen3-0.6B-ONNX'),
+    systemPrompt: getSystemPromptForModel('LiquidAI/LFM2.5-1.2B-Thinking-ONNX'),
     maxTokens: {
-      default: 2048,
-      thinking: 4096,
+      default: 4096,
+      thinking: 8192,
       wasm: 2048,
       wasmThinking: 4096,
     },
     temperature: {
-      default: 0.3,
-      thinking: 0.3,
+      default: 0.6,
+      thinking: 0.6,
       wasm: 0.3,
     },
     topK: {
-      default: 40,
-      thinking: 40,
+      default: 50,
+      thinking: 50,
       wasm: 40,
     },
-    repetitionPenalty: 1.05,
+    repetitionPenalty: 1.1,
   },
   interface: {
     welcomeMessage:
@@ -180,10 +179,13 @@ export const chatConfig: ChatConfig = {
     enableThinking: true,
   },
   behavior: {
-    contextWindow: 16384,
+    contextWindow: 32768,
     enableWebGPU: true,
     fallbackToWasm: true,
     persistConversation: true,
     autoLoadModel: false,
   },
 };
+
+/** Single source of truth for available models — re-exported by lib/utils/chat */
+export const AVAILABLE_MODELS: ChatModel[] = chatConfig.models.available;

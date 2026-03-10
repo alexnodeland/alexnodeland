@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSettingsPanel } from '../SettingsPanelContext';
 import { useChat } from './ChatContext';
+import ChatErrorBoundary from './ChatErrorBoundary';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import ClearConfirmDialog from './ClearConfirmDialog';
@@ -235,8 +236,19 @@ const ChatModal: React.FC = () => {
       {/* Chat messages and input - hidden when showing welcome screen */}
       {!(modelState?.status === 'idle' && messages.length === 0) && (
         <>
-          <div className="chat-messages">
-            <ChatMessage />
+          <div className="chat-messages" role="log" aria-live="polite">
+            <div
+              className="sr-only"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {isGenerating ? 'Generating response...' : ''}
+              {modelState?.status === 'loading' ? 'Loading model...' : ''}
+            </div>
+            <ChatErrorBoundary fallbackMessage="Something went wrong displaying chat messages.">
+              <ChatMessage />
+            </ChatErrorBoundary>
             <div ref={messagesEndRef} />
           </div>
 

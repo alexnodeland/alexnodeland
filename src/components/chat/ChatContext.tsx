@@ -12,7 +12,6 @@ import {
   createRollingContext,
   ModelCache,
   parseThinkingBlocks,
-  updateMessageWithThinking,
 } from '../../lib/utils/chat';
 import {
   ChatMessage,
@@ -64,7 +63,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [selectedModel, setSelectedModelState] = useState(
     chatConfig.models.default
   );
-  const [isLoading, setIsLoading] = useState(false);
   // New non-breaking state additions
   const [modelState, setModelState] = useState<ModelLoadingState>({
     status: 'idle', // Start as idle since we need to load QWEN model
@@ -83,8 +81,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
     return chatConfig.interface.enableThinking;
   });
+  // Derived loading state — replaces separate useState to avoid sync bugs
+  const isLoading = isGenerating || modelState.status === 'loading';
+
   const [workerInitKey, setWorkerInitKey] = useState(0); // Force worker reinitialization
   const workerRef = useRef<Worker | null>(null);
+  const workerUrlRef = useRef<string | null>(null);
+  const WORKER_PATH_KEY = 'chat-worker-path';
 
   // Feature flag for worker connection - controllable via environment
   // Set GATSBY_CHAT_WORKER=true to enable real model
@@ -113,9 +116,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const setLoading = (loading: boolean) => {
-    setIsLoading(loading);
-  };
+  // No-op for backward compat — isLoading is now derived
+  const setLoading = (_loading: boolean) => {};
 
   const clearMessages = () => {
     // Clear all messages
@@ -128,7 +130,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
 
     // Reset loading states
-    setIsLoading(false);
 
     // Reset conversation context in worker if available
     if (USE_CHAT_WORKER && workerRef.current) {
@@ -158,7 +159,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
 
     // Reset loading states
-    setIsLoading(false);
 
     // Update the selected model
     setSelectedModelState(modelId);
@@ -262,7 +262,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Worker generation failed:', error);
       setIsGenerating(false);
-      setIsLoading(false);
+
       addMessage({
         role: 'assistant',
         content:
@@ -319,7 +319,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // Reset model state back to idle to show welcome screen
     setModelState({ status: 'idle', progress: [] });
-    setIsLoading(false);
+
     setIsGenerating(false);
 
     // Clear any model loading cache state completely
@@ -327,6 +327,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // Clear the cached models list to ensure fresh state
     setCachedModels([]);
+
+    // Clear cached worker path since we terminated
+    try {
+      sessionStorage.removeItem(WORKER_PATH_KEY);
+    } catch {
+      // sessionStorage may be unavailable
+    }
 
     if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
       // eslint-disable-next-line no-console
@@ -343,12 +350,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     try {
       if (typeof window !== 'undefined') {
+        // Check sessionStorage for a previously successful worker path
+        const cachedPath = sessionStorage.getItem(WORKER_PATH_KEY);
+
         // Detect path prefix from the initial app base URL (navigation-independent)
         const baseUrl = window.location.origin;
         let pathPrefix = '';
 
         // For GitHub Pages deployment, check if we're in a subdirectory
-        // Use a more reliable detection method based on the initial load location
         const href = window.location.href;
         if (href.includes('/alexnodeland/')) {
           pathPrefix = '/alexnodeland';
@@ -360,10 +369,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           console.log('[chat] Base URL:', baseUrl);
           // eslint-disable-next-line no-console
           console.log('[chat] Detected pathPrefix:', pathPrefix || '(none)');
+          if (cachedPath) {
+            // eslint-disable-next-line no-console
+            console.log('[chat] Cached worker path:', cachedPath);
+          }
         }
 
-        // Try multiple strategies for worker URL resolution (navigation-independent)
+        // Build worker paths: cached path first (if available), then fallbacks
         const workerPaths = [
+          ...(cachedPath ? [cachedPath] : []),
           `${baseUrl}${pathPrefix}/worker.js`, // Full absolute URL with prefix
           `${pathPrefix}/worker.js`, // Relative path with prefix
           '/worker.js', // Root fallback
@@ -389,6 +403,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                 workerUrl
               );
             }
+            workerUrlRef.current = workerUrl;
             return worker;
           } catch (urlErr) {
             if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
@@ -496,54 +511,67 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             setCachedModels(
               ModelCache.getCachedModels().map(entry => entry.modelId)
             );
-            // Model is ready - no automatic welcome message (using sample pills instead)
+            // Cache the successful worker path for faster init next time
+            if (workerUrlRef.current) {
+              try {
+                sessionStorage.setItem(WORKER_PATH_KEY, workerUrlRef.current);
+              } catch {
+                // sessionStorage may be unavailable
+              }
+            }
             break;
           }
           case 'start':
             setIsGenerating(true);
-            addMessage({ role: 'assistant', content: '' });
+            addMessage({ role: 'assistant', content: '', thinking: '' });
             break;
-          case 'update':
-            // Update the last assistant message with streaming content, handling thinking blocks
+          case 'update': {
+            // Route chunk to thinking or content based on worker's state tracking
+            const chunk = data.output || '';
+            const workerState = data.state || 'answering';
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
               const lastMessage = newMessages[newMessages.length - 1];
               if (lastMessage && lastMessage.role === 'assistant') {
-                const updatedMessage = updateMessageWithThinking(
-                  lastMessage,
-                  data.output || ''
-                );
-                newMessages[newMessages.length - 1] = updatedMessage;
+                if (workerState === 'thinking') {
+                  newMessages[newMessages.length - 1] = {
+                    ...lastMessage,
+                    thinking: (lastMessage.thinking || '') + chunk,
+                  };
+                } else {
+                  newMessages[newMessages.length - 1] = {
+                    ...lastMessage,
+                    content: (lastMessage.content || '') + chunk,
+                  };
+                }
               }
               return newMessages;
             });
             break;
+          }
           case 'complete': {
             setIsGenerating(false);
-            setIsLoading(false);
+
             const finalText = Array.isArray((data as any).output)
               ? (data as any).output.join('')
               : String((data as any).output || '');
-            // Ensure the final output is reflected and thinking blocks are finalized
+            // Content is already built via streaming; use parseThinkingBlocks only as fallback
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
               const lastMessage = newMessages[newMessages.length - 1];
               if (lastMessage && lastMessage.role === 'assistant') {
-                // If we have existing content, keep it, otherwise use final text
-                const contentToProcess =
-                  lastMessage.content && lastMessage.content.length > 0
-                    ? lastMessage.content
-                    : finalText;
-
-                // Parse final content for any thinking blocks
-                const parsed = parseThinkingBlocks(contentToProcess);
+                // If streaming already populated content, keep it
+                if (lastMessage.content && lastMessage.content.length > 0) {
+                  return newMessages;
+                }
+                // Fallback: no streaming occurred, parse final text
+                const parsed = parseThinkingBlocks(finalText);
                 newMessages[newMessages.length - 1] = {
                   ...lastMessage,
                   content: parsed.content,
                   thinking: parsed.thinking || lastMessage.thinking,
                 };
               } else if (finalText) {
-                // Create new message with thinking block parsing
                 const parsed = parseThinkingBlocks(finalText);
                 newMessages.push({
                   id: Math.random().toString(36).substr(2, 9),
@@ -565,7 +593,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
               error: errMsg,
             }));
             setIsGenerating(false);
-            setIsLoading(false);
+
             // Surface an assistant message so users see feedback even on failure
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
@@ -603,7 +631,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           error: String(e.message || 'Worker error'),
         }));
         setIsGenerating(false);
-        setIsLoading(false);
+        try {
+          sessionStorage.removeItem(WORKER_PATH_KEY);
+        } catch {
+          // sessionStorage may be unavailable
+        }
       };
 
       workerRef.current.addEventListener('message', onMessage as any);

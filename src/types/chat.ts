@@ -10,10 +10,6 @@ export interface ChatMessage {
   // Optional thinking block content
   thinking?: string;
   isThinkingExpanded?: boolean;
-  // Raw accumulated content for proper streaming parsing
-  _rawContent?: string;
-  // Track if thinking block is complete (has seen </think>)
-  _thinkingComplete?: boolean;
 }
 
 export interface ChatModel {

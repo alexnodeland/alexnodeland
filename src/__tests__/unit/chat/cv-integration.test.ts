@@ -238,18 +238,17 @@ describe('CV Integration in Chat', () => {
       expect(systemPrompt).toContain('Do NOT make up or infer information');
     });
 
-    it('should use concise CV level for small models', () => {
+    it('should use full CV level for LFM2.5 model', () => {
       const systemPrompt = chatConfig.generation.systemPrompt;
 
-      // The default model is set to use concise level
-      // Verify the CV context is shorter (concise version)
+      // The default model (LFM2.5 1.2B) uses full CV context
       expect(systemPrompt).toContain('<alexs_cv>');
       expect(systemPrompt).toContain(cvData.personal.name);
       expect(systemPrompt).toContain(cvData.experience[0].title);
 
-      // Concise version should not include personal summary or email
-      expect(systemPrompt).not.toContain(cvData.personal.summary);
-      expect(systemPrompt).not.toContain(cvData.personal.email);
+      // Full version includes personal summary and email
+      expect(systemPrompt).toContain(cvData.personal.summary);
+      expect(systemPrompt).toContain(cvData.personal.email);
     });
   });
 
