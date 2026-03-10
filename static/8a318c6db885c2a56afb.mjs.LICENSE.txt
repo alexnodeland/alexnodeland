@@ -1,0 +1,5 @@
+/*!
+ * ONNX Runtime Web v1.25.0-dev.20260303-e7e64dc112
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */

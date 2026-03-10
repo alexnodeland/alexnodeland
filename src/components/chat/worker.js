@@ -506,10 +506,11 @@ async function load() {
     // Model is ready for use
     self.postMessage({ status: 'ready' });
   } catch (error) {
-    // console.error('Model loading error:', error);
+    // eslint-disable-next-line no-console
+    console.error('[chat-worker] Model loading error:', error);
     self.postMessage({
       status: 'error',
-      data: error.message || 'Failed to load model',
+      data: error.message || error.toString() || 'Failed to load model',
     });
   }
 }

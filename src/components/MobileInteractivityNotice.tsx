@@ -95,14 +95,10 @@ const MobileInteractivityNotice: React.FC = () => {
                   <span className="feature-icon">🎹</span>
                   <span>play a fully functional synthesizer</span>
                 </div>
-                <div className="feature-item">
-                  <span className="feature-icon">💬</span>
-                  <span>chat with a local LLM about this website</span>
-                </div>
               </div>
 
               <p className="mobile-notice-recommend">
-                use a modern browser like Chrome or Safari on desktop
+                visit on desktop for the full interactive experience
               </p>
             </div>
           </div>
