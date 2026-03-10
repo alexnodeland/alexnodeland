@@ -297,13 +297,27 @@ async function generate({
 
     // Stream callback to send partial results to main thread
     const callback_function = output => {
-      self.postMessage({
-        status: 'update',
-        output,
-        tps,
-        numTokens,
-        state: reasonEnabled ? state : 'answering',
-      });
+      let text = output;
+
+      // Strip <think> / </think> tags and track state via text (robust fallback)
+      if (text.includes('<think>')) {
+        state = 'thinking';
+        text = text.replace(/<think>/g, '');
+      }
+      if (text.includes('</think>')) {
+        state = 'answering';
+        text = text.replace(/<\/think>/g, '');
+      }
+
+      if (text) {
+        self.postMessage({
+          status: 'update',
+          output: text,
+          tps,
+          numTokens,
+          state: reasonEnabled ? state : 'answering',
+        });
+      }
     };
 
     // Create text streamer for real-time output

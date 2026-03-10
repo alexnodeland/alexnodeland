@@ -555,15 +555,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             const finalText = Array.isArray((data as any).output)
               ? (data as any).output.join('')
               : String((data as any).output || '');
-            // Content is already built via streaming; use parseThinkingBlocks only as fallback
+
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
               const lastMessage = newMessages[newMessages.length - 1];
               if (lastMessage && lastMessage.role === 'assistant') {
-                // If streaming already populated content, keep it
-                if (lastMessage.content && lastMessage.content.length > 0) {
+                // Always strip residual think tags from streamed content
+                const cleanContent = (lastMessage.content || '')
+                  .replace(/<\/?think>/g, '')
+                  .trim();
+
+                if (cleanContent.length > 0) {
+                  newMessages[newMessages.length - 1] = {
+                    ...lastMessage,
+                    content: cleanContent,
+                  };
                   return newMessages;
                 }
+
                 // Fallback: no streaming occurred, parse final text
                 const parsed = parseThinkingBlocks(finalText);
                 newMessages[newMessages.length - 1] = {
