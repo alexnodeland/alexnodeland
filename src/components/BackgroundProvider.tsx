@@ -47,6 +47,11 @@ interface BackgroundContextType {
   // Computed values
   currentBackground: ReturnType<typeof getBackgroundById>;
   currentSettings: BackgroundSettings;
+
+  // True once the component has mounted on the client. Used to defer any
+  // non-deterministic rendering (random background / persisted settings) until
+  // after hydration so SSR and the first client render stay identical.
+  mounted: boolean;
 }
 
 const BackgroundContext = createContext<BackgroundContextType | undefined>(
@@ -68,39 +73,20 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
   children,
   initialBackgroundId,
 }) => {
-  // Initialize state with persistence first
+  // Initialize state DETERMINISTICALLY so the server render and the first
+  // client (hydration) render are identical. Any non-deterministic selection
+  // (localStorage restore or random pick) is applied after mount in a
+  // useEffect below — never in the initializer — to avoid hydration mismatches.
   const [state, setState] = useState<BackgroundManagerState>(() => {
     const initialSettings: Record<string, BackgroundSettings> = {};
     backgroundRegistry.forEach(bg => {
       initialSettings[bg.id] = { ...bg.defaultSettings };
     });
 
-    // Try to load from localStorage first
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('animatedBackgroundSettings');
-        if (saved) {
-          const parsedState = JSON.parse(saved);
-          // Validate that the saved background still exists
-          if (getBackgroundById(parsedState.currentBackgroundId)) {
-            return {
-              ...parsedState,
-              settings: { ...initialSettings, ...parsedState.settings },
-              showSettingsPanel: false, // Never restore panel open state
-              closingSettingsPanel: false,
-            };
-          }
-        }
-      } catch (error) {
-        console.warn(
-          'Failed to load background settings from localStorage:',
-          error
-        );
-      }
-    }
-
-    // Use provided initialBackgroundId or select a random one
-    const selectedBackgroundId = initialBackgroundId || getRandomBackgroundId();
+    // Fixed default: honor an explicit prop, otherwise the first registered
+    // background. This is stable across SSR and the initial client render.
+    const selectedBackgroundId =
+      initialBackgroundId || backgroundRegistry[0].id;
 
     return {
       currentBackgroundId: selectedBackgroundId,
@@ -109,6 +95,50 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
       closingSettingsPanel: false,
     };
   });
+
+  // Tracks client mount. Stays false through SSR and the first client render.
+  const [mounted, setMounted] = useState(false);
+
+  // After mount, apply persisted settings or a random background. Runs once on
+  // the client only, so it cannot affect the hydration render. When an explicit
+  // initialBackgroundId is provided (e.g. the PDE-solver blog integration) we
+  // respect it and skip both the localStorage restore and the random pick.
+  useEffect(() => {
+    if (!initialBackgroundId) {
+      let restored = false;
+      try {
+        const saved = localStorage.getItem('animatedBackgroundSettings');
+        if (saved) {
+          const parsedState = JSON.parse(saved);
+          // Validate that the saved background still exists
+          if (getBackgroundById(parsedState.currentBackgroundId)) {
+            setState(prev => ({
+              ...prev,
+              ...parsedState,
+              settings: { ...prev.settings, ...parsedState.settings },
+              showSettingsPanel: false, // Never restore panel open state
+              closingSettingsPanel: false,
+            }));
+            restored = true;
+          }
+        }
+      } catch (error) {
+        console.warn(
+          'Failed to load background settings from localStorage:',
+          error
+        );
+      }
+
+      // No valid persisted background: pick a random one for this visit.
+      if (!restored) {
+        const randomId = getRandomBackgroundId();
+        setState(prev => ({ ...prev, currentBackgroundId: randomId }));
+      }
+    }
+
+    setMounted(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialBackgroundId]);
 
   // Audio control state
   const [audioControls, setAudioControls] = useState<{
@@ -129,8 +159,11 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
     setClosingSettingsPanel,
   } = useSettingsPanel();
 
-  // Persist settings to localStorage
+  // Persist settings to localStorage. Guarded by `mounted` so the deterministic
+  // default state written during the first render can't clobber a user's
+  // persisted settings before the restore effect above has run.
   useEffect(() => {
+    if (!mounted) return;
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(
@@ -144,7 +177,7 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
         );
       }
     }
-  }, [state]);
+  }, [state, mounted]);
 
   // Computed values
   const currentBackground = useMemo(() => {
@@ -261,6 +294,7 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
     setOverlayOpacity,
     currentBackground,
     currentSettings,
+    mounted,
   };
 
   return (

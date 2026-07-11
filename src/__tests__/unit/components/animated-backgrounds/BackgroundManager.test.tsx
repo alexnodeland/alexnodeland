@@ -101,6 +101,7 @@ jest.mock('../../../../components/BackgroundProvider', () => ({
       elementSize: 0.02,
       globalTimeMultiplier: 1,
     },
+    mounted: true,
   }),
 }));
 

@@ -23,6 +23,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     setOverlayOpacity,
     currentBackground,
     currentSettings,
+    mounted,
   } = useBackground();
 
   // Toggle content visibility
@@ -196,6 +197,11 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
       <BackgroundComponent className={className} settings={currentSettings} />
     );
   };
+
+  // Defer all background DOM until after client mount. SSR renders nothing for
+  // the background (no gatsby-ssr wrapRootElement), so rendering null on the
+  // first client render keeps hydration identical and avoids mismatches.
+  if (!mounted) return null;
 
   return (
     <>
