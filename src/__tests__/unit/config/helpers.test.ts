@@ -63,6 +63,7 @@ describe('Configuration Helper Functions', () => {
 
       expect(navItems).toEqual([
         { name: 'blog', href: '/blog' },
+        { name: 'projects', href: '/projects' },
         { name: 'cv', href: '/cv' },
       ]);
     });

@@ -67,3 +67,14 @@ jspm_packages/
 public/
 
 .scratch/
+
+# Generated chat worker bundle (produced by `npm run build:worker`, which runs
+# before every build/develop). Regenerated deterministically from source.
+static/worker.js
+static/worker.js.LICENSE.txt
+static/*.mjs
+static/*.mjs.LICENSE.txt
+static/*.wasm
+
+# Playwright MCP artifacts and ad-hoc screenshots
+.playwright-mcp/

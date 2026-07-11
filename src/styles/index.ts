@@ -7,3 +7,4 @@ import './cv.scss';
 import './global.scss';
 import './index.scss';
 import './layout.scss';
+import './projects.scss';

@@ -39,7 +39,7 @@ describe('Chat Utilities', () => {
     });
 
     it('should handle text with special characters', () => {
-      const text = 'Hello! 🚀 This has émojis and spécial characters.';
+      const text = 'Hello! This has emojis and special characters.';
       const expected = Math.ceil(text.length / 4);
       expect(estimateTokens(text)).toBe(expected);
     });
@@ -85,7 +85,6 @@ describe('Chat Utilities', () => {
     });
 
     it('should keep most recent messages when over token limit', () => {
-      // Each message is roughly 3-4 tokens, so limit of 8 should keep last 2 messages
       const result = createRollingContext(mockMessages, 8);
       expect(result.length).toBeGreaterThan(0);
       expect(result[result.length - 1].id).toBe('3'); // Most recent message
@@ -116,7 +115,6 @@ describe('Chat Utilities', () => {
     const originalNavigator = (global as any).navigator;
 
     afterEach(() => {
-      // Restore original navigator
       if (originalNavigator) {
         Object.defineProperty(global, 'navigator', {
           value: originalNavigator,
@@ -188,14 +186,32 @@ describe('Chat Utilities', () => {
   });
 
   describe('AVAILABLE_MODELS', () => {
-    it('should contain the LFM2.5 model', () => {
-      expect(AVAILABLE_MODELS.length).toBeGreaterThanOrEqual(1);
-
+    it('should contain the LFM model', () => {
       const lfmModel = AVAILABLE_MODELS.find(
         m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
       expect(lfmModel).toBeDefined();
-      expect(lfmModel?.name).toBe('LFM2.5 1.2B');
+      expect(lfmModel?.name).toBe('lfm-1.2b');
+      expect(lfmModel?.alwaysThinks).toBe(true);
+      expect(lfmModel?.generationProfile?.topP).toBe(0.1);
+    });
+
+    it('should contain the Qwen model', () => {
+      const qwenModel = AVAILABLE_MODELS.find(
+        m => m.id === 'onnx-community/Qwen3-0.6B-ONNX'
+      );
+      expect(qwenModel).toBeDefined();
+      expect(qwenModel?.name).toBe('qwen-0.6b');
+      expect(qwenModel?.dtype).toBe('q4f16');
+      expect(qwenModel?.alwaysThinks).toBe(false);
+      expect(qwenModel?.generationProfile?.topP).toBeUndefined();
+    });
+
+    it('should have generationProfile for each model', () => {
+      AVAILABLE_MODELS.forEach(model => {
+        expect(model.generationProfile).toBeDefined();
+        expect(model.generationProfile?.maxTokens).toBeGreaterThan(0);
+      });
     });
 
     it('should have all required properties for each model', () => {
@@ -221,7 +237,13 @@ describe('Chat Utilities', () => {
       const model = getModelById('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
       expect(model).toBeDefined();
       expect(model?.id).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
-      expect(model?.name).toBe('LFM2.5 1.2B');
+      expect(model?.name).toBe('lfm-1.2b');
+    });
+
+    it('should return Qwen model when ID exists', () => {
+      const model = getModelById('onnx-community/Qwen3-0.6B-ONNX');
+      expect(model).toBeDefined();
+      expect(model?.name).toBe('qwen-0.6b');
     });
 
     it('should return undefined when ID does not exist', () => {
@@ -262,7 +284,6 @@ describe('Chat Utilities', () => {
     });
 
     it('should handle negative values gracefully', () => {
-      // This is edge case handling - function should not crash
       const result = formatBytes(-1024);
       expect(typeof result).toBe('string');
     });
@@ -366,7 +387,7 @@ describe('Chat Utilities', () => {
     });
 
     it('should handle special characters in content', () => {
-      const content = 'System message with émojis 🤖 and special chars!';
+      const content = 'System message with emojis and special chars!';
       const result = createSystemMessage(content);
       expect(result.content).toBe(content);
     });

@@ -48,6 +48,9 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
               style={{ backgroundColor: languageColor }}
             />
             <span className="language-name">{project.language}</span>
+            {typeof project.stars === 'number' && project.stars > 0 && (
+              <span className="project-stars">★ {project.stars}</span>
+            )}
           </div>
           <div className="project-link-indicator">
             <span>view on github</span>

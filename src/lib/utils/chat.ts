@@ -103,9 +103,60 @@ export async function detectWebGPUSupport(): Promise<boolean> {
   }
 }
 
-// Re-export AVAILABLE_MODELS from config — single source of truth
-import { AVAILABLE_MODELS } from '../../config/chat';
-export { AVAILABLE_MODELS };
+/**
+ * Available AI models for the chat interface.
+ * Single source of truth for model selection and per-model configuration.
+ */
+export const AVAILABLE_MODELS: ChatModel[] = [
+  {
+    id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+    name: 'lfm-1.2b',
+    description:
+      'efficient reasoning model with hybrid state-space architecture',
+    size: '~1.2GB',
+    contextWindow: 16384,
+    device: 'webgpu',
+    dtype: 'q4',
+    dtypeWasm: 'auto',
+    fallbackDevice: 'wasm',
+    supportsThinking: true,
+    alwaysThinks: true,
+    templateOptions: {},
+    generationProfile: {
+      maxTokens: 4096,
+      maxTokensWasm: 2048,
+      temperature: 0.05,
+      temperatureWasm: 0.0,
+      topK: 40,
+      topKWasm: 20,
+      topP: 0.1,
+      repetitionPenalty: 1.05,
+    },
+  },
+  {
+    id: 'onnx-community/Qwen3-0.6B-ONNX',
+    name: 'qwen-0.6b',
+    description: 'lightweight reasoning model, smaller and faster',
+    size: '~600MB',
+    contextWindow: 16384,
+    device: 'webgpu',
+    dtype: 'q4f16',
+    dtypeWasm: 'auto',
+    fallbackDevice: 'wasm',
+    supportsThinking: true,
+    alwaysThinks: false,
+    templateOptions: { add_special_tokens: false },
+    generationProfile: {
+      maxTokens: 4096,
+      maxTokensWasm: 2048,
+      temperature: 0.3,
+      temperatureWasm: 0.0,
+      topK: 40,
+      topKWasm: 20,
+      repetitionPenalty: 1.05,
+    },
+  },
+];
 
 /**
  * Gets a model by ID from the available models

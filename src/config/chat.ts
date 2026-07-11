@@ -1,34 +1,13 @@
 // Chat configuration for Transformers.js integration
-import {
-  combineSystemPromptWithCV,
-  CVContextLevel,
-} from '../lib/utils/cvFormatter';
-import { ChatModel } from '../types/chat';
+import { combineSystemPromptWithCV } from '../lib/utils/cvFormatter';
 import { cvData } from './cv';
+
 export interface ChatConfig {
   models: {
     default: string;
-    available: ChatModel[];
   };
   generation: {
-    systemPrompt: string;
-    maxTokens: {
-      default: number;
-      thinking: number;
-      wasm: number;
-      wasmThinking: number;
-    };
-    temperature: {
-      default: number;
-      thinking: number;
-      wasm: number;
-    };
-    topK: {
-      default: number;
-      thinking: number;
-      wasm: number;
-    };
-    repetitionPenalty: number;
+    getSystemPrompt: (modelId: string) => string;
   };
   interface: {
     welcomeMessage: string;
@@ -42,150 +21,81 @@ export interface ChatConfig {
   };
   behavior: {
     contextWindow: number;
-    enableWebGPU: boolean;
-    fallbackToWasm: boolean;
-    persistConversation: boolean;
-    autoLoadModel: boolean;
   };
 }
 
 /**
- * Gets the appropriate CV context level for a given model
+ * Base instructions shared across all models.
+ * CV data is prepended by combineSystemPromptWithCV, so "above" refers to it.
  */
-function getCVContextLevelForModel(modelId: string): CVContextLevel {
-  // Define available models inline to avoid circular reference
-  const availableModels = [
-    {
-      id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
-      cvContextLevel: 'full' as CVContextLevel,
-    },
-    {
-      id: 'onnx-community/Qwen2.5-0.5B-Instruct',
-      cvContextLevel: 'concise' as CVContextLevel,
-    },
-  ];
+const SHARED_INSTRUCTIONS = `You are "chat", Alex Nodeland's AI assistant on his personal website.
 
-  // First, try to find the model in the available models
-  const model = availableModels.find(m => m.id === modelId);
-  if (model?.cvContextLevel) {
-    return model.cvContextLevel;
-  }
+Rules:
+- Answer ONLY from the <alexs_cv> data above. Never invent or assume facts.
+- If the answer is not in the CV, say: "That's not in Alex's CV. Try asking about his experience, skills, or education."
+- Be concise and specific. Cite concrete details: roles, companies, dates, skills.
+- When asked who you are, say: "I'm chat, an AI assistant running in your browser to help you learn about Alex."
 
-  // Fallback based on model ID patterns
-  if (modelId.includes('0.5B') || modelId.includes('0.6B')) {
-    return 'concise';
-  } else if (
-    modelId.includes('1B') ||
-    modelId.includes('1.5B') ||
-    modelId.includes('3B')
-  ) {
-    return 'medium';
-  } else {
-    return 'full';
-  }
-}
+Examples:
+
+User: What does Alex do?
+Assistant: Alex is a Senior AI Engineer at Perch Insights, where he leads AI engineering initiatives and architects DAG-based workflow orchestration for autonomous data analysis agents. He also consults independently on AI strategy.
+
+User: Does Alex know Rust?
+Assistant: That's not in Alex's CV. Try asking about his experience, skills, or education.
+
+User: Where did Alex study?
+Assistant: Alex studied at Stony Brook University. He completed a BS in Applied Mathematics and Statistics (2013-2015) and began a Ph.D. in Computational Applied Mathematics (2016) before transitioning to entrepreneurial roles.`;
 
 /**
- * Generates a system prompt for a specific model using appropriate CV context level
+ * LFM-specific suffix — guides the thinking model to reason over CV sections.
  */
-function getSystemPromptForModel(modelId: string): string {
-  const cvLevel = getCVContextLevelForModel(modelId);
+const LFM_SUFFIX = `
+When answering, first identify which CV section(s) contain the relevant information, then compose your response from those details. Keep responses to 2-3 sentences unless the user asks for more detail.
 
-  const basePrompt = `You are "chat", Alex Nodeland's AI assistant designed to help visitors to his personal website get to know him better.
+Remember: answer ONLY from the CV data above.`;
 
-CRITICAL INSTRUCTIONS:
-- You ONLY have access to information provided in the CV data above
-- If asked about information NOT in the CV, respond: "I don't have that information in Alex's CV. Please ask about his professional experience, skills, education, or achievements that are documented above."
-- Do NOT make up or infer information beyond what's explicitly stated in the CV
-- Be accurate and concise in your responses
+/**
+ * Qwen-specific suffix — tighter constraints for the smaller model.
+ */
+const QWEN_SUFFIX = `
+Keep responses to 1-3 sentences. Stick strictly to facts from the CV above.
 
-Key characteristics:
-- Help visitors understand Alex's background, experience, and expertise based ONLY on the CV information provided
-- Provide insights into his technical skills and career journey as documented
-- Answer questions about his work in AI engineering, technical leadership, and startups using only CV data
-- Reference specific experiences and achievements from the CV when relevant
-- Be knowledgeable about his documented projects, roles, and technical capabilities
+Remember: answer ONLY from the CV data above.`;
 
-If someone asks who you are or what this is, say: "I'm chat, an AI assistant running entirely in your browser designed to help you get to know Alex Nodeland."
-
-Use ONLY the CV information above to provide concise, accurate responses about Alex's professional background, skills, and achievements. Do not speculate or provide information not explicitly contained in the CV.`;
-
-  return combineSystemPromptWithCV(basePrompt, cvData, cvLevel);
+/**
+ * Generates the system prompt with full CV context.
+ * Uses model-specific suffixes for optimal behavior per architecture.
+ */
+export function getSystemPromptForModel(modelId: string): string {
+  const isLFM = modelId.includes('LFM');
+  const suffix = isLFM ? LFM_SUFFIX : QWEN_SUFFIX;
+  return combineSystemPromptWithCV(SHARED_INSTRUCTIONS + suffix, cvData);
 }
 
 export const chatConfig: ChatConfig = {
   models: {
     default: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
-    available: [
-      {
-        id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
-        name: 'LFM2.5 1.2B',
-        description: 'fast reasoning model optimized for in-browser inference',
-        size: '1.2B parameters',
-        contextWindow: 32768,
-        device: 'webgpu',
-        dtype: 'q4f16',
-        fallbackDevice: 'wasm',
-        supportsThinking: true,
-        cvContextLevel: 'full',
-      },
-      {
-        id: 'onnx-community/Qwen2.5-0.5B-Instruct',
-        name: 'Qwen 2.5 0.5B',
-        description: 'Optimized instruction-following model',
-        size: '0.5B parameters',
-        contextWindow: 2048,
-        device: 'webgpu',
-        dtype: 'q4f16',
-        fallbackDevice: 'wasm',
-        supportsThinking: false,
-        cvContextLevel: 'concise',
-      },
-    ],
   },
   generation: {
-    systemPrompt: getSystemPromptForModel('LiquidAI/LFM2.5-1.2B-Thinking-ONNX'),
-    maxTokens: {
-      default: 4096,
-      thinking: 8192,
-      wasm: 2048,
-      wasmThinking: 4096,
-    },
-    temperature: {
-      default: 0.6,
-      thinking: 0.6,
-      wasm: 0.3,
-    },
-    topK: {
-      default: 50,
-      thinking: 50,
-      wasm: 40,
-    },
-    repetitionPenalty: 1.1,
+    getSystemPrompt: getSystemPromptForModel,
   },
   interface: {
     welcomeMessage:
-      "Hi! I'm chat, Alex's AI assistant. I can help you with technical questions, discuss AI engineering topics, or chat about anything else you're curious about. What would you like to explore?",
+      "Hi! I'm chat, Alex's AI assistant running in your browser. Ask me about his experience, skills, education, or career background.",
     placeholderText: {
-      ready: 'type your message here...',
+      ready: 'ask about Alex...',
       loading: 'loading model...',
       idle: 'please download the model first',
     },
     samplePrompts: [
-      'what is this?',
-      "explain alex's roles in startups",
-      "what is alex's experience with hpc?",
+      "what's Alex's current role?",
+      'what AI/ML experience does he have?',
+      'where did Alex study?',
     ],
     enableThinking: true,
   },
   behavior: {
-    contextWindow: 32768,
-    enableWebGPU: true,
-    fallbackToWasm: true,
-    persistConversation: true,
-    autoLoadModel: false,
+    contextWindow: 16384,
   },
 };
-
-/** Single source of truth for available models — re-exported by lib/utils/chat */
-export const AVAILABLE_MODELS: ChatModel[] = chatConfig.models.available;

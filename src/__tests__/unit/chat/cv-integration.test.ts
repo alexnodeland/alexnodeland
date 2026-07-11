@@ -7,120 +7,13 @@ import { cvData } from '../../../config/cv';
 import {
   combineSystemPromptWithCV,
   createCVContextBlock,
-  formatCVConcise,
-  formatCVForSystemPrompt,
-  formatCVFull,
-  formatCVMedium,
+  formatCV,
 } from '../../../lib/utils/cvFormatter';
 
 describe('CV Integration in Chat', () => {
-  describe('CV Context Levels', () => {
-    describe('formatCVConcise', () => {
-      it('should include only essential information', () => {
-        const formatted = formatCVConcise(cvData);
-
-        expect(formatted).toContain(cvData.personal.name);
-        expect(formatted).toContain(cvData.personal.title);
-        expect(formatted).toContain(cvData.personal.location);
-        expect(formatted).toContain(cvData.personal.website);
-
-        // Should include current role
-        expect(formatted).toContain(cvData.experience[0].title);
-        expect(formatted).toContain(cvData.experience[0].company);
-
-        // Should include top 5 skills only
-        const topSkills = cvData.skills.technical.slice(0, 5);
-        topSkills.forEach(skill => {
-          expect(formatted).toContain(skill);
-        });
-
-        // Should include latest education
-        expect(formatted).toContain(cvData.education[0].degree);
-        expect(formatted).toContain(cvData.education[0].institution);
-
-        // Should be compact - no detailed achievements
-        expect(formatted).not.toContain('achievements');
-        expect(formatted).not.toContain('Summary:');
-      });
-    });
-
-    describe('formatCVMedium', () => {
-      it('should include balanced information', () => {
-        const formatted = formatCVMedium(cvData);
-
-        expect(formatted).toContain(cvData.personal.name);
-        expect(formatted).toContain(cvData.personal.title);
-        expect(formatted).toContain(cvData.personal.location);
-
-        // Should include recent 3 positions
-        const recentExperience = cvData.experience.slice(0, 3);
-        recentExperience.forEach(exp => {
-          expect(formatted).toContain(exp.title);
-          expect(formatted).toContain(exp.company);
-        });
-
-        // Should include limited technical skills
-        const topTechnicalSkills = cvData.skills.technical.slice(0, 10);
-        expect(formatted).toContain(topTechnicalSkills[0]);
-
-        // Should include education
-        cvData.education.forEach(edu => {
-          expect(formatted).toContain(edu.degree);
-          expect(formatted).toContain(edu.institution);
-        });
-
-        // Should include some achievements but limited
-        expect(formatted).toContain('achievements');
-      });
-    });
-
-    describe('formatCVFull', () => {
-      it('should include complete information', () => {
-        const formatted = formatCVFull(cvData);
-
-        expect(formatted).toContain(cvData.personal.name);
-        expect(formatted).toContain(cvData.personal.title);
-        expect(formatted).toContain(cvData.personal.email);
-        expect(formatted).toContain(cvData.personal.location);
-        expect(formatted).toContain(cvData.personal.website);
-        expect(formatted).toContain(cvData.personal.summary);
-
-        // Should include all experience
-        cvData.experience.forEach(exp => {
-          expect(formatted).toContain(exp.title);
-          expect(formatted).toContain(exp.company);
-        });
-
-        // Should include all skills
-        expect(formatted).toContain('Technical Skills');
-        expect(formatted).toContain('Soft Skills');
-
-        // Should include certifications if present
-        if (cvData.certifications.length > 0) {
-          expect(formatted).toContain('Certifications');
-        }
-      });
-    });
-
-    describe('formatCVForSystemPrompt with levels', () => {
-      it('should delegate to appropriate level function', () => {
-        const concise = formatCVForSystemPrompt(cvData, 'concise');
-        const medium = formatCVForSystemPrompt(cvData, 'medium');
-        const full = formatCVForSystemPrompt(cvData, 'full');
-
-        expect(concise.length).toBeLessThan(medium.length);
-        expect(medium.length).toBeLessThan(full.length);
-
-        // Concise should not include summary
-        expect(concise).not.toContain(cvData.personal.summary);
-        expect(full).toContain(cvData.personal.summary);
-      });
-    });
-  });
-
-  describe('formatCVForSystemPrompt', () => {
+  describe('formatCV', () => {
     it('should include personal information', () => {
-      const formatted = formatCVForSystemPrompt(cvData);
+      const formatted = formatCV(cvData);
 
       expect(formatted).toContain(cvData.personal.name);
       expect(formatted).toContain(cvData.personal.title);
@@ -129,30 +22,91 @@ describe('CV Integration in Chat', () => {
       expect(formatted).toContain(cvData.personal.summary);
     });
 
-    it('should include recent experience', () => {
-      const formatted = formatCVForSystemPrompt(cvData);
+    it('should include all experience positions', () => {
+      const formatted = formatCV(cvData);
 
-      // Should include the most recent positions
-      expect(formatted).toContain(cvData.experience[0].title);
-      expect(formatted).toContain(cvData.experience[0].company);
-      expect(formatted).toContain(cvData.experience[0].duration);
+      cvData.experience.forEach(exp => {
+        expect(formatted).toContain(exp.title);
+        expect(formatted).toContain(exp.company);
+        expect(formatted).toContain(exp.duration);
+      });
     });
 
-    it('should include technical and soft skills', () => {
-      const formatted = formatCVForSystemPrompt(cvData);
+    it('should include per-role skills when available', () => {
+      const formatted = formatCV(cvData);
 
-      expect(formatted).toContain('Technical Skills');
-      expect(formatted).toContain('Soft Skills');
-      expect(formatted).toContain(cvData.skills.technical[0]);
-      expect(formatted).toContain(cvData.skills.soft[0]);
+      const firstWithSkills = cvData.experience.find(
+        exp => exp.skills && exp.skills.length > 0
+      );
+      if (firstWithSkills && firstWithSkills.skills) {
+        firstWithSkills.skills.forEach(skill => {
+          expect(formatted).toContain(skill);
+        });
+      }
     });
 
-    it('should include education information', () => {
-      const formatted = formatCVForSystemPrompt(cvData);
+    it('should include technical and leadership skills', () => {
+      const formatted = formatCV(cvData);
 
-      expect(formatted).toContain('Education');
-      expect(formatted).toContain(cvData.education[0].degree);
-      expect(formatted).toContain(cvData.education[0].institution);
+      cvData.skills.technical.forEach(skill => {
+        expect(formatted).toContain(skill);
+      });
+      cvData.skills.soft.forEach(skill => {
+        expect(formatted).toContain(skill);
+      });
+    });
+
+    it('should include languages when available', () => {
+      const formatted = formatCV(cvData);
+
+      if (cvData.skills.languages && cvData.skills.languages.length > 0) {
+        cvData.skills.languages.forEach(lang => {
+          expect(formatted).toContain(lang);
+        });
+      }
+    });
+
+    it('should include all education entries with details', () => {
+      const formatted = formatCV(cvData);
+
+      cvData.education.forEach(edu => {
+        expect(formatted).toContain(edu.degree);
+        expect(formatted).toContain(edu.institution);
+        expect(formatted).toContain(edu.duration);
+
+        if (edu.description) {
+          expect(formatted).toContain(edu.description);
+        }
+        if (edu.relevantCoursework && edu.relevantCoursework.length > 0) {
+          edu.relevantCoursework.forEach(course => {
+            expect(formatted).toContain(course);
+          });
+        }
+      });
+    });
+
+    it('should include certifications', () => {
+      const formatted = formatCV(cvData);
+
+      cvData.certifications.forEach(cert => {
+        expect(formatted).toContain(cert.name);
+        expect(formatted).toContain(cert.issuer);
+      });
+    });
+
+    it('should use XML section tags', () => {
+      const formatted = formatCV(cvData);
+
+      expect(formatted).toContain('<personal>');
+      expect(formatted).toContain('</personal>');
+      expect(formatted).toContain('<experience>');
+      expect(formatted).toContain('</experience>');
+      expect(formatted).toContain('<skills>');
+      expect(formatted).toContain('</skills>');
+      expect(formatted).toContain('<education>');
+      expect(formatted).toContain('</education>');
+      expect(formatted).toContain('<certifications>');
+      expect(formatted).toContain('</certifications>');
     });
   });
 
@@ -162,7 +116,7 @@ describe('CV Integration in Chat', () => {
 
       expect(contextBlock).toMatch(/^<alexs_cv>/);
       expect(contextBlock).toMatch(/<\/alexs_cv>$/);
-      expect(contextBlock).toContain(cvData.personal.name);
+      expect(contextBlock).toContain(cvData.personal.title);
     });
   });
 
@@ -182,41 +136,44 @@ describe('CV Integration in Chat', () => {
       const systemPrompt = 'You are a helpful assistant.';
       const combined = combineSystemPromptWithCV(systemPrompt, cvData);
 
-      expect(combined).toContain(cvData.personal.name);
+      expect(combined).toContain(cvData.personal.title);
       expect(combined).toContain(systemPrompt);
     });
   });
 
   describe('Chat Config Integration', () => {
     it('should include CV data in the system prompt', () => {
-      const systemPrompt = chatConfig.generation.systemPrompt;
+      const systemPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
 
       expect(systemPrompt).toContain('<alexs_cv>');
       expect(systemPrompt).toContain('</alexs_cv>');
-      expect(systemPrompt).toContain(cvData.personal.name);
       expect(systemPrompt).toContain(cvData.personal.title);
     });
 
     it('should include recent work experience in system prompt', () => {
-      const systemPrompt = chatConfig.generation.systemPrompt;
+      const systemPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
 
       expect(systemPrompt).toContain(cvData.experience[0].company);
       expect(systemPrompt).toContain(cvData.experience[0].title);
     });
 
     it('should include technical skills in system prompt', () => {
-      const systemPrompt = chatConfig.generation.systemPrompt;
+      const systemPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
 
-      // Check for key technical skills that are in the concise version (top 5)
-      expect(systemPrompt).toContain('Python');
-      expect(systemPrompt).toContain('AWS');
-      expect(systemPrompt).toContain('JavaScript/TypeScript');
+      expect(systemPrompt).toContain(cvData.skills.technical[0]);
     });
 
     it('should maintain proper system prompt structure', () => {
-      const systemPrompt = chatConfig.generation.systemPrompt;
+      const systemPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
 
-      // Should have CV data first, then instructions
       const cvIndex = systemPrompt.indexOf('<alexs_cv>');
       const instructionsStart = systemPrompt.indexOf('You are "chat"');
 
@@ -225,50 +182,107 @@ describe('CV Integration in Chat', () => {
       expect(cvIndex).toBeLessThan(instructionsStart);
     });
 
-    it('should include refusal instructions in system prompt', () => {
-      const systemPrompt = chatConfig.generation.systemPrompt;
+    it('should include rules and grounding constraints', () => {
+      const systemPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
 
-      expect(systemPrompt).toContain('CRITICAL INSTRUCTIONS');
-      expect(systemPrompt).toContain(
-        'You ONLY have access to information provided in the CV data above'
-      );
-      expect(systemPrompt).toContain(
-        "I don't have that information in Alex's CV"
-      );
-      expect(systemPrompt).toContain('Do NOT make up or infer information');
+      expect(systemPrompt).toContain('Rules:');
+      expect(systemPrompt).toContain('Answer ONLY from the <alexs_cv> data');
+      expect(systemPrompt).toContain("not in Alex's CV");
+      expect(systemPrompt).toContain('Never invent or assume facts');
     });
 
-    it('should use full CV level for LFM2.5 model', () => {
-      const systemPrompt = chatConfig.generation.systemPrompt;
+    it('should include few-shot examples', () => {
+      const systemPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
 
-      // The default model (LFM2.5 1.2B) uses full CV context
+      expect(systemPrompt).toContain('Examples:');
+      expect(systemPrompt).toContain('User:');
+      expect(systemPrompt).toContain('Assistant:');
+    });
+
+    it('should include full CV with all experience and summary', () => {
+      const systemPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
+
       expect(systemPrompt).toContain('<alexs_cv>');
-      expect(systemPrompt).toContain(cvData.personal.name);
       expect(systemPrompt).toContain(cvData.experience[0].title);
-
-      // Full version includes personal summary and email
       expect(systemPrompt).toContain(cvData.personal.summary);
-      expect(systemPrompt).toContain(cvData.personal.email);
-    });
-  });
 
-  describe('Model-Specific CV Context', () => {
-    it('should configure models with appropriate CV context levels', () => {
-      const models = chatConfig.models.available;
-
-      // Small models should use concise
-      const smallModels = models.filter(
-        m => m.id.includes('0.5B') || m.id.includes('0.6B')
-      );
-      smallModels.forEach(model => {
-        expect(model.cvContextLevel).toBe('concise');
+      cvData.experience.forEach(exp => {
+        expect(systemPrompt).toContain(exp.title);
       });
     });
 
-    it('should provide fallback CV context levels', () => {
-      // Test the fallback logic for unknown models
-      const systemPromptUnknownSmall = chatConfig.generation.systemPrompt;
-      expect(systemPromptUnknownSmall).toContain('<alexs_cv>');
+    it('should reinforce grounding constraint at end of prompt', () => {
+      const systemPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
+
+      expect(systemPrompt).toMatch(/answer ONLY from the CV data above\.$/);
+    });
+  });
+
+  describe('Model-Specific Prompting', () => {
+    it('should produce identical CV context for all models', () => {
+      const lfmPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
+      const qwenPrompt = chatConfig.generation.getSystemPrompt(
+        'onnx-community/Qwen3-0.6B-ONNX'
+      );
+
+      const lfmCV = lfmPrompt.match(/<alexs_cv>[\s\S]*<\/alexs_cv>/)?.[0];
+      const qwenCV = qwenPrompt.match(/<alexs_cv>[\s\S]*<\/alexs_cv>/)?.[0];
+      expect(lfmCV).toBe(qwenCV);
+    });
+
+    it('should use different suffixes per model', () => {
+      const lfmPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
+      const qwenPrompt = chatConfig.generation.getSystemPrompt(
+        'onnx-community/Qwen3-0.6B-ONNX'
+      );
+
+      expect(lfmPrompt).not.toBe(qwenPrompt);
+    });
+
+    it('should include thinking guidance for LFM', () => {
+      const lfmPrompt = chatConfig.generation.getSystemPrompt(
+        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      );
+
+      expect(lfmPrompt).toContain('identify which CV section');
+    });
+
+    it('should include conciseness constraint for Qwen', () => {
+      const qwenPrompt = chatConfig.generation.getSystemPrompt(
+        'onnx-community/Qwen3-0.6B-ONNX'
+      );
+
+      expect(qwenPrompt).toContain('1-3 sentences');
+    });
+
+    it('should include CV tags in both model prompts', () => {
+      const qwenPrompt = chatConfig.generation.getSystemPrompt(
+        'onnx-community/Qwen3-0.6B-ONNX'
+      );
+      expect(qwenPrompt).toContain('<alexs_cv>');
+      expect(qwenPrompt).toContain('</alexs_cv>');
+    });
+
+    it('should use Qwen suffix for unknown models', () => {
+      const qwenPrompt = chatConfig.generation.getSystemPrompt(
+        'onnx-community/Qwen3-0.6B-ONNX'
+      );
+      const unknownPrompt =
+        chatConfig.generation.getSystemPrompt('unknown-model-id');
+
+      expect(unknownPrompt).toBe(qwenPrompt);
     });
   });
 });

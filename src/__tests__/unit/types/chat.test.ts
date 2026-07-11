@@ -1,8 +1,7 @@
 import {
   ChatMessage,
   ChatModel,
-  ExtendedChatContextType,
-  GenerationConfig,
+  ModelGenerationProfile,
   ModelLoadingState,
   ProgressItem,
   WorkerRequest,
@@ -37,6 +36,38 @@ describe('Chat Types', () => {
     });
   });
 
+  describe('ModelGenerationProfile', () => {
+    it('should validate ModelGenerationProfile interface', () => {
+      const profile: ModelGenerationProfile = {
+        maxTokens: 4096,
+        maxTokensWasm: 2048,
+        temperature: 0.05,
+        temperatureWasm: 0.0,
+        topK: 40,
+        topKWasm: 20,
+        topP: 0.1,
+        repetitionPenalty: 1.05,
+      };
+
+      expect(profile.maxTokens).toBe(4096);
+      expect(profile.topP).toBe(0.1);
+    });
+
+    it('should allow topP to be undefined', () => {
+      const profile: ModelGenerationProfile = {
+        maxTokens: 4096,
+        maxTokensWasm: 2048,
+        temperature: 0.3,
+        temperatureWasm: 0.0,
+        topK: 40,
+        topKWasm: 20,
+        repetitionPenalty: 1.05,
+      };
+
+      expect(profile.topP).toBeUndefined();
+    });
+  });
+
   describe('ChatModel', () => {
     it('should validate basic ChatModel interface', () => {
       const model: ChatModel = {
@@ -52,19 +83,35 @@ describe('Chat Types', () => {
 
     it('should allow extended properties', () => {
       const model: ChatModel = {
-        id: 'onnx-community/Qwen3-0.6B-ONNX',
-        name: 'qwen3-0.6b',
-        description: 'fast reasoning model',
-        size: '~600MB',
-        contextWindow: 4096,
+        id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+        name: 'lfm-1.2b',
+        description: 'efficient reasoning model',
+        size: '~1.2GB',
+        contextWindow: 16384,
         device: 'webgpu',
-        dtype: 'q4f16',
+        dtype: 'q4',
+        dtypeWasm: 'auto',
+        alwaysThinks: true,
+        templateOptions: {},
+        generationProfile: {
+          maxTokens: 4096,
+          maxTokensWasm: 2048,
+          temperature: 0.05,
+          temperatureWasm: 0.0,
+          topK: 40,
+          topKWasm: 20,
+          topP: 0.1,
+          repetitionPenalty: 1.05,
+        },
       };
 
-      expect(model.size).toBe('~600MB');
-      expect(model.contextWindow).toBe(4096);
+      expect(model.size).toBe('~1.2GB');
+      expect(model.contextWindow).toBe(16384);
       expect(model.device).toBe('webgpu');
-      expect(model.dtype).toBe('q4f16');
+      expect(model.dtype).toBe('q4');
+      expect(model.dtypeWasm).toBe('auto');
+      expect(model.alwaysThinks).toBe(true);
+      expect(model.generationProfile?.repetitionPenalty).toBe(1.05);
     });
 
     it('should allow cpu device option', () => {
@@ -163,11 +210,11 @@ describe('Chat Types', () => {
     it('should validate load request with data', () => {
       const request: WorkerRequest = {
         type: 'load',
-        data: { modelId: 'onnx-community/Qwen3-0.6B-ONNX' },
+        data: { modelId: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX' },
       };
 
       expect(request.type).toBe('load');
-      expect(request.data.modelId).toBe('onnx-community/Qwen3-0.6B-ONNX');
+      expect(request.data.modelId).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
     });
 
     it('should validate generate request', () => {
@@ -222,51 +269,6 @@ describe('Chat Types', () => {
 
       expect(response.status).toBe('error');
       expect(response.data).toBe('Model loading failed');
-    });
-  });
-
-  describe('GenerationConfig', () => {
-    it('should validate default generation config', () => {
-      const config: GenerationConfig = {};
-
-      expect(config).toBeDefined();
-    });
-
-    it('should validate full generation config', () => {
-      const config: GenerationConfig = {
-        maxTokens: 2048,
-        temperature: 0.7,
-        topK: 40,
-        doSample: true,
-      };
-
-      expect(config.maxTokens).toBe(2048);
-      expect(config.temperature).toBe(0.7);
-      expect(config.topK).toBe(40);
-      expect(config.doSample).toBe(true);
-    });
-  });
-
-  describe('ExtendedChatContextType', () => {
-    it('should include all required properties', () => {
-      // This is more of a compile-time check, but we can verify the interface exists
-      const mockContext: Partial<ExtendedChatContextType> = {
-        isChatOpen: false,
-        isClosing: false,
-        messages: [],
-        selectedModel: 'test-model',
-        availableModels: [],
-        isLoading: false,
-        modelState: { status: 'idle', progress: [] },
-        webGPUSupported: null,
-        isGenerating: false,
-        generationConfig: {},
-      };
-
-      expect(mockContext.isChatOpen).toBe(false);
-      expect(mockContext.modelState?.status).toBe('idle');
-      expect(mockContext.webGPUSupported).toBeNull();
-      expect(mockContext.isGenerating).toBe(false);
     });
   });
 });

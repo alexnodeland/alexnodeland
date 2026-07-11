@@ -256,6 +256,15 @@
     monospace;
 }
 
+.project-stars {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  margin-left: 0.25rem;
+}
+
 .project-link-indicator {
   display: flex;
   align-items: center;
@@ -450,13 +459,13 @@
 
 // Light mode specific enhancements
 [data-theme='light'] {
+  // Projects header - text on dark background
   .projects-header {
     h1 {
       color: white;
       text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
 
       &::after {
-        background: var(--accent-color);
         box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
       }
     }

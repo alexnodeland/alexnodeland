@@ -34,8 +34,8 @@ describe('Phase 4A: Model Switching with Cache', () => {
         m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
       expect(lfmModel).toBeDefined();
-      expect(lfmModel?.name).toBe('LFM2.5 1.2B');
-      expect(lfmModel?.contextWindow).toBe(32768);
+      expect(lfmModel?.name).toBe('lfm-1.2b');
+      expect(lfmModel?.contextWindow).toBe(16384);
       expect(lfmModel?.device).toBe('webgpu');
     });
 
@@ -111,7 +111,7 @@ describe('Phase 4A: Model Switching with Cache', () => {
     it('should return correct model for valid ID', () => {
       const model = getModelById('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
       expect(model).toBeDefined();
-      expect(model?.name).toBe('LFM2.5 1.2B');
+      expect(model?.name).toBe('lfm-1.2b');
     });
 
     it('should return undefined for invalid ID', () => {
@@ -125,7 +125,7 @@ describe('Phase 4A: Model Switching with Cache', () => {
       const contextWindow = getRecommendedContextWindow(
         'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
-      expect(contextWindow).toBe(32768);
+      expect(contextWindow).toBe(16384);
     });
 
     it('should reduce context for large CPU models', () => {
@@ -309,7 +309,7 @@ describe('Integration Tests', () => {
     const contextWindow = getRecommendedContextWindow(
       'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
     );
-    expect(contextWindow).toBe(32768);
+    expect(contextWindow).toBe(16384);
 
     // Create some test messages and apply rolling context
     const messages = Array.from(
