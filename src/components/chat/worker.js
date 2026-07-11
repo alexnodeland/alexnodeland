@@ -5,9 +5,6 @@ import {
   TextStreamer,
   env,
 } from '@huggingface/transformers';
-// Disable browser cache to avoid stale model files
-env.useBrowserCache = false;
-
 // Configure ONNX Runtime Web (wasm) for broader browser compatibility
 // - In non cross-origin-isolated contexts (most local dev servers),
 //   SharedArrayBuffer is unavailable. ORT's wasm multi-thread/proxy requires it.

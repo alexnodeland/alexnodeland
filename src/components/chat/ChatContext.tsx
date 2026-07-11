@@ -88,6 +88,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const workerRef = useRef<Worker | null>(null);
   const workerUrlRef = useRef<string | null>(null);
   const WORKER_PATH_KEY = 'chat-worker-path';
+  const MODEL_READY_KEY = 'chat-loaded-model';
 
   // Feature flag for worker connection - controllable via environment
   // Set GATSBY_CHAT_WORKER=true to enable real model
@@ -141,6 +142,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
 
     // Welcome message removed - using sample pills instead
+
+    // Clear model-ready state so reload won't auto-restore
+    try {
+      sessionStorage.removeItem(MODEL_READY_KEY);
+    } catch {
+      // sessionStorage may be unavailable
+    }
 
     if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
       // eslint-disable-next-line no-console
@@ -328,9 +336,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     // Clear the cached models list to ensure fresh state
     setCachedModels([]);
 
-    // Clear cached worker path since we terminated
+    // Clear cached worker path and model-ready state since we terminated
     try {
       sessionStorage.removeItem(WORKER_PATH_KEY);
+      sessionStorage.removeItem(MODEL_READY_KEY);
     } catch {
       // sessionStorage may be unavailable
     }
@@ -519,6 +528,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                 // sessionStorage may be unavailable
               }
             }
+            // Persist model-ready state for reload recovery (mobile tab kills)
+            try {
+              sessionStorage.setItem(MODEL_READY_KEY, selectedModel);
+            } catch {
+              // sessionStorage may be unavailable
+            }
             break;
           }
           case 'start':
@@ -651,11 +666,23 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       workerRef.current.addEventListener('error', onError as any);
 
       // Perform WebGPU capability check
-      // Checking WebGPU support...
       workerRef.current.postMessage({ type: 'check' });
 
-      // Don't auto-load any model - only load when user selects Qwen
-      // Worker initialized, modelState should be idle
+      // Auto-reload model from cache if previously loaded (handles mobile tab kills)
+      try {
+        const prevModel = sessionStorage.getItem(MODEL_READY_KEY);
+        if (prevModel) {
+          setModelState({
+            status: 'loading',
+            progress: [],
+            loadingMessage: 'Restoring model from cache...',
+          });
+          ModelCache.setModelLoading(prevModel);
+          worker.postMessage({ type: 'load', data: { modelId: prevModel } });
+        }
+      } catch {
+        // sessionStorage may be unavailable
+      }
 
       return () => {
         try {
