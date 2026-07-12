@@ -1,574 +1,369 @@
 # 💬 Chat Configuration Guide
 
-This guide explains how to configure and customize the AI chat system using the new centralized configuration system. The system now follows **Hugging Face's official chat templating standards** for proper message formatting and system prompt handling.
+This guide explains how the in-browser AI chat assistant is built and how to
+customize it. The chat runs entirely client-side via
+[Transformers.js](https://huggingface.co/docs/transformers.js) in a Web
+Worker — no server, no API keys, no data leaving the visitor's browser.
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Quick Start](#quick-start)
-- [Configuration Structure](#configuration-structure)
-- [System Prompt Configuration](#system-prompt-configuration)
-- [Generation Parameters](#generation-parameters)
-- [Interface Customization](#interface-customization)
-- [Behavior Settings](#behavior-settings)
-- [Using the ChatSettings Component](#using-the-chatsettings-component)
-- [Chat Templating Standards](#chat-templating-standards)
+- [Changing the Model Lineup](#changing-the-model-lineup)
+- [Editing the System Prompt](#editing-the-system-prompt)
 - [CV Data Integration](#cv-data-integration)
-- [Best Practices](#best-practices)
+- [Interface Customization](#interface-customization)
+- [Build Pipeline](#build-pipeline)
+- [Evaluation](#evaluation)
+- [Troubleshooting](#troubleshooting)
 
 ## 🎯 Overview
 
-The chat system uses a structured configuration that makes it easy to:
-
-- **Customize the system prompt** to define AI behavior
-- **Automatically include CV data** for context about Alex's background
-- **Adjust generation parameters** for different use cases
-- **Configure the user interface** elements
-- **Control model behavior** and performance settings
-- **Maintain consistency** across the chat experience
-
-### 📄 CV Integration
-
-The system automatically includes Alex's complete CV data in every conversation, providing the AI with detailed context about:
-
-- **Professional experience** and career progression
-- **Technical and soft skills**
-- **Education and certifications**
-- **Key achievements and project highlights**
-
-This data is wrapped in `<alexs_cv>` tags and prepended to the system prompt, ensuring the AI can provide informed responses about Alex's background and expertise.
-
-## 🚀 Quick Start
-
-### 1. Update System Prompt
-
-Edit `src/config/chat.ts`:
-
-```typescript
-generation: {
-  systemPrompt: `You are a helpful AI assistant specialized in [your domain].
-
-Key characteristics:
-- Be concise and accurate
-- Ask clarifying questions when needed
-- Provide practical solutions
-
-[Add your specific instructions here]`,
-  // ... other settings
-}
-```
-
-### 2. Customize Interface
-
-```typescript
-interface: {
-  welcomeMessage: "Welcome! I'm your AI assistant. How can I help today?",
-  samplePrompts: [
-    "Tell me about your capabilities",
-    "Help me with a coding problem",
-    "Explain a technical concept",
-  ],
-  enableThinking: true,
-}
-```
-
-### 3. Adjust Generation Settings
-
-```typescript
-generation: {
-  temperature: {
-    default: 0.7,    // More creative
-    thinking: 0.6,   // Balanced for reasoning
-    wasm: 0.0,      // Deterministic on CPU
-  },
-  maxTokens: {
-    default: 512,
-    thinking: 1024,  // More tokens for reasoning
-  },
-}
-```
-
-## 📊 Configuration Structure
-
-### Models Configuration
-
-Configure available models and defaults:
-
-```typescript
-models: {
-  default: 'onnx-community/Qwen3-0.6B-ONNX',
-  available: [
-    {
-      id: 'onnx-community/Qwen3-0.6B-ONNX',
-      name: 'Qwen 3 0.6B',
-      description: 'Fast, lightweight model',
-      size: '0.6B parameters',
-      contextWindow: 2048,
-      supportsThinking: true,
-    },
-    // Add more models...
-  ],
-}
-```
-
-### Generation Parameters
-
-Fine-tune AI responses:
-
-```typescript
-generation: {
-  systemPrompt: "Your custom system prompt...",
-  maxTokens: {
-    default: 512,      // Standard responses
-    thinking: 1024,    // Thinking mode responses
-    wasm: 96,          // CPU-optimized responses
-    wasmThinking: 192, // CPU thinking responses
-  },
-  temperature: {
-    default: 0.7,      // Creative responses
-    thinking: 0.6,     // Balanced reasoning
-    wasm: 0.0,         // Deterministic CPU
-  },
-  topK: {
-    default: 40,       // Good variety
-    thinking: 20,      // More focused
-    wasm: 20,          // CPU-optimized
-  },
-  repetitionPenalty: 1.05, // Reduce repetition
-}
-```
-
-### Interface Elements
-
-Customize user-facing text:
-
-```typescript
-interface: {
-  welcomeMessage: "Your welcome message",
-  placeholderText: {
-    ready: 'Type your message here...',
-    loading: 'Loading model...',
-    idle: 'Please download the model first',
-  },
-  samplePrompts: [
-    "Sample prompt 1",
-    "Sample prompt 2",
-    // Up to 5 prompts recommended
-  ],
-  enableThinking: true,
-}
-```
-
-### Behavior Settings
-
-Control system behavior:
-
-```typescript
-behavior: {
-  contextWindow: 2048,        // Token limit for context
-  enableWebGPU: true,         // Use GPU acceleration
-  fallbackToWasm: true,       // CPU fallback
-  persistConversation: true,  // Remember context
-  autoLoadModel: false,       // Load on startup
-}
-```
-
-## 🤖 System Prompt Configuration
-
-The system prompt defines how your AI assistant behaves. Here are some templates:
-
-### Technical Assistant
-
-```typescript
-systemPrompt: `You are an expert technical consultant with deep knowledge in software engineering, AI systems, and modern development practices.
-
-Characteristics:
-- Provide clear, actionable technical advice
-- Include code examples when relevant
-- Explain complex concepts in understandable terms
-- Ask clarifying questions about requirements
-- Focus on best practices and maintainable solutions
-
-When helping with code:
-- Use modern, idiomatic approaches
-- Consider performance and security
-- Explain your reasoning
-- Suggest testing strategies`;
-```
-
-### Creative Writing Assistant
-
-```typescript
-systemPrompt: `You are a creative writing assistant who helps users craft compelling stories, content, and copy.
-
-Characteristics:
-- Be imaginative and inspiring
-- Offer multiple creative approaches
-- Help with structure and flow
-- Provide specific examples
-- Encourage experimentation
-
-Focus areas:
-- Storytelling techniques
-- Character development
-- Plot structure
-- Writing style and voice
-- Editing and refinement`;
-```
-
-### Educational Tutor
-
-```typescript
-systemPrompt: `You are a patient and knowledgeable tutor who helps students learn effectively.
-
-Teaching approach:
-- Break down complex topics into digestible parts
-- Use analogies and examples
-- Check understanding before moving forward
-- Encourage questions and curiosity
-- Adapt explanations to the student's level
-
-Always:
-- Ask if they want more detail or examples
-- Provide practice opportunities
-- Be encouraging and supportive`;
-```
-
-## ⚙️ Generation Parameters
-
-### Temperature Settings
-
-- **0.0**: Completely deterministic, same response every time
-- **0.3-0.5**: Slightly creative, good for technical content
-- **0.7**: Balanced creativity and consistency
-- **0.9-1.0**: Very creative, good for brainstorming
-
-### Token Limits
-
-- **96-192**: Quick responses, good for simple questions
-- **512**: Standard responses for most use cases
-- **1024+**: Complex responses, detailed explanations
-
-### Top-K Values
-
-- **10-20**: More focused, consistent responses
-- **40-60**: Good variety while staying on topic
-- **80+**: More diverse but potentially off-topic
-
-## 🖥️ Using the ChatSettings Component
-
-Import and use the ChatSettings component:
-
-```typescript
-import ChatSettings from './components/chat/ChatSettings';
-
-// In your component
-<ChatSettings
-  onSystemPromptChange={(prompt) => {
-    // Handle system prompt changes
-    console.log('New system prompt:', prompt);
-  }}
-  onSettingChange={(setting, value) => {
-    // Handle other setting changes
-    console.log(`Setting ${setting} changed to:`, value);
-  }}
-/>
-```
-
-The component provides:
-
-- System prompt editor
-- Thinking mode toggle
-- Advanced parameter controls
-- Reset to defaults functionality
-
-## 🔄 Chat Templating Standards
-
-The system now follows **Hugging Face's official chat templating standards** for proper message formatting and system prompt injection.
-
-### Message Format
-
-All messages follow the standard chat template format:
-
-```typescript
-interface ChatMessage {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant' | 'system';
-  timestamp: Date;
-}
-```
-
-### System Prompt Injection
-
-- **Automatic**: System prompts are automatically injected as the first message
-- **Deduplication**: Multiple system messages are filtered to prevent duplication
-- **Validation**: All messages are validated before applying chat templates
-- **Preservation**: System messages are always preserved in rolling context windows
-
-### Template Application
-
-The worker uses Hugging Face's `tokenizer.apply_chat_template()` method:
-
-```javascript
-const inputs = tokenizer.apply_chat_template(processedMessages, {
-  add_generation_prompt: true,
-  return_dict: true,
-  enable_thinking: reasonEnabled,
-  add_special_tokens: false,
-});
-```
-
-### Message Validation
-
-Messages are validated to ensure they meet chat template requirements:
-
-- Valid role (`system`, `user`, or `assistant`)
-- Non-empty content
-- Proper structure for tokenizer processing
-
-### Context Window Management
-
-The rolling context system now:
-
-- **Preserves all system messages** regardless of token limits
-- **Maintains chronological order** for conversation messages
-- **System-first ordering** ensures proper template application
-- **Token-aware filtering** keeps recent conversation history
-
-### Debug Mode
-
-Enable debug logging to see chat templating in action:
-
-```javascript
-// In browser console
-window.CHAT_DEBUG = true;
-```
-
-This shows:
-
-- Processed messages before templating
-- System prompt injection status
-- Template application success/failure
-- Context window management decisions
-
-## 📄 CV Data Integration
-
-The chat system automatically includes Alex's complete CV data as context for every conversation. This provides the AI assistant with comprehensive knowledge about his background, experience, and expertise.
-
-### How It Works
-
-1. **Automatic Inclusion**: CV data is automatically imported from `src/config/cv.ts`
-2. **Formatted Context**: The CV is formatted into a structured, readable format
-3. **Tagged Placement**: CV data is wrapped in `<alexs_cv>` tags for clear delineation
-4. **System Prompt Integration**: CV data is prepended to the system prompt automatically
-
-### CV Data Structure
-
-The integrated CV includes:
-
-```
-<alexs_cv>
-**Personal Information:**
-- Name: Alex Nodeland
-- Title: Senior AI Engineer & Technical Consultant
-- Location: Upstate, New York, USA
-- Website: alexnodeland.com
-- Summary: [Professional summary]
-
-**Recent Experience:**
-- Senior AI Engineer at Perch Insights (2024 - Present)
-- Head of AI at Influize (2023 - 2024)
-- Technical Strategy Consultant at Freelance (2022 - Present)
-- [Additional recent positions...]
-
-**Technical Skills:**
-- Python, JavaScript/TypeScript, React, Node.js, AWS, GCP...
-
-**Soft Skills:**
-- Technical Leadership, Team Management, Strategic Planning...
-
-**Education:**
-- [Education details]
-
-**Certifications:**
-- [Certification details]
-</alexs_cv>
-```
-
-### Benefits
-
-- **Contextual Responses**: AI can reference specific experiences and skills
-- **Accurate Information**: Responses are based on actual CV data
-- **Dynamic Updates**: Changes to CV config automatically update chat context
-- **Comprehensive Knowledge**: AI has access to complete professional background
-
-### Implementation Details
-
-The integration uses utility functions from `src/lib/utils/cvFormatter.ts`:
-
-- `formatCVForSystemPrompt()`: Main formatting function with level support
-- `formatCVConcise()`: Minimal CV context for small models
-- `formatCVMedium()`: Balanced CV context for medium models
-- `formatCVFull()`: Complete CV context for large models
-- `createCVContextBlock()`: Wraps formatted CV in `<alexs_cv>` tags
-- `combineSystemPromptWithCV()`: Combines CV data with system prompt
-
-### CV Context Levels
-
-The system provides three levels of CV context optimized for different model sizes:
-
-**Concise Level** (`concise`)
-
-- Essential personal information only
-- Current role and company
-- Top 5 technical skills
-- Latest education entry
-- No detailed achievements or personal summary
-- Optimized for small models (0.5B-0.6B parameters)
-
-**Medium Level** (`medium`)
-
-- Brief personal information
-- Recent 3 positions with limited achievements (top 2 per role)
-- Top 10 technical skills and 5 leadership skills
-- All education entries
-- Balanced context for medium models (1B-3B parameters)
-
-**Full Level** (`full`)
-
-- Complete personal information including summary
-- All experience positions with full achievements
-- All technical and soft skills
-- Education and certifications
-- Maximum context for large models (7B+ parameters)
-
-### Model Configuration
-
-Each model in the chat config specifies its preferred CV context level:
+The chat widget lets visitors ask questions about Alex's background and get
+answers grounded entirely in his CV. The pieces:
+
+- **Worker** (`src/components/chat/worker.js`) — loads the model and runs
+  generation off the main thread using `@huggingface/transformers`
+  (`AutoModelForCausalLM`, `AutoTokenizer`, `TextStreamer`).
+- **WebGPU with WASM fallback** — the worker feature-detects WebGPU
+  (`navigator.gpu.requestAdapter()`). If available it loads the model on
+  `device: 'webgpu'` with the model's GPU `dtype`; otherwise (or if WebGPU
+  fails at load/generate time) it falls back to `device: 'wasm'` using the
+  model's `dtypeWasm`. WASM generation is deterministic
+  (`do_sample: false`) for speed and stability; WebGPU generation samples.
+- **Two models** defined in `src/lib/utils/chat.ts` as `AVAILABLE_MODELS` —
+  a default "thinking" model (LFM2.5-1.2B) and a lighter Qwen3-0.6B model.
+  Only one model is ever resident in memory: switching models disposes the
+  previously loaded one (see [Build Pipeline](#build-pipeline) below for the
+  worker's single-model cache).
+- **Full CV as context** — every conversation includes Alex's _entire_ CV,
+  wrapped in XML-ish section tags (`<personal>`, `<experience>`, `<skills>`,
+  `<education>`, `<certifications>`), all nested inside an outer `<alexs_cv>`
+  block. There are no "concise/medium/full" tiers anymore — the full CV is
+  small enough to fit comfortably in any supported model's context window.
+- **Thinking models** — models that support reasoning stream a `<think>...
+</think>` block before the answer. The worker strips these tags from the
+  visible stream in real time (`thinkTagStreamer.js`) and tags each streamed
+  segment with `state: 'thinking' | 'answering'` so the UI can render a
+  collapsible "thinking" section separately from the final answer.
+
+## 🤖 Changing the Model Lineup
+
+`AVAILABLE_MODELS` in `src/lib/utils/chat.ts` is the **single source of
+truth** for which models are offered, and `chatConfig.models.default` in
+`src/config/chat.ts` picks which one loads by default. Example entry:
 
 ```typescript
 {
-  id: 'onnx-community/Qwen3-0.6B-ONNX',
-  name: 'Qwen 3 0.6B',
-  cvContextLevel: 'concise', // Uses minimal CV context
+  id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+  name: 'lfm-1.2b',
+  description: 'efficient reasoning model with hybrid state-space architecture',
+  size: '~1.2GB',
+  contextWindow: 16384,
+  device: 'webgpu',
+  dtype: 'q4',
+  dtypeWasm: 'auto',
+  fallbackDevice: 'wasm',
+  supportsThinking: true,
+  alwaysThinks: true,
+  templateOptions: {},
+  generationProfile: {
+    maxTokens: 4096,
+    maxTokensWasm: 2048,
+    temperature: 0.05,
+    temperatureWasm: 0.0,
+    topK: 40,
+    topKWasm: 20,
+    topP: 0.1,
+    repetitionPenalty: 1.05,
+  },
 }
 ```
 
-### Testing
+Field notes (see `ModelGenerationProfile` and `ChatModel` in
+`src/types/chat.ts` for the authoritative types):
 
-The CV integration includes comprehensive tests in `src/__tests__/unit/chat/cv-integration.test.ts`:
+- **`id`** must be a valid ONNX model repo on the Hugging Face Hub
+  (loaded via `AutoModelForCausalLM.from_pretrained` / `AutoTokenizer.from_pretrained`).
+- **`dtype` / `dtypeWasm`** — quantization used on WebGPU vs. WASM
+  respectively (e.g. `q4`, `q4f16`, `auto`).
+- **`alwaysThinks`** — `true` for models (like LFM) that unconditionally
+  emit a `<think>` block; the worker never sends `enable_thinking` to these
+  models. `false` for models (like Qwen) whose thinking is toggleable — for
+  those the worker passes `enable_thinking: reasonEnabled` via
+  `templateOptions` when `alwaysThinks === false && supportsThinking`.
+- **`templateOptions`** — extra options forwarded to
+  `tokenizer.apply_chat_template()`, e.g. Qwen needs
+  `{ add_special_tokens: false }`.
+- **`generationProfile`** — one flat object with GPU and WASM variants of
+  each generation parameter (`maxTokens`/`maxTokensWasm`,
+  `temperature`/`temperatureWasm`, `topK`/`topKWasm`, an optional `topP`
+  used only on GPU, and `repetitionPenalty`). The worker's `generate()`
+  picks the WASM or GPU fields based on the device the model actually
+  resolved to at load time, and always forces `do_sample: false` on WASM
+  regardless of the configured temperature.
+- **`contextWindow`** — used by `ChatContext` to size the rolling context
+  window for that model (falls back to `chatConfig.behavior.contextWindow`,
+  currently `16384`, if a model doesn't specify one).
 
-```bash
-# Run CV integration tests
-npm test src/__tests__/unit/chat/cv-integration.test.ts
-```
+To add a model: append an entry to `AVAILABLE_MODELS` with a valid repo id,
+tune its `generationProfile`, and optionally point `chatConfig.models.default`
+at it. To remove one, delete its entry — there's no other registry to update.
 
-### Updating CV Data
+## ✍️ Editing the System Prompt
 
-To update the CV information available to the chat:
+The system prompt lives in `src/config/chat.ts` and is assembled by
+`getSystemPromptForModel(modelId)`:
 
-1. Edit `src/config/cv.ts`
-2. Update the `cvData` object with new information
-3. Changes are automatically reflected in the chat system
-4. No additional configuration required
+- **`SHARED_INSTRUCTIONS`** — the base instructions used for every model:
+  who "chat" is, the rule to answer only from the CV, the exact refusal
+  string, and **three few-shot examples** (a grounded answer, a refusal for
+  an out-of-CV skill, and a multi-fact answer). Small models imitate
+  patterns much more reliably than they follow abstract rules, so the
+  few-shot examples do a lot of the behavioral work here.
+- **`LFM_SUFFIX`** / **`QWEN_SUFFIX`** — model-specific tails appended after
+  the shared instructions. LFM (the reasoning model) gets an instruction to
+  first identify the relevant CV section before answering; Qwen (the
+  smaller, faster model) gets a tighter 1-3 sentence constraint. Both
+  suffixes end by repeating "answer ONLY from the CV data above" —
+  deliberately redundant.
+- **`getSystemPromptForModel(modelId)`** picks the LFM or Qwen suffix based
+  on whether the model id contains `'LFM'`, concatenates
+  `SHARED_INSTRUCTIONS + suffix`, and passes the result through
+  `combineSystemPromptWithCV()` (see below), which puts the CV **first** and
+  the instructions **after** it.
 
-### Critical Instructions & Refusal Logic
+**Why ordering matters for small models:** `combineSystemPromptWithCV`
+places the `<alexs_cv>` block before the instructions, and the instructions
+end by repeating "answer ONLY from the CV data above" a second time (in the
+suffix). This CV-first, instructions-after, repeat-at-the-end structure
+exists because small models (0.6B-1.2B parameters) weight information near
+the _end_ of the prompt more heavily when deciding how to behave, but still
+need the facts available for retrieval throughout generation. Front-loading
+the data and grounding the model with rules at the end measurably reduces
+hallucination at these sizes. If you edit the prompt, keep the CV block
+first and keep some form of "answer ONLY from the CV" as the last thing the
+model reads before generating.
 
-The system prompt now includes strict instructions to prevent the AI from providing information outside the CV:
+To change assistant behavior: edit `SHARED_INSTRUCTIONS` (rules + few-shot
+examples) for changes that should apply to every model, or edit
+`LFM_SUFFIX`/`QWEN_SUFFIX` for model-specific tone/length tweaks.
 
-- **Scope Limitation**: AI only uses information explicitly provided in CV data
-- **Refusal Template**: "I don't have that information in Alex's CV. Please ask about his professional experience, skills, education, or achievements that are documented above."
-- **No Speculation**: AI will not make up or infer information beyond what's in the CV
-- **Accuracy Focus**: Responses must be accurate and based only on documented information
+## 📄 CV Data Integration
 
-This ensures the AI stays within bounds and provides reliable, factual information about Alex's background.
+`src/config/cv.ts` (`cvData`) is the **single source of truth** for Alex's
+professional background — it's the same data used to render the CV/resume
+page on the site, so there is nothing chat-specific to maintain separately.
+Edit `cvData` there and both the CV page and the chat assistant update
+automatically.
 
-## 🔧 Best Practices
+`src/lib/utils/cvFormatter.ts` turns that structured data into a prompt
+block:
 
-### System Prompt Design
+- **`formatCV(cvData)`** — renders the _entire_ CV (not a subset) into
+  sections wrapped in XML-style tags: `<personal>`, `<experience>` (all
+  positions, each with up to 3 achievements and per-role skills),
+  `<skills>` (technical, leadership/soft, and languages), `<education>`
+  (with descriptions, coursework, and achievements), and `<certifications>`
+  (omitted if empty).
+- **`createCVContextBlock(cvData)`** — wraps the output of `formatCV` in an
+  outer `<alexs_cv>...</alexs_cv>` block.
+- **`combineSystemPromptWithCV(systemPrompt, cvData)`** — returns the CV
+  block followed by the system prompt (CV first, instructions after — see
+  above for why that ordering is deliberate).
 
-1. **Be specific** about the assistant's role and expertise
-2. **Include personality traits** to make interactions consistent
-3. **Set clear boundaries** about what the assistant should/shouldn't do
-4. **Provide examples** of desired response format
-5. **Keep it concise** but comprehensive
+There is no "concise/medium/full" tiering anymore — every model gets the
+complete CV. Update `cv.ts` and the chat picks up the change on next page
+load; no other configuration is required.
 
-### Parameter Tuning
+## 🎨 Interface Customization
 
-1. **Start with defaults** and adjust based on needs
-2. **Lower temperature** for factual, consistent responses
-3. **Higher temperature** for creative, varied responses
-4. **Adjust token limits** based on typical response length needed
-5. **Test on CPU/WASM** for performance optimization
-
-### Interface Customization
-
-1. **Write clear welcome messages** that set expectations
-2. **Create relevant sample prompts** for your use case
-3. **Use appropriate placeholder text** for different states
-4. **Enable thinking mode** for complex reasoning tasks
-
-### Performance Optimization
-
-1. **Set reasonable context windows** to balance memory and performance
-2. **Use WebGPU** when available for better performance
-3. **Implement fallbacks** for broader device compatibility
-4. **Consider token limits** for responsive interactions
-
-## 🔄 Dynamic Configuration
-
-For runtime configuration changes, you can modify the config object:
+User-facing copy lives in `chatConfig.interface` (`src/config/chat.ts`):
 
 ```typescript
-import { chatConfig } from '../config/chat';
-
-// Update system prompt at runtime
-chatConfig.generation.systemPrompt = 'Updated system prompt...';
-
-// Update interface settings
-chatConfig.interface.welcomeMessage = 'New welcome message!';
-
-// Note: Some changes may require chat context reset
+interface: {
+  welcomeMessage:
+    "Hi! I'm chat, Alex's AI assistant running in your browser. Ask me about his experience, skills, education, or career background.",
+  placeholderText: {
+    ready: 'ask about Alex...',
+    loading: 'loading model...',
+    idle: 'please download the model first',
+  },
+  samplePrompts: [
+    "what's Alex's current role?",
+    'what AI/ML experience does he have?',
+    'where did Alex study?',
+  ],
+  enableThinking: true,
+}
 ```
+
+- **`welcomeMessage`** is shown on the empty-state welcome screen.
+- **`placeholderText`** drives the input placeholder for each loading state
+  (`idle` before download, `loading` while the model loads, `ready` once
+  generation is available).
+- **`samplePrompts`** populate the clickable sample-prompt chips shown on
+  the welcome screen.
+- **`enableThinking`** is the default value for the thinking-mode toggle
+  (only relevant for models where `alwaysThinks: false`).
+
+There is no separate settings UI component — these are the only interface
+knobs, and they're edited directly in `chat.ts`.
+
+## 🔧 Build Pipeline
+
+The worker is **not** bundled by Gatsby's normal webpack config — it has its
+own build step because it must ship as a plain, CSP-safe script:
+
+- `npm run build:worker` runs
+  `npx webpack --config webpack.worker.config.js`, which bundles
+  `src/components/chat/worker.js` into `static/worker.js` in **production
+  mode** (minified, no `eval()`), targeting `webworker`. Production mode is
+  required because dev-mode webpack output uses `eval()`, which strict
+  Content-Security-Policies block.
+- `build:worker` runs automatically before `gatsby build`, `gatsby develop`,
+  and `npm start` (see the `build`, `develop`, and `start` scripts in
+  `package.json`), so you rarely need to invoke it manually — but do so
+  after editing `worker.js` or `thinkTagStreamer.js` if you need the static
+  bundle refreshed without a full dev-server restart.
+- The generated artifacts — `static/worker.js`, `static/worker.js.LICENSE.txt`,
+  and any `static/*.mjs` / `static/*.wasm` ONNX Runtime files — are
+  **gitignored**. They're build output, not source; never hand-edit or
+  commit them. Source of truth is always `src/components/chat/worker.js`.
+
+## 🧪 Evaluation
+
+`scripts/chat-eval.mjs` is a headless-browser quality/performance harness
+for the live chat widget, run via:
+
+```bash
+npm run eval:chat [baseUrl]   # defaults to http://localhost:9124
+```
+
+### What it measures
+
+Using Playwright (`chromium.launch` with `--enable-unsafe-webgpu`), the
+script drives the real chat UI in a fresh browser context and records:
+
+- **Cold model load time** — wall-clock time from clicking "download" to
+  the input becoming enabled (download + compile + warmup), and which
+  device (`webgpu` or `wasm`) the model actually loaded on.
+- **Time-to-first-answer (TTFA)** — time from sending a question to the
+  first non-empty assistant text appearing (this spans any thinking phase,
+  since the thinking block renders before the final answer becomes
+  visible).
+- **Total latency** — time from send to the assistant's answer text going
+  stable (unchanged for 2s and no longer generating).
+- **Tokens/sec** — sampled directly from the app's own `.chat-tps-indicator`
+  UI element while generation is in progress (max observed value is
+  reported), rather than computed independently — it reflects exactly what
+  the user sees.
+
+### Graded cases
+
+Six cases in the `CASES` array probe different failure modes:
+
+- `current-role` — a grounded single-fact lookup.
+- `multi-turn-prev-company` — a follow-up question that depends on
+  conversation history (tests multi-turn context handling).
+- `education` — another grounded fact lookup.
+- `synthesis-ai-ml` — requires synthesizing across multiple CV entries.
+- `refusal-off-topic` — an off-topic question (capital of France) that must
+  trigger the CV-only refusal rather than being answered from general
+  knowledge.
+- `hallucination-probe` — asks about a skill not in the CV (COBOL); must
+  refuse/deny rather than hallucinate.
+
+Each case has an `expectAny` list (at least one substring, matched
+case-insensitively, must appear in the answer) and an optional
+per-case `forbidden` list. Every case is also checked against
+`GLOBAL_FORBIDDEN`, which catches **leaks**: `<think`/`</think` fragments
+that escaped the streaming filter, and raw `<experience>`/`<personal>` tags
+that would mean the CV context itself was echoed back to the user instead
+of a real answer.
+
+Grading for the collapsible thinking block is handled by stripping any
+element matching `[class*="thinking"]`/`[class*="Thinking"]` from the
+assistant message DOM before extracting text, so only the final answer is
+graded (`assistantAnswers()` in the script).
+
+### Prerequisites
+
+```bash
+npm run build && npx gatsby serve -p 9124   # serve a production build
+npm run eval:chat http://localhost:9124     # run the harness against it
+```
+
+The harness needs a real served build (not `gatsby develop`) so timings
+reflect production behavior. It launches, in order of preference: installed
+Google Chrome (`channel: 'chrome'`), Playwright's Chromium
+(`npx playwright install chromium`), then the default headless shell.
+WebGPU requires one of the first two — the headless shell has no GPU, so
+the model silently falls back to WASM there (the `device` field in the
+output tells you which path actually ran). Set `EVAL_HEADED=1` to watch the
+run in a visible browser window.
+
+### Baseline results (July 2026, M-series Mac, LFM2.5-1.2B-Thinking)
+
+Cold WebGPU load of the ~810 MB model: **~63–68s**. Generation:
+**~50–95 tok/s**, TTFA 12–32s (dominated by the thinking phase), total
+55–95s per answer. Grounded-fact, synthesis, and hallucination-probe cases
+pass consistently; the two known-flaky cases are `multi-turn-prev-company`
+(the 1.2B model sometimes picks the wrong prior employer from the CV) and
+`refusal-off-topic` (it occasionally answers from world knowledge despite
+the refusal instruction). No think-tag or CV-context leaks observed.
+
+### Adding new eval cases
+
+Add an object to the `CASES` array in `scripts/chat-eval.mjs`:
+
+```javascript
+{
+  id: 'unique-case-id',
+  q: 'the question to ask',
+  expectAny: ['substring1', 'substring2'],  // at least one must match, case-insensitive
+  forbidden: ['bad substring'],             // optional, in addition to GLOBAL_FORBIDDEN
+}
+```
+
+The script prints a `[PASS]`/`[FAIL]` line per case with TTFA, total time,
+and peak tok/s, then a final `N/M passed` summary and a full JSON dump of
+`results` for deeper inspection or CI capture.
 
 ## 🚨 Troubleshooting
 
-### Common Issues
-
 **System prompt not taking effect:**
 
-- Clear chat history to reset context
-- Ensure worker receives updated config
-- Check for syntax errors in prompt
+- Clear chat history / reset the conversation to force a fresh system
+  message.
+- Check `getSystemPromptForModel` is actually being called for the model
+  you're testing (it branches on whether `modelId` contains `'LFM'`).
 
-**Performance issues:**
+**Model won't load / falls back to WASM unexpectedly:**
 
-- Reduce max token limits
-- Lower temperature for CPU/WASM
-- Disable thinking mode for simpler responses
+- Check for WebGPU support in the browser (`navigator.gpu`); the worker
+  logs `'WebGPU not available. Loading WASM backend...'` when it falls
+  back at load time, or `'WebGPU failed during generation. Falling back to
+WASM...'` if the GPU path fails mid-generation.
+- Verify the model's `dtype`/`dtypeWasm` are valid quantization options for
+  that repo on the Hugging Face Hub.
 
-**Interface not updating:**
+**Worker changes not showing up:**
 
-- Check component imports
-- Verify config exports
-- Clear browser cache if needed
+- Run `npm run build:worker` manually — `static/worker.js` is generated
+  output and won't update just because `src/components/chat/worker.js`
+  changed, unless you're going through `develop`/`start`/`build`, which
+  build it automatically.
 
-### Debug Mode
+**Thinking tags or CV data leaking into the visible answer:**
 
-Enable debug logging:
-
-```javascript
-// In browser console
-window.CHAT_DEBUG = true;
-```
-
-This will show:
-
-- Context window management
-- Generation parameters being used
-- Worker communication details
+- This should be structurally prevented by `thinkTagStreamer.js` (streaming
+  tag stripping) and by the worker decoding only newly generated tokens
+  (never the prompt/CV) for the final `complete` message. Run
+  `npm run eval:chat` — `GLOBAL_FORBIDDEN` checks are designed to catch
+  exactly this regression.
 
 ---
 
-💡 **Need help?** Check the existing CV and homepage configs for more examples of the configuration pattern.
+💡 **Need help?** `src/config/chat.ts`, `src/lib/utils/chat.ts`, and
+`src/lib/utils/cvFormatter.ts` are the three files that define almost all
+chat behavior — start there.

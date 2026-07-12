@@ -115,6 +115,43 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const setChatOpen = (isOpen: boolean) => setIsChatOpen(isOpen);
   const setClosing = (closing: boolean) => setIsClosing(closing);
 
+  // Stall watchdog, re-armed on every streamed chunk. Must NOT be a fixed cap
+  // on total generation time: thinking models stream for minutes, and prefill
+  // of the full-CV prompt on WASM can be slow before the first token.
+  const GENERATION_STALL_TIMEOUT_MS = 60000;
+
+  const armGenerationTimeout = () => {
+    if (generationTimeoutRef.current) {
+      clearTimeout(generationTimeoutRef.current);
+    }
+    generationTimeoutRef.current = setTimeout(() => {
+      console.warn('[chat] Generation stalled: no worker activity for 60s');
+      isGeneratingRef.current = false;
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: 'interrupt' });
+      }
+      setIsGenerating(false);
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const last = newMessages[newMessages.length - 1];
+        if (last && last.role === 'assistant') {
+          newMessages[newMessages.length - 1] = {
+            ...last,
+            content: last.content || 'Generation timed out. Please try again.',
+          };
+        } else {
+          newMessages.push({
+            id: Math.random().toString(36).substr(2, 9),
+            role: 'assistant',
+            content: 'Generation timed out. Please try again.',
+            timestamp: new Date(),
+          });
+        }
+        return newMessages;
+      });
+    }, GENERATION_STALL_TIMEOUT_MS);
+  };
+
   const addMessage = (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
     const newMessage: ChatMessage = {
       ...message,
@@ -265,37 +302,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       };
       workerRef.current.postMessage(req);
 
-      // 30s generation timeout with recovery
-      if (generationTimeoutRef.current) {
-        clearTimeout(generationTimeoutRef.current);
-      }
-      generationTimeoutRef.current = setTimeout(() => {
-        console.warn('[chat] Generation timed out after 30s');
-        isGeneratingRef.current = false;
-        if (workerRef.current) {
-          workerRef.current.postMessage({ type: 'interrupt' });
-        }
-        setIsGenerating(false);
-        setMessages(prev => {
-          const newMessages = [...prev];
-          const last = newMessages[newMessages.length - 1];
-          if (last && last.role === 'assistant') {
-            newMessages[newMessages.length - 1] = {
-              ...last,
-              content:
-                last.content || 'Generation timed out. Please try again.',
-            };
-          } else {
-            newMessages.push({
-              id: Math.random().toString(36).substr(2, 9),
-              role: 'assistant',
-              content: 'Generation timed out. Please try again.',
-              timestamp: new Date(),
-            });
-          }
-          return newMessages;
-        });
-      }, 30000);
+      armGenerationTimeout();
     } catch (error) {
       console.error('Worker generation failed:', error);
       isGeneratingRef.current = false;
@@ -486,6 +493,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             addMessage({ role: 'assistant', content: '', thinking: '' });
             break;
           case 'update': {
+            // Feed the stall watchdog — tokens are flowing.
+            if (isGeneratingRef.current) armGenerationTimeout();
             if (typeof data.tps === 'number') setTokensPerSecond(data.tps);
             // Worker streams tag-free text with an explicit thinking/answering
             // state (tags are filtered across chunk boundaries in the worker).
