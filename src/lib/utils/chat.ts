@@ -109,11 +109,34 @@ export async function detectWebGPUSupport(): Promise<boolean> {
  */
 export const AVAILABLE_MODELS: ChatModel[] = [
   {
-    id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+    id: 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX',
     name: 'lfm-1.2b',
-    description:
-      'efficient reasoning model with hybrid state-space architecture',
-    size: '~1.2GB',
+    description: 'fast, grounded answers — starts responding immediately',
+    size: '~760MB',
+    contextWindow: 16384,
+    device: 'webgpu',
+    dtype: 'q4f16',
+    dtypeWasm: 'auto',
+    fallbackDevice: 'wasm',
+    supportsThinking: false,
+    alwaysThinks: false,
+    templateOptions: {},
+    generationProfile: {
+      maxTokens: 1024,
+      maxTokensWasm: 512,
+      temperature: 0.0,
+      temperatureWasm: 0.0,
+      topK: 40,
+      topKWasm: 20,
+      repetitionPenalty: 1.05,
+      doSample: false,
+    },
+  },
+  {
+    id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+    name: 'lfm-1.2b-thinking',
+    description: 'reasons step-by-step before answering — slower but thorough',
+    size: '~810MB',
     contextWindow: 16384,
     device: 'webgpu',
     dtype: 'q4',
@@ -136,7 +159,7 @@ export const AVAILABLE_MODELS: ChatModel[] = [
   {
     id: 'onnx-community/Qwen3-0.6B-ONNX',
     name: 'qwen-0.6b',
-    description: 'lightweight reasoning model, smaller and faster',
+    description: 'smallest and lightest option, with optional reasoning',
     size: '~600MB',
     contextWindow: 16384,
     device: 'webgpu',

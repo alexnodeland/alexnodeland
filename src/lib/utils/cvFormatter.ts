@@ -14,6 +14,16 @@ Location: ${cvData.personal.location} | Website: ${cvData.personal.website}
 ${cvData.personal.summary}
 </personal>`);
 
+  // Career timeline — explicit chronological ordering so small models can
+  // answer "before/after that" questions without inferring order from prose.
+  const timelineEntries = cvData.experience.map((exp, i) => {
+    const marker = i === 0 ? ' (current)' : '';
+    return `${i + 1}. ${exp.duration}: ${exp.title}, ${exp.company}${marker}`;
+  });
+  sections.push(
+    `<career_timeline>\nMost recent first:\n${timelineEntries.join('\n')}\n</career_timeline>`
+  );
+
   // Experience (all positions with achievements and per-role skills)
   const expEntries = cvData.experience.map(exp => {
     const lines: string[] = [

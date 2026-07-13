@@ -8,6 +8,11 @@ export interface ChatConfig {
   };
   generation: {
     getSystemPrompt: (modelId: string) => string;
+    /** Prompts for the cheap pre-generation topic guard ({question} placeholder).
+     *  A question is refused only when EVERY prompt answers NO. */
+    guardPrompts: string[];
+    /** Canned reply when the guard classifies a question OFF_TOPIC. */
+    refusalMessage: string;
   };
   interface: {
     welcomeMessage: string;
@@ -33,6 +38,8 @@ const SHARED_INSTRUCTIONS = `You are "chat", Alex Nodeland's AI assistant on his
 Rules:
 - Answer ONLY from the <alexs_cv> data above. Never invent or assume facts.
 - If the answer is not in the CV, say: "That's not in Alex's CV. Try asking about his experience, skills, or education."
+- NEVER answer general-knowledge questions (world facts, trivia, coding help), even when you know the answer. Use the refusal line above instead.
+- For questions about job order ("before that", "after that", "previous company"), use the <career_timeline> section — it lists roles most recent first.
 - Be concise and specific. Cite concrete details: roles, companies, dates, skills.
 - When asked who you are, say: "I'm chat, an AI assistant running in your browser to help you learn about Alex."
 
@@ -44,6 +51,12 @@ Assistant: Alex is a Senior AI Engineer at Perch Insights, where he leads AI eng
 User: Does Alex know Rust?
 Assistant: That's not in Alex's CV. Try asking about his experience, skills, or education.
 
+User: What's the capital of France?
+Assistant: That's not in Alex's CV. Try asking about his experience, skills, or education.
+
+User: Where did Alex work before Perch Insights?
+Assistant: Before joining Perch Insights in 2024, Alex was Head of AI at Influize (2023-2024).
+
 User: Where did Alex study?
 Assistant: Alex studied at Stony Brook University. He completed a BS in Applied Mathematics and Statistics (2013-2015) and began a Ph.D. in Computational Applied Mathematics (2016) before transitioning to entrepreneurial roles.`;
 
@@ -52,6 +65,8 @@ Assistant: Alex studied at Stony Brook University. He completed a BS in Applied 
  */
 const LFM_SUFFIX = `
 When answering, first identify which CV section(s) contain the relevant information, then compose your response from those details. Keep responses to 2-3 sentences unless the user asks for more detail.
+
+Final check before every answer: is the question about Alex? If not (general knowledge, trivia, coding help, opinions), reply exactly: "That's not in Alex's CV. Try asking about his experience, skills, or education."
 
 Remember: answer ONLY from the CV data above.`;
 
@@ -73,12 +88,37 @@ export function getSystemPromptForModel(modelId: string): string {
   return combineSystemPromptWithCV(SHARED_INSTRUCTIONS + suffix, cvData);
 }
 
+/**
+ * Topic guard: tiny CV-free classification prompts run before every answer.
+ * A 1.2B model reliably refuses off-topic questions on turn 1 but not after a
+ * few answered turns (conversation momentum beats any in-prompt rule), so the
+ * refusal decision is made by this separate cheap pass instead.
+ *
+ * Two phrasings are asked and a question is refused only when BOTH say NO —
+ * single-prompt verdicts from a small model are knife-edge on borderline
+ * questions, and the guard must fail open (the main model handles on-topic
+ * unknowns gracefully, e.g. "COBOL is not mentioned in Alex's CV").
+ * `{question}` is replaced with the visitor's question.
+ */
+const GUARD_BIO =
+  'Alex Nodeland is an AI engineer: Senior AI Engineer at Perch Insights, previously Head of AI at Influize, Tech Lead at Musiio, founder of Archanan; studied applied mathematics at Stony Brook.';
+
+const GUARD_PROMPTS = [
+  `${GUARD_BIO}\n\nQuestion: "{question}"\n\nIs this question about Alex, his career, skills, education, or projects — or a follow-up about him? Reply with exactly YES or NO.`,
+  `${GUARD_BIO}\n\nQuestion: "{question}"\n\nIs this question asking about Alex, his career, skills, education, or projects — or a follow-up about him? Answer YES even if you don't know the answer to the question itself (e.g. asking whether Alex knows some skill is still about Alex). Reply with exactly YES or NO.`,
+];
+
+const REFUSAL_MESSAGE =
+  "That's not in Alex's CV. Try asking about his experience, skills, or education.";
+
 export const chatConfig: ChatConfig = {
   models: {
-    default: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+    default: 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX',
   },
   generation: {
     getSystemPrompt: getSystemPromptForModel,
+    guardPrompts: GUARD_PROMPTS,
+    refusalMessage: REFUSAL_MESSAGE,
   },
   interface: {
     welcomeMessage:

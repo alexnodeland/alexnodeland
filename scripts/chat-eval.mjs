@@ -43,6 +43,14 @@ const CASES = [
     expectAny: ['musiio', 'perch', 'llm', 'machine learning'],
   },
   {
+    id: 'skill-positive',
+    // Guards must not swallow answerable skill questions: Python IS in the CV,
+    // so the canned "not in Alex's CV" refusal here is a failure.
+    q: 'does Alex know Python?',
+    expectAny: ['yes', 'python'],
+    forbidden: ["that's not in alex's cv"],
+  },
+  {
     id: 'refusal-off-topic',
     q: "what's the capital of France?",
     expectAny: ["not in alex's cv"],
@@ -84,6 +92,13 @@ async function main() {
     .catch(() => chromium.launch({ ...launchOpts, channel: 'chromium' }))
     .catch(() => chromium.launch(launchOpts));
   const page = await browser.newPage();
+  if (process.env.EVAL_DEBUG === '1') {
+    page.on('console', msg => {
+      const t = msg.text();
+      if (/worker-dbg|stalled|error/i.test(t))
+        console.log(`  [console ${new Date().toISOString().slice(14, 23)}]`, t.slice(0, 160));
+    });
+  }
   const results = { base: BASE, device: null, loadMs: null, cases: [] };
 
   await page.goto(BASE, { waitUntil: 'networkidle' });
@@ -91,7 +106,7 @@ async function main() {
 
   // --- model load ---
   const t0 = now();
-  await page.locator('button', { hasText: /download/i }).first().click();
+  await page.getByRole('button', { name: /^download .* model$/i }).click();
   const loadingText = page.locator('.loading-message');
   try {
     await loadingText.waitFor({ state: 'visible', timeout: 15000 });
@@ -128,7 +143,7 @@ async function main() {
     while (now() - tSend < GEN_TIMEOUT_MS) {
       const tps = await page
         .locator('.chat-tps-indicator')
-        .textContent()
+        .textContent({ timeout: 100 })
         .catch(() => null);
       if (tps) {
         const m = tps.match(/([\d.]+)\s*tok\/s/);

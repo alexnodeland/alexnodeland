@@ -191,7 +191,7 @@ describe('Chat Utilities', () => {
         m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
       expect(lfmModel).toBeDefined();
-      expect(lfmModel?.name).toBe('lfm-1.2b');
+      expect(lfmModel?.name).toBe('lfm-1.2b-thinking');
       expect(lfmModel?.alwaysThinks).toBe(true);
       expect(lfmModel?.generationProfile?.topP).toBe(0.1);
     });
@@ -237,7 +237,7 @@ describe('Chat Utilities', () => {
       const model = getModelById('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
       expect(model).toBeDefined();
       expect(model?.id).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
-      expect(model?.name).toBe('lfm-1.2b');
+      expect(model?.name).toBe('lfm-1.2b-thinking');
     });
 
     it('should return Qwen model when ID exists', () => {

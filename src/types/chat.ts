@@ -22,6 +22,9 @@ export interface ModelGenerationProfile {
   topKWasm: number;
   topP?: number; // undefined means omit top_p from the generation call
   repetitionPenalty: number;
+  // Force greedy decoding on all devices (most reliable for grounded QA).
+  // When undefined, sampling is used on GPU and greedy on WASM.
+  doSample?: boolean;
 }
 
 export interface ChatModel {

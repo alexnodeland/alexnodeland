@@ -81,6 +81,7 @@ class TextGenerationPipeline {
 
     // Single-model policy: dispose any previously loaded model to free memory
     if (this.modelCache.size > 0) {
+      clearKvCache(); // KV tensors belong to the model being disposed
       for (const [, entry] of this.modelCache) {
         try {
           if (entry.model && typeof entry.model.dispose === 'function') {
@@ -146,6 +147,7 @@ class TextGenerationPipeline {
 
   // Reset the pipeline (useful for switching models or debugging)
   static reset(modelId = null) {
+    clearKvCache();
     if (modelId) {
       this.modelCache.delete(modelId);
       if (this.currentModelId === modelId) {
@@ -169,21 +171,99 @@ class TextGenerationPipeline {
 // Global stopping criteria for interrupting generation
 const stopping_criteria = new InterruptableStoppingCriteria();
 
-// NOTE: We deliberately do NOT persist/reuse KV values (past_key_values) across
-// turns. The full conversation is re-sent and re-tokenized every turn, so a
-// cached past_key_values from a prior (different-length) input would be invalid.
-// Every generate() call passes past_key_values: null.
+// Cross-turn KV cache (the transformers.js llama-3.2-webgpu pattern).
+// The conversation prompt grows append-only, so the previous turn's
+// past_key_values can be reused IF the new templated input starts with
+// exactly the tokens the cache covers. We verify that prefix explicitly —
+// history rewrites (think-tag stripping, rolling-window eviction, message
+// edits) make the check fail and we simply re-prefill from scratch.
+const kvState = {
+  cache: null, // past_key_values from the last generate/warmup
+  tokens: null, // array of BigInt token ids the cache covers
+  modelId: null,
+};
+
+function clearKvCache() {
+  kvState.cache = null;
+  kvState.tokens = null;
+  kvState.modelId = null;
+}
+
+/** Returns the cached past_key_values iff it covers an exact prefix of ids. */
+function reusableKvCache(modelId, ids) {
+  const { cache, tokens } = kvState;
+  if (!cache || !tokens || kvState.modelId !== modelId) return null;
+  // Strictly shorter: generation must have at least the new tokens to encode
+  if (tokens.length >= ids.length) return null;
+  for (let i = 0; i < tokens.length; i++) {
+    if (ids[i] !== tokens[i]) return null;
+  }
+  return cache;
+}
+
+function storeKvCache(modelId, cache, sequences) {
+  try {
+    kvState.cache = cache || null;
+    // sequences is a [1, seqLen] tensor of the full input+generated ids
+    kvState.tokens = cache ? Array.from(sequences.data) : null;
+    kvState.modelId = cache ? modelId : null;
+  } catch (e) {
+    clearKvCache();
+  }
+}
 
 /**
  * Generate text using the loaded model.
  * Streams output, filters <think>/</think> tags across chunk boundaries, and
  * decodes only the newly generated tokens for the final message.
  */
+/**
+ * Cheap pre-generation topic guard: classifies the latest question with a
+ * tiny CV-free prompt (fast prefill, ~6 output tokens, greedy). Returns true
+ * when the question is off-topic and the canned refusal should be used.
+ * Never touches the cross-turn KV cache. Fails open (on-topic) on any error.
+ */
+async function isOffTopic(tokenizer, model, guard, messages) {
+  try {
+    const userMsgs = messages.filter(m => m.role === 'user');
+    const current = userMsgs[userMsgs.length - 1];
+    if (!current) return false;
+    for (const promptTemplate of guard.prompts || []) {
+      const inputs = tokenizer.apply_chat_template(
+        [
+          {
+            role: 'user',
+            content: promptTemplate.replace('{question}', current.content),
+          },
+        ],
+        { add_generation_prompt: true, return_dict: true }
+      );
+      const out = await model.generate({
+        ...inputs,
+        past_key_values: null,
+        max_new_tokens: 8,
+        do_sample: false,
+      });
+      const promptLen = inputs.input_ids.dims[inputs.input_ids.dims.length - 1];
+      const verdict =
+        tokenizer.batch_decode(out.slice(null, [promptLen, null]), {
+          skip_special_tokens: true,
+        })[0] || '';
+      // Any single YES means on-topic; only a unanimous NO refuses.
+      if (!/^\s*NO\b/i.test(verdict)) return false;
+    }
+    return (guard.prompts || []).length > 0;
+  } catch (e) {
+    return false; // fail open - the main model handles it
+  }
+}
+
 async function generate({
   messages,
   reasonEnabled = false,
   systemPrompt = null,
   modelConfig = {},
+  guard = null,
 }) {
   try {
     // Retrieve the loaded pipeline (and the device it actually loaded on)
@@ -192,6 +272,27 @@ async function generate({
       'LiquidAI/LFM2.5-1.2B-Thinking-ONNX';
     const [tokenizer, model, device] =
       await TextGenerationPipeline.getInstance(modelId);
+
+    // Topic guard: short-circuit off-topic questions with the canned refusal
+    // before the (expensive) full-CV generation ever runs.
+    if (guard && guard.prompts && guard.refusal) {
+      if (await isOffTopic(tokenizer, model, guard, messages)) {
+        self.postMessage({ status: 'start' });
+        self.postMessage({
+          status: 'update',
+          output: guard.refusal,
+          tps: 0,
+          numTokens: 0,
+          state: 'answering',
+        });
+        self.postMessage({
+          status: 'complete',
+          output: [guard.refusal],
+          state: 'answering',
+        });
+        return;
+      }
+    }
 
     // Prepare messages: inject the system prompt as the first message
     let processedMessages = [...messages];
@@ -296,8 +397,9 @@ async function generate({
     const isWasm = device === 'wasm';
 
     const genParams = {
-      // Deterministic on CPU (wasm) for speed/stability; sampled on GPU
-      do_sample: !isWasm,
+      // Greedy when the profile demands it; otherwise deterministic on CPU
+      // (wasm) for speed/stability and sampled on GPU
+      do_sample: profile.doSample ?? !isWasm,
       top_k: isWasm ? (profile.topKWasm ?? 20) : (profile.topK ?? 40),
       temperature: isWasm
         ? (profile.temperatureWasm ?? 0.0)
@@ -312,18 +414,24 @@ async function generate({
       genParams.top_p = profile.topP;
     }
 
+    // Reuse the previous turn's KV cache when the new prompt extends it —
+    // skips re-prefilling the (large) CV system prompt and prior turns.
+    const pastKV = reusableKvCache(modelId, inputs.input_ids.data);
+
     let sequences;
+    let pastKeyValuesOut = null;
     try {
-      ({ sequences } = await model.generate({
+      ({ sequences, past_key_values: pastKeyValuesOut } = await model.generate({
         ...inputs,
-        // Do not reuse KV cache across turns (see note above)
-        past_key_values: null,
+        past_key_values: pastKV,
         ...genParams,
         streamer,
         stopping_criteria,
         return_dict_in_generate: true,
       }));
+      storeKvCache(modelId, pastKeyValuesOut, sequences);
     } catch (genErr) {
+      clearKvCache();
       // If generation fails on WebGPU, fall back to CPU (wasm) and retry once
       if (device === 'webgpu') {
         self.postMessage({
@@ -392,8 +500,11 @@ async function generate({
 
 /**
  * Load the model and notify the main thread of progress.
+ * warmupPrompt (the real system prompt) lets WebGPU compile shaders at the
+ * shapes the first real question will use, moving that cost into the load
+ * screen instead of the first response.
  */
-async function load(modelId, modelConfig = {}) {
+async function load(modelId, modelConfig = {}, warmupPrompt = null) {
   try {
     const supportsWebGPU = await checkWebGPUSupport();
     self.postMessage({
@@ -457,10 +568,41 @@ async function load(modelId, modelConfig = {}) {
           : 'Warming up WASM backend for generation...',
     });
 
-    // Warmup generation to compile shaders / prime the backend
+    // Warmup generation to compile shaders / prime the backend.
     const inputs = tokenizer('Hello');
     try {
       await model.generate({ ...inputs, max_new_tokens: 1, do_sample: false });
+
+      // On WebGPU, additionally prefill the real system prompt via a plain
+      // forward pass and keep its KV cache: shaders get compiled at
+      // first-question shapes AND the first question skips the (large) CV
+      // prompt prefill entirely. Skipped on WASM where big prefills are slow.
+      if (device === 'webgpu' && warmupPrompt) {
+        try {
+          const sysTemplateOptions = {
+            add_generation_prompt: false,
+            return_dict: true,
+          };
+          if (
+            modelConfig.templateOptions &&
+            'add_special_tokens' in modelConfig.templateOptions
+          ) {
+            sysTemplateOptions.add_special_tokens =
+              modelConfig.templateOptions.add_special_tokens;
+          }
+          const sysInputs = tokenizer.apply_chat_template(
+            [{ role: 'system', content: warmupPrompt }],
+            sysTemplateOptions
+          );
+          const out = await model({ ...sysInputs });
+          if (out && out.past_key_values) {
+            storeKvCache(modelId, out.past_key_values, sysInputs.input_ids);
+          }
+        } catch (seedErr) {
+          // KV seeding is a pure optimization — never fail the load over it
+          clearKvCache();
+        }
+      }
     } catch (warmupErr) {
       if (device === 'webgpu') {
         self.postMessage({
@@ -473,8 +615,9 @@ async function load(modelId, modelConfig = {}) {
           null,
           'wasm'
         );
+        // Minimal warmup on WASM — never prefill the full prompt on CPU
         await modelCPU.generate({
-          ...inputs,
+          ...tokenizer('Hello'),
           max_new_tokens: 1,
           do_sample: false,
         });
@@ -500,6 +643,7 @@ async function load(modelId, modelConfig = {}) {
  */
 function reset() {
   stopping_criteria.reset();
+  clearKvCache();
   self.postMessage({ status: 'reset_complete' });
 }
 
@@ -523,7 +667,7 @@ self.addEventListener('message', async event => {
       case 'load': {
         const modelId = data?.modelId || 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX';
         const modelConfig = data?.modelConfig || {};
-        await load(modelId, modelConfig);
+        await load(modelId, modelConfig, data?.warmupPrompt || null);
         break;
       }
 

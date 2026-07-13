@@ -260,13 +260,15 @@ script drives the real chat UI in a fresh browser context and records:
 
 ### Graded cases
 
-Six cases in the `CASES` array probe different failure modes:
+Seven cases in the `CASES` array probe different failure modes:
 
 - `current-role` — a grounded single-fact lookup.
 - `multi-turn-prev-company` — a follow-up question that depends on
   conversation history (tests multi-turn context handling).
 - `education` — another grounded fact lookup.
 - `synthesis-ai-ml` — requires synthesizing across multiple CV entries.
+- `skill-positive` — asks about a skill that IS in the CV (Python); the
+  topic guard must not swallow it with the canned refusal.
 - `refusal-off-topic` — an off-topic question (capital of France) that must
   trigger the CV-only refusal rather than being answered from general
   knowledge.
@@ -302,15 +304,33 @@ the model silently falls back to WASM there (the `device` field in the
 output tells you which path actually ran). Set `EVAL_HEADED=1` to watch the
 run in a visible browser window.
 
-### Baseline results (July 2026, M-series Mac, LFM2.5-1.2B-Thinking)
+### Baseline results (July 2026, M-series Mac, LFM2.5-1.2B-Instruct q4f16)
 
-Cold WebGPU load of the ~810 MB model: **~63–68s**. Generation:
-**~50–95 tok/s**, TTFA 12–32s (dominated by the thinking phase), total
-55–95s per answer. Grounded-fact, synthesis, and hallucination-probe cases
-pass consistently; the two known-flaky cases are `multi-turn-prev-company`
-(the 1.2B model sometimes picks the wrong prior employer from the CV) and
-`refusal-off-topic` (it occasionally answers from world knowledge despite
-the refusal instruction). No think-tag or CV-context leaks observed.
+With the default instruct model (~760 MB, q4f16, no thinking phase):
+cold WebGPU load **~30–40s** (download + shader warmup at real prompt
+shapes); TTFA **0.5–2.2s**; total **2.6–4.2s** per answer; decode
+**~120–150 tok/s** peak. **7/7 cases pass deterministically** (greedy
+decoding). Speed comes from three stacked changes: the non-thinking
+instruct model (removes the 12–32s hidden reasoning phase), cross-turn KV
+cache reuse in the worker (the ~2.3k-token CV prompt is prefilled once, not
+per turn — guarded by an exact token-prefix check), and load-time warmup
+that compiles WebGPU shaders at first-question shapes.
+
+Off-topic refusals are enforced by a **topic guard** (see
+`GUARD_PROMPTS` in `src/config/chat.ts`): two tiny CV-free YES/NO
+classification prompts run before each answer (~0.3s combined), refusing
+only on a unanimous NO. In-prompt refusal rules alone stop working after a
+few answered turns — conversation momentum wins — which is why this is a
+separate pass. The guard fails open: borderline questions go to the main
+model, which handles on-topic unknowns gracefully.
+
+For comparison, the previous default (LFM2.5-1.2B-Thinking, ~810 MB q4):
+load ~63–68s, TTFA 12–32s, 55–95s per answer, and two flaky cases
+(multi-turn employer recall, off-topic refusal). It remains selectable in
+the UI as `lfm-1.2b-thinking`.
+
+Set `EVAL_DEBUG=1` to stream the page's console (worker logs, errors) into
+the eval output.
 
 ### Adding new eval cases
 

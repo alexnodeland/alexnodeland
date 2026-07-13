@@ -34,7 +34,7 @@ describe('Phase 4A: Model Switching with Cache', () => {
         m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
       );
       expect(lfmModel).toBeDefined();
-      expect(lfmModel?.name).toBe('lfm-1.2b');
+      expect(lfmModel?.name).toBe('lfm-1.2b-thinking');
       expect(lfmModel?.contextWindow).toBe(16384);
       expect(lfmModel?.device).toBe('webgpu');
     });
@@ -111,7 +111,7 @@ describe('Phase 4A: Model Switching with Cache', () => {
     it('should return correct model for valid ID', () => {
       const model = getModelById('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
       expect(model).toBeDefined();
-      expect(model?.name).toBe('lfm-1.2b');
+      expect(model?.name).toBe('lfm-1.2b-thinking');
     });
 
     it('should return undefined for invalid ID', () => {

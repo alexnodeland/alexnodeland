@@ -65,6 +65,14 @@ const loadConfigFor = (modelId: string) => {
   return def ? { dtype: def.dtype, dtypeWasm: def.dtypeWasm } : {};
 };
 
+/** Builds the full 'load' request payload, including the warmup prompt so the
+ * worker can compile WebGPU shaders at real prefill shapes during loading. */
+const loadRequestDataFor = (modelId: string) => ({
+  modelId,
+  modelConfig: loadConfigFor(modelId),
+  warmupPrompt: chatConfig.generation.getSystemPrompt(modelId),
+});
+
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -200,6 +208,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     if (ModelCache.isModelCached(modelId)) {
       setModelState({ status: 'ready', progress: [] });
+    } else if (modelState.status === 'idle') {
+      // Nothing loaded yet (welcome screen): just switch the selection —
+      // the user starts the download explicitly.
     } else if (USE_CHAT_WORKER && workerRef.current) {
       setModelState({
         status: 'loading',
@@ -209,7 +220,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       ModelCache.setModelLoading(modelId);
       workerRef.current.postMessage({
         type: 'load',
-        data: { modelId, modelConfig: loadConfigFor(modelId) },
+        data: loadRequestDataFor(modelId),
       });
     } else {
       setModelState({ status: 'idle', progress: [] });
@@ -228,7 +239,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       });
       const req: WorkerRequest = {
         type: 'load',
-        data: { modelId: targetId, modelConfig: loadConfigFor(targetId) },
+        data: loadRequestDataFor(targetId),
       };
       workerRef.current.postMessage(req);
       return;
@@ -276,6 +287,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       );
       const contextMessages = createRollingContext(msgs, budget);
 
+      // Off-topic handling lives in the worker's topic guard (a cheap
+      // CV-free classification pass), NOT in per-message prompt notes —
+      // in-prompt rules stop working after a few answered turns, and
+      // history rewrites would break the worker's KV prefix reuse.
+
       // Always-thinking models reason regardless of the toggle
       const effectiveReasonEnabled = modelDef?.alwaysThinks
         ? true
@@ -288,6 +304,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           modelId: selectedModel,
           reasonEnabled: effectiveReasonEnabled,
           systemPrompt,
+          guard: {
+            prompts: chatConfig.generation.guardPrompts,
+            refusal: chatConfig.generation.refusalMessage,
+          },
           modelConfig: modelDef
             ? {
                 generationProfile: modelDef.generationProfile,
@@ -384,10 +404,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         ModelCache.setModelLoading(selectedModel);
         workerRef.current.postMessage({
           type: 'load',
-          data: {
-            modelId: selectedModel,
-            modelConfig: loadConfigFor(selectedModel),
-          },
+          data: loadRequestDataFor(selectedModel),
         });
       }
     }, 100);
@@ -656,7 +673,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           ModelCache.setModelLoading(prevModel);
           worker.postMessage({
             type: 'load',
-            data: { modelId: prevModel, modelConfig: loadConfigFor(prevModel) },
+            data: loadRequestDataFor(prevModel),
           });
         }
       } catch {
