@@ -33,6 +33,20 @@ describe('Projects Page', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders a section per category with projects', () => {
+    render(<ProjectsPage />);
+    projectsConfig.categories.forEach(category => {
+      const hasProjects = projectsConfig.projects.some(
+        p => !p.featured && p.category === category.id
+      );
+      if (hasProjects) {
+        expect(
+          screen.getByRole('heading', { level: 2, name: category.title })
+        ).toBeInTheDocument();
+      }
+    });
+  });
+
   it('renders project names from config', () => {
     render(<ProjectsPage />);
     projectsConfig.projects.forEach(project => {

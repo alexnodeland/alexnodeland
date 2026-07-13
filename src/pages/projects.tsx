@@ -72,7 +72,14 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
 
 const ProjectsPage: React.FC = () => {
   const featuredProjects = projectsConfig.projects.filter(p => p.featured);
-  const otherProjects = projectsConfig.projects.filter(p => !p.featured);
+  const categorySections = projectsConfig.categories
+    .map(category => ({
+      ...category,
+      projects: projectsConfig.projects.filter(
+        p => !p.featured && p.category === category.id
+      ),
+    }))
+    .filter(section => section.projects.length > 0);
 
   return (
     <Layout>
@@ -97,16 +104,16 @@ const ProjectsPage: React.FC = () => {
           </section>
         )}
 
-        {otherProjects.length > 0 && (
-          <section className="projects-section">
-            <h2 className="section-title">more projects</h2>
+        {categorySections.map(section => (
+          <section key={section.id} className="projects-section">
+            <h2 className="section-title">{section.title}</h2>
             <div className="projects-grid">
-              {otherProjects.map(project => (
+              {section.projects.map(project => (
                 <ProjectCard key={project.name} project={project} />
               ))}
             </div>
           </section>
-        )}
+        ))}
 
         <div className="github-cta">
           <p>want to see more?</p>
