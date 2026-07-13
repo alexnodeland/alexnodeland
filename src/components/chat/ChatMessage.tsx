@@ -99,11 +99,22 @@ interface MessageItemProps {
 
 const MessageItem = React.memo<MessageItemProps>(
   ({ message, isLastMessage, isGenerating, isExpanded, onToggleThinking }) => {
+    const [copied, setCopied] = useState(false);
     const hasThinking = !!(message.thinking && message.thinking.length > 0);
     const displayContent = message.content;
     const thinkingContent = message.thinking || '';
     const isThinkingIncomplete =
       isLastMessage && isGenerating && hasThinking && !message.content;
+
+    const copyToClipboard = async () => {
+      try {
+        await navigator.clipboard.writeText(displayContent);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy message:', err);
+      }
+    };
 
     return (
       <div className={`chat-message ${message.role}`}>
@@ -129,7 +140,53 @@ const MessageItem = React.memo<MessageItemProps>(
             ))}
 
           <div className="message-timestamp">
-            {formatTime(message.timestamp)}
+            <span className="timestamp-text">
+              {formatTime(message.timestamp)}
+            </span>
+            {displayContent && (
+              <button
+                className="copy-button"
+                onClick={copyToClipboard}
+                aria-label={copied ? 'Copied!' : 'Copy message'}
+                title={copied ? 'Copied!' : 'Copy message'}
+              >
+                {copied ? (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20,6 9,17 4,12"></polyline>
+                  </svg>
+                ) : (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect
+                      x="9"
+                      y="9"
+                      width="13"
+                      height="13"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
