@@ -11,6 +11,12 @@ const TestComponent = () => {
       <div data-testid="messages-count">{chat.messages.length}</div>
       <div data-testid="selected-model">{chat.selectedModel}</div>
       <div data-testid="is-loading">{chat.isLoading.toString()}</div>
+      <div data-testid="model-status">
+        {chat.modelState?.status || 'unknown'}
+      </div>
+      <div data-testid="is-generating">
+        {(chat.isGenerating || false).toString()}
+      </div>
       <button onClick={() => chat.setChatOpen(true)}>Open Chat</button>
       <button
         onClick={() =>
@@ -40,7 +46,7 @@ describe('ChatContext', () => {
     expect(screen.getByTestId('is-closing')).toHaveTextContent('false');
     expect(screen.getByTestId('messages-count')).toHaveTextContent('0');
     expect(screen.getByTestId('selected-model')).toHaveTextContent(
-      'onnx-community/Qwen3-0.6B-ONNX'
+      'LiquidAI/LFM2.5-1.2B-Instruct-ONNX'
     );
     expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
   });
@@ -85,7 +91,7 @@ describe('ChatContext', () => {
     );
 
     expect(screen.getByTestId('selected-model')).toHaveTextContent(
-      'onnx-community/Qwen3-0.6B-ONNX'
+      'LiquidAI/LFM2.5-1.2B-Instruct-ONNX'
     );
 
     act(() => {
@@ -97,20 +103,24 @@ describe('ChatContext', () => {
     );
   });
 
-  it('sets loading state', () => {
+  it('derives loading state from modelState and isGenerating', () => {
     render(
       <ChatProvider>
         <TestComponent />
       </ChatProvider>
     );
 
-    expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
+    // Initially not generating → isLoading depends on modelState
+    expect(screen.getByTestId('is-generating')).toHaveTextContent('false');
 
+    // setLoading is now a no-op (isLoading is derived)
     act(() => {
       screen.getByText('Set Loading').click();
     });
 
-    expect(screen.getByTestId('is-loading')).toHaveTextContent('true');
+    // isLoading is derived — calling setLoading has no effect
+    // It remains whatever the derived value is (based on modelState + isGenerating)
+    expect(screen.getByTestId('is-generating')).toHaveTextContent('false');
   });
 
   it('clears messages', () => {

@@ -80,45 +80,13 @@ describe('Thinking Block Functionality', () => {
     });
   });
 
-  describe('updateMessageWithThinking', () => {
+  describe('updateMessageWithThinking (deprecated — kept for compat)', () => {
     const baseMessage: ChatMessage = {
       id: 'test-1',
       content: '',
       role: 'assistant',
       timestamp: new Date(),
     };
-
-    it('should update message with streaming thinking content', () => {
-      const message1 = updateMessageWithThinking(
-        baseMessage,
-        '<think>Starting to think'
-      );
-      expect(message1.thinking).toBe('Starting to think');
-      expect(message1.content).toBe('');
-
-      const message2 = updateMessageWithThinking(
-        message1,
-        ' about this problem...'
-      );
-      expect(message2.thinking).toBe('Starting to think about this problem...');
-      expect(message2.content).toBe('');
-    });
-
-    it('should transition from thinking to content', () => {
-      let message = updateMessageWithThinking(
-        baseMessage,
-        '<think>Analyzing the question'
-      );
-      expect(message.thinking).toBe('Analyzing the question');
-      expect(message.content).toBe('');
-
-      message = updateMessageWithThinking(
-        message,
-        '...</think>Based on my analysis, here is the answer.'
-      );
-      expect(message.thinking).toBe('Analyzing the question...');
-      expect(message.content).toBe('Based on my analysis, here is the answer.');
-    });
 
     it('should handle regular content without thinking', () => {
       const message = updateMessageWithThinking(

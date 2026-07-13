@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSettingsPanel } from '../SettingsPanelContext';
 import { useChat } from './ChatContext';
+import ChatErrorBoundary from './ChatErrorBoundary';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import ClearConfirmDialog from './ClearConfirmDialog';
@@ -28,7 +29,9 @@ const ChatModal: React.FC = () => {
     cachedModels,
     clearChatHistory,
     isGenerating,
+    tokensPerSecond,
     cancelModelLoading,
+    retryModelLoad,
   } = useChat();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [promptValue, setPromptValue] = useState<string | undefined>(undefined);
@@ -84,8 +87,10 @@ const ChatModal: React.FC = () => {
     }
   };
 
+  // Debounce scroll so rapid streaming updates don't thrash scrollIntoView.
   useEffect(() => {
-    scrollToBottom();
+    const timer = setTimeout(scrollToBottom, 50);
+    return () => clearTimeout(timer);
   }, [isChatPanelOpen, messages]);
 
   if (!isChatPanelOpen) return null;
@@ -198,6 +203,45 @@ const ChatModal: React.FC = () => {
         <WelcomeScreen />
       )}
 
+      {/* Model load error with a clean retry affordance */}
+      {modelState?.status === 'error' && messages.length === 0 && (
+        <div className="chat-input-container" aria-live="assertive">
+          <div
+            className="model-error-notice"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+              width: '100%',
+              padding: '1rem',
+              textAlign: 'center',
+            }}
+          >
+            <strong>Model failed to load</strong>
+            {modelState.error && (
+              <p
+                className="model-error-detail"
+                style={{
+                  fontSize: '0.8rem',
+                  opacity: 0.7,
+                  margin: 0,
+                  wordBreak: 'break-word',
+                }}
+              >
+                {modelState.error}
+              </p>
+            )}
+            <button
+              className="download-button"
+              onClick={() => retryModelLoad && retryModelLoad()}
+              aria-label="Retry loading the model"
+            >
+              retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Non-breaking loading UI (visible only if modelState is loading) */}
       {modelState?.status === 'loading' && (
         <div className="chat-input-container" aria-live="polite">
@@ -232,11 +276,41 @@ const ChatModal: React.FC = () => {
         </div>
       )}
 
-      {/* Chat messages and input - hidden when showing welcome screen */}
-      {!(modelState?.status === 'idle' && messages.length === 0) && (
+      {/* Chat messages and input - hidden when showing welcome/error screens */}
+      {!(
+        (modelState?.status === 'idle' || modelState?.status === 'error') &&
+        messages.length === 0
+      ) && (
         <>
-          <div className="chat-messages">
-            <ChatMessage />
+          <div className="chat-messages" role="log" aria-live="polite">
+            <div
+              className="sr-only"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {isGenerating ? 'Generating response...' : ''}
+              {modelState?.status === 'loading' ? 'Loading model...' : ''}
+            </div>
+            {isGenerating && tokensPerSecond && tokensPerSecond > 0 ? (
+              <div
+                className="chat-tps-indicator"
+                aria-hidden="true"
+                title="generation speed"
+                style={{
+                  fontSize: '0.7rem',
+                  opacity: 0.55,
+                  textAlign: 'right',
+                  padding: '0 0.75rem',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {tokensPerSecond.toFixed(1)} tok/s
+              </div>
+            ) : null}
+            <ChatErrorBoundary fallbackMessage="Something went wrong displaying chat messages.">
+              <ChatMessage />
+            </ChatErrorBoundary>
             <div ref={messagesEndRef} />
           </div>
 

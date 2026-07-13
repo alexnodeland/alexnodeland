@@ -9,6 +9,7 @@ const WelcomeScreen: React.FC = () => {
     loadModel,
     modelState,
     webGPUSupported,
+    setSelectedModel,
   } = useChat();
   const [showInfoPopover, setShowInfoPopover] = useState(false);
   const [attemptedWorkerInit, setAttemptedWorkerInit] = useState(false);
@@ -112,7 +113,40 @@ const WelcomeScreen: React.FC = () => {
         </div>
 
         <div className="welcome-actions">
-          <p className="download-note">Downloads once, cached forever</p>
+          <div
+            className="model-picker"
+            role="radiogroup"
+            aria-label="Choose a model"
+          >
+            {availableModels.map(model => (
+              <button
+                key={model.id}
+                role="radio"
+                aria-checked={model.id === selectedModel}
+                className={`model-option ${model.id === selectedModel ? 'selected' : ''}`}
+                onClick={() => setSelectedModel(model.id)}
+              >
+                <span className="model-option-name">
+                  {model.name}
+                  <span className="model-option-size">{model.size}</span>
+                </span>
+                <span className="model-option-description">
+                  {model.description}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="download-note">
+            downloads once ({modelSize}), cached forever
+          </p>
+          {webGPUSupported === false && (
+            <p
+              className="download-note download-note-warning"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              no WebGPU detected — will run on CPU (slower)
+            </p>
+          )}
 
           <div className="download-button-group">
             <button

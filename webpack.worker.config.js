@@ -1,7 +1,10 @@
 const path = require('path');
 
 module.exports = {
-  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+  // Always build a production (minified, non-eval) worker bundle. The dev/eval
+  // devtool output uses eval() which is blocked by strict CSPs and ships a much
+  // larger, unreadable artifact.
+  mode: 'production',
   entry: './src/components/chat/worker.js',
   output: {
     filename: 'worker.js',

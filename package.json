@@ -15,6 +15,7 @@
     "test:unit": "jest --testPathPattern=__tests__/unit",
     "test:integration": "jest --testPathPattern=__tests__/integration",
     "test:e2e": "playwright test",
+    "eval:chat": "node scripts/chat-eval.mjs",
     "test:e2e:ui": "playwright test --ui",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:coverage:full": "node scripts/test-coverage.js",
@@ -48,7 +49,7 @@
   "homepage": "https://github.com/alexnodeland/alexnodeland#readme",
   "description": "Portfolio website for Alex Nodeland - Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.",
   "dependencies": {
-    "@huggingface/transformers": "^3.7.3",
+    "@huggingface/transformers": "^4.0.0-next.6",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@types/three": "^0.180.0",

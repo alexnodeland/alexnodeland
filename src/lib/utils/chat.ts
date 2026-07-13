@@ -104,36 +104,81 @@ export async function detectWebGPUSupport(): Promise<boolean> {
 }
 
 /**
- * Available AI models for the chat interface
- * This will be the source of truth for model selection
- *
- * Currently focused on QWEN 0.6B for optimal performance and user experience.
- * Architecture is designed to easily support additional models in the future.
+ * Available AI models for the chat interface.
+ * Single source of truth for model selection and per-model configuration.
  */
 export const AVAILABLE_MODELS: ChatModel[] = [
   {
-    id: 'onnx-community/Qwen3-0.6B-ONNX',
-    name: 'qwen3-0.6b',
-    description: 'fast reasoning model optimized for in-browser inference',
-    size: '~600MB',
-    contextWindow: 4096,
+    id: 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX',
+    name: 'lfm-1.2b',
+    description: 'fast, grounded answers — starts responding immediately',
+    size: '~760MB',
+    contextWindow: 16384,
     device: 'webgpu',
     dtype: 'q4f16',
+    dtypeWasm: 'auto',
+    fallbackDevice: 'wasm',
+    supportsThinking: false,
+    alwaysThinks: false,
+    templateOptions: {},
+    generationProfile: {
+      maxTokens: 1024,
+      maxTokensWasm: 512,
+      temperature: 0.0,
+      temperatureWasm: 0.0,
+      topK: 40,
+      topKWasm: 20,
+      repetitionPenalty: 1.05,
+      doSample: false,
+    },
+  },
+  {
+    id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+    name: 'lfm-1.2b-thinking',
+    description: 'reasons step-by-step before answering — slower but thorough',
+    size: '~810MB',
+    contextWindow: 16384,
+    device: 'webgpu',
+    dtype: 'q4',
+    dtypeWasm: 'auto',
     fallbackDevice: 'wasm',
     supportsThinking: true,
+    alwaysThinks: true,
+    templateOptions: {},
+    generationProfile: {
+      maxTokens: 4096,
+      maxTokensWasm: 2048,
+      temperature: 0.05,
+      temperatureWasm: 0.0,
+      topK: 40,
+      topKWasm: 20,
+      topP: 0.1,
+      repetitionPenalty: 1.05,
+    },
   },
-  // Additional models can be easily added here in the future
-  // Example:
-  // {
-  //   id: 'onnx-community/NewModel-ONNX',
-  //   name: 'New Model Name',
-  //   description: 'Model description',
-  //   size: '~XMB',
-  //   contextWindow: XXXX,
-  //   device: 'webgpu',
-  //   dtype: 'q4f16',
-  //   supportsThinking: true,
-  // },
+  {
+    id: 'onnx-community/Qwen3-0.6B-ONNX',
+    name: 'qwen-0.6b',
+    description: 'smallest and lightest option, with optional reasoning',
+    size: '~600MB',
+    contextWindow: 16384,
+    device: 'webgpu',
+    dtype: 'q4f16',
+    dtypeWasm: 'auto',
+    fallbackDevice: 'wasm',
+    supportsThinking: true,
+    alwaysThinks: false,
+    templateOptions: { add_special_tokens: false },
+    generationProfile: {
+      maxTokens: 4096,
+      maxTokensWasm: 2048,
+      temperature: 0.3,
+      temperatureWasm: 0.0,
+      topK: 40,
+      topKWasm: 20,
+      repetitionPenalty: 1.05,
+    },
+  },
 ];
 
 /**
@@ -251,38 +296,31 @@ export function parseThinkingBlocks(text: string): ThinkingBlockParseResult {
 }
 
 /**
- * Updates an existing message with new thinking or content based on streaming text
+ * @deprecated Thinking block routing is now handled by the worker state.
+ * Kept for backward compatibility with tests. Use worker state-based routing instead.
  */
 export function updateMessageWithThinking(
   existingMessage: ChatMessage,
   newText: string
 ): ChatMessage {
-  // If message already has thinking and no raw content (meaning it was pre-parsed),
-  // and we're not adding thinking tags, just append to regular content
-  const hasPreParsedThinking =
-    existingMessage.thinking && !existingMessage._rawContent;
-  const isThinkingComplete =
-    existingMessage._thinkingComplete || hasPreParsedThinking;
+  const hasPreParsedThinking = !!existingMessage.thinking;
 
-  if (isThinkingComplete && !newText.includes('<think>')) {
+  if (hasPreParsedThinking && !newText.includes('<think>')) {
     return {
       ...existingMessage,
       content: (existingMessage.content || '') + newText,
-      thinking: existingMessage.thinking, // Preserve existing thinking
-      _thinkingComplete: true,
+      thinking: existingMessage.thinking,
     };
   }
 
-  // For streaming with thinking tags or incomplete thinking, use raw content accumulation
-  const rawContent = (existingMessage._rawContent || '') + newText;
+  // Fallback: accumulate raw text and re-parse
+  const rawContent = (existingMessage.content || '') + newText;
   const parsed = parseThinkingBlocks(rawContent);
 
   return {
     ...existingMessage,
     content: parsed.content,
     thinking: parsed.thinking || undefined,
-    _rawContent: rawContent,
-    _thinkingComplete: parsed.isThinkingComplete,
   };
 }
 

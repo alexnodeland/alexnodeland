@@ -10,9 +10,9 @@ import { chatConfig } from '../../config/chat';
 import {
   AVAILABLE_MODELS,
   createRollingContext,
+  estimateTokens,
   ModelCache,
   parseThinkingBlocks,
-  updateMessageWithThinking,
 } from '../../lib/utils/chat';
 import {
   ChatMessage,
@@ -33,6 +33,7 @@ interface ChatContextType {
   modelState?: ModelLoadingState;
   webGPUSupported?: boolean | null;
   isGenerating?: boolean;
+  tokensPerSecond?: number;
   cachedModels?: string[];
   isThinkingEnabled?: boolean;
   setChatOpen: (isOpen: boolean) => void;
@@ -49,6 +50,7 @@ interface ChatContextType {
   clearChatHistory?: () => void;
   toggleThinking?: () => void;
   cancelModelLoading?: () => void;
+  retryModelLoad?: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -57,6 +59,20 @@ interface ChatProviderProps {
   children: ReactNode;
 }
 
+/** Extracts the { dtype, dtypeWasm } config a model needs at load time. */
+const loadConfigFor = (modelId: string) => {
+  const def = AVAILABLE_MODELS.find(m => m.id === modelId);
+  return def ? { dtype: def.dtype, dtypeWasm: def.dtypeWasm } : {};
+};
+
+/** Builds the full 'load' request payload, including the warmup prompt so the
+ * worker can compile WebGPU shaders at real prefill shapes during loading. */
+const loadRequestDataFor = (modelId: string) => ({
+  modelId,
+  modelConfig: loadConfigFor(modelId),
+  warmupPrompt: chatConfig.generation.getSystemPrompt(modelId),
+});
+
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -64,17 +80,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [selectedModel, setSelectedModelState] = useState(
     chatConfig.models.default
   );
-  const [isLoading, setIsLoading] = useState(false);
-  // New non-breaking state additions
   const [modelState, setModelState] = useState<ModelLoadingState>({
-    status: 'idle', // Start as idle since we need to load QWEN model
+    status: 'idle',
     progress: [],
   });
   const [webGPUSupported, setWebGPUSupported] = useState<boolean | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [tokensPerSecond, setTokensPerSecond] = useState<number>(0);
   const [cachedModels, setCachedModels] = useState<string[]>([]);
   const [isThinkingEnabled, setIsThinkingEnabled] = useState(() => {
-    // Load thinking preference from localStorage
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('chat-thinking-enabled');
       return saved !== null
@@ -83,25 +97,67 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
     return chatConfig.interface.enableThinking;
   });
-  const [workerInitKey, setWorkerInitKey] = useState(0); // Force worker reinitialization
-  const workerRef = useRef<Worker | null>(null);
 
-  // Feature flag for worker connection - controllable via environment
-  // Set GATSBY_CHAT_WORKER=true to enable real model
+  // Derived loading state — avoids a separate useState that can desync
+  const isLoading = isGenerating || modelState.status === 'loading';
+
+  const [workerInitKey, setWorkerInitKey] = useState(0);
+  const workerRef = useRef<Worker | null>(null);
+  const generationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const isGeneratingRef = useRef(false); // Synchronous concurrent-generation guard
+  const selectedModelRef = useRef(selectedModel); // Latest model for worker callbacks
+  const MODEL_READY_KEY = 'chat-loaded-model';
+
+  // Keep the ref in sync so the (model-independent) worker effect never needs
+  // selectedModel in its deps — switching models must NOT recreate the worker.
+  useEffect(() => {
+    selectedModelRef.current = selectedModel;
+  }, [selectedModel]);
+
   const USE_CHAT_WORKER = typeof window !== 'undefined';
-  if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-    // eslint-disable-next-line no-console
-    console.log('[chat] USE_CHAT_WORKER', USE_CHAT_WORKER);
-  }
 
   const availableModels: ChatModel[] = AVAILABLE_MODELS;
 
-  const setChatOpen = (isOpen: boolean) => {
-    setIsChatOpen(isOpen);
-  };
+  const setChatOpen = (isOpen: boolean) => setIsChatOpen(isOpen);
+  const setClosing = (closing: boolean) => setIsClosing(closing);
 
-  const setClosing = (isClosing: boolean) => {
-    setIsClosing(isClosing);
+  // Stall watchdog, re-armed on every streamed chunk. Must NOT be a fixed cap
+  // on total generation time: thinking models stream for minutes, and prefill
+  // of the full-CV prompt on WASM can be slow before the first token.
+  const GENERATION_STALL_TIMEOUT_MS = 60000;
+
+  const armGenerationTimeout = () => {
+    if (generationTimeoutRef.current) {
+      clearTimeout(generationTimeoutRef.current);
+    }
+    generationTimeoutRef.current = setTimeout(() => {
+      console.warn('[chat] Generation stalled: no worker activity for 60s');
+      isGeneratingRef.current = false;
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: 'interrupt' });
+      }
+      setIsGenerating(false);
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const last = newMessages[newMessages.length - 1];
+        if (last && last.role === 'assistant') {
+          newMessages[newMessages.length - 1] = {
+            ...last,
+            content: last.content || 'Generation timed out. Please try again.',
+          };
+        } else {
+          newMessages.push({
+            id: Math.random().toString(36).substr(2, 9),
+            role: 'assistant',
+            content: 'Generation timed out. Please try again.',
+            timestamp: new Date(),
+          });
+        }
+        return newMessages;
+      });
+    }, GENERATION_STALL_TIMEOUT_MS);
   };
 
   const addMessage = (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
@@ -113,24 +169,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const setLoading = (loading: boolean) => {
-    setIsLoading(loading);
-  };
+  // No-op for backward compat — isLoading is derived
+  const setLoading = (_loading: boolean) => {};
 
   const clearMessages = () => {
-    // Clear all messages
     setMessages([]);
 
-    // Stop any ongoing generation
     if (isGenerating && workerRef.current) {
       workerRef.current.postMessage({ type: 'interrupt' });
       setIsGenerating(false);
     }
 
-    // Reset loading states
-    setIsLoading(false);
-
-    // Reset conversation context in worker if available
     if (USE_CHAT_WORKER && workerRef.current) {
       try {
         workerRef.current.postMessage({ type: 'reset' });
@@ -139,60 +188,50 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       }
     }
 
-    // Welcome message removed - using sample pills instead
-
-    if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-      // eslint-disable-next-line no-console
-      console.log('[chat] Chat history cleared and conversation reset');
+    // Clear model-ready state so a reload won't auto-restore
+    try {
+      sessionStorage.removeItem(MODEL_READY_KEY);
+    } catch {
+      // sessionStorage may be unavailable
     }
   };
 
   const setSelectedModel = (modelId: string) => {
-    // Don't do anything if already selected
     if (modelId === selectedModel) return;
 
-    // Interrupt any ongoing generation
     if (isGenerating && workerRef.current) {
       workerRef.current.postMessage({ type: 'interrupt' });
       setIsGenerating(false);
     }
 
-    // Reset loading states
-    setIsLoading(false);
-
-    // Update the selected model
     setSelectedModelState(modelId);
 
-    // Handle model loading based on cache status
     if (ModelCache.isModelCached(modelId)) {
-      // Model is already cached, switch instantly
       setModelState({ status: 'ready', progress: [] });
+    } else if (modelState.status === 'idle') {
+      // Nothing loaded yet (welcome screen): just switch the selection —
+      // the user starts the download explicitly.
     } else if (USE_CHAT_WORKER && workerRef.current) {
-      // Load new model via worker
       setModelState({
         status: 'loading',
         progress: [],
         loadingMessage: `Loading ${availableModels.find(m => m.id === modelId)?.name || modelId}...`,
       });
-
       ModelCache.setModelLoading(modelId);
       workerRef.current.postMessage({
         type: 'load',
-        data: { modelId },
+        data: loadRequestDataFor(modelId),
       });
     } else {
-      // Worker not available, set to idle
       setModelState({ status: 'idle', progress: [] });
     }
 
-    // Update cached models list
     setCachedModels(ModelCache.getCachedModels().map(entry => entry.modelId));
   };
 
-  // Safe no-op methods when worker is disabled
   const loadModel = (modelId?: string) => {
+    const targetId = modelId ?? selectedModel;
     if (USE_CHAT_WORKER && workerRef.current) {
-      // Proactively show loading UI
       setModelState({
         status: 'loading',
         progress: [],
@@ -200,26 +239,22 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       });
       const req: WorkerRequest = {
         type: 'load',
-        data: { modelId: modelId ?? selectedModel },
-      } as any;
+        data: loadRequestDataFor(targetId),
+      };
       workerRef.current.postMessage(req);
       return;
     }
 
-    // Simulated non-breaking behavior
+    // Simulated non-breaking behavior (no worker, e.g. tests)
     setModelState({
       status: 'loading',
       progress: [],
       loadingMessage: 'Loading model...',
     });
-    // Simulate a brief loading then ready
-    setTimeout(() => {
-      setModelState({ status: 'ready', progress: [] });
-    }, 50);
+    setTimeout(() => setModelState({ status: 'ready', progress: [] }), 50);
   };
 
   const generateResponse = (msgs: ChatMessage[]) => {
-    // Only generate if model is ready
     if (
       !USE_CHAT_WORKER ||
       !workerRef.current ||
@@ -229,40 +264,69 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       return;
     }
 
-    try {
-      // Apply rolling context window management using config
-      const contextWindow = chatConfig.behavior.contextWindow;
-      const contextMessages = createRollingContext(msgs, contextWindow);
+    // Prevent concurrent generations (synchronous guard)
+    if (isGeneratingRef.current) {
+      console.warn('Cannot generate: already generating');
+      return;
+    }
+    isGeneratingRef.current = true;
 
-      if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-        // eslint-disable-next-line no-console
-        console.log(`[chat] Context window: ${contextWindow} tokens`);
-        // eslint-disable-next-line no-console
-        console.log(
-          `[chat] Original messages: ${msgs.length}, Context messages: ${contextMessages.length}`
-        );
-      }
+    try {
+      const modelDef = AVAILABLE_MODELS.find(m => m.id === selectedModel);
+      const systemPrompt = chatConfig.generation.getSystemPrompt(selectedModel);
+
+      // Model-aware rolling context: budget = model window − system prompt (CV)
+      // tokens − tokens reserved for the model's own output.
+      const modelContext =
+        modelDef?.contextWindow ?? chatConfig.behavior.contextWindow;
+      const reservedOutput = modelDef?.generationProfile?.maxTokens ?? 1024;
+      const systemTokens = estimateTokens(systemPrompt);
+      const budget = Math.max(
+        512,
+        modelContext - systemTokens - reservedOutput
+      );
+      const contextMessages = createRollingContext(msgs, budget);
+
+      // Off-topic handling lives in the worker's topic guard (a cheap
+      // CV-free classification pass), NOT in per-message prompt notes —
+      // in-prompt rules stop working after a few answered turns, and
+      // history rewrites would break the worker's KV prefix reuse.
+
+      // Always-thinking models reason regardless of the toggle
+      const effectiveReasonEnabled = modelDef?.alwaysThinks
+        ? true
+        : isThinkingEnabled;
 
       const req: WorkerRequest = {
         type: 'generate',
         data: {
           messages: contextMessages,
           modelId: selectedModel,
-          reasonEnabled: isThinkingEnabled,
-          systemPrompt: chatConfig.generation.systemPrompt,
-          generationConfig: {
-            maxTokens: chatConfig.generation.maxTokens,
-            temperature: chatConfig.generation.temperature,
-            topK: chatConfig.generation.topK,
-            repetitionPenalty: chatConfig.generation.repetitionPenalty,
+          reasonEnabled: effectiveReasonEnabled,
+          systemPrompt,
+          guard: {
+            prompts: chatConfig.generation.guardPrompts,
+            refusal: chatConfig.generation.refusalMessage,
           },
+          modelConfig: modelDef
+            ? {
+                generationProfile: modelDef.generationProfile,
+                templateOptions: modelDef.templateOptions,
+                alwaysThinks: modelDef.alwaysThinks,
+                supportsThinking: modelDef.supportsThinking,
+                dtype: modelDef.dtype,
+                dtypeWasm: modelDef.dtypeWasm,
+              }
+            : {},
         },
-      } as any;
+      };
       workerRef.current.postMessage(req);
+
+      armGenerationTimeout();
     } catch (error) {
       console.error('Worker generation failed:', error);
+      isGeneratingRef.current = false;
       setIsGenerating(false);
-      setIsLoading(false);
       addMessage({
         role: 'assistant',
         content:
@@ -273,25 +337,20 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   const interruptGeneration = () => {
     if (USE_CHAT_WORKER && workerRef.current) {
-      const req: WorkerRequest = { type: 'interrupt' };
-      workerRef.current.postMessage(req);
+      workerRef.current.postMessage({ type: 'interrupt' });
       return;
     }
-    // Simulated no-op
     setIsGenerating(false);
   };
 
   const resetConversation = () => {
     if (USE_CHAT_WORKER && workerRef.current) {
-      const req: WorkerRequest = { type: 'reset' };
-      workerRef.current.postMessage(req);
+      workerRef.current.postMessage({ type: 'reset' });
       return;
     }
-    // Simulated no-op
     setModelState(prev => ({ ...prev, status: 'idle', progress: [] }));
   };
 
-  // Enhanced clear function that combines message clearing with conversation reset
   const clearChatHistory = () => {
     clearMessages();
     resetConversation();
@@ -300,7 +359,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const toggleThinking = () => {
     const newValue = !isThinkingEnabled;
     setIsThinkingEnabled(newValue);
-    // Persist thinking preference
     if (typeof window !== 'undefined') {
       localStorage.setItem('chat-thinking-enabled', newValue.toString());
     }
@@ -308,7 +366,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   const cancelModelLoading = () => {
     if (USE_CHAT_WORKER && workerRef.current) {
-      // Terminate the worker to cancel download
       try {
         workerRef.current.terminate();
         workerRef.current = null;
@@ -317,118 +374,69 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       }
     }
 
-    // Reset model state back to idle to show welcome screen
     setModelState({ status: 'idle', progress: [] });
-    setIsLoading(false);
     setIsGenerating(false);
-
-    // Clear any model loading cache state completely
     ModelCache.removeModel(selectedModel);
-
-    // Clear the cached models list to ensure fresh state
     setCachedModels([]);
 
-    if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-      // eslint-disable-next-line no-console
-      console.log('[chat] Model loading cancelled, worker terminated');
+    try {
+      sessionStorage.removeItem(MODEL_READY_KEY);
+    } catch {
+      // sessionStorage may be unavailable
     }
 
-    // Force worker reinitialization by incrementing the key
+    // Force worker reinitialization
     setWorkerInitKey(prev => prev + 1);
   };
 
-  // Helper function to create worker (environment-safe approach)
+  // Retry a failed load by cleanly re-initializing the worker, then loading.
+  const retryModelLoad = () => {
+    cancelModelLoading();
+    // The worker re-init effect runs on workerInitKey change; kick off the load
+    // once it's ready. A short delay lets the new worker mount.
+    setModelState({
+      status: 'loading',
+      progress: [],
+      loadingMessage: 'Loading model...',
+    });
+    setTimeout(() => {
+      if (workerRef.current) {
+        ModelCache.setModelLoading(selectedModel);
+        workerRef.current.postMessage({
+          type: 'load',
+          data: loadRequestDataFor(selectedModel),
+        });
+      }
+    }, 100);
+  };
+
+  // Single deterministic worker URL (no multi-URL fallback loop)
   const createWorker = () => {
-    if (typeof Worker === 'undefined') return null;
+    if (typeof Worker === 'undefined' || typeof window === 'undefined')
+      return null;
 
     try {
-      if (typeof window !== 'undefined') {
-        // Detect path prefix from the initial app base URL (navigation-independent)
-        const baseUrl = window.location.origin;
-        let pathPrefix = '';
-
-        // For GitHub Pages deployment, check if we're in a subdirectory
-        // Use a more reliable detection method based on the initial load location
-        const href = window.location.href;
-        if (href.includes('/alexnodeland/')) {
-          pathPrefix = '/alexnodeland';
-        }
-
-        // Debug logging
-        if ((window as any).CHAT_DEBUG) {
-          // eslint-disable-next-line no-console
-          console.log('[chat] Base URL:', baseUrl);
-          // eslint-disable-next-line no-console
-          console.log('[chat] Detected pathPrefix:', pathPrefix || '(none)');
-        }
-
-        // Try multiple strategies for worker URL resolution (navigation-independent)
-        const workerPaths = [
-          `${baseUrl}${pathPrefix}/worker.js`, // Full absolute URL with prefix
-          `${pathPrefix}/worker.js`, // Relative path with prefix
-          '/worker.js', // Root fallback
-          `${baseUrl}/worker.js`, // Absolute root fallback
-        ];
-
-        if ((window as any).CHAT_DEBUG) {
-          // eslint-disable-next-line no-console
-          console.log('[chat] Will try worker URLs:', workerPaths);
-        }
-
-        for (const workerUrl of workerPaths) {
-          try {
-            if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-              // eslint-disable-next-line no-console
-              console.log('[chat] Attempting to load worker from:', workerUrl);
-            }
-            const worker = new Worker(workerUrl, { type: 'module' });
-            if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-              // eslint-disable-next-line no-console
-              console.log(
-                '[chat] Worker created successfully from:',
-                workerUrl
-              );
-            }
-            return worker;
-          } catch (urlErr) {
-            if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-              // eslint-disable-next-line no-console
-              console.warn(
-                '[chat] Worker creation failed for URL:',
-                workerUrl,
-                urlErr
-              );
-            }
-            continue; // Try next URL
-          }
-        }
-      }
-      return null;
+      // Detect subdirectory prefix for GitHub Pages deployments
+      const pathPrefix = window.location.href.includes('/alexnodeland/')
+        ? '/alexnodeland'
+        : '';
+      const workerUrl = `${window.location.origin}${pathPrefix}/worker.js`;
+      return new Worker(workerUrl, { type: 'module' });
     } catch (err) {
-      // This is expected in test environment
-      if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          '[chat] Worker creation failed (expected in test environment):',
-          err
-        );
-      }
+      console.warn('[chat] Worker creation failed:', err);
       return null;
     }
   };
 
-  // Initialize worker when feature flag is enabled
+  // Initialize worker. Intentionally NOT dependent on selectedModel — switching
+  // models sends a 'load' message to the existing worker instead of recreating
+  // it, preserving the worker's in-memory model cache.
   useEffect(() => {
     if (!USE_CHAT_WORKER) {
-      // Worker disabled by feature flag - set to idle to allow basic chat interface
-      setModelState({
-        status: 'idle',
-        progress: [],
-      });
+      setModelState({ status: 'idle', progress: [] });
       return;
     }
 
-    // Clean up existing worker if any
     if (workerRef.current) {
       try {
         workerRef.current.terminate();
@@ -438,30 +446,22 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       workerRef.current = null;
     }
 
-    // Initializing worker...
     try {
       const worker = createWorker();
       if (!worker) {
         console.warn(
           '[chat] Worker creation failed or not supported - chat will work in basic mode'
         );
-        setModelState({
-          status: 'idle',
-          progress: [],
-        });
-        // Allow chat to work without worker
-        return () => {}; // Return cleanup function
+        setModelState({ status: 'idle', progress: [] });
+        return () => {};
       }
-      // Worker created successfully
       workerRef.current = worker;
 
       const onMessage = (e: MessageEvent<WorkerResponse>) => {
-        const data = e.data as any; // Type assertion for flexibility
+        const data = e.data as any;
 
-        // Handle progress updates from the model loading
         if (data.status === 'progress') {
           const { file = 'model', loaded, total, progress } = data as any;
-          // Update a single progress bar
           setModelState((prev: ModelLoadingState) => ({
             ...prev,
             status: 'loading',
@@ -469,7 +469,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           }));
           return;
         }
-        // Handle other worker messages
+
         switch (data.status) {
           case 'check_complete':
             setWebGPUSupported(data.webGPUSupported ?? null);
@@ -480,7 +480,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
               ...prev,
               status: 'loading',
               loadingMessage: message,
-              // Only clear progress on the initial model download start
               progress: message === 'Loading model...' ? [] : prev.progress,
             }));
             break;
@@ -488,62 +487,95 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           case 'ready': {
             setModelState({ status: 'ready', progress: [] });
             setIsGenerating(false);
-            // Mark the model as cached when it's ready
+            // Use the modelId the worker actually loaded (B7), not the current
+            // selection which may have changed during the load.
+            const loadedModel = data.modelId || selectedModelRef.current;
             const deviceInfo =
               typeof data.data === 'string' ? data.data : 'unknown';
-            ModelCache.setModelReady(selectedModel, deviceInfo);
-            // Update cached models list to reflect the change
+            ModelCache.setModelReady(loadedModel, deviceInfo);
             setCachedModels(
               ModelCache.getCachedModels().map(entry => entry.modelId)
             );
-            // Model is ready - no automatic welcome message (using sample pills instead)
+            // Persist model-ready state for reload recovery (mobile tab kills)
+            try {
+              sessionStorage.setItem(MODEL_READY_KEY, loadedModel);
+            } catch {
+              // sessionStorage may be unavailable
+            }
             break;
           }
           case 'start':
             setIsGenerating(true);
-            addMessage({ role: 'assistant', content: '' });
+            setTokensPerSecond(0);
+            addMessage({ role: 'assistant', content: '', thinking: '' });
             break;
-          case 'update':
-            // Update the last assistant message with streaming content, handling thinking blocks
+          case 'update': {
+            // Feed the stall watchdog — tokens are flowing.
+            if (isGeneratingRef.current) armGenerationTimeout();
+            if (typeof data.tps === 'number') setTokensPerSecond(data.tps);
+            // Worker streams tag-free text with an explicit thinking/answering
+            // state (tags are filtered across chunk boundaries in the worker).
+            const chunk = data.output || '';
+            const workerState = data.state || 'answering';
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
-              const lastMessage = newMessages[newMessages.length - 1];
-              if (lastMessage && lastMessage.role === 'assistant') {
-                const updatedMessage = updateMessageWithThinking(
-                  lastMessage,
-                  data.output || ''
-                );
-                newMessages[newMessages.length - 1] = updatedMessage;
+              const last = newMessages[newMessages.length - 1];
+              if (last && last.role === 'assistant') {
+                if (workerState === 'thinking') {
+                  newMessages[newMessages.length - 1] = {
+                    ...last,
+                    thinking: (last.thinking || '') + chunk,
+                  };
+                } else {
+                  newMessages[newMessages.length - 1] = {
+                    ...last,
+                    content: (last.content || '') + chunk,
+                  };
+                }
               }
               return newMessages;
             });
             break;
+          }
           case 'complete': {
+            if (generationTimeoutRef.current) {
+              clearTimeout(generationTimeoutRef.current);
+              generationTimeoutRef.current = null;
+            }
+            isGeneratingRef.current = false;
             setIsGenerating(false);
-            setIsLoading(false);
+
             const finalText = Array.isArray((data as any).output)
               ? (data as any).output.join('')
               : String((data as any).output || '');
-            // Ensure the final output is reflected and thinking blocks are finalized
+
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
-              const lastMessage = newMessages[newMessages.length - 1];
-              if (lastMessage && lastMessage.role === 'assistant') {
-                // If we have existing content, keep it, otherwise use final text
-                const contentToProcess =
-                  lastMessage.content && lastMessage.content.length > 0
-                    ? lastMessage.content
-                    : finalText;
+              const last = newMessages[newMessages.length - 1];
+              if (last && last.role === 'assistant') {
+                // Strip any residual think tags from streamed content
+                const cleanContent = (last.content || '')
+                  .replace(/<\/?think>/g, '')
+                  .trim();
 
-                // Parse final content for any thinking blocks
-                const parsed = parseThinkingBlocks(contentToProcess);
+                if (cleanContent.length > 0) {
+                  newMessages[newMessages.length - 1] = {
+                    ...last,
+                    content: cleanContent,
+                  };
+                  return newMessages;
+                }
+
+                // Fallback: streaming produced no visible content. finalText is
+                // the newly generated tokens only (worker slices off the prompt),
+                // so this can't echo the CV.
+                const parsed = parseThinkingBlocks(finalText);
                 newMessages[newMessages.length - 1] = {
-                  ...lastMessage,
+                  ...last,
                   content: parsed.content,
-                  thinking: parsed.thinking || lastMessage.thinking,
+                  thinking: parsed.thinking || last.thinking,
                 };
               } else if (finalText) {
-                // Create new message with thinking block parsing
                 const parsed = parseThinkingBlocks(finalText);
                 newMessages.push({
                   id: Math.random().toString(36).substr(2, 9),
@@ -558,27 +590,35 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             break;
           }
           case 'error': {
+            if (generationTimeoutRef.current) {
+              clearTimeout(generationTimeoutRef.current);
+              generationTimeoutRef.current = null;
+            }
+            const wasGenerating = isGeneratingRef.current;
+            isGeneratingRef.current = false;
             const errMsg = String(data.data ?? 'Worker error');
-            setModelState((prev: ModelLoadingState) => ({
-              ...prev,
-              status: 'error',
-              error: errMsg,
-            }));
+            // Generation errors keep the model 'ready' (it's still loaded);
+            // only load failures move status to 'error'.
+            setModelState((prev: ModelLoadingState) => {
+              if (prev.status === 'ready' || wasGenerating) {
+                return prev;
+              }
+              return { ...prev, status: 'error', error: errMsg };
+            });
             setIsGenerating(false);
-            setIsLoading(false);
-            // Surface an assistant message so users see feedback even on failure
+
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
-              const lastMessage = newMessages[newMessages.length - 1];
+              const last = newMessages[newMessages.length - 1];
               const fallbackText =
                 'Sorry, I ran into an error while generating the response. Retrying on CPU may help.\n' +
                 `Details: ${errMsg}`;
-              if (lastMessage && lastMessage.role === 'assistant') {
+              if (last && last.role === 'assistant') {
                 newMessages[newMessages.length - 1] = {
-                  ...lastMessage,
+                  ...last,
                   content:
-                    lastMessage.content && lastMessage.content.length > 0
-                      ? lastMessage.content
+                    last.content && last.content.length > 0
+                      ? last.content
                       : fallbackText,
                 };
               } else {
@@ -593,6 +633,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             });
             break;
           }
+          case 'interrupted': {
+            if (generationTimeoutRef.current) {
+              clearTimeout(generationTimeoutRef.current);
+              generationTimeoutRef.current = null;
+            }
+            isGeneratingRef.current = false;
+            setIsGenerating(false);
+            break;
+          }
         }
       };
 
@@ -603,18 +652,33 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           error: String(e.message || 'Worker error'),
         }));
         setIsGenerating(false);
-        setIsLoading(false);
       };
 
       workerRef.current.addEventListener('message', onMessage as any);
       workerRef.current.addEventListener('error', onError as any);
 
-      // Perform WebGPU capability check
-      // Checking WebGPU support...
+      // WebGPU capability check
       workerRef.current.postMessage({ type: 'check' });
 
-      // Don't auto-load any model - only load when user selects Qwen
-      // Worker initialized, modelState should be idle
+      // Auto-restore a previously loaded model (handles mobile tab kills where
+      // the JS state is lost but the browser model cache survives).
+      try {
+        const prevModel = sessionStorage.getItem(MODEL_READY_KEY);
+        if (prevModel) {
+          setModelState({
+            status: 'loading',
+            progress: [],
+            loadingMessage: 'Restoring model from cache...',
+          });
+          ModelCache.setModelLoading(prevModel);
+          worker.postMessage({
+            type: 'load',
+            data: loadRequestDataFor(prevModel),
+          });
+        }
+      } catch {
+        // sessionStorage may be unavailable
+      }
 
       return () => {
         try {
@@ -628,82 +692,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       };
     } catch (err) {
       console.error('Failed to initialize worker:', err);
-      // Set to idle instead of error to allow app to continue functioning
-      setModelState({
-        status: 'idle',
-        progress: [],
-      });
-      // Don't throw the error - let the app continue to work without chat
+      setModelState({ status: 'idle', progress: [] });
     }
-  }, [USE_CHAT_WORKER, selectedModel, workerInitKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [USE_CHAT_WORKER, workerInitKey]);
 
-  // Sync cached models state with ModelCache on mount and when selected model changes
+  // Sync cached models when the selection changes
   useEffect(() => {
-    const updateCachedModels = () => {
-      const currentCachedModels = ModelCache.getCachedModels().map(
-        entry => entry.modelId
-      );
-      setCachedModels(currentCachedModels);
-
-      if (typeof window !== 'undefined' && (window as any).CHAT_DEBUG) {
-        // eslint-disable-next-line no-console
-        console.log('[chat] Cached models updated:', currentCachedModels);
-      }
-    };
-
-    updateCachedModels();
-  }, [selectedModel]); // Sync cache when model selection changes
-
-  // Handle navigation events to ensure worker stability
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleNavigation = () => {
-      // Check if worker is still alive and responsive
-      if (workerRef.current && USE_CHAT_WORKER) {
-        try {
-          // Send a ping to verify worker is responsive
-          workerRef.current.postMessage({ type: 'check' });
-        } catch (err) {
-          // eslint-disable-next-line no-console
-          console.warn(
-            '[chat] Worker became unresponsive during navigation, reinitializing...',
-            err
-          );
-          // Force worker reinitialization
-          setWorkerInitKey(prev => prev + 1);
-        }
-      }
-    };
-
-    // Listen for Gatsby navigation events
-    const handleRouteChange = () => {
-      setTimeout(handleNavigation, 100); // Small delay to ensure navigation is complete
-    };
-
-    // Gatsby uses history API for navigation
-    window.addEventListener('popstate', handleRouteChange);
-
-    // Also listen for hash changes and pushstate events
-    const originalPushState = window.history.pushState;
-    const originalReplaceState = window.history.replaceState;
-
-    window.history.pushState = function (...args) {
-      originalPushState.apply(window.history, args);
-      handleRouteChange();
-    };
-
-    window.history.replaceState = function (...args) {
-      originalReplaceState.apply(window.history, args);
-      handleRouteChange();
-    };
-
-    return () => {
-      window.removeEventListener('popstate', handleRouteChange);
-      window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
-    };
-  }, [USE_CHAT_WORKER]);
+    setCachedModels(ModelCache.getCachedModels().map(entry => entry.modelId));
+  }, [selectedModel]);
 
   return (
     <ChatContext.Provider
@@ -711,12 +708,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         isChatOpen,
         isClosing,
         messages,
-        selectedModel: selectedModel,
+        selectedModel,
         availableModels,
         isLoading,
         modelState,
         webGPUSupported,
         isGenerating,
+        tokensPerSecond,
         cachedModels,
         isThinkingEnabled,
         setChatOpen,
@@ -732,6 +730,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         clearChatHistory,
         toggleThinking,
         cancelModelLoading,
+        retryModelLoad,
       }}
     >
       {children}

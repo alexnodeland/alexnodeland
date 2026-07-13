@@ -1,41 +1,18 @@
 // Chat configuration for Transformers.js integration
-import {
-  combineSystemPromptWithCV,
-  CVContextLevel,
-} from '../lib/utils/cvFormatter';
+import { combineSystemPromptWithCV } from '../lib/utils/cvFormatter';
 import { cvData } from './cv';
+
 export interface ChatConfig {
   models: {
     default: string;
-    available: Array<{
-      id: string;
-      name: string;
-      description: string;
-      size?: string;
-      contextWindow?: number;
-      supportsThinking?: boolean;
-      cvContextLevel?: CVContextLevel;
-    }>;
   };
   generation: {
-    systemPrompt: string;
-    maxTokens: {
-      default: number;
-      thinking: number;
-      wasm: number;
-      wasmThinking: number;
-    };
-    temperature: {
-      default: number;
-      thinking: number;
-      wasm: number;
-    };
-    topK: {
-      default: number;
-      thinking: number;
-      wasm: number;
-    };
-    repetitionPenalty: number;
+    getSystemPrompt: (modelId: string) => string;
+    /** Prompts for the cheap pre-generation topic guard ({question} placeholder).
+     *  A question is refused only when EVERY prompt answers NO. */
+    guardPrompts: string[];
+    /** Canned reply when the guard classifies a question OFF_TOPIC. */
+    refusalMessage: string;
   };
   interface: {
     welcomeMessage: string;
@@ -49,141 +26,116 @@ export interface ChatConfig {
   };
   behavior: {
     contextWindow: number;
-    enableWebGPU: boolean;
-    fallbackToWasm: boolean;
-    persistConversation: boolean;
-    autoLoadModel: boolean;
   };
 }
 
 /**
- * Gets the appropriate CV context level for a given model
+ * Base instructions shared across all models.
+ * CV data is prepended by combineSystemPromptWithCV, so "above" refers to it.
  */
-function getCVContextLevelForModel(modelId: string): CVContextLevel {
-  // Define available models inline to avoid circular reference
-  const availableModels = [
-    {
-      id: 'onnx-community/Qwen3-0.6B-ONNX',
-      cvContextLevel: 'concise' as CVContextLevel,
-    },
-    {
-      id: 'onnx-community/Qwen2.5-0.5B-Instruct',
-      cvContextLevel: 'concise' as CVContextLevel,
-    },
-  ];
+const SHARED_INSTRUCTIONS = `You are "chat", Alex Nodeland's AI assistant on his personal website.
 
-  // First, try to find the model in the available models
-  const model = availableModels.find(m => m.id === modelId);
-  if (model?.cvContextLevel) {
-    return model.cvContextLevel;
-  }
+Rules:
+- Answer ONLY from the <alexs_cv> data above. Never invent or assume facts.
+- If the answer is not in the CV, say: "That's not in Alex's CV. Try asking about his experience, skills, or education."
+- NEVER answer general-knowledge questions (world facts, trivia, coding help), even when you know the answer. Use the refusal line above instead.
+- For questions about job order ("before that", "after that", "previous company"), use the <career_timeline> section — it lists roles most recent first.
+- Be concise and specific. Cite concrete details: roles, companies, dates, skills.
+- When asked who you are, say: "I'm chat, an AI assistant running in your browser to help you learn about Alex."
 
-  // Fallback based on model ID patterns
-  if (modelId.includes('0.5B') || modelId.includes('0.6B')) {
-    return 'concise';
-  } else if (
-    modelId.includes('1B') ||
-    modelId.includes('1.5B') ||
-    modelId.includes('3B')
-  ) {
-    return 'medium';
-  } else {
-    return 'full';
-  }
+Examples:
+
+User: What does Alex do?
+Assistant: Alex is a Senior AI Engineer at Perch Insights, where he leads AI engineering initiatives and architects DAG-based workflow orchestration for autonomous data analysis agents. He also consults independently on AI strategy.
+
+User: Does Alex know Rust?
+Assistant: That's not in Alex's CV. Try asking about his experience, skills, or education.
+
+User: What's the capital of France?
+Assistant: That's not in Alex's CV. Try asking about his experience, skills, or education.
+
+User: Where did Alex work before Perch Insights?
+Assistant: Before joining Perch Insights in 2024, Alex was Head of AI at Influize (2023-2024).
+
+User: Where did Alex study?
+Assistant: Alex studied at Stony Brook University. He completed a BS in Applied Mathematics and Statistics (2013-2015) and began a Ph.D. in Computational Applied Mathematics (2016) before transitioning to entrepreneurial roles.`;
+
+/**
+ * LFM-specific suffix — guides the thinking model to reason over CV sections.
+ */
+const LFM_SUFFIX = `
+When answering, first identify which CV section(s) contain the relevant information, then compose your response from those details. Keep responses to 2-3 sentences unless the user asks for more detail.
+
+Final check before every answer: is the question about Alex? If not (general knowledge, trivia, coding help, opinions), reply exactly: "That's not in Alex's CV. Try asking about his experience, skills, or education."
+
+Remember: answer ONLY from the CV data above.`;
+
+/**
+ * Qwen-specific suffix — tighter constraints for the smaller model.
+ */
+const QWEN_SUFFIX = `
+Keep responses to 1-3 sentences. Stick strictly to facts from the CV above.
+
+Remember: answer ONLY from the CV data above.`;
+
+/**
+ * Generates the system prompt with full CV context.
+ * Uses model-specific suffixes for optimal behavior per architecture.
+ */
+export function getSystemPromptForModel(modelId: string): string {
+  const isLFM = modelId.includes('LFM');
+  const suffix = isLFM ? LFM_SUFFIX : QWEN_SUFFIX;
+  return combineSystemPromptWithCV(SHARED_INSTRUCTIONS + suffix, cvData);
 }
 
 /**
- * Generates a system prompt for a specific model using appropriate CV context level
+ * Topic guard: tiny CV-free classification prompts run before every answer.
+ * A 1.2B model reliably refuses off-topic questions on turn 1 but not after a
+ * few answered turns (conversation momentum beats any in-prompt rule), so the
+ * refusal decision is made by this separate cheap pass instead.
+ *
+ * Two phrasings are asked and a question is refused only when BOTH say NO —
+ * single-prompt verdicts from a small model are knife-edge on borderline
+ * questions, and the guard must fail open (the main model handles on-topic
+ * unknowns gracefully, e.g. "COBOL is not mentioned in Alex's CV").
+ * `{question}` is replaced with the visitor's question.
  */
-function getSystemPromptForModel(modelId: string): string {
-  const cvLevel = getCVContextLevelForModel(modelId);
+const GUARD_BIO =
+  'Alex Nodeland is an AI engineer: Senior AI Engineer at Perch Insights, previously Head of AI at Influize, Tech Lead at Musiio, founder of Archanan; studied applied mathematics at Stony Brook.';
 
-  const basePrompt = `You are "chat", Alex Nodeland's AI assistant designed to help visitors to his personal website get to know him better.
+const GUARD_PROMPTS = [
+  `${GUARD_BIO}\n\nQuestion: "{question}"\n\nIs this question about Alex, his career, skills, education, or projects — or a follow-up about him? Reply with exactly YES or NO.`,
+  `${GUARD_BIO}\n\nQuestion: "{question}"\n\nIs this question asking about Alex, his career, skills, education, or projects — or a follow-up about him? Answer YES even if you don't know the answer to the question itself (e.g. asking whether Alex knows some skill is still about Alex). Reply with exactly YES or NO.`,
+];
 
-CRITICAL INSTRUCTIONS:
-- You ONLY have access to information provided in the CV data above
-- If asked about information NOT in the CV, respond: "I don't have that information in Alex's CV. Please ask about his professional experience, skills, education, or achievements that are documented above."
-- Do NOT make up or infer information beyond what's explicitly stated in the CV
-- Be accurate and concise in your responses
-
-Key characteristics:
-- Help visitors understand Alex's background, experience, and expertise based ONLY on the CV information provided
-- Provide insights into his technical skills and career journey as documented
-- Answer questions about his work in AI engineering, technical leadership, and startups using only CV data
-- Reference specific experiences and achievements from the CV when relevant
-- Be knowledgeable about his documented projects, roles, and technical capabilities
-
-If someone asks who you are or what this is, say: "I'm chat, an AI assistant running entirely in your browser designed to help you get to know Alex Nodeland."
-
-Use ONLY the CV information above to provide concise, accurate responses about Alex's professional background, skills, and achievements. Do not speculate or provide information not explicitly contained in the CV.`;
-
-  return combineSystemPromptWithCV(basePrompt, cvData, cvLevel);
-}
+const REFUSAL_MESSAGE =
+  "That's not in Alex's CV. Try asking about his experience, skills, or education.";
 
 export const chatConfig: ChatConfig = {
   models: {
-    default: 'onnx-community/Qwen3-0.6B-ONNX',
-    available: [
-      {
-        id: 'onnx-community/Qwen3-0.6B-ONNX',
-        name: 'Qwen 3 0.6B',
-        description: 'fast, lightweight model perfect for quick responses',
-        size: '0.6b parameters',
-        contextWindow: 16384,
-        supportsThinking: true,
-        cvContextLevel: 'concise',
-      },
-      {
-        id: 'onnx-community/Qwen2.5-0.5B-Instruct',
-        name: 'Qwen 2.5 0.5B',
-        description: 'Optimized instruction-following model',
-        size: '0.5B parameters',
-        contextWindow: 2048,
-        supportsThinking: false,
-        cvContextLevel: 'concise',
-      },
-    ],
+    default: 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX',
   },
   generation: {
-    systemPrompt: getSystemPromptForModel('onnx-community/Qwen3-0.6B-ONNX'),
-    maxTokens: {
-      default: 2048,
-      thinking: 4096,
-      wasm: 2048,
-      wasmThinking: 4096,
-    },
-    temperature: {
-      default: 0.3,
-      thinking: 0.3,
-      wasm: 0.3,
-    },
-    topK: {
-      default: 40,
-      thinking: 40,
-      wasm: 40,
-    },
-    repetitionPenalty: 1.05,
+    getSystemPrompt: getSystemPromptForModel,
+    guardPrompts: GUARD_PROMPTS,
+    refusalMessage: REFUSAL_MESSAGE,
   },
   interface: {
     welcomeMessage:
-      "Hi! I'm chat, Alex's AI assistant. I can help you with technical questions, discuss AI engineering topics, or chat about anything else you're curious about. What would you like to explore?",
+      "Hi! I'm chat, Alex's AI assistant running in your browser. Ask me about his experience, skills, education, or career background.",
     placeholderText: {
-      ready: 'type your message here...',
+      ready: 'ask about Alex...',
       loading: 'loading model...',
       idle: 'please download the model first',
     },
     samplePrompts: [
-      'what is this?',
-      "explain alex's roles in startups",
-      "what is alex's experience with hpc?",
+      "what's Alex's current role?",
+      'what AI/ML experience does he have?',
+      'where did Alex study?',
     ],
     enableThinking: true,
   },
   behavior: {
     contextWindow: 16384,
-    enableWebGPU: true,
-    fallbackToWasm: true,
-    persistConversation: true,
-    autoLoadModel: false,
   },
 };

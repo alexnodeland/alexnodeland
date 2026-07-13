@@ -1,5 +1,4 @@
 // Chat types for Transformers.js integration
-import { CVContextLevel } from '../lib/utils/cvFormatter';
 
 // Core chat types
 export interface ChatMessage {
@@ -10,10 +9,22 @@ export interface ChatMessage {
   // Optional thinking block content
   thinking?: string;
   isThinkingExpanded?: boolean;
-  // Raw accumulated content for proper streaming parsing
-  _rawContent?: string;
-  // Track if thinking block is complete (has seen </think>)
-  _thinkingComplete?: boolean;
+}
+
+// Per-model generation parameters bundled in one flat object.
+// WebGPU and WASM (CPU) each get their own tuned values.
+export interface ModelGenerationProfile {
+  maxTokens: number;
+  maxTokensWasm: number;
+  temperature: number;
+  temperatureWasm: number;
+  topK: number;
+  topKWasm: number;
+  topP?: number; // undefined means omit top_p from the generation call
+  repetitionPenalty: number;
+  // Force greedy decoding on all devices (most reliable for grounded QA).
+  // When undefined, sampling is used on GPU and greedy on WASM.
+  doSample?: boolean;
 }
 
 export interface ChatModel {
@@ -25,9 +36,15 @@ export interface ChatModel {
   contextWindow?: number;
   device?: 'webgpu' | 'cpu';
   dtype?: string;
+  dtypeWasm?: string;
   fallbackDevice?: 'wasm' | 'cpu';
   supportsThinking?: boolean;
-  cvContextLevel?: CVContextLevel;
+  // When true the model always emits <think> blocks regardless of the toggle.
+  alwaysThinks?: boolean;
+  // Extra options passed to tokenizer.apply_chat_template for this model.
+  templateOptions?: Record<string, any>;
+  // Per-model generation parameters.
+  generationProfile?: ModelGenerationProfile;
 }
 
 // Model loading and progress tracking
@@ -73,6 +90,8 @@ export interface WorkerResponse {
   tps?: number;
   numTokens?: number;
   state?: 'thinking' | 'answering';
+  // modelId of the model that finished loading (attached to 'ready')
+  modelId?: string;
 }
 
 // Generation parameters

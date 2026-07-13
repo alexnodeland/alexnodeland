@@ -67,7 +67,10 @@ describe('SEO Component', () => {
     const ogImage = document.querySelector('meta[property="og:image"]');
     const ogUrl = document.querySelector('meta[property="og:url"]');
 
-    expect(ogImage).toHaveAttribute('content', '/custom/image.png');
+    expect(ogImage).toHaveAttribute(
+      'content',
+      'https://alexnodeland.com/custom/image.png'
+    );
     expect(ogUrl).toHaveAttribute(
       'content',
       'https://alexnodeland.com/custom-page'
@@ -146,7 +149,10 @@ describe('SEO Component', () => {
       'content',
       'Learn more about our company'
     );
-    expect(ogImage).toHaveAttribute('content', '/images/about-hero.jpg');
+    expect(ogImage).toHaveAttribute(
+      'content',
+      'https://alexnodeland.com/images/about-hero.jpg'
+    );
     expect(ogUrl).toHaveAttribute('content', 'https://alexnodeland.com/about');
   });
 

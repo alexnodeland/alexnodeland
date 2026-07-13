@@ -20,6 +20,7 @@ jest.mock('rehype-highlight', () => ({
 // Mock Gatsby
 jest.mock('gatsby', () => ({
   graphql: jest.fn(),
+  withPrefix: path => path,
   Link: ({ children, to, ...props }) => {
     const React = require('react');
     return React.createElement('a', { href: to, ...props }, children);
