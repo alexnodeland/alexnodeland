@@ -19,7 +19,7 @@ const SEO: React.FC<SEOProps> = ({
   const fullTitle =
     title === siteConfig.siteName ? title : `${title} | ${siteConfig.siteName}`;
 
-  // Icon paths must respect the deploy pathPrefix (/alexnodeland).
+  // Icon paths must respect the deploy pathPrefix.
   const iconHref = withPrefix('/images/icon.png');
 
   // Social crawlers require ABSOLUTE image URLs. Pass through anything already

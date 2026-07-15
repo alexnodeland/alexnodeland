@@ -5,12 +5,12 @@ import { siteConfig } from './src/config/site';
  * @type {import('gatsby').GatsbyConfig}
  */
 const config: import('gatsby').GatsbyConfig = {
-  pathPrefix: `/alexnodeland`,
+  pathPrefix: `/`,
   siteMetadata: {
     title: siteConfig.siteName,
     description: siteConfig.description,
     author: siteConfig.author,
-    siteUrl: `https://alexnodeland.github.io/alexnodeland`,
+    siteUrl: `https://alexnodeland.com`,
   },
   plugins: [
     `gatsby-plugin-typescript`,
