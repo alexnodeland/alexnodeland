@@ -336,9 +336,13 @@ export function solveWaveEquation(
         rySq * (uCurrent[idxUp] - 2 * uCurrent[idx] + uCurrent[idxDown]);
 
       if (isFirstStep) {
-        // First step: u(t+dt) = u(t) + dt*v(t) + 0.5*dt²*c²*∇²u(t)
-        // v(t) is taken from the initial velocity if provided; otherwise, it defaults to zero
-        uNext[idx] = uCurrent[idx] + laplacian;
+        // First step: u(t+dt) = u(t) + dt*v(t) + 0.5*dt²*c²*∇²u(t).
+        // createInitialState seeds uPrev as u(0) - dt*v(0), so dt*v(t) is
+        // u(t) - uPrev — which folds the whole expansion into the standard
+        // step with a half-weight Laplacian. Taking the full weight here (as
+        // this did) doubles the opening impulse and drops the initial
+        // velocity on the floor.
+        uNext[idx] = 2 * uCurrent[idx] - uPrev[idx] + 0.5 * laplacian;
       } else {
         // Standard step: u(t+dt) = 2*u(t) - u(t-dt) + dt²*c²*∇²u(t)
         uNext[idx] = 2 * uCurrent[idx] - uPrev[idx] + laplacian;
@@ -411,11 +415,17 @@ export function createInitialState(
   // For wave equation, initialize previous state
   if (equationType === 'wave') {
     if (initialVelocity) {
-      // If initial velocity provided, use it to compute u(t - dt)
+      // If initial velocity provided, use it to compute u(t - dt). Has to be
+      // the same dt the solver will actually step with, or the seeded velocity
+      // comes out scaled wrong whenever the CFL clamp engages.
+      const dt = Math.min(
+        config.dt,
+        maxStableDtWave(config.c ?? 1.0, config.dx, config.dy)
+      );
       const v = generateInitialCondition(config, initialVelocity);
       state.uPrev = new Float32Array(u.length);
       for (let i = 0; i < u.length; i++) {
-        state.uPrev[i] = u[i] - v[i] * config.dt;
+        state.uPrev[i] = u[i] - v[i] * dt;
       }
     } else {
       // Zero initial velocity

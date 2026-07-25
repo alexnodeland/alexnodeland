@@ -53,7 +53,12 @@ const defaultCustomSettings: PDESolverCustomSettings = {
   equationType: 'wave',
   alpha: 0.1,
   waveSpeed: 1.0,
-  damping: 0.001,
+  // Per step, not per second — and the solver takes 300 steps a second, so
+  // even 0.001 bleeds about a quarter of the amplitude away every second and
+  // the field is flat within a minute. A background has to still be there
+  // after a minute, so take the control's own zero case: energy conserved,
+  // waves ringing off the boundaries indefinitely.
+  damping: 0,
   gridSize: 128,
   initialConditionType: 'interference',
   initialAmplitude: 1.0,

@@ -6,6 +6,7 @@ const mockSetContentHidden = jest.fn();
 const mockSwitchToNext = jest.fn();
 const mockSwitchToPrevious = jest.fn();
 const mockToggleSettingsPanel = jest.fn();
+const mockCloseSettingsPanel = jest.fn();
 
 let mockIsContentHidden = false;
 let mockShowSettingsPanel = false;
@@ -28,6 +29,7 @@ jest.mock('../../../../components/BackgroundProvider', () => ({
     switchToNextBackground: mockSwitchToNext,
     switchToPreviousBackground: mockSwitchToPrevious,
     toggleSettingsPanel: mockToggleSettingsPanel,
+    closeSettingsPanel: mockCloseSettingsPanel,
   }),
 }));
 
@@ -111,6 +113,18 @@ describe('MobileInteractivity', () => {
       expect(container.querySelector('.mobile-explore')).toHaveClass(
         'chrome-hidden'
       );
+    });
+
+    it('dismisses an open settings sheet when the background behind it is tapped', () => {
+      mockShowSettingsPanel = true;
+      render(<MobileInteractivity />);
+
+      fireEvent.click(screen.getByRole('button', { name: /close settings/i }));
+
+      expect(mockCloseSettingsPanel).toHaveBeenCalled();
+      // The sheet's backdrop must not double as the chrome toggle, or closing
+      // it would leave the control bar in whatever state the tap flipped it to.
+      expect(mockToggleSettingsPanel).not.toHaveBeenCalled();
     });
 
     it('restores the page content on close', () => {

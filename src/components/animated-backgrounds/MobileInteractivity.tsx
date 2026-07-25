@@ -30,6 +30,7 @@ const MobileInteractivity: React.FC = () => {
     switchToNextBackground,
     switchToPreviousBackground,
     toggleSettingsPanel,
+    closeSettingsPanel,
   } = useBackground();
 
   const isMobile = useIsMobileViewport();
@@ -136,14 +137,23 @@ const MobileInteractivity: React.FC = () => {
     <div
       className={`mobile-explore ${chromeHidden ? 'chrome-hidden' : 'chrome-visible'}`}
     >
+      {/* The exposed background doubles as the sheet's backdrop: tapping it
+          dismisses the settings sheet if one is up, and otherwise toggles the
+          control bar. */}
       <button
         type="button"
         className="mobile-explore-surface"
-        onClick={() => setControlsVisible(visible => !visible)}
+        onClick={
+          settingsOpen
+            ? closeSettingsPanel
+            : () => setControlsVisible(visible => !visible)
+        }
         aria-label={
-          controlsVisible
-            ? 'Hide background controls'
-            : 'Show background controls'
+          settingsOpen
+            ? 'Close settings'
+            : controlsVisible
+              ? 'Hide background controls'
+              : 'Show background controls'
         }
       />
 
