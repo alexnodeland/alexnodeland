@@ -76,3 +76,7 @@ quality:
 # Run all code quality checks with auto-fix
 quality-fix:
     npm run code-quality:fix
+
+# Re-archive the press articles linked from the blog (local copies + Wayback)
+archive-press:
+    ./scripts/archive-press.sh
