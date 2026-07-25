@@ -680,5 +680,7 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  // A continuous field has no discrete element to size.
+  omitStandardSettings: ['elementSize'],
   blogPostSection: '#fm-synthesis',
 });

@@ -53,6 +53,7 @@ export interface BackgroundConfig<TCustomSettings = {}> {
   standardSettings: StandardSettings;
   customSettings: TCustomSettings;
   customSettingsSchema: SettingsSchema[];
+  omitStandardSettings?: readonly string[];
   blogPostSection?: string; // Optional link to blog post section
 }
 

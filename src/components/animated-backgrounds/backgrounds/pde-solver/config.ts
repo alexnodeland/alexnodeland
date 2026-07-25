@@ -345,5 +345,7 @@ export const pdeSolverConfig = createBackgroundConfig({
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  // A continuous height field has no discrete element to size.
+  omitStandardSettings: ['elementSize'],
   blogPostSection: '#pde-solver',
 });

@@ -62,9 +62,19 @@ export function createBackgroundSettings<T extends Record<string, any>>(
   };
 }
 
-// Utility to create schema combining standard and custom
+// Utility to create schema combining standard and custom.
+//
+// A "standard" setting is only standard if the background reads it. Element
+// Size in particular has no meaning for a background that draws a continuous
+// field rather than discrete elements, and offering a slider that does nothing
+// is worse than offering nothing at all — so backgrounds can opt out by key.
 export function createSettingsSchema(
-  customSchema: SettingsSchema[]
+  customSchema: SettingsSchema[],
+  omitStandardKeys: readonly string[] = []
 ): SettingsSchema[] {
-  return [...customSchema, ...standardSettingsSchema];
+  const omitted = new Set(omitStandardKeys);
+  return [
+    ...customSchema,
+    ...standardSettingsSchema.filter(setting => !omitted.has(setting.key)),
+  ];
 }

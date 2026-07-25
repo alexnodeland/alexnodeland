@@ -12,7 +12,7 @@ export interface GraphTopologyCustomSettings {
   scale: number;
   edgeThickness: number; // Moved from standard since not all backgrounds use edges
 
-  // Legacy compatibility settings
+  // Annealer proposal rate, in swaps per second
   updateAnimationSpeed: number;
 
   // Colors specific to graph topology
@@ -36,7 +36,7 @@ const defaultCustomSettings: GraphTopologyCustomSettings = {
   animationSpeed: 1.0,
   scale: 1.0,
   edgeThickness: 2.0, // Moved from standard
-  updateAnimationSpeed: 4.0, // Legacy compatibility
+  updateAnimationSpeed: 2.0, // Proposals per second — the rate this shipped at
 
   // Network/topology color scheme
   colors: {
@@ -103,15 +103,26 @@ const customSettingsSchema: SettingsSchema[] = [
     category: 'Graph Topology',
   },
   {
+    key: 'updateAnimationSpeed',
+    label: 'Swap Proposals / sec',
+    type: 'slider',
+    min: 0.5,
+    max: 20.0,
+    step: 0.5,
+    description:
+      'How fast the annealer proposes swaps. Slow it down to watch individual accept and reject decisions.',
+    category: 'Algorithm',
+  },
+  {
     key: 'animationSpeed',
-    label: 'Simulation Speed',
+    label: 'Layout Settling Speed',
     type: 'slider',
     min: 0.2,
     max: 3.0,
     step: 0.1,
     description:
-      'How fast the annealer proposes swaps. Slow it down to see individual accept and reject decisions.',
-    category: 'Algorithm',
+      'Timestep for the force-directed layout — how quickly nodes drift into place. Independent of the search itself.',
+    category: 'Graph Topology',
   },
   {
     key: 'edgeThickness',

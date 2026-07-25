@@ -35,6 +35,7 @@ const CellularAutomatonBackground: React.FC<
 
   // Structural settings that require rebuilding the grid.
   const { rule, cellSize, generationsPerSecond, initialDensity } = settings;
+  const { globalTimeMultiplier } = settings;
   const perturbationRate = settings.perturbationRate;
   const perturbationRef = useRef(perturbationRate);
   perturbationRef.current = perturbationRate;
@@ -266,7 +267,10 @@ const CellularAutomatonBackground: React.FC<
     const geometry = new THREE.PlaneGeometry(2, 2);
     scene.add(new THREE.Mesh(geometry, material));
 
-    const stepIntervalMs = 1000 / Math.max(0.1, generationsPerSecond);
+    // Animation Speed is a master multiplier over this background's own rate,
+    // so it means the same thing here as it does everywhere else.
+    const stepIntervalMs =
+      1000 / Math.max(0.1, generationsPerSecond * globalTimeMultiplier);
     let lastStep = performance.now();
     let lastPopulation = -1;
     let stalledFor = 0;
@@ -330,7 +334,13 @@ const CellularAutomatonBackground: React.FC<
     // from the dependency list — the effect below updates them in place so that
     // nudging a color slider does not restart the simulation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rule, cellSize, generationsPerSecond, initialDensity]);
+  }, [
+    rule,
+    cellSize,
+    generationsPerSecond,
+    initialDensity,
+    globalTimeMultiplier,
+  ]);
 
   // Cosmetic updates go straight to uniforms, leaving the simulation running.
   useEffect(() => {
