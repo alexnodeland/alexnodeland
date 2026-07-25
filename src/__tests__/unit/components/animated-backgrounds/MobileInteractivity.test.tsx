@@ -48,7 +48,7 @@ describe('MobileInteractivity', () => {
       const launcher = screen.getByRole('button', {
         name: /explore the animated background/i,
       });
-      expect(launcher).toHaveTextContent('interactivity');
+      expect(launcher).toHaveTextContent('backgrounds');
 
       fireEvent.click(launcher);
       expect(mockSetContentHidden).toHaveBeenCalledWith(true);

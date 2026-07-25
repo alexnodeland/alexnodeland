@@ -299,10 +299,12 @@ export const cvData: CVData = {
       company: 'Absara Audio',
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
+      description:
+        'First software job, and first hardware job — where I learned how shipped products actually get made.',
       achievements: [
         'Wrote production firmware for digital guitar pedals',
-        'Shipped feature releases through a continuous integration process',
-        'Introduced testing practices to catch firmware defects before release',
+        "Shipped feature releases through the team's existing continuous integration process",
+        'Worked to the established test practice, catching firmware defects before release',
         'Wrote the technical documentation and user manuals',
         'Fed customer feedback back into what got built next',
       ],

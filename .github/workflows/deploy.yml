@@ -82,6 +82,21 @@ jobs:
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
 
+      # `npm run build` runs scripts/build-cv.js, which typesets the CV PDFs
+      # into static/cv/ before Gatsby copies static/ into the bundle. These
+      # three packages cover what templates/cv/resume.tex.js uses (geometry,
+      # titlesec, enumitem, hyperref, xcolor, microtype, charter) without
+      # pulling the whole of TeX Live. Without them the build still succeeds,
+      # but /cv/*.pdf ships as a 404.
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended
+
       - name: Build with Gatsby
         run: ${{ steps.detect-package-manager.outputs.manager }} run build
 

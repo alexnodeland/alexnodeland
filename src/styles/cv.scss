@@ -1050,6 +1050,9 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       monospace;
     text-transform: lowercase;
     letter-spacing: -0.01em;
+    // The pdf button is an <a> at a prebuilt artifact rather than a <button>,
+    // so it has to shed the global link underline.
+    text-decoration: none;
     cursor: pointer;
     transition: all var(--transition-normal);
     display: inline-flex;

@@ -57,6 +57,7 @@ const CVPage: React.FC = () => {
         <ExportButtons
           resumeData={data}
           resumeElementId="resume-content"
+          variant={view}
           className="cv-export"
         />
 

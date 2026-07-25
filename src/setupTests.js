@@ -45,21 +45,6 @@ jest.mock('file-saver', () => ({
   saveAs: jest.fn(),
 }));
 
-// Mock jsPDF
-jest.mock('jspdf', () => {
-  const mockPdf = {
-    setFontSize: jest.fn().mockReturnThis(),
-    setFont: jest.fn().mockReturnThis(),
-    splitTextToSize: jest.fn().mockReturnValue(['test line']),
-    text: jest.fn().mockReturnThis(),
-    line: jest.fn().mockReturnThis(),
-    setLineWidth: jest.fn().mockReturnThis(),
-    addPage: jest.fn().mockReturnThis(),
-    save: jest.fn().mockReturnThis(),
-  };
-  return jest.fn(() => mockPdf);
-});
-
 // Mock docx
 jest.mock('docx', () => ({
   Document: jest.fn(),
@@ -68,9 +53,13 @@ jest.mock('docx', () => ({
   },
   Paragraph: jest.fn(),
   TextRun: jest.fn(),
-  AlignmentType: {
-    CENTER: 'center',
-  },
+  Table: jest.fn(),
+  TableRow: jest.fn(),
+  TableCell: jest.fn(),
+  AlignmentType: { CENTER: 'center', RIGHT: 'right' },
+  BorderStyle: { SINGLE: 'single', NONE: 'none' },
+  TableLayoutType: { FIXED: 'fixed' },
+  WidthType: { DXA: 'dxa' },
 }));
 
 // Mock html2canvas

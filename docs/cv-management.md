@@ -57,9 +57,13 @@ personal: {
 
 ### 3. Export CV
 
-- **PDF**: Click "📄 Download PDF" button (clean markdown-style rendering)
-- **DOCX**: Click "📝 Download DOCX" button (Microsoft Word format)
-- **Markdown**: Click "📝 Download Markdown" button (plain text format)
+- **PDF**: Click "📄 download pdf" — a link at a PDF typeset by LaTeX during the build
+- **DOCX**: Click "📝 download docx" — generated in the browser from the same data
+- **Markdown**: Click "📝 download markdown" — plain text, generated in the browser
+
+The CV page has a **full cv / one page** toggle, and all three exports follow
+whichever is on screen. See [Export Options](#-export-options) for how the
+one-pager is derived and where its layout lives.
 
 ## 📊 Data Structure
 
@@ -181,36 +185,79 @@ skills: {
 
 ## 📤 Export Options
 
-### PDF Export
+### Two lengths, one source
 
-- **What it does**: Creates a clean, professional PDF with markdown-style formatting
-- **Use case**: Professional applications, printing, ATS systems
-- **Quality**: High-resolution, clean typography, proper spacing
-- **Format**: Structured sections with clear hierarchy
-- **File size**: Optimized for sharing and email
+`src/config/cv.ts` is the only place CV content lives. The one-page resume is
+derived from it by `getResumeData()`: a role appears only if it carries a
+`resume: { maxBullets: n }` field, and contributes the first `n` of its
+achievements — which is why achievements are ordered strongest-first.
+Coursework and certifications are dropped to make the page fit.
 
-### DOCX Export
+To move a role on or off the one-pager, add or remove its `resume` field. To
+change how much of it shows, change `maxBullets`.
 
-- **What it does**: Creates a Microsoft Word document
-- **Use case**: Applications requiring Word format, easy editing
-- **Format**: Professional layout with proper formatting
-- **Compatibility**: Opens in Microsoft Word, Google Docs, LibreOffice
-- **Features**: Editable text, proper spacing, professional appearance
+### PDF — LaTeX, built ahead of time
 
-### Markdown Export
+The PDFs are **not** generated in the browser. `scripts/build-cv.js` renders
+`templates/cv/resume.tex.js` and runs pdflatex, writing two artifacts:
 
-- **What it does**: Creates a clean text version
-- **Use case**: GitHub profiles, text-based applications, version control
-- **Format**: Structured markdown with headers and lists
-- **Compatibility**: Works with any markdown viewer
-- **Features**: Plain text, easy to edit, version control friendly
+| Artifact                             | From         | Length              |
+| ------------------------------------ | ------------ | ------------------- |
+| `static/cv/alex-nodeland-resume.pdf` | `resumeData` | one page            |
+| `static/cv/alex-nodeland-cv.pdf`     | `cvData`     | as long as it takes |
 
-### Export Process
+`npm run build` runs this before `gatsby build`, so `static/cv/` is in place
+when Gatsby copies it into the bundle. The CV page's PDF button is a plain
+download link at whichever artifact matches the current view.
 
-1. **Click** the export button you want
-2. **Wait** for processing (PDF takes a few seconds)
-3. **File downloads** automatically
-4. **Rename** if needed
+```bash
+just cv          # build both PDFs
+just cv-debug    # build them and keep the generated .tex alongside
+```
+
+The outputs are gitignored — they are generated, so they can never be stale
+relative to the data they came from. The deploy workflow apt-installs the TeX
+subset the template needs (`texlive-latex-base`, `-recommended`, `-extra`,
+`texlive-fonts-recommended`).
+
+**Without pdflatex installed**, `build-cv.js` warns and exits cleanly. The site
+still builds; `/cv/*.pdf` just 404s. On macOS: `brew install texlive`.
+
+### Keeping the one-pager on one page
+
+`build-cv.js` prints the page count of each artifact and warns — loudly, but
+without failing the build — if the resume comes out longer than one page:
+
+```
+build-cv: rendering CV artifacts
+  static/cv/alex-nodeland-resume.pdf  1 page
+  static/cv/alex-nodeland-cv.pdf      4 pages
+```
+
+If you add content and it spills, you have two levers:
+
+1. **Trim content** — drop a bullet, or lower a `maxBullets` in `src/config/cv.ts`.
+2. **Tighten the layout** — the knobs are at the top of `preamble()` in
+   `templates/cv/resume.tex.js`: `margin`, `fontSize`, `sectionBefore`,
+   `sectionAfter`, `itemSep`, `roleSep`. They are already fairly tight; prefer
+   lever 1.
+
+### DOCX — docx.js, generated in the browser
+
+There is no `.docx` equivalent of handing a `.tex` to pdflatex, so the Word
+template is expressed in code: `src/lib/utils/export/docx.ts`. It is kept
+deliberately parallel to the LaTeX template — same sections in the same order,
+same one-line entry heading with place and dates on the right rail, same things
+dropped from the one-pager — so a change to one has an obvious counterpart in
+the other.
+
+Units follow the OOXML conventions docx.js exposes: font sizes in half-points,
+everything else in twips (1 inch = 1440).
+
+### Markdown
+
+`src/lib/utils/export/markdown.ts`, generated in the browser. Structured
+markdown for GitHub profiles, text-based applications, and version control.
 
 ## 🎨 Customization
 
@@ -320,11 +367,13 @@ All data is fully typed, so you get:
 
 ## 📚 Related Files
 
-- `src/config/cv.ts` - Main CV data
-- `src/components/cv/` - CV components
-- `src/utils/exportCV.ts` - Export utilities
-- `src/pages/cv.mdx` - CV page
-- `src/styles/cv.scss` - Resume styles
+- `src/config/cv.ts` — CV data, and `getResumeData()` for the one-page derivation
+- `src/components/cv/` — CV components
+- `src/lib/utils/export/` — DOCX and Markdown exporters
+- `templates/cv/resume.tex.js` — the LaTeX template for both PDFs
+- `scripts/build-cv.js` — renders the template and runs pdflatex
+- `src/pages/cv.tsx` — CV page
+- `src/styles/cv.scss` — CV styles
 
 ## 🎉 Benefits
 

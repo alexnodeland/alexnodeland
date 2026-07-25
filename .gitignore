@@ -86,3 +86,8 @@ static/*.wasm
 # worth version-controlling.
 archive/press/*
 !archive/press/README.md
+
+# CV artifacts, typeset from src/config/cv.ts by `just cv` and by the deploy
+# workflow before gatsby build. Generated, so not committed — which also means
+# they are never stale relative to the data they came from.
+static/cv/

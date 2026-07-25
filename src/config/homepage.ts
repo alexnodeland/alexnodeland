@@ -48,7 +48,7 @@ export const homepageConfig: HomepageConfig = {
   consulting: {
     title: 'consulting',
     description:
-      "i take on a few engagements a year, split about evenly between two things. sometimes it's an llm prototype that works in a demo and falls over in production, where the fix is almost never the model — it's the data model, the evals, or the failure handling. sometimes it's the earlier question of what to build with ai, or whether to.",
+      'i take on a few engagements a year, split about evenly between two kinds of problem people bring me. the first is a team whose llm prototype demos well and falls over in production — i get called in after that happens, and the fix is almost never the model; it is the data model, the evals, or the failure handling. the second is the earlier question, before anything is built: what to build with ai, or whether to build it at all.',
     ctaButtons: {
       primary: {
         text: 'send me an email',
@@ -96,8 +96,7 @@ export const homepageConfig: HomepageConfig = {
       {
         icon: '🎛️',
         title: 'creative technology',
-        description:
-          'audio dsp, synthesis, generative visuals — the part i would do for free anyway',
+        description: 'audio dsp, synthesis, and generative visuals',
       },
     ],
   },

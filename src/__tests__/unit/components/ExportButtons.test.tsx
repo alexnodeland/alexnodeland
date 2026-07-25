@@ -261,24 +261,36 @@ describe('CVExportButtons Component', () => {
 
   describe('Export Functionality', () => {
     beforeEach(() => {
-      mockExportUtils.exportCVAsPDF.mockResolvedValue(undefined);
       mockExportUtils.exportCVAsDOCX.mockResolvedValue(undefined);
       mockExportUtils.exportCVAsMarkdown.mockReturnValue('# Test Resume');
       mockExportUtils.downloadMarkdown.mockImplementation(() => {});
     });
 
-    it('should export PDF when PDF button is clicked', async () => {
-      const user = userEvent.setup();
+    // The PDFs are typeset by LaTeX at build time (scripts/build-cv.js), so
+    // the PDF control is a download link at the artifact for the current
+    // length rather than something generated in the browser.
+    it('should link the PDF button at the full-CV artifact by default', () => {
       render(
         <CVExportButtons resumeData={mockCVData} resumeElementId="resume" />
       );
 
-      const pdfButton = screen.getByText('📄 download pdf');
-      await user.click(pdfButton);
+      const pdfLink = screen.getByText('📄 download pdf');
+      expect(pdfLink).toHaveAttribute('href', '/cv/alex-nodeland-cv.pdf');
+      expect(pdfLink).toHaveAttribute('download');
+    });
 
-      expect(mockExportUtils.exportCVAsPDF).toHaveBeenCalledWith(
-        mockCVData,
-        'John_Doe_Resume.pdf'
+    it('should link the PDF button at the one-page artifact in resume view', () => {
+      render(
+        <CVExportButtons
+          resumeData={mockCVData}
+          resumeElementId="resume"
+          variant="resume"
+        />
+      );
+
+      expect(screen.getByText('📄 download pdf')).toHaveAttribute(
+        'href',
+        '/cv/alex-nodeland-resume.pdf'
       );
     });
 
@@ -293,7 +305,8 @@ describe('CVExportButtons Component', () => {
 
       expect(mockExportUtils.exportCVAsDOCX).toHaveBeenCalledWith(
         mockCVData,
-        'John_Doe_Resume.docx'
+        'John_Doe_Resume.docx',
+        'full'
       );
     });
 
@@ -315,24 +328,6 @@ describe('CVExportButtons Component', () => {
       );
     });
 
-    it('should show loading state during PDF export', async () => {
-      const user = userEvent.setup();
-      mockExportUtils.exportCVAsPDF.mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 100))
-      );
-
-      render(
-        <CVExportButtons resumeData={mockCVData} resumeElementId="resume" />
-      );
-
-      const pdfButton = screen.getByText('📄 download pdf');
-      await user.click(pdfButton);
-
-      expect(screen.getAllByText('generating...')).toHaveLength(2);
-      const loadingPdfButton = screen.getAllByText('generating...')[0];
-      expect(loadingPdfButton).toBeDisabled();
-    });
-
     it('should show loading state during DOCX export', async () => {
       const user = userEvent.setup();
       mockExportUtils.exportCVAsDOCX.mockImplementation(
@@ -346,41 +341,7 @@ describe('CVExportButtons Component', () => {
       const docxButton = screen.getByText('📝 download docx');
       await user.click(docxButton);
 
-      expect(screen.getAllByText('generating...')).toHaveLength(2);
-      const loadingDocxButton = screen.getAllByText('generating...')[1];
-      expect(loadingDocxButton).toBeDisabled();
-    });
-
-    it('should handle PDF export errors', async () => {
-      const user = userEvent.setup();
-      const consoleSpy = jest
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
-      const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
-
-      mockExportUtils.exportCVAsPDF.mockRejectedValue(
-        new Error('PDF export failed')
-      );
-
-      render(
-        <CVExportButtons resumeData={mockCVData} resumeElementId="resume" />
-      );
-
-      const pdfButton = screen.getByText('📄 download pdf');
-      await user.click(pdfButton);
-
-      await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith(
-          'PDF export failed:',
-          expect.any(Error)
-        );
-        expect(alertSpy).toHaveBeenCalledWith(
-          'Failed to export PDF: PDF export failed'
-        );
-      });
-
-      consoleSpy.mockRestore();
-      alertSpy.mockRestore();
+      expect(screen.getByText('generating...')).toBeDisabled();
     });
 
     it('should handle DOCX export errors', async () => {
@@ -462,12 +423,13 @@ describe('CVExportButtons Component', () => {
         />
       );
 
-      const pdfButton = screen.getByText('📄 download pdf');
-      await user.click(pdfButton);
+      const docxButton = screen.getByText('📝 download docx');
+      await user.click(docxButton);
 
-      expect(mockExportUtils.exportCVAsPDF).toHaveBeenCalledWith(
+      expect(mockExportUtils.exportCVAsDOCX).toHaveBeenCalledWith(
         resumeDataWithSpaces,
-        'John_Michael_Doe_Resume.pdf'
+        'John_Michael_Doe_Resume.docx',
+        'full'
       );
     });
   });
@@ -478,13 +440,14 @@ describe('CVExportButtons Component', () => {
         <CVExportButtons resumeData={mockCVData} resumeElementId="resume" />
       );
 
-      const buttons = screen.getAllByRole('button');
-      expect(buttons).toHaveLength(3);
+      // docx and markdown are buttons; pdf is a download link.
+      expect(screen.getAllByRole('button')).toHaveLength(2);
+      expect(screen.getByRole('link', { name: /download pdf/ })).toBeTruthy();
     });
 
     it('should disable buttons during export', async () => {
       const user = userEvent.setup();
-      mockExportUtils.exportCVAsPDF.mockImplementation(
+      mockExportUtils.exportCVAsDOCX.mockImplementation(
         () => new Promise(resolve => setTimeout(resolve, 100))
       );
 
@@ -492,10 +455,10 @@ describe('CVExportButtons Component', () => {
         <CVExportButtons resumeData={mockCVData} resumeElementId="resume" />
       );
 
-      const pdfButton = screen.getByText('📄 download pdf');
-      await user.click(pdfButton);
+      const docxButton = screen.getByText('📝 download docx');
+      await user.click(docxButton);
 
-      expect(pdfButton).toBeDisabled();
+      expect(docxButton).toBeDisabled();
     });
   });
 });
