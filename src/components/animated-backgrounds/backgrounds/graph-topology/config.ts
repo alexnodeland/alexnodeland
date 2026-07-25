@@ -35,7 +35,7 @@ const defaultCustomSettings: GraphTopologyCustomSettings = {
   requestedNodes: 8,
   animationSpeed: 1.0,
   scale: 1.0,
-  edgeThickness: 2.0, // Moved from standard
+  edgeThickness: 1.2, // Pixels for an ordinary edge, now that width is real
   updateAnimationSpeed: 2.0, // Proposals per second — the rate this shipped at
 
   // Network/topology color scheme
@@ -128,8 +128,8 @@ const customSettingsSchema: SettingsSchema[] = [
     key: 'edgeThickness',
     label: 'Edge Thickness',
     type: 'slider',
-    min: 0.5,
-    max: 5.0,
+    min: 0.25,
+    max: 4.0,
     step: 0.25,
     description: "Line weight for the network's links.",
     category: 'Graph Topology',

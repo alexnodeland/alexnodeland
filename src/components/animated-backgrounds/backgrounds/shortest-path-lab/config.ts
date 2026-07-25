@@ -56,8 +56,8 @@ const defaultCustomSettings: ShortestPathLabCustomSettings = {
 
   // Visual properties
   spBaseEdgeAlpha: 0.18,
-  spBaseEdgeThickness: 1.2,
-  spActionEdgeThickness: 3.5,
+  spBaseEdgeThickness: 0.8,
+  spActionEdgeThickness: 1.6,
   spDotSize: 14,
   spDotGlow: 0.6,
 
@@ -180,8 +180,8 @@ const customSettingsSchema: SettingsSchema[] = [
     key: 'spBaseEdgeThickness',
     label: 'Base Edge Thickness',
     type: 'slider',
-    min: 0.5,
-    max: 4.0,
+    min: 0.25,
+    max: 3.0,
     step: 0.25,
     description: 'Line weight for untouched edges.',
     category: 'Visual Effects',
@@ -190,8 +190,8 @@ const customSettingsSchema: SettingsSchema[] = [
     key: 'spActionEdgeThickness',
     label: 'Action Edge Thickness',
     type: 'slider',
-    min: 1.0,
-    max: 8.0,
+    min: 0.5,
+    max: 5.0,
     step: 0.25,
     description:
       'Line weight for edges the search has explored. This is what makes the explored region legible, so it is the one to raise if you are watching the frontier.',

@@ -702,6 +702,9 @@ const GraphTopologyBackground: React.FC<
 
         let color: number[];
         let alpha: number;
+        // Widths are in pixels now that Line2 honours them, so these are a
+        // deliberately narrow spread — the graph reads as a drawing, and the
+        // state hierarchy comes mostly from colour with weight as a hint.
         let linewidth = 1.0;
 
         if (hasConverged && inBestSubgraph) {
@@ -709,22 +712,22 @@ const GraphTopologyBackground: React.FC<
           const flash = flashPhase > 0 ? 1 : 0;
           color = flash > 0.5 ? live.colors.accent : live.colors.primary;
           alpha = 1.0; // Full opacity
-          linewidth = 3.0;
+          linewidth = 1.4;
         } else if (inBestSubgraph && inCurrentSubgraph) {
           // Edge in both: bright accent color
           color = live.colors.accent;
           alpha = 1.0;
-          linewidth = 2.5;
+          linewidth = 1.2;
         } else if (inBestSubgraph) {
           // Best only: primary color
           color = live.colors.primary;
           alpha = 0.9;
-          linewidth = 2.0;
+          linewidth = 1.0;
         } else if (inCurrentSubgraph) {
           // Current only: secondary color with pulse
           color = live.colors.secondary;
           alpha = 0.8 + searchPulse * 0.2;
-          linewidth = 2.0;
+          linewidth = 1.0;
         } else if (touchesCurrent) {
           // Boundary of current: faded secondary
           color = live.colors.secondary.map(c => c * 0.5) as [
@@ -733,7 +736,7 @@ const GraphTopologyBackground: React.FC<
             number,
           ];
           alpha = 0.4;
-          linewidth = 1.0;
+          linewidth = 0.7;
         } else if (touchesBest) {
           // Boundary of best: faded primary
           color = live.colors.primary.map(c => c * 0.5) as [
@@ -742,12 +745,12 @@ const GraphTopologyBackground: React.FC<
             number,
           ];
           alpha = 0.4;
-          linewidth = 1.0;
+          linewidth = 0.7;
         } else {
           // Background edge: very dark gray
           color = live.colors.background;
           alpha = 0.05 + normalizedWeight * 0.05; // Very faint
-          linewidth = 0.3;
+          linewidth = 0.5;
         }
 
         // Apply settings
