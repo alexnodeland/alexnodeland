@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   CVSectionNav,
   EducationSection,
@@ -8,10 +8,15 @@ import {
   SEO,
   SkillsSection,
 } from '../components';
-import { cvData } from '../config';
+import { cvData, resumeData } from '../config';
 import '../styles/cv.scss';
 
+type CVView = 'full' | 'resume';
+
 const CVPage: React.FC = () => {
+  const [view, setView] = useState<CVView>('full');
+  const data = view === 'resume' ? resumeData : cvData;
+
   return (
     <Layout>
       <SEO title="cv" description="Complete resume and CV for Alex Nodeland" />
@@ -19,13 +24,38 @@ const CVPage: React.FC = () => {
         <header className="cv-page-header">
           <h1>cv</h1>
           <p>
-            comprehensive overview of my professional experience, skills, and
-            achievements
+            {view === 'full'
+              ? 'everything, in order, back to 2010.'
+              : 'the short version — recent roles only, trimmed to one page.'}{' '}
+            export it as pdf, docx, or markdown below.
           </p>
         </header>
 
+        <div
+          className="cv-view-toggle"
+          role="group"
+          aria-label="Choose CV length"
+        >
+          <button
+            type="button"
+            className={`cv-view-button ${view === 'full' ? 'active' : ''}`}
+            onClick={() => setView('full')}
+            aria-pressed={view === 'full'}
+          >
+            full cv
+          </button>
+          <button
+            type="button"
+            className={`cv-view-button ${view === 'resume' ? 'active' : ''}`}
+            onClick={() => setView('resume')}
+            aria-pressed={view === 'resume'}
+          >
+            one page
+          </button>
+        </div>
+
         <ExportButtons
-          resumeData={cvData}
+          resumeData={data}
           resumeElementId="resume-content"
           className="cv-export"
         />
@@ -36,7 +66,7 @@ const CVPage: React.FC = () => {
             { id: 'cv-experience', label: 'Experience', mobileLabel: 'Exp' },
             { id: 'cv-education', label: 'Education', mobileLabel: 'Edu' },
             { id: 'cv-skills', label: 'Skills', mobileLabel: 'Skills' },
-            ...(cvData.certifications && cvData.certifications.length > 0
+            ...(data.certifications && data.certifications.length > 0
               ? [
                   {
                     id: 'cv-certifications',
@@ -51,45 +81,43 @@ const CVPage: React.FC = () => {
         <div className="cv-overview-contact">
           <div className="overview-section">
             <h3>overview</h3>
-            <p>{cvData.personal.summary}</p>
+            <p>{data.personal.summary}</p>
           </div>
           <div className="contact-section">
             <h3>contact</h3>
             <div className="contact-grid">
               <div className="contact-item">
                 <span className="contact-label">location</span>
-                <span className="contact-value">
-                  {cvData.personal.location}
-                </span>
+                <span className="contact-value">{data.personal.location}</span>
               </div>
               <div className="contact-item">
                 <span className="contact-label">email</span>
                 <a
-                  href={`mailto:${cvData.personal.email}`}
+                  href={`mailto:${data.personal.email}`}
                   className="contact-value"
                 >
-                  {cvData.personal.email}
+                  {data.personal.email}
                 </a>
               </div>
               <div className="contact-item">
                 <span className="contact-label">website</span>
                 <a
-                  href={`https://${cvData.personal.website}`}
+                  href={`https://${data.personal.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="contact-value"
                 >
-                  {cvData.personal.website}
+                  {data.personal.website}
                 </a>
               </div>
-              {cvData.personal.phone && (
+              {data.personal.phone && (
                 <div className="contact-item">
                   <span className="contact-label">phone</span>
                   <a
-                    href={`tel:${cvData.personal.phone}`}
+                    href={`tel:${data.personal.phone}`}
                     className="contact-value"
                   >
-                    {cvData.personal.phone}
+                    {data.personal.phone}
                   </a>
                 </div>
               )}
@@ -99,22 +127,22 @@ const CVPage: React.FC = () => {
 
         <div id="resume-content">
           <section id="cv-experience">
-            <ExperienceSection experiences={cvData.experience} />
+            <ExperienceSection experiences={data.experience} />
           </section>
 
           <section id="cv-education">
-            <EducationSection education={cvData.education} />
+            <EducationSection education={data.education} />
           </section>
 
           <section id="cv-skills">
-            <SkillsSection skills={cvData.skills} />
+            <SkillsSection skills={data.skills} />
           </section>
 
-          {cvData.certifications && cvData.certifications.length > 0 && (
+          {data.certifications && data.certifications.length > 0 && (
             <section id="cv-certifications">
               <h2 className="cv-section-title">Certifications</h2>
               <div className="certifications-container">
-                {cvData.certifications.map((cert, index) => {
+                {data.certifications.map((cert, index) => {
                   // Create a shorter name for the chip - be more careful with word boundaries
                   let shortName = cert.name
                     // Remove common certification words only when they're complete words

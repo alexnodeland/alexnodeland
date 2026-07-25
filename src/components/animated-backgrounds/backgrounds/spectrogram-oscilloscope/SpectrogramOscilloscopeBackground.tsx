@@ -20,8 +20,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const spectrogramTextureRef = useRef<THREE.DataTexture | null>(null);
-  const waveformTextureRef = useRef<THREE.DataTexture | null>(null);
 
   // Web Audio API references
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -225,34 +223,10 @@ const SpectrogramOscilloscopeBackground: React.FC<
     sceneRef.current = scene;
     rendererRef.current = renderer;
 
-    // Create textures for spectrogram history and waveform
-    const spectrogramWidth = 512; // Frequency bins
-    const spectrogramHeight = 256; // Time history
-    const spectrogramData = new Float32Array(
-      spectrogramWidth * spectrogramHeight * 4
-    );
-    const spectrogramTexture = new THREE.DataTexture(
-      spectrogramData,
-      spectrogramWidth,
-      spectrogramHeight,
-      THREE.RGBAFormat,
-      THREE.FloatType
-    );
-    spectrogramTexture.needsUpdate = true;
-    spectrogramTextureRef.current = spectrogramTexture;
-
-    // Waveform texture for current signal
-    const waveformSize = 1024;
-    const waveformData = new Float32Array(waveformSize * 4);
-    const waveformTexture = new THREE.DataTexture(
-      waveformData,
-      waveformSize,
-      1,
-      THREE.RGBAFormat,
-      THREE.FloatType
-    );
-    waveformTexture.needsUpdate = true;
-    waveformTextureRef.current = waveformTexture;
+    // The spectrogram is computed per fragment in the shader, so there is no
+    // history texture to maintain. An earlier texture-based approach left a
+    // 512x256 RGBA float buffer and a 1024-sample waveform buffer allocated
+    // and uploaded here; neither was ever sampled.
 
     // Vertex shader
     const vertexShader = `
@@ -265,12 +239,17 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
     // Fragment shader for spectrogram and oscilloscope visualization
     const fragmentShader = `
+      const float TWO_PI = 6.283185307179586;
+      // FM amount sliders run 0-1; scale them into a usable modulation index.
+      const float FM_INDEX_SCALE = 8.0;
+      // Upper bound for the analysis loop. Each step evaluates the full
+      // synthesis chain per fragment, so this is a framerate ceiling as much
+      // as a resolution one; the slider is capped to match.
+      const float MAX_FFT_WINDOW = 128.0;
+
       uniform float uTime;
       uniform vec2 uResolution;
       uniform vec2 uMouse;
-      uniform sampler2D uSpectrogramTexture;
-      uniform sampler2D uWaveformTexture;
-      uniform float uCurrentRow;
 
       // VCO 1 Parameters
       uniform float uVCO1Frequency;
@@ -328,6 +307,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
       uniform vec3 uColorMid;
       uniform vec3 uColorHigh;
       uniform vec3 uColorPeak;
+      uniform vec3 uColorGrid;
       uniform vec3 uWaveformColor;
       uniform float uWaveformThickness;
       uniform float uSpectrogramSmoothing;
@@ -442,13 +422,17 @@ const SpectrogramOscilloscopeBackground: React.FC<
       // Generate signal at specific time with effects chain
       float generateSignal(float t) {
         // === VCO GENERATION ===
-        // FM modulation for VCO1
-        float fm1 = sin(t * uVCO1FMFrequency) * uVCO1FMAmount;
-        float vco1Phase = t * (uVCO1Frequency * 0.01 + fm1) + uVCO1Phase;
+        // Frequency modulation, Chowning form: the modulator is added to the
+        // carrier's PHASE, not to its frequency before multiplying by t.
+        // Multiplying (fc + fm) by t makes the modulation depth grow without
+        // bound as t advances, which smears the sidebands instead of producing
+        // the fixed Bessel-series spectrum that defines FM synthesis.
+        // The amount sliders run 0-1 and are scaled to a useful modulation index.
+        float fm1 = sin(t * uVCO1FMFrequency) * uVCO1FMAmount * FM_INDEX_SCALE;
+        float vco1Phase = t * uVCO1Frequency * 0.01 + fm1 + uVCO1Phase;
 
-        // FM modulation for VCO2 with detune
-        float fm2 = sin(t * uVCO2FMFrequency) * uVCO2FMAmount;
-        float vco2Phase = t * (uVCO2Frequency * 0.01 * (1.0 + uDetune) + fm2) + uVCO2Phase;
+        float fm2 = sin(t * uVCO2FMFrequency) * uVCO2FMAmount * FM_INDEX_SCALE;
+        float vco2Phase = t * uVCO2Frequency * 0.01 * (1.0 + uDetune) + fm2 + uVCO2Phase;
 
         // Generate VCO signals
         float vco1 = generateWaveform(vco1Phase, uVCO1WaveformType) * uVCO1Amplitude;
@@ -513,107 +497,52 @@ const SpectrogramOscilloscopeBackground: React.FC<
         return signal;
       }
 
-      // Enhanced FFT magnitude calculation with better harmonic content
+      // Discrete Fourier transform of the actual generated signal at a single
+      // frequency bin.
+      //
+      // This deliberately measures rather than draws. The previous version
+      // correlated a few samples and then ADDED an idealised harmonic series,
+      // subharmonics, ring-mod sidebands and a noise floor on top -- so the
+      // spectrogram showed what the spectrum was assumed to look like, not what
+      // the signal contained. Every one of those features falls out of a
+      // correct transform anyway, because generateSignal genuinely produces
+      // them.
       float getFrequencyMagnitude(float freq, float time) {
-        float magnitude = 0.0;
-        float samples = 64.0;
+        float dt = 0.1; // Sample spacing; Nyquist is pi/dt in these units.
 
-        // Analyze a window of the signal
-        for(float i = 0.0; i < samples; i += 1.0) {
-          float t = time + i * 0.001;
-          float signal = generateSignal(t);
+        // Window length trades frequency resolution against time resolution:
+        // a longer window resolves closely spaced partials but smears events
+        // that move. GLSL ES 1.0 requires a constant loop bound, so the loop
+        // is fixed at the maximum and exits early at the requested length.
+        float n = clamp(uFFTWindowSize, 16.0, MAX_FFT_WINDOW);
 
-          // Correlate with test frequency (both sine and cosine for better accuracy)
-          magnitude += signal * sin(freq * i * 0.1);
-          magnitude += signal * cos(freq * i * 0.1) * 0.5;
+        float re = 0.0;
+        float im = 0.0;
+        float windowSum = 0.0;
+
+        for (float i = 0.0; i < MAX_FFT_WINDOW; i += 1.0) {
+          if (i >= n) break;
+
+          // The analysis window is blended from rectangular to Hann. A
+          // rectangular window gives the sharpest main lobe and the worst
+          // spectral leakage; Hann trades a wider main lobe for far lower
+          // sidelobes, which reads as a smoother spectrum. That blend *is*
+          // the smoothing control -- no post-hoc blurring involved.
+          float hann = 0.5 - 0.5 * cos(TWO_PI * i / (n - 1.0));
+          float w = mix(1.0, hann, uSpectrogramSmoothing);
+
+          // 'sample' is a reserved word in GLSL.
+          float s = generateSignal(time + i * dt) * w;
+          float phase = freq * i * dt;
+          re += s * cos(phase);
+          im += s * sin(phase);
+          windowSum += w;
         }
 
-        magnitude = abs(magnitude) / samples;
-
-        // Convert frequency to Hz for harmonic calculations
-        float freqHz = freq * 100.0;
-        float f1 = uVCO1Frequency;
-        float f2 = uVCO2Frequency * (1.0 + uDetune);
-
-        // Add fundamental frequencies with wider detection range
-        float dist1 = abs(freqHz - f1);
-        float dist2 = abs(freqHz - f2);
-
-        if (dist1 < 20.0) magnitude += uVCO1Amplitude * exp(-dist1 * 0.1);
-        if (dist2 < 20.0) magnitude += uVCO2Amplitude * exp(-dist2 * 0.1);
-
-        // Extended harmonics for richer spectrum (up to 20th harmonic)
-        for (float h = 2.0; h <= 20.0; h += 1.0) {
-          float hdist1 = abs(freqHz - f1 * h);
-          float hdist2 = abs(freqHz - f2 * h);
-
-          // Waveform-dependent harmonic amplitude
-          float harmAmp1 = 1.0 / pow(h, 0.7); // Slower rolloff
-          float harmAmp2 = 1.0 / pow(h, 0.7);
-
-          // Square waves have only odd harmonics with 1/n amplitude
-          if (uVCO1WaveformType > 0.5 && uVCO1WaveformType < 1.5) {
-            if (mod(h, 2.0) > 0.1) harmAmp1 *= 2.0 / h; // Strong odd harmonics
-            else harmAmp1 = 0.0;
-          }
-          // Sawtooth has all harmonics with 1/n amplitude
-          else if (uVCO1WaveformType > 2.5) {
-            harmAmp1 = 1.5 / h;
-          }
-          // Triangle has only odd harmonics with 1/n² amplitude
-          else if (uVCO1WaveformType > 1.5 && uVCO1WaveformType < 2.5) {
-            if (mod(h, 2.0) > 0.1) harmAmp1 = 0.8 / (h * h);
-            else harmAmp1 = 0.0;
-          }
-
-          // Same for VCO2
-          if (uVCO2WaveformType > 0.5 && uVCO2WaveformType < 1.5) {
-            if (mod(h, 2.0) > 0.1) harmAmp2 *= 2.0 / h;
-            else harmAmp2 = 0.0;
-          }
-          else if (uVCO2WaveformType > 2.5) {
-            harmAmp2 = 1.5 / h;
-          }
-          else if (uVCO2WaveformType > 1.5 && uVCO2WaveformType < 2.5) {
-            if (mod(h, 2.0) > 0.1) harmAmp2 = 0.8 / (h * h);
-            else harmAmp2 = 0.0;
-          }
-
-          if (hdist1 < 20.0) magnitude += uVCO1Amplitude * exp(-hdist1 * 0.03) * harmAmp1;
-          if (hdist2 < 20.0) magnitude += uVCO2Amplitude * exp(-hdist2 * 0.03) * harmAmp2;
-        }
-
-        // Add subharmonics for bass richness
-        for (float s = 2.0; s <= 4.0; s += 1.0) {
-          float sdist1 = abs(freqHz - f1 / s);
-          float sdist2 = abs(freqHz - f2 / s);
-          if (sdist1 < 10.0) magnitude += uVCO1Amplitude * exp(-sdist1 * 0.1) * 0.3;
-          if (sdist2 < 10.0) magnitude += uVCO2Amplitude * exp(-sdist2 * 0.1) * 0.3;
-        }
-
-        // Effects add frequency content
-        if (uDistortionAmount > 0.01) {
-          // Distortion adds high harmonics
-          for (float h = 3.0; h <= 10.0; h += 2.0) {
-            if (abs(freqHz - f1 * h) < 30.0) {
-              magnitude += uDistortionAmount * exp(-abs(freqHz - f1 * h) * 0.02) * 0.5;
-            }
-          }
-        }
-
-        if (uRingModAmount > 0.01) {
-          // Ring mod creates sidebands
-          float ringHz = uRingModFrequency;
-          magnitude += uRingModAmount * exp(-abs(freqHz - (f1 + ringHz)) * 0.05) * 0.4;
-          magnitude += uRingModAmount * exp(-abs(freqHz - abs(f1 - ringHz)) * 0.05) * 0.4;
-        }
-
-        if (uNoiseAmount > 0.01) {
-          // Noise adds broadband energy
-          magnitude += uNoiseAmount * 0.05 * (1.0 + hash(freqHz) * 0.3);
-        }
-
-        return magnitude;
+        // Normalise by the window's DC gain so that changing window length or
+        // shape does not change the height of a peak. The factor of two
+        // accounts for the negative-frequency image of a real-valued signal.
+        return 2.0 * sqrt(re * re + im * im) / max(1.0, windowSum);
       }
 
       // Color mapping for spectrogram using standardized colors
@@ -664,7 +593,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
           // Grid overlay for oscilloscope
           float gridX = smoothstep(0.003, 0.001, abs(fract(uv.x * 8.0) - 0.5));
           float gridY = smoothstep(0.003, 0.001, abs(fract(scopeY * 4.0) - 0.5));
-          finalColor += vec3(0.1, 0.15, 0.2) * max(gridX, gridY) * 0.25;
+          finalColor += uColorGrid * max(gridX, gridY) * 0.25;
 
         } else {
           // === SPECTROGRAM SECTION ===
@@ -686,13 +615,13 @@ const SpectrogramOscilloscopeBackground: React.FC<
             // Draw logarithmic frequency grid
             float octave = log(frequency * 100.0) / log(2.0);
             float octaveGrid = smoothstep(0.01, 0.001, abs(fract(octave) - 0.5));
-            finalColor += vec3(0.05, 0.1, 0.15) * octaveGrid * 0.4;
+            finalColor += uColorGrid * octaveGrid * 0.4;
 
             // Add markers at musical frequencies (A notes across octaves)
             for (float octaveA = 55.0; octaveA <= 3520.0; octaveA *= 2.0) {
               float markerPos = (log(octaveA) - logMin) / (logMax - logMin);
               if (abs(uv.x - markerPos) < 0.002) {
-                finalColor += vec3(0.1, 0.2, 0.3) * 0.5;
+                finalColor += uColorGrid * 1.4 * 0.5;
               }
             }
           } else {
@@ -701,7 +630,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
             // Frequency grid lines
             float freqGrid = smoothstep(0.003, 0.001, abs(fract(uv.x * 10.0) - 0.5));
-            finalColor += vec3(0.02, 0.05, 0.08) * freqGrid * 0.3;
+            finalColor += uColorGrid * 0.5 * freqGrid * 0.3;
           }
 
           // Get magnitude at this frequency and time
@@ -717,7 +646,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
           // Time grid lines
           float timeGrid = smoothstep(0.003, 0.001, abs(fract(spectrogramY * 10.0) - 0.5));
-          finalColor += vec3(0.02, 0.05, 0.08) * timeGrid * 0.2;
+          finalColor += uColorGrid * 0.5 * timeGrid * 0.2;
         }
 
         // Separator line between sections
@@ -762,9 +691,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
             renderer.domElement.height / 2
           ),
         },
-        uSpectrogramTexture: { value: spectrogramTexture },
-        uWaveformTexture: { value: waveformTexture },
-        uCurrentRow: { value: 0.0 },
 
         // VCO 1 Parameters
         uVCO1Frequency: { value: settings.vco1Frequency },
@@ -822,6 +748,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
         uColorMid: { value: new THREE.Vector3(...settings.colors.primary) },
         uColorHigh: { value: new THREE.Vector3(...settings.colors.secondary) },
         uColorPeak: { value: new THREE.Vector3(...settings.colors.accent) },
+        uColorGrid: { value: new THREE.Vector3(...settings.colors.grid) },
         uWaveformColor: {
           value: new THREE.Vector3(...settings.colors.primary),
         },
@@ -879,7 +806,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
     };
 
     // Animation loop
-    let currentRow = 0;
     const animate = (time: number) => {
       const t = time * 0.001;
 
@@ -894,10 +820,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
       }
 
       // Update spectrogram texture row counter
-      currentRow = (currentRow + 1) % spectrogramHeight;
-      if (material.uniforms.uCurrentRow) {
-        material.uniforms.uCurrentRow.value = currentRow / spectrogramHeight;
-      }
 
       renderer.render(scene, camera);
       animationFrameRef.current = requestAnimationFrame(animate);
@@ -941,8 +863,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
       geometry.dispose();
       material.dispose();
       renderer.dispose();
-      if (spectrogramTexture) spectrogramTexture.dispose();
-      if (waveformTexture) waveformTexture.dispose();
     };
   }, [settings, stableStartAudio, stableStopAudio]);
 

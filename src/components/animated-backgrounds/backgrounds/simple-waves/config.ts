@@ -49,6 +49,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 1.0,
     max: 20.0,
     step: 0.5,
+    description:
+      'Spatial frequency of all three components at once. Higher packs more interference fringes into the screen.',
     category: 'Wave Properties',
   },
   {
@@ -58,6 +60,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.1,
     max: 2.0,
     step: 0.1,
+    description:
+      'Height of each component before they are summed. Larger amplitudes push more of the screen into full constructive or destructive interference and flatten the mid-tones.',
     category: 'Wave Properties',
   },
 
@@ -66,30 +70,29 @@ const customSettingsSchema: SettingsSchema[] = [
     key: 'colors.primary',
     label: 'Primary Wave Color',
     type: 'color',
+    description: 'Mid amplitudes, where the components partly cancel.',
     category: 'Colors',
   },
   {
     key: 'colors.secondary',
     label: 'Secondary Wave Color',
     type: 'color',
+    description: 'Strong negative amplitude — troughs.',
     category: 'Colors',
   },
   {
     key: 'colors.accent',
     label: 'Accent Wave Color',
     type: 'color',
+    description:
+      'Strong positive amplitude, where all three components reinforce.',
     category: 'Colors',
   },
   {
     key: 'colors.background',
     label: 'Background Color',
     type: 'color',
-    category: 'Colors',
-  },
-  {
-    key: 'colors.grid',
-    label: 'Grid Color',
-    type: 'color',
+    description: 'Shown where the three components cancel out completely.',
     category: 'Colors',
   },
 ];
@@ -99,7 +102,7 @@ export const simpleWaveConfig = createBackgroundConfig({
   id: 'simple-waves',
   name: 'Simple Sine Waves',
   description:
-    'Visualization of wave interference - the fundamental physics governing sound, light, radio, and quantum mechanics. Multiple sine waves combine through superposition, creating constructive interference (bright warm colors) when waves align, destructive interference (dark cool colors) when they cancel. Essential for understanding audio processing, signal analysis, noise cancellation, and communications systems. Colors map wave amplitude: bright indicates reinforcement, dark shows cancellation.',
+    'Three sine waves summed: one along x, one along y at 0.8x the frequency, one diagonal at 0.6x, each drifting at a different rate. Color maps the resulting amplitude — bright where the components reinforce, dark where they cancel. Superposition and nothing else, which is the point: interference underpins most of signal processing and takes three lines of arithmetic.',
   component: SimpleWaveBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

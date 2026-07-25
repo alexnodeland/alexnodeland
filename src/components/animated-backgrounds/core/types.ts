@@ -20,6 +20,12 @@ export interface SettingsSchema {
   step?: number;
   options?: { value: any; label: string }[];
   category: string;
+  /**
+   * What the control does and what to watch when you move it. Surfaced as a
+   * tooltip next to the label. Say what changes on screen, not what the
+   * variable is named.
+   */
+  description?: string;
 }
 
 // Props for animated background components

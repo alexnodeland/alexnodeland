@@ -464,6 +464,71 @@
       hyphens: auto;
     }
 
+    // Help affordance next to a control's label. Keyboard reachable, and the
+    // description is also on aria-label so screen readers get it without
+    // needing hover.
+    .setting-help {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-left: 0.35rem;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.6rem;
+      line-height: 1;
+      cursor: help;
+      vertical-align: middle;
+      transition: all var(--transition-fast);
+
+      &:hover,
+      &:focus-visible {
+        color: var(--text-primary);
+        border-color: var(--primary-color);
+        outline: none;
+      }
+
+      .setting-tooltip {
+        position: absolute;
+        bottom: calc(100% + 0.4rem);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        width: max-content;
+        max-width: 15rem;
+        padding: 0.5rem 0.65rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-size: 0.7rem;
+        line-height: 1.45;
+        text-transform: none;
+        text-align: left;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity var(--transition-fast);
+        pointer-events: none;
+      }
+
+      // Flipped below the icon when there is not enough room above inside the
+      // scrolling list; the class is set on hover/focus by positionTooltip.
+      &.flip .setting-tooltip {
+        bottom: auto;
+        top: calc(100% + 0.4rem);
+      }
+
+      &:hover .setting-tooltip,
+      &:focus-visible .setting-tooltip {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+
     .setting-input {
       display: flex;
       align-items: center;

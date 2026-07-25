@@ -1,12 +1,14 @@
 ---
 title: 'Resume Crew: AI-Powered Career Tools'
 date: '2024-06-30'
-description: 'An AI-powered tool for resume tailoring and interview preparation'
+description: 'A CrewAI system that tailors a resume to a specific posting and prepares you for the interview that follows.'
 category: 'Projects'
 ---
 
-Resume Crew is an AI-powered tool that assists job seekers in tailoring their resumes and preparing for interviews using CrewAI. The system uses specialized AI agents to analyze job descriptions, optimize resume content, and provide personalized interview preparation.
+a crewai system that tailors a resume to a specific job posting, then prepares you for the interview that follows.
 
-This project demonstrates the practical application of multi-agent AI systems in career development, helping users navigate the job market more effectively with AI assistance.
+the agents split the work rather than sharing it. one reads the posting and extracts what is genuinely being asked for, as opposed to what the boilerplate says. one rewrites the resume against that reading. one generates the questions you should expect given the gap between the two.
 
-[View on GitHub](https://github.com/alexandernodeland/resume-crew)
+that separation is the whole reason it works better than a single long prompt. critiquing a resume and rewriting it are different jobs, and a model asked to do both at once will soften the critique to justify the rewrite it has already started composing. splitting them forces the criticism to be written down before anything acts on it.
+
+[view on github](https://github.com/alexnodeland/resume-crew)

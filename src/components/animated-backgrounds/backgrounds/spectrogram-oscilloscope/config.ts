@@ -167,6 +167,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 20,
     max: 2000,
     step: 10,
+    description:
+      'Pitch of the first oscillator in Hz. With FM off this is the lowest bright band on the spectrogram.',
     category: 'VCO 1',
   },
   {
@@ -176,6 +178,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description: 'Level of the first oscillator going into the mixer.',
     category: 'VCO 1',
   },
   {
@@ -188,6 +191,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 2, label: 'Triangle' },
       { value: 3, label: 'Sawtooth' },
     ],
+    description:
+      'Waveform of the first oscillator, and the fastest way to see what harmonics are. A sine has a single partial; triangle and square have odd harmonics only; sawtooth has every harmonic. Watch bands appear on the spectrogram as you move through them.',
     category: 'VCO 1',
   },
   {
@@ -197,6 +202,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 6.28,
     step: 0.1,
+    description:
+      'Starting phase offset. On its own it is inaudible — it matters through how it lines up against the second oscillator.',
     category: 'VCO 1',
   },
   {
@@ -206,6 +213,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description:
+      'Modulation index. Raise it and sidebands appear in pairs either side of the carrier, spaced at the FM frequency. That pair-spawning is the whole of FM synthesis, and it is why two oscillators can make a bell.',
     category: 'VCO 1',
   },
   {
@@ -215,6 +224,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.01,
     max: 10.0,
     step: 0.01,
+    description:
+      'Rate of the modulator, which sets how far apart the sidebands sit. Simple ratios against the carrier sound harmonic; irrational ones sound like metal.',
     category: 'VCO 1',
   },
 
@@ -226,6 +237,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 20,
     max: 2000,
     step: 10,
+    description:
+      'Pitch of the second oscillator in Hz. It defaults a fifth above the first.',
     category: 'VCO 2',
   },
   {
@@ -235,6 +248,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description: 'Level of the second oscillator going into the mixer.',
     category: 'VCO 2',
   },
   {
@@ -247,6 +261,7 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 2, label: 'Triangle' },
       { value: 3, label: 'Sawtooth' },
     ],
+    description: 'Waveform of the second oscillator.',
     category: 'VCO 2',
   },
   {
@@ -256,6 +271,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 6.28,
     step: 0.1,
+    description:
+      'Starting phase offset for the second oscillator, relative to the first.',
     category: 'VCO 2',
   },
   {
@@ -265,6 +282,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description: 'Modulation index for the second oscillator.',
     category: 'VCO 2',
   },
   {
@@ -274,6 +292,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.01,
     max: 10.0,
     step: 0.01,
+    description: 'Modulator rate for the second oscillator.',
     category: 'VCO 2',
   },
 
@@ -285,6 +304,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description:
+      'Balance between the two oscillators — 0 is all VCO 1, 1 is all VCO 2.',
     category: 'Mixer',
   },
   {
@@ -294,6 +315,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: -0.1,
     max: 0.1,
     step: 0.001,
+    description:
+      'Offsets VCO 2 slightly from its nominal pitch. Small amounts produce slow beating as the two drift in and out of phase, which you can see as a pulsing in the oscilloscope trace.',
     category: 'Mixer',
   },
 
@@ -305,6 +328,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description: 'How long the echo waits before repeating.',
     category: 'Delay/Echo',
   },
   {
@@ -314,6 +338,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 0.95,
     step: 0.05,
+    description:
+      'How much of the delayed signal is fed back in. High values repeat for a long time; near the top it barely decays at all.',
     category: 'Delay/Echo',
   },
   {
@@ -323,6 +349,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description: 'Balance between the dry signal and the echo.',
     category: 'Delay/Echo',
   },
 
@@ -337,6 +364,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 2, label: 'Highpass' },
       { value: 3, label: 'Bandpass' },
     ],
+    description:
+      'Which frequencies survive. Lowpass keeps the bottom, highpass the top, bandpass a slice around the cutoff.',
     category: 'Filter',
   },
   {
@@ -346,6 +375,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.01,
     max: 0.99,
     step: 0.01,
+    description:
+      'The frequency the filter is centred on. Sweep it and watch the top of the spectrogram open and close.',
     category: 'Filter',
   },
   {
@@ -355,6 +386,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description:
+      'Emphasis right at the cutoff. High settings make the filter ring at that frequency, and the peak shows up as a bright band that tracks the cutoff.',
     category: 'Filter',
   },
   {
@@ -364,6 +397,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 0.5,
     step: 0.01,
+    description: 'How far the cutoff is swept automatically.',
     category: 'Filter',
   },
   {
@@ -373,6 +407,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.01,
     max: 10.0,
     step: 0.01,
+    description: 'How fast that sweep runs.',
     category: 'Filter',
   },
 
@@ -384,6 +419,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description:
+      'How hard the signal is driven. Distortion generates new harmonics above the ones already present, so the spectrogram fills in upward.',
     category: 'Distortion',
   },
   {
@@ -396,6 +433,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 2, label: 'Foldback' },
       { value: 3, label: 'Bitcrush' },
     ],
+    description:
+      'The shape of the non-linearity. Soft clipping adds harmonics gradually; the wave folder and bit crusher are far more aggressive and generate content that is not harmonically related at all.',
     category: 'Distortion',
   },
 
@@ -407,6 +446,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 10,
     max: 1000,
     step: 10,
+    description:
+      'Frequency of the modulating sine. Ring modulation produces sum and difference tones rather than harmonics, so you get two new bands either side rather than a series above.',
     category: 'Ring Mod',
   },
   {
@@ -416,6 +457,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description:
+      'How much ring modulation is mixed in. Because the tones it produces are not harmonically related to the carrier, this is what makes a sound read as metallic or bell-like.',
     category: 'Ring Mod',
   },
 
@@ -427,6 +470,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description:
+      'How much noise is mixed in. Noise is broadband, so it raises the whole spectrogram rather than adding bands.',
     category: 'Noise',
   },
   {
@@ -438,6 +483,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 1, label: 'Pink' },
       { value: 2, label: 'Brown' },
     ],
+    description:
+      'White noise has equal energy per hertz; pink falls off with frequency and sounds more natural; brown falls off faster still and sounds like distant rumble.',
     category: 'Noise',
   },
 
@@ -449,6 +496,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description: 'How much of the reverberated signal is mixed in.',
     category: 'Reverb',
   },
   {
@@ -458,6 +506,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.1,
     max: 2.0,
     step: 0.1,
+    description: 'How long the reverb tail takes to fade.',
     category: 'Reverb',
   },
   {
@@ -467,6 +516,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 0.5,
     step: 0.01,
+    description:
+      'Gap between the dry sound and the onset of reverb. Longer predelay reads as a larger room.',
     category: 'Reverb',
   },
 
@@ -478,6 +529,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.5,
     max: 2.0,
     step: 0.1,
+    description: 'Brightness of the oscilloscope trace along the top.',
     category: 'Visualization',
   },
   {
@@ -487,6 +539,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.5,
     max: 2.0,
     step: 0.1,
+    description:
+      'Brightness of the spectrogram below. Raise it to bring out quiet partials, at the cost of washing out the loud ones.',
     category: 'Visualization',
   },
   {
@@ -496,6 +550,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.5,
     max: 3.0,
     step: 0.1,
+    description: 'Line weight of the oscilloscope trace.',
     category: 'Visualization',
   },
   {
@@ -505,6 +560,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description:
+      'Blends the analysis window from rectangular to Hann. Rectangular gives the sharpest peaks and the worst spectral leakage — energy smeared across neighbouring bins. Hann widens each peak slightly but suppresses the skirts around it, which reads as a cleaner spectrum. This is a real change to the transform, not a blur applied afterwards.',
     category: 'Visualization',
   },
   {
@@ -514,6 +571,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 1.0,
     max: 10.0,
     step: 0.5,
+    description:
+      'How much of the frequency range the linear scale covers. No effect when the logarithmic scale is selected.',
     category: 'Visualization',
   },
   {
@@ -523,6 +582,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.001,
     max: 1.0,
     step: 0.001,
+    description:
+      'How fast the spectrogram scrolls, which sets how much history is on screen.',
     category: 'Visualization',
   },
   {
@@ -530,8 +591,10 @@ const customSettingsSchema: SettingsSchema[] = [
     label: 'FFT Window Size',
     type: 'slider',
     min: 16,
-    max: 256,
+    max: 128,
     step: 16,
+    description:
+      'How many samples each analysis window covers. Longer windows resolve closely spaced partials but smear anything that moves — the time-versus-frequency tradeoff that every spectrogram has to pick a point on. Each sample evaluates the full synthesis chain, so this is also the main performance dial here.',
     category: 'Visualization',
   },
   {
@@ -542,6 +605,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 0, label: 'Linear' },
       { value: 1, label: 'Logarithmic' },
     ],
+    description:
+      'Logarithmic spacing gives each octave equal width, which matches how pitch is heard and keeps the bass legible. Linear spreads the high end out instead, which suits looking at harmonic series.',
     category: 'Visualization',
   },
   {
@@ -551,6 +616,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 10,
     max: 100,
     step: 5,
+    description: 'Lowest frequency shown on the logarithmic scale.',
     category: 'Visualization',
   },
   {
@@ -560,6 +626,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 2000,
     max: 20000,
     step: 500,
+    description:
+      'Highest frequency shown. Most musical content sits below 5 kHz; above that you are mostly looking at the harmonics of the distortion.',
     category: 'Visualization',
   },
 
@@ -568,30 +636,36 @@ const customSettingsSchema: SettingsSchema[] = [
     key: 'colors.primary',
     label: 'Mid Amplitude Color',
     type: 'color',
+    description: 'Mid-level bins on the spectrogram.',
     category: 'Colors',
   },
   {
     key: 'colors.secondary',
     label: 'High Amplitude Color',
     type: 'color',
+    description: 'Loud bins.',
     category: 'Colors',
   },
   {
     key: 'colors.accent',
     label: 'Peak Amplitude Color',
     type: 'color',
+    description: 'The loudest bins — peaks.',
     category: 'Colors',
   },
   {
     key: 'colors.background',
     label: 'Low Amplitude Color',
     type: 'color',
+    description: 'Near-silent bins, and the canvas behind everything.',
     category: 'Colors',
   },
   {
     key: 'colors.grid',
     label: 'Grid Color',
     type: 'color',
+    description:
+      "The frequency, time and octave gridlines, and the oscilloscope's graticule.",
     category: 'Colors',
   },
 ];
@@ -601,7 +675,7 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
   id: 'spectrogram-oscilloscope',
   name: 'Dual FM Oscillator',
   description:
-    "Complete digital audio synthesizer demonstrating frequency modulation synthesis - a technique that creates complex harmonic content by having one oscillator modulate another's frequency. Two VCOs generate basic waveforms, then frequency modulate each other to produce rich timbres, passing through filters, delay, distortion, and reverb. Top display: oscilloscope showing waveform amplitude over time. Bottom: spectrogram showing frequency content evolution (low-to-high, left-to-right), with brightness indicating spectral intensity. Fundamental technique in electronic music production and audio DSP.",
+    "A working FM synthesizer. Two oscillators, one modulating the other's phase — the trick that let a DX7 make a bell out of two sine waves while subtractive synths needed a filter bank. The signal then runs through filter, delay, distortion, and reverb. Top is an oscilloscope: amplitude against time. Bottom is a spectrogram: frequency low-to-high, scrolling left-to-right, brightness as intensity. Every spectrogram bin is a windowed DFT of the same samples the oscilloscope draws, so the sidebands, harmonic series and ring-mod tones are measured rather than drawn. Same signal in both domains at once, which is the fastest way to build intuition for what FM does to a spectrum. Hold the speaker button to hear it.",
   component: SpectrogramOscilloscopeBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

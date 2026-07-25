@@ -238,6 +238,22 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   // Render setting input based on type
+  // The settings list scrolls, so a tooltip anchored above its icon is clipped
+  // for any control near the top of the viewport. Measure the room actually
+  // available and flip it below when there isn't enough.
+  const positionTooltip = useCallback(
+    (event: React.SyntheticEvent<HTMLSpanElement>) => {
+      const help = event.currentTarget;
+      const tooltip = help.querySelector<HTMLElement>('.setting-tooltip');
+      const scroller = help.closest('.settings-content');
+      if (!tooltip || !scroller) return;
+      const roomAbove =
+        help.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+      help.classList.toggle('flip', roomAbove < tooltip.offsetHeight + 8);
+    },
+    []
+  );
+
   const renderSettingInput = (setting: SettingsSchema) => {
     const value = getNestedValue(settings, setting.key);
 
@@ -467,6 +483,21 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       <div key={setting.key} className="setting-row">
                         <label className="setting-label">
                           {setting.label?.toLowerCase?.() || ''}
+                          {setting.description && (
+                            <span
+                              className="setting-help"
+                              tabIndex={0}
+                              role="note"
+                              aria-label={setting.description}
+                              onMouseEnter={positionTooltip}
+                              onFocus={positionTooltip}
+                            >
+                              ?
+                              <span className="setting-tooltip" role="tooltip">
+                                {setting.description}
+                              </span>
+                            </span>
+                          )}
                         </label>
                         {renderSettingInput(setting)}
                       </div>
@@ -522,6 +553,21 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       <div key={setting.key} className="setting-row">
                         <label className="setting-label">
                           {setting.label?.toLowerCase?.() || ''}
+                          {setting.description && (
+                            <span
+                              className="setting-help"
+                              tabIndex={0}
+                              role="note"
+                              aria-label={setting.description}
+                              onMouseEnter={positionTooltip}
+                              onFocus={positionTooltip}
+                            >
+                              ?
+                              <span className="setting-tooltip" role="tooltip">
+                                {setting.description}
+                              </span>
+                            </span>
+                          )}
                         </label>
                         {renderSettingInput(setting)}
                       </div>

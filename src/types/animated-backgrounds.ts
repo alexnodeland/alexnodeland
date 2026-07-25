@@ -134,6 +134,13 @@ export interface SettingsSchema {
   step?: number;
   options?: { value: any; label: string }[];
   category?: string;
+  /**
+   * What the control does and what to watch when you move it. Shown as a
+   * tooltip beside the label. Keep in step with the same field on
+   * `core/types.ts` — the configs are authored against that one and this is
+   * what the settings panel renders from.
+   */
+  description?: string;
 }
 
 export interface BackgroundManagerState {

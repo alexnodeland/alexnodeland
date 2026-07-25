@@ -563,6 +563,47 @@
     background: var(--border-color);
     margin: 3rem 0;
   }
+
+  // Tables scroll independently so wide content never scrolls the page body
+  .table-wrapper,
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 2rem 0;
+    font-size: 0.95rem;
+
+    th,
+    td {
+      padding: 0.6rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    th {
+      font-family:
+        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+        monospace;
+      text-transform: lowercase;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      border-bottom-width: 2px;
+      white-space: nowrap;
+    }
+
+    td {
+      color: var(--text-secondary);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+  }
 }
 
 .post-footer {
@@ -648,7 +689,14 @@
 
     p {
       color: rgba(255, 255, 255, 0.95);
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+      // Two layers rather than one: a tight near-opaque halo holds an edge
+      // against an adjacent bright cell, and a wider soft one fills the gaps.
+      // A single 4px blur was tuned for the low-frequency backgrounds and does
+      // not survive the cellular automaton, which alternates light and dark
+      // every cell.
+      text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.9),
+        0 0 10px rgba(0, 0, 0, 0.6);
     }
   }
 

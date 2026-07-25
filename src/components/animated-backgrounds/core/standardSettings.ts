@@ -20,6 +20,8 @@ export const standardSettingsSchema: SettingsSchema[] = [
     min: 0.1,
     max: 1.0,
     step: 0.05,
+    description:
+      'How strongly the background reads against the page. Lower it when the animation competes with text in front of it.',
     category: 'Visual',
   },
   {
@@ -29,6 +31,8 @@ export const standardSettingsSchema: SettingsSchema[] = [
     min: 0.005,
     max: 0.08,
     step: 0.002,
+    description:
+      'Base size for whatever the background draws — dots, cells, nodes. A rough zoom control.',
     category: 'Visual',
   },
 
@@ -40,6 +44,8 @@ export const standardSettingsSchema: SettingsSchema[] = [
     min: 0.1,
     max: 5.0,
     step: 0.1,
+    description:
+      'Master speed for the whole animation. Slow it right down to study what a background is doing rather than watch it.',
     category: 'Animation',
   },
 ];

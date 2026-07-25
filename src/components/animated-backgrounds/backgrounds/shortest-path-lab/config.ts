@@ -93,6 +93,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 10,
     max: 80,
     step: 2,
+    description: 'Number of nodes in the randomly generated graph.',
     category: 'Graph',
   },
   {
@@ -102,6 +103,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.05,
     max: 0.6,
     step: 0.01,
+    description:
+      'What fraction of possible edges exist. Sparse graphs force long detours and make the algorithms differ more; dense ones make almost every route short.',
     category: 'Graph',
   },
   {
@@ -111,6 +114,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0,
     max: 79,
     step: 1,
+    description: 'Index of the node the search starts from.',
     category: 'Graph',
   },
   {
@@ -120,6 +124,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0,
     max: 79,
     step: 1,
+    description:
+      'Index of the node it is trying to reach. The further it is from the start, the more visible the difference between the algorithms.',
     category: 'Graph',
   },
 
@@ -131,6 +137,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 3.0,
     step: 0.05,
+    description:
+      'Scales w in f = g + w·h, which is the only thing separating these algorithms. At 0 the heuristic vanishes and this is Dijkstra, exploring evenly in every direction. At 1 it is A*: still guaranteed optimal, but exploration stretches toward the goal. Above 1 it over-trusts the heuristic, drives almost straight at the goal, and gives up the optimality guarantee. Watch the shape of the explored region rather than the path — a circle, then an ellipse, then a corridor.',
     category: 'Algorithm',
   },
   {
@@ -140,6 +148,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.5,
     max: 12.0,
     step: 0.5,
+    description:
+      'How many nodes the search expands per second. Drop it to around 5 to follow the frontier one node at a time.',
     category: 'Algorithm',
   },
   {
@@ -149,6 +159,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.2,
     max: 10.0,
     step: 0.2,
+    description:
+      'Speed of the dot that retraces the route once the search has finished.',
     category: 'Algorithm',
   },
 
@@ -160,6 +172,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.05,
     max: 0.8,
     step: 0.05,
+    description:
+      'Opacity of edges the search has not touched — the backdrop it happens over.',
     category: 'Visual Effects',
   },
   {
@@ -169,6 +183,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.5,
     max: 4.0,
     step: 0.25,
+    description: 'Line weight for untouched edges.',
     category: 'Visual Effects',
   },
   {
@@ -178,6 +193,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 1.0,
     max: 8.0,
     step: 0.25,
+    description:
+      'Line weight for edges the search has explored. This is what makes the explored region legible, so it is the one to raise if you are watching the frontier.',
     category: 'Visual Effects',
   },
   {
@@ -187,6 +204,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 4,
     max: 24,
     step: 1,
+    description: 'Size of the dot that traces the final route.',
     category: 'Visual Effects',
   },
   {
@@ -196,6 +214,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.05,
+    description: 'Glow around that dot.',
     category: 'Visual Effects',
   },
 
@@ -207,6 +226,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0,
     max: 1,
     step: 1,
+    description: 'Toggles the bloom post-process. Off is cheaper and sharper.',
     category: 'Post-Processing',
   },
   {
@@ -216,6 +236,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 3.0,
     step: 0.05,
+    description: 'How intensely bright areas bloom.',
     category: 'Post-Processing',
   },
   {
@@ -225,6 +246,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.01,
+    description: 'How far the bloom spreads from its source.',
     category: 'Post-Processing',
   },
   {
@@ -234,6 +256,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 1.0,
     step: 0.01,
+    description:
+      'How bright a pixel must be before it blooms at all. Raise it to confine the glow to the final path.',
     category: 'Post-Processing',
   },
 
@@ -242,30 +266,29 @@ const customSettingsSchema: SettingsSchema[] = [
     key: 'colors.primary',
     label: 'Final Path Color',
     type: 'color',
+    description: 'The shortest route, once the search has found it.',
     category: 'Colors',
   },
   {
     key: 'colors.secondary',
     label: 'Exploration Color',
     type: 'color',
+    description:
+      'Nodes and edges the search has explored. This is the region whose shape tells you which algorithm is running.',
     category: 'Colors',
   },
   {
     key: 'colors.accent',
     label: 'Start/Goal Color',
     type: 'color',
+    description: 'The start and goal nodes.',
     category: 'Colors',
   },
   {
     key: 'colors.background',
     label: 'Background Color',
     type: 'color',
-    category: 'Colors',
-  },
-  {
-    key: 'colors.grid',
-    label: 'Grid Color',
-    type: 'color',
+    description: 'Canvas colour behind the graph.',
     category: 'Colors',
   },
 ];
@@ -275,7 +298,7 @@ export const shortestPathLabConfig = createBackgroundConfig({
   id: 'shortest-path-lab',
   name: 'Shortest Path (Dijkstra/A*)',
   description:
-    "Comparative visualization of pathfinding algorithms that power GPS navigation, internet routing, and game AI. Dijkstra's algorithm (weight = 0) systematically explores all possibilities to guarantee optimal paths. A* (weight = 1) uses distance heuristics to find optimal paths faster. Greedy search (weight > 1) sacrifices optimality for speed. Yellow patterns show exploration strategy: uniform for Dijkstra, directionally-biased for A*, narrow for greedy. Blue highlights the discovered optimal route. Demonstrates the fundamental trade-off between computational thoroughness and execution speed in network optimization.",
+    'Dijkstra, A*, and greedy best-first are the same search with one number changed. Heuristic Weight scales w in f = g + w*h: at 0 the heuristic vanishes and this is Dijkstra, at 1 it is A* with an admissible heuristic, above 1 it over-trusts the heuristic and gives up the optimality guarantee for speed. Watch the shape of the explored region rather than the path — a circle, then an ellipse, then a corridor. Yellow is explored, blue is the route found. Drop Steps per Second to about 5 to follow the frontier node by node.',
   component: ShortestPathLabBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

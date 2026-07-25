@@ -48,6 +48,7 @@ const SimpleWaveBackground: React.FC<
       uniform vec3 uColorPrimary;
       uniform vec3 uColorSecondary;
       uniform vec3 uColorAccent;
+      uniform vec3 uColorBackground;
 
       varying vec2 vUv;
 
@@ -76,6 +77,13 @@ const SimpleWaveBackground: React.FC<
         float brightness = 0.8 + 0.4 * sin(uv.x * 3.0 + time * 0.5) * sin(uv.y * 2.0 + time * 0.3);
         color *= brightness;
 
+        // Fade toward the background colour where the three components cancel.
+        // Without this the background colour has nowhere to show: the wave
+        // fills every pixel, so total destructive interference still painted a
+        // wave colour rather than reading as empty.
+        float energy = smoothstep(0.0, 0.35, abs(combined));
+        color = mix(uColorBackground, color, energy);
+
         gl_FragColor = vec4(color, 1.0);
       }
     `;
@@ -95,6 +103,9 @@ const SimpleWaveBackground: React.FC<
           value: new THREE.Vector3(...settings.colors.secondary),
         },
         uColorAccent: { value: new THREE.Vector3(...settings.colors.accent) },
+        uColorBackground: {
+          value: new THREE.Vector3(...settings.colors.background),
+        },
       },
       vertexShader,
       fragmentShader,

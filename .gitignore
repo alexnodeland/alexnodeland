@@ -78,3 +78,11 @@ static/*.wasm
 
 # Playwright MCP artifacts and ad-hoc screenshots
 .playwright-mcp/
+
+# Local copies of third-party press articles. Kept on disk as personal
+# reference copies but deliberately not committed — they are someone else's
+# copyrighted work. Regenerate with `just archive-press`. The README stays
+# tracked because it holds the original and Wayback URLs, which is the part
+# worth version-controlling.
+archive/press/*
+!archive/press/README.md
