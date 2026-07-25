@@ -25,6 +25,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     switchToNextBackground,
     switchToPreviousBackground,
     updateCurrentSettings,
+    resetCurrentSettings,
     toggleSettingsPanel,
     closeSettingsPanel,
     audioControls,
@@ -249,6 +250,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
         settings={currentSettings}
         settingsSchema={currentBackground?.settingsSchema}
         onSettingsChange={updateCurrentSettings}
+        onResetSettings={resetCurrentSettings}
         onCloseSettings={closeSettingsPanel}
         onStartAudio={audioControls.startAudio || undefined}
         onStopAudio={audioControls.stopAudio || undefined}

@@ -10,6 +10,7 @@ interface SettingsPanelProps {
   settings: BackgroundSettings;
   settingsSchema: SettingsSchema[];
   onSettingsChange: (newSettings: BackgroundSettings) => void;
+  onResetSettings?: () => void;
   onClose: () => void;
   // Background info for sidebar header
   currentBackgroundId: string;
@@ -30,6 +31,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   settings,
   settingsSchema,
   onSettingsChange,
+  onResetSettings,
   onClose,
   currentBackgroundId,
   currentBackgroundName,
@@ -644,8 +646,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       <div className="settings-panel-footer">
         <button
-          onClick={() => onSettingsChange(settings)}
+          onClick={onResetSettings}
           className="reset-button"
+          disabled={!onResetSettings}
         >
           reset to defaults
         </button>

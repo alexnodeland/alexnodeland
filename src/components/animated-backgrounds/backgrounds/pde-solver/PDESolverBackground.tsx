@@ -12,6 +12,42 @@ import { PDESolverSettings } from './config';
 import { createInitialState, stepPDESolver, index } from './pde-solver';
 import { PDEState, PDESolverConfig } from './types';
 
+// Framing constants. The height field is a PLANE_SIZE-square plate held very
+// nearly face-on to the camera (its -30° tilt about x almost exactly matches
+// the camera's elevation), and it spins in its own plane.
+export const PLANE_SIZE = 2;
+const CAMERA_POSITION: [number, number, number] = [0, 1.5, 2.5];
+export const CAMERA_DISTANCE = Math.hypot(...CAMERA_POSITION);
+export const BASE_FOV_DEGREES = 50;
+
+/**
+ * Vertical FOV for a given viewport.
+ *
+ * Landscape keeps the designed framing: a plate floating against the page,
+ * smaller than the window. Portrait cannot have that and be full-bleed, and
+ * full-bleed is what a phone wants — the alternative is the plate's spinning
+ * corners sweeping wedges of empty page across the screen.
+ *
+ * The plate covers a rotating square, so the guaranteed-covered region is its
+ * inscribed circle, of world radius PLANE_SIZE / 2. Solve for the FOV that
+ * projects that circle out to the screen's corners and the plate covers at
+ * every angle of its spin. Never widens past the base FOV, so this only ever
+ * zooms in.
+ */
+export const fovForViewport = (width: number, height: number): number => {
+  if (width >= height) return BASE_FOV_DEGREES;
+
+  // Half-height of the frustum at the plate, as a fraction of the world radius
+  // we have to fill: screen half-diagonal over screen half-height.
+  const cornerReach = Math.hypot(width, height) / height;
+  const covering =
+    2 *
+    Math.atan(PLANE_SIZE / 2 / (CAMERA_DISTANCE * cornerReach)) *
+    (180 / Math.PI);
+
+  return Math.min(BASE_FOV_DEGREES, covering);
+};
+
 const PDESolverBackground: React.FC<
   AnimatedBackgroundProps<PDESolverSettings>
 > = ({ className, settings }) => {
@@ -33,12 +69,12 @@ const PDESolverBackground: React.FC<
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(
-      50,
+      fovForViewport(window.innerWidth, window.innerHeight),
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-    camera.position.set(0, 1.5, 2.5);
+    camera.position.set(...CAMERA_POSITION);
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
@@ -112,9 +148,11 @@ const PDESolverBackground: React.FC<
     // Handle window resize
     const handleResize = () => {
       if (cameraRef.current && rendererRef.current) {
-        cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+        const { innerWidth, innerHeight } = window;
+        cameraRef.current.aspect = innerWidth / innerHeight;
+        cameraRef.current.fov = fovForViewport(innerWidth, innerHeight);
         cameraRef.current.updateProjectionMatrix();
-        rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+        rendererRef.current.setSize(innerWidth, innerHeight);
       }
     };
 
@@ -240,7 +278,12 @@ function createVisualizationMesh(
   const { gridSizeX, gridSizeY } = state;
 
   // Create plane geometry
-  const geometry = new THREE.PlaneGeometry(2, 2, gridSizeX - 1, gridSizeY - 1);
+  const geometry = new THREE.PlaneGeometry(
+    PLANE_SIZE,
+    PLANE_SIZE,
+    gridSizeX - 1,
+    gridSizeY - 1
+  );
 
   // Create material
   const material = new THREE.MeshStandardMaterial({

@@ -57,7 +57,11 @@ const defaultCustomSettings: PDESolverCustomSettings = {
   gridSize: 128,
   initialConditionType: 'interference',
   initialAmplitude: 1.0,
-  initialFrequency: 3.0,
+  // At 3 the four sources overlap into one broad blob — the plate reads as a
+  // flat wash with no interference visible, which is the whole point of this
+  // initial condition. 6 puts a few fringes across the grid without aliasing
+  // against it the way the top of the range does.
+  initialFrequency: 6.0,
   initialWidth: 0.08,
   numSources: 4,
   boundaryConditionX: 'dirichlet',

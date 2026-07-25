@@ -23,6 +23,7 @@ interface BackgroundContextType {
   switchToPreviousBackground: () => void;
   selectBackground: (backgroundId: string) => void;
   updateCurrentSettings: (newSettings: Partial<BackgroundSettings>) => void;
+  resetCurrentSettings: () => void;
 
   // Settings panel controls
   toggleSettingsPanel: () => void;
@@ -241,6 +242,26 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
     []
   );
 
+  // Replaces the current background's settings outright rather than merging.
+  // A merge cannot undo an edit — every key in the working copy already has a
+  // value, so spreading anything over it is a no-op for the keys the user
+  // changed.
+  const resetCurrentSettings = useCallback(() => {
+    setState(prev => {
+      const defaults = getBackgroundById(
+        prev.currentBackgroundId
+      )?.defaultSettings;
+      if (!defaults) return prev;
+      return {
+        ...prev,
+        settings: {
+          ...prev.settings,
+          [prev.currentBackgroundId]: { ...defaults },
+        },
+      };
+    });
+  }, []);
+
   // Sync BackgroundProvider state with SettingsPanelProvider state
   useEffect(() => {
     setState(prev => ({
@@ -286,6 +307,7 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
     switchToPreviousBackground,
     selectBackground,
     updateCurrentSettings,
+    resetCurrentSettings,
     toggleSettingsPanel,
     closeSettingsPanel,
     audioControls,
