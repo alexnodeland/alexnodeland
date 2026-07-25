@@ -1,0 +1,305 @@
+// Mobile interactivity: the touch entry point into the animated backgrounds.
+// Everything in here is mobile-only — desktop drives the backgrounds from the
+// keyboard and its own control cluster.
+
+$mobile-breakpoint: 768px;
+
+// ---------------------------------------------------------------------------
+// Launcher pill (browsing state)
+// ---------------------------------------------------------------------------
+
+.mobile-interactivity-launcher {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+    position: fixed;
+    bottom: 1.75rem;
+    left: 1.75rem;
+    z-index: 1000;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    animation: slideInFromLeftWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)
+      forwards;
+  }
+
+  @media (max-width: 480px) {
+    bottom: 1rem;
+    left: 1rem;
+  }
+}
+
+.mobile-interactivity-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-lg);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transition: all var(--transition-normal);
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    flex-shrink: 0;
+    color: var(--primary-color);
+  }
+
+  &:active {
+    transform: scale(0.97);
+    border-color: var(--primary-color);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Explore + immersive states
+// ---------------------------------------------------------------------------
+
+.mobile-explore {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+}
+
+// Full-bleed tap target that sits over the background canvas and toggles the
+// chrome. Deliberately invisible — the background is the content here.
+.mobile-explore-surface {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.mobile-explore-chrome {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  pointer-events: none; // Only the individual controls take taps.
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+
+  .mobile-explore.chrome-hidden & {
+    opacity: 0;
+    transform: translateY(0.5rem);
+    pointer-events: none;
+  }
+
+  .mobile-explore.chrome-visible & {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  > * {
+    pointer-events: auto;
+  }
+
+  .mobile-explore.chrome-hidden & > * {
+    pointer-events: none;
+  }
+}
+
+// Shared surface treatment. The backgrounds run the full gamut from near-black
+// to saturated yellow, so this has to hold legible contrast against all of
+// them while still reading as glass rather than a solid panel.
+@mixin explore-surface {
+  background: rgba(8, 10, 14, 0.55);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.mobile-explore-exit {
+  @include explore-surface;
+
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: lowercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    transform: scale(0.97);
+    color: #fff;
+  }
+}
+
+.mobile-explore-bar {
+  @include explore-surface;
+
+  // Background names run from "simple sine waves" to "pde solver: heat & wave
+  // equations", so the bar is a fixed full-width rail rather than a pill that
+  // resizes under you every time the background changes.
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: max(1.25rem, calc(env(safe-area-inset-bottom) + 0.75rem));
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border-radius: var(--radius-lg);
+
+  // Rainbow hairline along the top, echoing the site header.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0.75rem;
+    right: 0.75rem;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--accent-pink) 20%,
+      var(--primary-color) 50%,
+      var(--accent-blue) 80%,
+      transparent 100%
+    );
+    opacity: 0.7;
+  }
+}
+
+.mobile-explore-step {
+  flex-shrink: 0;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.75);
+  font-family: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.mobile-explore-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.4rem 0.6rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-explore-title {
+    max-width: 100%;
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  }
+
+  .mobile-explore-sub {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.6rem;
+    font-weight: 400;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  }
+}
+
+.mobile-explore-hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 5rem));
+  transform: translateX(-50%);
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.65rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+
+  &.visible {
+    opacity: 1;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mobile chrome trimming
+// ---------------------------------------------------------------------------
+
+@media (max-width: $mobile-breakpoint) {
+  // The desktop control cluster and its keyboard affordances are replaced by
+  // the explore bar above.
+  .background-controls,
+  .keyboard-shortcuts-toggle,
+  .keyboard-hint,
+  .sidebar-keyboard-hints {
+    display: none !important;
+  }
+
+  // Chat is part of the page, not the background; it would only clutter the
+  // full-bleed view.
+  body.mobile-explore-active .chat-icon-container {
+    display: none !important;
+  }
+}

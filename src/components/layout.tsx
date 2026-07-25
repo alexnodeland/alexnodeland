@@ -5,7 +5,6 @@ import '../styles/layout.scss';
 import { useSettingsPanel } from './SettingsPanelContext';
 import ThemeToggle from './ThemeToggle';
 import { ChatIcon, ChatModal, KeyboardShortcuts } from './chat';
-import MobileInteractivityNotice from './MobileInteractivityNotice';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -81,7 +80,15 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
               {!isHomePage && (
                 <div className="nav-brand">
                   <Link to="/" className="nav-link">
-                    {siteConfig.siteName}
+                    {/* The narrow viewports swap in the short form so the nav
+                        stays on one row; both are in the DOM so the width
+                        actually collapses rather than just going transparent. */}
+                    <span className="nav-brand-full">
+                      {siteConfig.siteName}
+                    </span>
+                    <span className="nav-brand-short" aria-hidden="true">
+                      {siteConfig.siteName.split(' ')[0]}
+                    </span>
                   </Link>
                 </div>
               )}
@@ -137,9 +144,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
       <ChatIcon />
       <ChatModal />
       <KeyboardShortcuts />
-
-      {/* Mobile Interactivity Notice - only shows on mobile */}
-      <MobileInteractivityNotice />
     </>
   );
 };

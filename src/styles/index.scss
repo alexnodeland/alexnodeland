@@ -62,7 +62,20 @@
   p {
     margin-bottom: 1.5rem;
     line-height: 1.7;
+    // Justified text needs enough characters per line to distribute the slack;
+    // below that the word gaps blow out into rivers. Wide viewports keep the
+    // clean column edge (with hyphenation to tighten it further), narrow ones
+    // fall back to ragged right.
     text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+
+    @media (max-width: 768px) {
+      text-align: left;
+      hyphens: manual;
+      -webkit-hyphens: manual;
+      text-wrap: pretty;
+    }
   }
 }
 

@@ -3,6 +3,8 @@ import { siteConfig } from '../../config';
 import { useBackground } from '../BackgroundProvider';
 import { useSettingsPanel } from '../SettingsPanelContext';
 import BackgroundControls from './BackgroundControls';
+import MobileInteractivity from './MobileInteractivity';
+import { useIsMobileViewport } from './core/useIsMobileViewport';
 
 interface BackgroundManagerProps {
   className?: string;
@@ -11,6 +13,13 @@ interface BackgroundManagerProps {
 const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
   // Use contexts
   const { isContentHidden, setContentHidden } = useSettingsPanel();
+  const isMobile = useIsMobileViewport();
+
+  // Mobile reaches the backgrounds by hiding the page content (see
+  // MobileInteractivity), which is a deliberate "let me look at / tune this
+  // one" gesture — auto-advancing out from under it would fight the user.
+  // Desktop's H key is a passive lean-back view, so it keeps cycling.
+  const cyclePaused = isMobile && isContentHidden;
   const {
     state,
     switchToNextBackground,
@@ -122,9 +131,11 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     if (
       state.showSettingsPanel ||
       state.closingSettingsPanel ||
+      cyclePaused ||
       !cycleEnabled
     ) {
       clearTimers();
+      setOverlayOpacity(0); // Never strand the user on the fade-to-black frame
       return;
     }
 
@@ -178,6 +189,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     setOverlayOpacity,
     state.showSettingsPanel,
     state.closingSettingsPanel,
+    cyclePaused,
   ]);
 
   // When the settings panel fully closes, resume cycle from visible phase
@@ -242,6 +254,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
         onStopAudio={audioControls.stopAudio || undefined}
         isAudioPlaying={audioControls.isPlaying}
       />
+
+      {/* Touch equivalent of the keyboard controls; mobile-only via CSS */}
+      <MobileInteractivity />
     </>
   );
 };
