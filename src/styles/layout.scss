@@ -94,6 +94,7 @@
   flex-direction: column;
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px); // Safari 17 and earlier
   border-radius: var(--radius-lg);
   position: fixed;
   top: calc(1rem + 3px); // Start below rainbow; header overlays transparently
@@ -168,6 +169,7 @@
 [data-theme='light'] .layout {
   background: rgba(0, 0, 0, 0.1); // Keep dark like dark mode
   backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px); // Safari 17 and earlier
   box-shadow: var(--shadow-lg);
   border: 2px solid rgba(255, 255, 255, 0.1); // Subtle light border
 }
@@ -192,6 +194,7 @@
 [data-theme='light'] .header-fixed {
   background: rgba(0, 0, 0, 0.1); // Match layout exactly
   backdrop-filter: blur(3px); // Match layout blur exactly
+  -webkit-backdrop-filter: blur(3px); // Safari 17 and earlier
   border: none; // Remove all borders for full transparency
   box-shadow: none; // Remove box shadow for transparency
 }
@@ -251,6 +254,7 @@
 .header-fixed {
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(3px); // Match layout blur exactly
+  -webkit-backdrop-filter: blur(3px); // Safari 17 and earlier
   border: none; // Remove all borders for full transparency
   margin: 0 1rem; // Remove top margin to connect with rainbow
   box-shadow: none; // Remove box shadow for transparency

@@ -79,11 +79,18 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
             <nav className="nav">
               {!isHomePage && (
                 <div className="nav-brand">
-                  <Link to="/" className="nav-link">
-                    {/* The narrow viewports swap in the short form so the nav
-                        stays on one row; both are in the DOM so the width
-                        actually collapses rather than just going transparent. */}
-                    <span className="nav-brand-full">
+                  {/* Narrow viewports swap in the short form so the nav stays
+                      on one row; both spellings are in the DOM so the width
+                      actually collapses rather than just going transparent.
+                      The label lives on the link because whichever span is
+                      hidden at the current width is out of the accessibility
+                      tree with it — leaving the link unnamed on mobile. */}
+                  <Link
+                    to="/"
+                    className="nav-link"
+                    aria-label={siteConfig.siteName}
+                  >
+                    <span className="nav-brand-full" aria-hidden="true">
                       {siteConfig.siteName}
                     </span>
                     <span className="nav-brand-short" aria-hidden="true">

@@ -67,6 +67,10 @@ export default defineConfig({
     command: 'npm run develop',
     url: 'http://localhost:8000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    // `npm run develop` builds the web worker with webpack before Gatsby's own
+    // first compile even starts, and the two together run past two minutes
+    // from cold — the suite used to fail on the server timeout rather than on
+    // anything it was meant to test.
+    timeout: 5 * 60 * 1000,
   },
 });

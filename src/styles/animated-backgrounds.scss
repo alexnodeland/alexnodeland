@@ -63,6 +63,7 @@
     color: var(--text-primary);
     font-size: 0.875rem;
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); // Safari 17 and earlier
     box-shadow: var(--shadow-lg);
     transition: all var(--transition-normal);
     min-width: 280px; // Match keyboard hints width for alignment

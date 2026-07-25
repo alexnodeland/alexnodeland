@@ -101,6 +101,10 @@ describe('Layout Component', () => {
     const siteNameLink = siteName.closest('a');
     expect(siteNameLink).toHaveAttribute('href', '/');
     expect(siteNameLink).toHaveClass('nav-link');
+
+    // Whichever spelling is hidden at the current width leaves the a11y tree
+    // with it, so the accessible name has to come from the link itself.
+    expect(screen.getByRole('link', { name: 'Test Site' })).toBe(siteNameLink);
   });
 
   it('should not render site name on home page', () => {
