@@ -71,8 +71,8 @@ const CellularAutomatonBackground: React.FC<
       previous.set(current);
     };
 
-    /** (Re)builds the grid and its texture for the current viewport. */
-    const buildGrid = () => {
+    /** Grid dimensions the current viewport calls for, within the cell budget. */
+    const gridForViewport = () => {
       const px = Math.max(4, cellSize);
       let c = Math.max(8, Math.ceil(window.innerWidth / px));
       let r = Math.max(8, Math.ceil(window.innerHeight / px));
@@ -84,6 +84,24 @@ const CellularAutomatonBackground: React.FC<
         r = Math.max(8, Math.floor(r * scale));
       }
 
+      return { cols: c, rows: r };
+    };
+
+    /**
+     * (Re)builds the grid and its texture for the current viewport.
+     *
+     * `carryOver` keeps the running simulation across a resize: every cell the
+     * two grids share keeps its state and age, and only the newly exposed strip
+     * is seeded. Mobile browsers fire a resize each time the URL bar collapses
+     * or expands — which is to say on nearly every scroll, and reliably on the
+     * scroll back to the top of the page — so rebuilding from fresh soup there
+     * wipes the automaton out from under the reader.
+     */
+    const buildGrid = (carryOver = false) => {
+      const prev =
+        carryOver && current.length > 0 ? { cols, rows, current, age } : null;
+
+      const { cols: c, rows: r } = gridForViewport();
       cols = c;
       rows = r;
       const size = cols * rows;
@@ -92,7 +110,27 @@ const CellularAutomatonBackground: React.FC<
       age = new Uint8Array(size);
       previous = new Uint8Array(size);
       pixels = new Uint8Array(size * 4);
-      seed();
+
+      if (prev) {
+        const sharedCols = Math.min(prev.cols, cols);
+        const sharedRows = Math.min(prev.rows, rows);
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const to = y * cols + x;
+            if (y < sharedRows && x < sharedCols) {
+              const from = y * prev.cols + x;
+              current[to] = prev.current[from];
+              age[to] = prev.age[from];
+            } else {
+              current[to] = Math.random() < initialDensity ? 1 : 0;
+              age[to] = current[to];
+            }
+          }
+        }
+        previous.set(current);
+      } else {
+        seed();
+      }
 
       texture?.dispose();
       texture = new THREE.DataTexture(
@@ -314,19 +352,36 @@ const CellularAutomatonBackground: React.FC<
 
     frameId = requestAnimationFrame(animate);
 
-    const handleResize = () => {
+    // A URL bar sliding in and out can fire resize many times over a single
+    // flick, so collapse the burst into one rebuild per frame.
+    let resizeFrame: number | null = null;
+
+    const applyResize = () => {
+      resizeFrame = null;
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      const rebuilt = buildGrid();
+
+      // Most of those resizes are a few pixels of browser chrome and leave the
+      // grid the same shape, in which case there is nothing to rebuild at all.
+      const target = gridForViewport();
+      if (target.cols === cols && target.rows === rows) return;
+
+      const rebuilt = buildGrid(true);
       uploadState();
       material.uniforms.uState.value = rebuilt;
       material.uniforms.uGrid.value.set(cols, rows);
+    };
+
+    const handleResize = () => {
+      if (resizeFrame === null)
+        resizeFrame = requestAnimationFrame(applyResize);
     };
 
     window.addEventListener('resize', handleResize);
 
     return () => {
       if (frameId !== null) cancelAnimationFrame(frameId);
+      if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
       window.removeEventListener('resize', handleResize);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
