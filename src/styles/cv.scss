@@ -1675,3 +1675,38 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     }
   }
 }
+
+// Full CV / one-page resume switch, sits above the export buttons
+.cv-view-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+
+  .cv-view-button {
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    font-size: 0.9rem;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+
+    &:hover {
+      color: var(--text-primary);
+      border-color: var(--primary-color);
+    }
+
+    &.active {
+      color: var(--text-primary);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 12px rgba(0, 255, 136, 0.25);
+    }
+  }
+}

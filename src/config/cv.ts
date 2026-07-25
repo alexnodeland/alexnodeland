@@ -4,9 +4,12 @@ export interface ExperienceItem {
   location: string;
   duration: string;
   description?: string;
+  /** Ordered strongest-first — the one-page resume takes the top `resume.maxBullets`. */
   achievements: string[];
   skills?: string[];
   highlights?: string[];
+  /** Omit to leave this role off the one-page resume entirely. */
+  resume?: { maxBullets: number };
 }
 
 export interface EducationItem {
@@ -78,28 +81,29 @@ export interface CVData {
 export const cvData: CVData = {
   personal: {
     name: 'Alex Nodeland',
-    title: 'Senior AI Engineer & Technical Consultant',
+    title: 'Senior AI Engineer',
     email: 'alex@ournature.studio',
     location: 'Upstate, New York, USA',
     website: 'alexnodeland.com',
     summary:
-      'Experienced engineer and mathematician with a strong background in high-performance computing, AI system design, and startup development. Proven track record in leading cross-functional teams and managing strategic business partnerships. Passionate about transforming complex ideas into user-friendly solutions, optimizing business processes, and driving innovation and growth.',
+      'Engineer and mathematician working on AI systems — agent orchestration, evaluation infrastructure, and the semantic models underneath — currently at Perch Insights. Previously co-founded and ran a supercomputing startup in Singapore for four years, led engineering at a music-ML company acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Most useful on problems that sit between mathematics and production systems.',
   },
 
   experience: [
     {
       title: 'Senior AI Engineer',
       company: 'Perch Insights',
+      resume: { maxBullets: 3 },
       location: 'Remote, NY',
       duration: '2024 - Present',
       achievements: [
-        'Led AI engineering initiatives that transformed data analysis workflows, enabling business analysts to perform previously impossible automated insights and drastically reducing time-to-insight',
-        'Architected and implemented a DAG-based workflow orchestration framework that enables autonomous AI agents to perform complex multi-step data analysis',
-        'Designed a domain-specific language (DSL) that allows non-technical users to construct sophisticated analysis workflows combining LLM agents with traditional ML models',
-        'Built self-improving AI systems through virtuous feedback loops that automatically capture user feedback, expand evaluation datasets, and power few-shot examples downstream',
-        'Developed tabular insight generator agents using Jinja templating that maintain complete data lineage and provenance tracking, ensuring full auditability for enterprise compliance requirements',
-        'Enhanced the semantic data model with ontological abstractions and higher-order business concepts, enabling automated root cause analysis and data discovery',
-        'Engineered a fault-tolerant distributed worker architecture on AWS (ECS/SNS/SQS) with dead letter queue management and zero-downtime deployments',
+        'Built a DAG-based orchestration framework that lets autonomous agents carry out multi-step data analysis end to end',
+        'Designed a DSL that non-technical users write analysis workflows in, mixing LLM agents with conventional ML models in the same pipeline',
+        'Extended the semantic data model with ontological abstractions and higher-order business concepts — the layer that makes automated root-cause analysis and data discovery possible at all',
+        'Built the feedback loop that turns user corrections into evaluation data and downstream few-shot examples, so the system improves without a retraining cycle',
+        'Wrote tabular insight agents on Jinja templates that carry full lineage and provenance, so any generated number can be traced back to source for enterprise audit',
+        'Ran a fault-tolerant distributed worker fleet on AWS (ECS/SNS/SQS) with dead-letter queue handling and zero-downtime deploys',
+        'Lead AI engineering for the analytics product, turning analyst workflows that were manual or simply not possible into automated ones',
       ],
       skills: [
         'Python',
@@ -114,20 +118,19 @@ export const cvData: CVData = {
     {
       title: 'Head of AI',
       company: 'Influize',
+      resume: { maxBullets: 3 },
       location: 'Remote, NY',
       duration: '2023 - 2024',
       achievements: [
-        'Pioneered the AI engineering department, developing fully functional AI systems from conceptual models',
-        "Developed and fully implemented RAG-based LLM systems, enhancing the product's capabilities in generating dynamic responses based on retrieved data",
-        'Enhanced data model clarity by developing ontological models',
-        'Improved database security and efficiency by designing and implementing schema and backend infrastructure using Supabase Postgres',
-        'Boosted system security and functionality by building scalable AI pipelines with robust authentication',
-        'Optimized AI pipeline performance by implementing monitoring systems',
-        'Enhanced API throughput and reduced latency by architecting a high-performance, scalable API interface tailored for AI pipeline integrations',
-        'Optimized deployment workflows and enhanced system reliability by adopting Infrastructure as Code (IaC) practices using AWS CloudFormation and setting up a robust CI/CD pipeline with GitHub Actions',
-        'Ensured seamless platform integration by collaborating with external development teams',
-        "Streamlined development and coordination by directing project management with GitHub's self-management system",
-        'Boosted system responsiveness by optimizing database performance for higher scale and efficiency',
+        'Started the AI function from nothing and shipped its first systems to production',
+        "Built the RAG pipeline behind the product's generated responses, covering retrieval, chunking, and grounding",
+        'Designed the Postgres schema and backend on Supabase, including authentication and access control',
+        'Architected the API layer the AI pipelines sit behind, which cut latency and raised throughput',
+        'Moved infrastructure to CloudFormation and CI/CD to GitHub Actions',
+        'Added monitoring across the AI pipelines to catch quality regressions before customers did',
+        'Built ontological models that gave the data model a consistent vocabulary to work from',
+        'Rewrote the hot query paths and indexing strategy as load grew',
+        'Coordinated with external development teams on platform integration, and ran project management out of GitHub',
       ],
       skills: [
         'Python',
@@ -142,17 +145,17 @@ export const cvData: CVData = {
     {
       title: 'Technical Strategy Consultant',
       company: 'Freelance',
+      resume: { maxBullets: 2 },
       location: 'Remote, NY',
       duration: '2022 - Present',
       achievements: [
-        'Enhanced operational flow by providing strategic guidance to a blockchain unicorn',
-        'Showcased AI potential by delivering a keynote talk on ChatGPT to CIOs and founders',
-        'Improved personal knowledge management systems by advising on AI and LLM utilization',
-        'Developed strategic plans to keep companies at the forefront of technology',
-        'Reduced costs and increased efficiency by facilitating transitions to AI-integrated systems',
-        'Advanced business processes by engaging in AI research and development',
-        'Identified AI solution opportunities through comprehensive market analysis',
-        'Supported startups in technology selection and strategic decision-making',
+        'Advise startups and established companies on where AI belongs in their stack, and where it does not',
+        'Delivered a keynote on ChatGPT to a room of CIOs and founders',
+        'Advised a blockchain unicorn on engineering process and operational flow',
+        'Run technology assessments and build-versus-buy analysis for teams committing to an AI direction',
+        'Led migrations to AI-integrated systems where the cost case held up',
+        'Consulted on personal knowledge management systems built around LLMs',
+        'Help early-stage startups choose a technology stack they will not have to abandon in a year',
       ],
       skills: [
         'Strategic Planning',
@@ -164,19 +167,17 @@ export const cvData: CVData = {
     {
       title: 'Tech Lead',
       company: 'Musiio (acquired by SoundCloud)',
+      resume: { maxBullets: 2 },
       location: 'Singapore',
       duration: '2021 - 2022',
       achievements: [
-        'Led a cross-functional team, fostering collaboration with the music team and external partners',
-        'Streamlined development workflows, managing scheduling and coordination with research and sales teams',
-        'Fostered continuous improvement by conducting operational analysis and organizing training sessions',
-        'Mentored team members, supporting career development and engagement',
-        'Ensured effective project management by collaborating with founders on development plans',
-        'Guided technical development, meeting customer and partner requirements',
-        'Managed GCP infrastructure, implementing Kubernetes & Istio and monitoring with Grafana & Prometheus',
-        'Revamped CI/CD process with Jenkins and Cypress, ensuring software quality',
-        'Introduced agile practices (Scrum) to streamline operations and increase productivity',
-        'Improved efficiency by implementing workflow automation and building a custom data ingestion pipeline',
+        'Led a cross-functional engineering team, working alongside the music, research, and sales sides of the company',
+        'Ran GCP infrastructure: Kubernetes and Istio, monitored with Grafana and Prometheus',
+        'Rebuilt CI/CD on Jenkins with Cypress end-to-end coverage',
+        'Built a custom data ingestion pipeline and automated the manual steps that had grown around it',
+        'Introduced Scrum, along with the scheduling and coordination practice needed to make it stick',
+        'Set technical direction against customer and partner requirements, planning releases with the founders',
+        'Mentored engineers on the team and ran training sessions off the back of operational reviews',
       ],
       skills: [
         'Python',
@@ -192,22 +193,18 @@ export const cvData: CVData = {
     {
       title: 'CEO & Co-Founder',
       company: 'Archanan',
+      resume: { maxBullets: 3 },
       location: 'Singapore, SG',
       duration: '2018 - 2022',
       achievements: [
-        'Drove strategic direction by formulating business models and go-to-market strategies',
-        'Provided critical business insights by devising dynamic financial projections',
-        'Ensured seamless workflows by integrating management systems',
-        'Solidified financial foundation by securing early rounds of funding from government, VC, and angel investors',
-        'Expanded client base by attracting early customers, including Fortune 500 companies and national governments',
-        'Brought products to market by spearheading product development from conceptualization to launch',
-        'Fostered rapid growth by expanding the team from 3 to 15 in the first year',
-        'Strengthened partnerships by managing diplomatic relations with multiple levels of government',
-        'Promoted customer loyalty by establishing a strong brand identity',
-        'Secured beneficial terms by negotiating contracts and agreements with partners and suppliers',
-        'Mitigated business risks by implementing risk management strategies',
-        'Maintained transparency by steering investor relations and board communications',
-        'Challenged traditional norms by leveraging technical background to drive innovative solutions',
+        'Took the product from concept to launch: a cloud platform that emulates supercomputer environments so teams can develop and test at scale without waiting for time on the real machine',
+        'Raised early rounds from government, VC, and angel investors',
+        'Won early customers including Fortune 500 companies and national governments',
+        'Grew the team from 3 to 15 in the first year',
+        'Set the business model and go-to-market strategy, with the financial model underneath it',
+        'Managed relationships with several levels of government across the region',
+        'Ran investor relations and board communications',
+        'Negotiated the contracts with partners and suppliers',
       ],
       skills: [
         'Leadership',
@@ -223,15 +220,12 @@ export const cvData: CVData = {
       location: 'Singapore, SG',
       duration: 'Jan 2018 - Jun 2018',
       achievements: [
-        'Optimized market fit by refining early-stage ideas',
-        'Validated business concepts through comprehensive market research',
-        'Catalyzed product development by securing early LOIs and bringing MVPs to fruition',
-        'Drove business growth by formulating and implementing go-to-market strategies',
-        'Provided key insights through financial modeling to plan and predict business performance',
-        'Initiated a successful venture by co-founding Archanan',
-        'Secured seed capital by leading fundraising efforts',
-        'Broadened network and resources by forming strategic partnerships',
-        'Strengthened market positioning through business development initiatives',
+        'Co-founded Archanan out of the programme',
+        'Secured letters of intent from early customers before committing to a build',
+        'Tested several ideas against the market and killed the ones that did not hold up',
+        'Built the financial model and the go-to-market plan that came out of it',
+        'Led the first fundraise',
+        'Formed the early partnerships the company ran on',
       ],
       skills: [
         'Entrepreneurship',
@@ -243,19 +237,16 @@ export const cvData: CVData = {
     {
       title: 'CTO, Chief Mathematician',
       company: 'Scala Computing',
+      resume: { maxBullets: 2 },
       location: 'New York, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Drove financial stability by securing seed capital from prominent VCs and angels',
-        'Elevated company status by gaining membership to the Grand Central Tech Accelerator',
-        'Fast-tracked product development by designing, architecting, and implementing MVPs',
-        'Ensured reliable software solutions by developing, testing, and integrating production code',
-        'Enhanced productivity and collaboration by establishing robust development processes',
-        'Improved software performance by leading a team of developers in delivering cloud middleware solutions',
-        'Advanced technological capabilities by directing algorithm development for complex problems',
-        'Ensured software quality by establishing strict QA standards',
-        'Minimized bugs through efficient code review practices',
-        'Enhanced client service offerings by cultivating strong client relationships',
+        'Designed and built the MVPs, then the production cloud middleware that replaced them',
+        'Directed algorithm development for the core computational problems the product depended on',
+        'Raised seed capital from VCs and angels',
+        'Led the engineering team and set the code review and QA standards it worked to',
+        'Got the company into the Grand Central Tech accelerator',
+        'Worked directly with clients on what to build next',
       ],
       skills: [
         'Mathematics',
@@ -271,12 +262,10 @@ export const cvData: CVData = {
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Pioneered sound technology by designing, prototyping, and testing audio synthesizers',
-        'Contributed to novel audio technologies by engineering unique circuit designs',
-        'Generated creative content using academic research',
-        'Demystified complex concepts through collaboration with music technology industry professionals',
-        'Inspired creativity by leading seminars on the intersection of music and mathematics',
-        'Facilitated collaborative opportunities by networking with industry professionals',
+        'Designed, prototyped, and tested audio synthesizers, including the circuit design',
+        'Led seminars on where music and mathematics meet',
+        'Turned research into work that could actually be performed and heard',
+        'Collaborated with people from the music technology industry on novel audio hardware',
       ],
       skills: [
         'Audio Engineering',
@@ -292,11 +281,10 @@ export const cvData: CVData = {
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Boosted research capabilities by spearheading a supercomputing project funded by the High Performance Computing Consortium of New York',
-        'Contributed to advancements in audio technology by conducting in-depth research on optimal wavelet bases for audio compression',
-        'Provided insights into spectrum trends by performing real-time signal analysis',
-        'Ensured up-to-date practices by liaising with other research teams',
-        'Maintained reliable data sources by organizing and maintaining project documentation',
+        'Researched optimal wavelet bases for audio compression, searching for a general procedure rather than a one-off basis',
+        'Ran a supercomputing project funded by the High Performance Computing Consortium of New York',
+        'Performed real-time signal analysis on spectrum data',
+        'Kept the project documentation and datasets in a state other researchers could pick up',
       ],
       skills: [
         'Research',
@@ -312,12 +300,11 @@ export const cvData: CVData = {
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
       achievements: [
-        'Enhanced product functionality by developing production-grade firmware for digital guitar pedals',
-        'Ensured regular product improvements by contributing to continuous integration and feature releases',
-        'Simplified customer usage by authoring technical documentation and user manuals',
-        'Improved product quality by optimizing processes to reduce software bugs',
-        'Integrated customer feedback into product development',
-        'Ensured software quality by implementing rigorous testing protocols',
+        'Wrote production firmware for digital guitar pedals',
+        'Shipped feature releases through a continuous integration process',
+        'Built the testing protocols that brought the bug rate down',
+        'Wrote the technical documentation and user manuals',
+        'Fed customer feedback back into what got built next',
       ],
       skills: [
         'Firmware Development',
@@ -332,13 +319,10 @@ export const cvData: CVData = {
       location: 'Port Jefferson, NY',
       duration: '2010 - 2014',
       achievements: [
-        'Contributed to product manufacturing by assembling printed circuit boards for audio processing units',
-        'Guaranteed product reliability by conducting rigorous hardware testing',
-        'Ensured customer satisfaction by managing servicing of customer hardware',
-        'Maintained high service standards by leading technical customer service efforts',
-        'Optimized production processes through continuous improvement initiatives',
-        'Ensured quality standards by providing training to new staff',
-        'Contributed to customer service excellence by handling returns and repairs',
+        'Assembled and tested printed circuit boards for audio processing units',
+        'Ran technical customer service, including repairs and returns',
+        'Serviced customer hardware sent back to the shop',
+        'Trained new staff on assembly and quality control',
       ],
       skills: [
         'Hardware Assembly',
@@ -355,8 +339,7 @@ export const cvData: CVData = {
       institution: 'Stony Brook University',
       location: 'Stony Brook, NY',
       duration: '2016 - (Incomplete)',
-      description:
-        'Engaged in preliminary research but transitioned to entrepreneurial roles prior to advancing to candidacy.',
+      description: 'Left before advancing to candidacy to start a company.',
       relevantCoursework: [
         'Numerical Analysis',
         'Numerical Partial Differential Equations',
@@ -367,7 +350,7 @@ export const cvData: CVData = {
         'Parallel Computing',
       ],
       achievements: [
-        'Applied research experience at the Center of Excellence in Wireless Information Technology (CEWIT) and SUNY Research Foundation, focusing on audio compression and signal analysis',
+        'Research at the Center of Excellence in Wireless Information Technology (CEWIT) and the SUNY Research Foundation, on audio compression and signal analysis',
       ],
     },
     {
@@ -447,3 +430,28 @@ export const cvData: CVData = {
     languages: ['English (Native)'],
   },
 };
+
+/**
+ * Derives the one-page resume from the full CV.
+ *
+ * `cvData` stays the single source of truth: a role appears on the resume only
+ * if it carries a `resume` field, and contributes the first `maxBullets` of its
+ * achievements — which is why achievements are ordered strongest-first.
+ * Coursework and certifications are dropped to make the page fit.
+ */
+export const getResumeData = (data: CVData = cvData): CVData => ({
+  ...data,
+  experience: data.experience
+    .filter(role => role.resume)
+    .map(role => ({
+      ...role,
+      achievements: role.achievements.slice(0, role.resume!.maxBullets),
+    })),
+  education: data.education.map(
+    ({ relevantCoursework: _omit, ...rest }) => rest
+  ),
+  certifications: [],
+});
+
+/** The one-page resume, derived from `cvData` at module load. */
+export const resumeData: CVData = getResumeData();
