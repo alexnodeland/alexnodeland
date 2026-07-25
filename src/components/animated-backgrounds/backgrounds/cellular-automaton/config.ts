@@ -235,5 +235,7 @@ export const cellularAutomatonConfig = createBackgroundConfig({
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  // The automaton sizes its cells with its own Cell Size control.
+  omitStandardSettings: ['elementSize'],
   blogPostSection: '#cellular-automata',
 });

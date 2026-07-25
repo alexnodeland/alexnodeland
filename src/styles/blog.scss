@@ -646,8 +646,26 @@
     padding-right: 1rem;
   }
 
+  .blog-controls {
+    // "sort by date:" plus the select is wider than a small phone; let the
+    // select drop to its own line rather than pushing the card off-screen.
+    .sort-container {
+      flex-wrap: wrap;
+
+      .sort-select {
+        flex: 1 1 12rem;
+        min-width: 0;
+        max-width: 100%;
+      }
+    }
+  }
+
   .post-preview {
     padding: 1.5rem;
+  }
+
+  .post-title {
+    overflow-wrap: anywhere;
   }
 
   .post-meta {

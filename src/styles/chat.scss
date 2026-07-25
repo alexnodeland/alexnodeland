@@ -1282,6 +1282,7 @@
   bottom: 0;
   background: var(--bg-primary);
   backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px); // Safari 17 and earlier
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1396,6 +1397,7 @@
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       min-width: 100px;
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px); // Safari 17 and earlier
 
       &:focus {
         outline: none;
@@ -2390,6 +2392,7 @@
   bottom: 0;
   background: var(--bg-primary);
   backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px); // Safari 17 and earlier
   display: flex;
   align-items: center;
   justify-content: center;

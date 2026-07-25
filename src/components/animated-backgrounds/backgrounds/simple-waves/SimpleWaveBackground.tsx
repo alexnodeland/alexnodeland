@@ -11,6 +11,11 @@ const SimpleWaveBackground: React.FC<
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
+  // Live view of the settings for the animation loop, which outlives the
+  // render that created it.
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -44,7 +49,6 @@ const SimpleWaveBackground: React.FC<
       uniform vec2 uResolution;
       uniform float uWaveFrequency;
       uniform float uWaveAmplitude;
-      uniform float uWaveSpeed;
       uniform vec3 uColorPrimary;
       uniform vec3 uColorSecondary;
       uniform vec3 uColorAccent;
@@ -54,7 +58,7 @@ const SimpleWaveBackground: React.FC<
 
       void main() {
         vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / uResolution.y;
-        float time = uTime * uWaveSpeed;
+        float time = uTime;
 
         // Multiple sine waves
         float wave1 = sin(uv.x * uWaveFrequency + time) * uWaveAmplitude;
@@ -97,7 +101,6 @@ const SimpleWaveBackground: React.FC<
         },
         uWaveFrequency: { value: settings.waveFrequency },
         uWaveAmplitude: { value: settings.waveAmplitude },
-        uWaveSpeed: { value: settings.globalTimeMultiplier },
         uColorPrimary: { value: new THREE.Vector3(...settings.colors.primary) },
         uColorSecondary: {
           value: new THREE.Vector3(...settings.colors.secondary),
@@ -118,11 +121,29 @@ const SimpleWaveBackground: React.FC<
     const mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
 
-    // Animation loop
+    // Animation loop. Settings are read live off a ref and pushed into the
+    // uniforms each frame, so this effect never has to rebuild the scene —
+    // dragging a slider used to tear down the renderer and reset the clock on
+    // every input event.
+    //
+    // Phase is integrated rather than computed as time × speed, so changing
+    // the speed changes the rate from here on instead of jumping the wave.
+    let phase = 0;
+    let lastTime = 0;
     const animate = (time: number) => {
-      if (material.uniforms.uTime) {
-        material.uniforms.uTime.value = time * 0.001;
-      }
+      const live = settingsRef.current;
+      const deltaSec = lastTime === 0 ? 0 : (time - lastTime) / 1000;
+      lastTime = time;
+      phase += deltaSec * live.globalTimeMultiplier;
+
+      const u = material.uniforms;
+      u.uTime.value = phase;
+      u.uWaveFrequency.value = live.waveFrequency;
+      u.uWaveAmplitude.value = live.waveAmplitude;
+      u.uColorPrimary.value.set(...live.colors.primary);
+      u.uColorSecondary.value.set(...live.colors.secondary);
+      u.uColorAccent.value.set(...live.colors.accent);
+      u.uColorBackground.value.set(...live.colors.background);
 
       renderer.render(scene, camera);
       animationFrameRef.current = requestAnimationFrame(animate);
@@ -159,8 +180,12 @@ const SimpleWaveBackground: React.FC<
       geometry.dispose();
       material.dispose();
       renderer.dispose();
+      renderer.forceContextLoss();
     };
-  }, [settings]);
+    // Nothing here is structural: every setting is a uniform the loop refreshes
+    // from settingsRef each frame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div

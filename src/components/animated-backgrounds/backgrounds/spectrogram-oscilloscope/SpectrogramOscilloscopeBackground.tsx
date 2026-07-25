@@ -12,6 +12,65 @@ interface SpectrogramOscilloscopeBackgroundProps
   ) => void;
 }
 
+// Uniform name -> settings key. Kept as data so the per-frame refresh below
+// cannot drift out of step with the declarations, and so a new synth parameter
+// is live the moment it is declared.
+const SCALAR_UNIFORMS: Record<string, keyof SpectrogramOscilloscopeSettings> = {
+  uVCO1Frequency: 'vco1Frequency',
+  uVCO1Amplitude: 'vco1Amplitude',
+  uVCO1WaveformType: 'vco1WaveformType',
+  uVCO1Phase: 'vco1Phase',
+  uVCO1FMAmount: 'vco1FMAmount',
+  uVCO1FMFrequency: 'vco1FMFrequency',
+  uVCO2Frequency: 'vco2Frequency',
+  uVCO2Amplitude: 'vco2Amplitude',
+  uVCO2WaveformType: 'vco2WaveformType',
+  uVCO2Phase: 'vco2Phase',
+  uVCO2FMAmount: 'vco2FMAmount',
+  uVCO2FMFrequency: 'vco2FMFrequency',
+  uMixRatio: 'mixRatio',
+  uDetune: 'detune',
+  uDelayTime: 'delayTime',
+  uDelayFeedback: 'delayFeedback',
+  uDelayMix: 'delayMix',
+  uFilterType: 'filterType',
+  uFilterCutoff: 'filterCutoff',
+  uFilterResonance: 'filterResonance',
+  uFilterLFOAmount: 'filterLFOAmount',
+  uFilterLFOSpeed: 'filterLFOSpeed',
+  uDistortionAmount: 'distortionAmount',
+  uDistortionType: 'distortionType',
+  uRingModFrequency: 'ringModFrequency',
+  uRingModAmount: 'ringModAmount',
+  uNoiseAmount: 'noiseAmount',
+  uNoiseType: 'noiseType',
+  uReverbAmount: 'reverbAmount',
+  uReverbDecay: 'reverbDecay',
+  uReverbPredelay: 'reverbPredelay',
+  uWaveformBrightness: 'waveformBrightness',
+  uSpectrogramBrightness: 'spectrogramBrightness',
+  uWaveformThickness: 'waveformThickness',
+  uSpectrogramSmoothing: 'spectrogramSmoothing',
+  uFrequencyScale: 'frequencyScale',
+  uTimeScale: 'timeScale',
+  uFFTWindowSize: 'fftWindowSize',
+  uUseLogScale: 'useLogScale',
+  uMinLogFreq: 'minLogFreq',
+  uMaxLogFreq: 'maxLogFreq',
+};
+
+const COLOR_UNIFORMS: Record<
+  string,
+  keyof SpectrogramOscilloscopeSettings['colors']
+> = {
+  uColorLow: 'background',
+  uColorMid: 'primary',
+  uColorHigh: 'secondary',
+  uColorPeak: 'accent',
+  uColorGrid: 'grid',
+  uWaveformColor: 'primary',
+};
+
 const SpectrogramOscilloscopeBackground: React.FC<
   SpectrogramOscilloscopeBackgroundProps
 > = ({ className, settings, onAudioControlsReady }) => {
@@ -20,6 +79,11 @@ const SpectrogramOscilloscopeBackground: React.FC<
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Live view of the settings for the animation loop and the audio graph, both
+  // of which outlive the render that created them.
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   // Web Audio API references
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -35,6 +99,11 @@ const SpectrogramOscilloscopeBackground: React.FC<
   // Create stable audio control functions using useCallback
   const stableStartAudio = useCallback(async () => {
     if (isPlayingRef.current) return;
+
+    // Read through the ref so the audio graph is built from whatever the
+    // controls say right now, without this callback's identity changing on
+    // every edit and remounting the visualisation with it.
+    const settings = settingsRef.current;
 
     try {
       // Create audio context
@@ -156,7 +225,11 @@ const SpectrogramOscilloscopeBackground: React.FC<
       // Audio playback failed - silently continue
       isPlayingRef.current = false;
     }
-  }, [settings]);
+    // Reads settingsRef at call time, so the identity of this callback does not
+    // need to change when a setting does — which is what kept the effect above
+    // rebuilding.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stableStopAudio = useCallback(() => {
     if (!isPlayingRef.current) return;
@@ -805,12 +878,29 @@ const SpectrogramOscilloscopeBackground: React.FC<
       stopAudio: stableStopAudio,
     };
 
-    // Animation loop
+    // Animation loop. Every synth parameter is a uniform, so they are refreshed
+    // per frame from settingsRef and this effect never rebuilds the scene —
+    // dragging a filter cutoff used to tear down the WebGL context and restart
+    // the visualisation on every input event.
+    //
+    // Phase is integrated rather than time × speed, so changing the master
+    // speed changes the rate from here on instead of jumping the waveform.
+    let phase = 0;
+    let lastTime = 0;
     const animate = (time: number) => {
-      const t = time * 0.001;
+      const live = settingsRef.current;
+      const deltaSec = lastTime === 0 ? 0 : (time - lastTime) / 1000;
+      lastTime = time;
+      phase += deltaSec * live.globalTimeMultiplier;
 
-      if (material.uniforms.uTime) {
-        material.uniforms.uTime.value = t * settings.globalTimeMultiplier;
+      const u = material.uniforms;
+      u.uTime.value = phase;
+
+      for (const [name, key] of Object.entries(SCALAR_UNIFORMS)) {
+        if (u[name]) u[name].value = live[key];
+      }
+      for (const [name, key] of Object.entries(COLOR_UNIFORMS)) {
+        if (u[name]) u[name].value.set(...live.colors[key]);
       }
 
       // Update mouse uniform
@@ -863,8 +953,12 @@ const SpectrogramOscilloscopeBackground: React.FC<
       geometry.dispose();
       material.dispose();
       renderer.dispose();
+      renderer.forceContextLoss();
     };
-  }, [settings, stableStartAudio, stableStopAudio]);
+    // Nothing structural: every setting is a uniform the loop refreshes from
+    // settingsRef each frame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stableStartAudio, stableStopAudio]);
 
   // State for showing audio playback indicator
   const [isPlaying, setIsPlaying] = React.useState(false);

@@ -17,6 +17,9 @@ export function createBackgroundConfig<
   customSettings: TCustomSettings;
   customSettingsSchema: SettingsSchema[];
   standardOverrides?: Partial<StandardSettings>;
+  // Standard setting keys this background does not read, and so should not
+  // advertise a control for.
+  omitStandardSettings?: readonly string[];
   blogPostSection?: string;
 }): BackgroundConfig<TCustomSettings> {
   const standardSettings = {
@@ -32,6 +35,7 @@ export function createBackgroundConfig<
     standardSettings,
     customSettings: config.customSettings,
     customSettingsSchema: config.customSettingsSchema,
+    omitStandardSettings: config.omitStandardSettings ?? [],
     blogPostSection: config.blogPostSection,
   };
 }
@@ -52,7 +56,10 @@ export function getCompleteSettings<
 export function getCompleteSettingsSchema<
   TCustomSettings extends Record<string, any>,
 >(config: BackgroundConfig<TCustomSettings>): SettingsSchema[] {
-  return createSettingsSchema(config.customSettingsSchema);
+  return createSettingsSchema(
+    config.customSettingsSchema,
+    config.omitStandardSettings
+  );
 }
 
 // Legacy compatibility function - converts new config to old format

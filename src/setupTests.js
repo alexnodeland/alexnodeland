@@ -300,6 +300,7 @@ jest.mock('three', () => ({
     domElement: createCanvasElement(),
     setPixelRatio: jest.fn(),
     dispose: jest.fn(),
+    forceContextLoss: jest.fn(),
   })),
   Color: jest.fn(() => ({ setRGB: jest.fn() })),
   Vector3: jest.fn(() => ({ set: jest.fn(), toArray: jest.fn() })),
@@ -317,7 +318,15 @@ jest.mock('three', () => ({
     setXY: jest.fn(),
     needsUpdate: false,
   })),
-  LineDashedMaterial: jest.fn(),
+  LineDashedMaterial: jest.fn(() => ({
+    color: { setRGB: jest.fn() },
+    opacity: 1,
+    linewidth: 1,
+    transparent: true,
+    dashSize: 1,
+    gapSize: 1,
+    dispose: jest.fn(),
+  })),
   LineBasicMaterial: jest.fn(() => ({
     color: { setRGB: jest.fn() },
     opacity: 1,
@@ -369,6 +378,34 @@ jest.mock('three/examples/jsm/postprocessing/RenderPass.js', () => ({
 }));
 jest.mock('three/examples/jsm/postprocessing/UnrealBloomPass.js', () => ({
   UnrealBloomPass: jest.fn(),
+}));
+
+// Mock three/examples wide-line modules. These are what actually honour an
+// edge thickness, since gl.LINES is stuck at one pixel.
+jest.mock('three/examples/jsm/lines/LineGeometry.js', () => ({
+  LineGeometry: jest.fn(() => ({
+    setPositions: jest.fn(),
+    dispose: jest.fn(),
+  })),
+}));
+jest.mock('three/examples/jsm/lines/LineMaterial.js', () => ({
+  LineMaterial: jest.fn(() => ({
+    color: { setRGB: jest.fn() },
+    opacity: 1,
+    linewidth: 1,
+    transparent: true,
+    dashed: false,
+    resolution: { set: jest.fn() },
+    dispose: jest.fn(),
+  })),
+}));
+jest.mock('three/examples/jsm/lines/Line2.js', () => ({
+  Line2: jest.fn((geometry, material) => ({
+    geometry,
+    material,
+    userData: {},
+    computeLineDistances: jest.fn(),
+  })),
 }));
 
 // Mock console methods to reduce noise in tests

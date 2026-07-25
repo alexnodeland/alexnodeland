@@ -4,11 +4,13 @@ import {
   BackgroundSettings,
   SettingsSchema,
 } from '../../types/animated-backgrounds';
+import { useIsMobileViewport } from './core/useIsMobileViewport';
 
 interface SettingsPanelProps {
   settings: BackgroundSettings;
   settingsSchema: SettingsSchema[];
   onSettingsChange: (newSettings: BackgroundSettings) => void;
+  onResetSettings?: () => void;
   onClose: () => void;
   // Background info for sidebar header
   currentBackgroundId: string;
@@ -29,6 +31,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   settings,
   settingsSchema,
   onSettingsChange,
+  onResetSettings,
   onClose,
   currentBackgroundId,
   currentBackgroundName,
@@ -90,6 +93,32 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     });
     return { customCategories: custom, standardCategories: standardSorted };
   }, [settingsByCategory, STANDARD_CATEGORIES, STANDARD_CATEGORY_ORDER]);
+
+  // Phones get a flat, one-category-at-a-time layout instead of the desktop's
+  // section > accordion > rows nesting: two levels of disclosure inside a
+  // hand-sized sheet is mostly chrome, and every tap costs a scroll.
+  const isMobile = useIsMobileViewport();
+
+  const orderedCategories = useMemo(
+    () => [...customCategories, ...standardCategories],
+    [customCategories, standardCategories]
+  );
+
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
+
+  // Switching backgrounds swaps the whole category set out from under us.
+  useEffect(() => {
+    setActiveCategory(current =>
+      current && orderedCategories.includes(current)
+        ? current
+        : (orderedCategories[0] ?? null)
+    );
+  }, [orderedCategories]);
+
+  useEffect(() => {
+    setDescriptionOpen(false);
+  }, [currentBackgroundId]);
 
   // Track open/closed per-category; default: all categories closed
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
@@ -325,12 +354,25 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         return (
           <div className="setting-input">
             <select
-              value={value}
-              onChange={e => handleSettingChange(setting.key, e.target.value)}
+              value={String(value)}
+              // A DOM select only ever hands back a string. Several schemas
+              // declare boolean or numeric option values, and storing "false"
+              // for them is worse than useless — it is truthy, so the "no"
+              // choice reads as yes. Map the selection back to the value the
+              // schema actually declared.
+              onChange={e => {
+                const chosen = setting.options?.find(
+                  option => String(option.value) === e.target.value
+                );
+                handleSettingChange(
+                  setting.key,
+                  chosen ? chosen.value : e.target.value
+                );
+              }}
               className="select-input"
             >
               {setting.options?.map(option => (
-                <option key={option.value} value={option.value}>
+                <option key={String(option.value)} value={String(option.value)}>
                   {option.label?.toLowerCase?.() || ''}
                 </option>
               ))}
@@ -343,56 +385,105 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
   };
 
+  const renderSettingRow = (setting: SettingsSchema) => (
+    <div key={setting.key} className="setting-row">
+      <label className="setting-label">
+        {setting.label?.toLowerCase?.() || ''}
+        {setting.description && (
+          <span
+            className="setting-help"
+            tabIndex={0}
+            role="note"
+            aria-label={setting.description}
+            onMouseEnter={positionTooltip}
+            onFocus={positionTooltip}
+          >
+            ?
+            <span className="setting-tooltip" role="tooltip">
+              {setting.description}
+            </span>
+          </span>
+        )}
+      </label>
+      {renderSettingInput(setting)}
+    </div>
+  );
+
+  const description = currentBackgroundDescription?.toLowerCase?.() || '';
+
   return (
-    <div className={`settings-sidebar ${isClosing ? 'closing' : ''}`}>
+    <div
+      className={[
+        'settings-sidebar',
+        isMobile && 'settings-sheet',
+        isClosing && 'closing',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className="sidebar-header">
         <div className="background-header">
           <div className="background-controls-header">
             <div className="background-name">
               {currentBackgroundName?.toLowerCase?.() || ''}
             </div>
+            {isMobile && description && (
+              <button
+                className={`description-toggle ${descriptionOpen ? 'open' : ''}`}
+                onClick={() => setDescriptionOpen(open => !open)}
+                aria-expanded={descriptionOpen}
+                aria-label={
+                  descriptionOpen
+                    ? 'Hide background description'
+                    : 'Show background description'
+                }
+              >
+                i
+              </button>
+            )}
             <button
               onClick={onClose}
               className="close-button"
               aria-label="Close settings"
             />
           </div>
-          <div className="background-description">
-            {currentBackgroundDescription?.toLowerCase?.() || ''}
-          </div>
-
-          {currentBackgroundBlogPostSection && (
-            <div className="blog-post-link-container">
-              <a
-                href={`/blog/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`}
-                className="blog-post-link"
-                onClick={e => {
-                  e.preventDefault();
-                  // Navigate using Gatsby's navigate to maintain state persistence
-                  navigate(
-                    `/blog/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`
-                  );
-                }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                view in post
-              </a>
-            </div>
+          {(!isMobile || descriptionOpen) && (
+            <div className="background-description">{description}</div>
           )}
+
+          {currentBackgroundBlogPostSection &&
+            (!isMobile || descriptionOpen) && (
+              <div className="blog-post-link-container">
+                <a
+                  href={`/blog/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`}
+                  className="blog-post-link"
+                  onClick={e => {
+                    e.preventDefault();
+                    // Navigate using Gatsby's navigate to maintain state persistence
+                    navigate(
+                      `/blog/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`
+                    );
+                  }}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  view in post
+                </a>
+              </div>
+            )}
 
           {currentBackgroundId === 'spectrogram-oscilloscope' && (
             <div className="special-hotkeys">
@@ -435,105 +526,68 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
       </div>
 
-      <div
-        className="settings-content"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          height: '100%',
-        }}
-      >
-        {/* Custom categories (top, fixed) */}
-        <div className="settings-section settings-section-custom">
-          <div className="section-header">
-            <div className="section-left">
+      {isMobile ? (
+        <>
+          {/* One flat, swipeable strip of categories in place of the desktop's
+              two collapsible sections of collapsible categories. */}
+          <div
+            className="category-tabs"
+            role="tablist"
+            aria-label="Setting categories"
+          >
+            {orderedCategories.map(category => (
               <button
-                className="section-action"
-                onClick={toggleCustomSection}
-                aria-label={
-                  customAnyOpen ? 'Collapse all custom' : 'Expand all custom'
-                }
-                title={customAnyOpen ? 'Collapse all' : 'Expand all'}
+                key={category}
+                role="tab"
+                aria-selected={activeCategory === category}
+                className={[
+                  'category-tab',
+                  activeCategory === category && 'active',
+                  STANDARD_CATEGORIES.has(category) && 'standard',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => setActiveCategory(category)}
               >
-                {customAnyOpen ? '▾' : '▸'}
+                {category?.toLowerCase?.() || ''}
               </button>
-              <div className="section-title">custom settings</div>
-            </div>
+            ))}
           </div>
-          {customCategories.map(category => {
-            const categorySettings = settingsByCategory[category] || [];
-            return (
-              <div key={category} className="settings-category">
-                <button
-                  className={`category-header ${openCategories[category] ? 'open' : ''}`}
-                  onClick={() => toggleCategory(category)}
-                  aria-expanded={!!openCategories[category]}
-                >
-                  <span className="category-left">
-                    <span className="category-toggle" aria-hidden="true" />
-                    <span className="category-title">
-                      {category?.toLowerCase?.() || ''}
-                    </span>
-                  </span>
-                </button>
-                {openCategories[category] && (
-                  <div className="category-content">
-                    {categorySettings.map(setting => (
-                      <div key={setting.key} className="setting-row">
-                        <label className="setting-label">
-                          {setting.label?.toLowerCase?.() || ''}
-                          {setting.description && (
-                            <span
-                              className="setting-help"
-                              tabIndex={0}
-                              role="note"
-                              aria-label={setting.description}
-                              onMouseEnter={positionTooltip}
-                              onFocus={positionTooltip}
-                            >
-                              ?
-                              <span className="setting-tooltip" role="tooltip">
-                                {setting.description}
-                              </span>
-                            </span>
-                          )}
-                        </label>
-                        {renderSettingInput(setting)}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
 
-        {/* Standard categories (bottom-justified) */}
-        <div
-          className="settings-section settings-section-standard"
-          style={{ marginTop: 'auto' }}
-        >
-          <div className="section-header">
-            <div className="section-left">
-              <button
-                className="section-action"
-                onClick={toggleStandardSection}
-                aria-label={
-                  standardAnyOpen
-                    ? 'Collapse all standard'
-                    : 'Expand all standard'
-                }
-                title={standardAnyOpen ? 'Collapse all' : 'Expand all'}
-              >
-                {standardAnyOpen ? '▾' : '▸'}
-              </button>
-              <div className="section-title">standard settings</div>
-            </div>
+          <div className="settings-content" role="tabpanel">
+            {(activeCategory ? settingsByCategory[activeCategory] : [])?.map(
+              renderSettingRow
+            )}
           </div>
-          {standardCategories.map(category => {
-            const categorySettings = settingsByCategory[category] || [];
-            return (
+        </>
+      ) : (
+        <div
+          className="settings-content"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            height: '100%',
+          }}
+        >
+          {/* Custom categories (top, fixed) */}
+          <div className="settings-section settings-section-custom">
+            <div className="section-header">
+              <div className="section-left">
+                <button
+                  className="section-action"
+                  onClick={toggleCustomSection}
+                  aria-label={
+                    customAnyOpen ? 'Collapse all custom' : 'Expand all custom'
+                  }
+                  title={customAnyOpen ? 'Collapse all' : 'Expand all'}
+                >
+                  {customAnyOpen ? '▾' : '▸'}
+                </button>
+                <div className="section-title">custom settings</div>
+              </div>
+            </div>
+            {customCategories.map(category => (
               <div key={category} className="settings-category">
                 <button
                   className={`category-header ${openCategories[category] ? 'open' : ''}`}
@@ -549,41 +603,65 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </button>
                 {openCategories[category] && (
                   <div className="category-content">
-                    {categorySettings.map(setting => (
-                      <div key={setting.key} className="setting-row">
-                        <label className="setting-label">
-                          {setting.label?.toLowerCase?.() || ''}
-                          {setting.description && (
-                            <span
-                              className="setting-help"
-                              tabIndex={0}
-                              role="note"
-                              aria-label={setting.description}
-                              onMouseEnter={positionTooltip}
-                              onFocus={positionTooltip}
-                            >
-                              ?
-                              <span className="setting-tooltip" role="tooltip">
-                                {setting.description}
-                              </span>
-                            </span>
-                          )}
-                        </label>
-                        {renderSettingInput(setting)}
-                      </div>
-                    ))}
+                    {(settingsByCategory[category] || []).map(renderSettingRow)}
                   </div>
                 )}
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          {/* Standard categories (bottom-justified) */}
+          <div
+            className="settings-section settings-section-standard"
+            style={{ marginTop: 'auto' }}
+          >
+            <div className="section-header">
+              <div className="section-left">
+                <button
+                  className="section-action"
+                  onClick={toggleStandardSection}
+                  aria-label={
+                    standardAnyOpen
+                      ? 'Collapse all standard'
+                      : 'Expand all standard'
+                  }
+                  title={standardAnyOpen ? 'Collapse all' : 'Expand all'}
+                >
+                  {standardAnyOpen ? '▾' : '▸'}
+                </button>
+                <div className="section-title">standard settings</div>
+              </div>
+            </div>
+            {standardCategories.map(category => (
+              <div key={category} className="settings-category">
+                <button
+                  className={`category-header ${openCategories[category] ? 'open' : ''}`}
+                  onClick={() => toggleCategory(category)}
+                  aria-expanded={!!openCategories[category]}
+                >
+                  <span className="category-left">
+                    <span className="category-toggle" aria-hidden="true" />
+                    <span className="category-title">
+                      {category?.toLowerCase?.() || ''}
+                    </span>
+                  </span>
+                </button>
+                {openCategories[category] && (
+                  <div className="category-content">
+                    {(settingsByCategory[category] || []).map(renderSettingRow)}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="settings-panel-footer">
         <button
-          onClick={() => onSettingsChange(settings)}
+          onClick={onResetSettings}
           className="reset-button"
+          disabled={!onResetSettings}
         >
           reset to defaults
         </button>

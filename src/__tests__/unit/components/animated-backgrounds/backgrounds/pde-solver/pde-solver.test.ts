@@ -11,6 +11,7 @@ import {
   solveHeatEquation,
   solveWaveEquation,
 } from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/pde-solver';
+import { pdeSolverConfig } from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/config';
 import { PDESolverConfig } from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/types';
 
 describe('PDE Solver', () => {
@@ -241,6 +242,137 @@ describe('PDE Solver', () => {
 
       const result = solveWaveEquation(state, config);
       expect(result.state.step).toBe(1);
+    });
+
+    test('first step takes a half-weight laplacian, not a full one', () => {
+      const config: PDESolverConfig = {
+        gridSizeX: 16,
+        gridSizeY: 16,
+        dx: 0.1,
+        dy: 0.1,
+        dt: 0.0005,
+        c: 1.0,
+        damping: 0,
+        boundaryX: { type: 'dirichlet', value: 0 },
+        boundaryY: { type: 'dirichlet', value: 0 },
+        initialCondition: {
+          type: 'gaussian',
+          amplitude: 1.0,
+          width: 0.08,
+          centerX: 0.5,
+          centerY: 0.5,
+        },
+      };
+
+      const state = createInitialState(config, 'wave');
+      const u0 = Float32Array.from(state.u);
+
+      // u(dt) = u(0) + dt·v(0) + ½·dt²c²∇²u(0); with v(0) = 0 the whole first
+      // step is half the Laplacian term. Taking it at full weight — the bug —
+      // makes this displacement exactly twice as large.
+      const centre = index(8, 8, 16);
+      const rSq = (config.c! * 0.0005) / 0.1;
+      const laplacian =
+        rSq ** 2 *
+        (u0[index(9, 8, 16)] +
+          u0[index(7, 8, 16)] +
+          u0[index(8, 9, 16)] +
+          u0[index(8, 7, 16)] -
+          4 * u0[centre]);
+
+      const result = solveWaveEquation(state, config);
+
+      expect(result.state.u[centre]).toBeCloseTo(
+        u0[centre] + 0.5 * laplacian,
+        10
+      );
+    });
+
+    test('still has a wave to show after a long run at the shipped damping', () => {
+      // Regression guard on the `damping` default. It bleeds per step, not per
+      // second, and the background takes 300 steps a second — a value that
+      // looks small here erases the field within a minute of wall clock, which
+      // is how the plate ended up rendering as a flat wash.
+      const defaults = pdeSolverConfig.customSettings;
+
+      const config: PDESolverConfig = {
+        gridSizeX: 32,
+        gridSizeY: 32,
+        dx: 0.01,
+        dy: 0.01,
+        dt: 0.0001,
+        c: defaults.waveSpeed,
+        damping: defaults.damping,
+        boundaryX: { type: 'dirichlet', value: 0 },
+        boundaryY: { type: 'dirichlet', value: 0 },
+        initialCondition: {
+          type: 'interference',
+          amplitude: defaults.initialAmplitude,
+          frequency: defaults.initialFrequency,
+          width: defaults.initialWidth,
+          centerX: 0.5,
+          centerY: 0.5,
+          numSources: defaults.numSources,
+        },
+      };
+
+      let state = createInitialState(config, 'wave');
+      const initialPeak = Math.max(...Array.from(state.u).map(Math.abs));
+
+      // 5000 steps is about 17 seconds of the real thing.
+      let result = solveWaveEquation(state, config);
+      for (let i = 1; i < 5000; i++) {
+        result = solveWaveEquation(result.state, config);
+      }
+      state = result.state;
+
+      const peak = Math.max(...Array.from(state.u).map(Math.abs));
+      expect(peak).toBeGreaterThan(initialPeak * 0.5);
+    });
+
+    test('honours a seeded initial velocity on the first step', () => {
+      const config: PDESolverConfig = {
+        gridSizeX: 16,
+        gridSizeY: 16,
+        dx: 0.1,
+        dy: 0.1,
+        dt: 0.0005,
+        c: 1.0,
+        damping: 0,
+        boundaryX: { type: 'dirichlet', value: 0 },
+        boundaryY: { type: 'dirichlet', value: 0 },
+        initialCondition: {
+          type: 'gaussian',
+          amplitude: 1.0,
+          width: 0.08,
+          centerX: 0.5,
+          centerY: 0.5,
+        },
+      };
+
+      const atRest = solveWaveEquation(
+        createInitialState(config, 'wave'),
+        config
+      );
+      const moving = solveWaveEquation(
+        createInitialState(
+          {
+            ...config,
+            initialVelocity: {
+              type: 'gaussian',
+              amplitude: 5.0,
+              width: 0.08,
+              centerX: 0.5,
+              centerY: 0.5,
+            },
+          },
+          'wave'
+        ),
+        { ...config }
+      );
+
+      const centre = index(8, 8, 16);
+      expect(moving.state.u[centre]).toBeGreaterThan(atRest.state.u[centre]);
     });
   });
 

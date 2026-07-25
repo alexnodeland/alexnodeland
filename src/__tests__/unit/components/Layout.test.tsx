@@ -91,10 +91,20 @@ describe('Layout Component', () => {
 
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
-    const siteNameLink = screen.getByText('Test Site');
-    expect(siteNameLink).toBeInTheDocument();
+    // The brand ships both spellings — the full name and a short form the
+    // mobile stylesheet swaps in — so the link is what carries the href.
+    const siteName = screen.getByText('Test Site');
+    expect(siteName).toBeInTheDocument();
+    expect(siteName).toHaveClass('nav-brand-full');
+    expect(screen.getByText('Test')).toHaveClass('nav-brand-short');
+
+    const siteNameLink = siteName.closest('a');
     expect(siteNameLink).toHaveAttribute('href', '/');
     expect(siteNameLink).toHaveClass('nav-link');
+
+    // Whichever spelling is hidden at the current width leaves the a11y tree
+    // with it, so the accessible name has to come from the link itself.
+    expect(screen.getByRole('link', { name: 'Test Site' })).toBe(siteNameLink);
   });
 
   it('should not render site name on home page', () => {

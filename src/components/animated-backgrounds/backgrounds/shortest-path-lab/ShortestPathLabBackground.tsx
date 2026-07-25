@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { ShortestPathLabSettings } from './config';
 
@@ -81,6 +84,11 @@ const ShortestPathLabBackground: React.FC<
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
 
+  // Live view of the settings for the render loop, which outlives the render
+  // that created it.
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -107,13 +115,21 @@ const ShortestPathLabBackground: React.FC<
       composer.addPass(bloom);
     }
 
-    // Parameters with safe defaults
-    const opacity = settings.opacity;
+    // Structural parameters — these define the graph and the search, so
+    // changing one has to rebuild.
     const totalNodes = settings.spTotalNodes;
     const edgeDensity = Math.min(1, Math.max(0.05, settings.spEdgeDensity));
     const heuristicWeight = settings.spHeuristicWeight; // 0=Dijkstra, 1=A*
-    const stepsPerSecond = Math.max(0.5, settings.spAnimationSpeed);
-    const nodeSize = settings.elementSize * 380;
+
+    // Everything below is read per frame instead of captured: rebuilding the
+    // scene mid-drag restarted the search on every input event.
+    // Animation Speed is a master multiplier over this background's own rates.
+    const liveStepsPerSecond = () =>
+      Math.max(
+        0.1,
+        settingsRef.current.spAnimationSpeed *
+          settingsRef.current.globalTimeMultiplier
+      );
 
     let seed = 424242;
     let rngFunc = mulberry32(seed);
@@ -127,55 +143,64 @@ const ShortestPathLabBackground: React.FC<
     );
     const goalNode = Math.min(totalNodes - 1, Math.max(0, settings.spGoalNode));
 
-    // Edge lines (contrasting style vs topology): light dashed base, thick vivid action colors
+    // Edge lines (contrasting style vs topology): light dashed base, thick vivid
+    // action colors. These seed the materials; renderFrame refreshes them.
+    const opacity = settings.opacity;
     const baseAlpha = settings.spBaseEdgeAlpha;
     const baseThickness = settings.spBaseEdgeThickness;
     const actionThickness = settings.spActionEdgeThickness;
+    const nodeSize = settings.elementSize * 380;
     const dotSizePx = settings.spDotSize;
-    const dotGlow = settings.spDotGlow;
-    const traversalSpeed = settings.spTraversalSpeed; // edges per second
 
-    const baseEdgeMaterial = new THREE.LineDashedMaterial({
+    // Line2/LineMaterial rather than THREE.Line: gl.LINES is stuck at one
+    // device pixel in every browser, so `linewidth` on a LineBasicMaterial is
+    // silently ignored and these three thickness controls did nothing. Line2
+    // draws the line as screen-space quads, which honours the width — at the
+    // cost of needing the viewport resolution kept up to date.
+    const lineResolution = new THREE.Vector2(
+      window.innerWidth,
+      window.innerHeight
+    );
+
+    const baseEdgeMaterial = new LineMaterial({
       color: new THREE.Color(...settings.colors.background), // Use background color
       transparent: true,
       opacity: baseAlpha * opacity,
+      dashed: true,
       dashSize: 0.04,
       gapSize: 0.025,
       linewidth: baseThickness,
+      resolution: lineResolution,
     });
-    const exploreEdgeMaterial = new THREE.LineBasicMaterial({
+    const exploreEdgeMaterial = new LineMaterial({
       color: new THREE.Color(...settings.colors.secondary), // Use secondary color
       transparent: true,
       opacity: 0.9 * opacity,
       linewidth: actionThickness,
+      resolution: lineResolution,
     });
-    const finalEdgeMaterial = new THREE.LineBasicMaterial({
+    const finalEdgeMaterial = new LineMaterial({
       color: new THREE.Color(...settings.colors.primary), // Use primary color
       transparent: true,
       opacity: 1.0 * opacity,
       linewidth: actionThickness,
+      resolution: lineResolution,
     });
 
-    const edgeLines: THREE.Line[] = [];
-    for (const e of edges) {
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(6);
-      // initialize positions once (static graph)
+    const buildEdgeLine = (e: LabEdge): Line2 => {
       const a0 = nodes[e.source].position;
       const b0 = nodes[e.target].position;
-      positions[0] = a0.x;
-      positions[1] = a0.y;
-      positions[2] = 0;
-      positions[3] = b0.x;
-      positions[4] = b0.y;
-      positions[5] = 0;
-      geometry.setAttribute(
-        'position',
-        new THREE.BufferAttribute(positions, 3)
-      );
-      const line = new THREE.Line(geometry, baseEdgeMaterial);
+      const geometry = new LineGeometry();
+      geometry.setPositions([a0.x, a0.y, 0, b0.x, b0.y, 0]);
+      const line = new Line2(geometry, baseEdgeMaterial);
       line.computeLineDistances(); // required for dashed
       line.userData = { e };
+      return line;
+    };
+
+    const edgeLines: Line2[] = [];
+    for (const e of edges) {
+      const line = buildEdgeLine(e);
       scene.add(line);
       edgeLines.push(line);
     }
@@ -257,7 +282,7 @@ const ShortestPathLabBackground: React.FC<
     }
 
     function step(now: number) {
-      const interval = 1000 / stepsPerSecond;
+      const interval = 1000 / liveStepsPerSecond();
       if (now - lastStep < interval) return;
       lastStep = now;
 
@@ -300,14 +325,17 @@ const ShortestPathLabBackground: React.FC<
     }
 
     function render(timeMs: number) {
+      const live = settingsRef.current;
       step(timeMs);
       if (pendingRegenerate && timeMs >= regenerateAt) {
         // regenerate graph with same parameters and a new seed
         // cleanup old edges
+        // Geometries are per-line and must go; the three materials are shared
+        // and get re-attached to the rebuilt lines below, so disposing them
+        // here only forces a shader recompile on every regeneration.
         edgeLines.forEach(l => {
           scene.remove(l);
           l.geometry.dispose();
-          (l.material as THREE.Material).dispose();
         });
         edgeLines.length = 0;
         seed = (seed * 1664525 + 1013904223) >>> 0; // LCG step for new seed
@@ -317,23 +345,7 @@ const ShortestPathLabBackground: React.FC<
         edges = graph.edges;
         // rebuild edges
         for (const e of edges) {
-          const geometry = new THREE.BufferGeometry();
-          const positions = new Float32Array(6);
-          const a0 = nodes[e.source].position;
-          const b0 = nodes[e.target].position;
-          positions[0] = a0.x;
-          positions[1] = a0.y;
-          positions[2] = 0;
-          positions[3] = b0.x;
-          positions[4] = b0.y;
-          positions[5] = 0;
-          geometry.setAttribute(
-            'position',
-            new THREE.BufferAttribute(positions, 3)
-          );
-          const line = new THREE.Line(geometry, baseEdgeMaterial);
-          line.computeLineDistances();
-          line.userData = { e };
+          const line = buildEdgeLine(e);
           scene.add(line);
           edgeLines.push(line);
         }
@@ -356,9 +368,9 @@ const ShortestPathLabBackground: React.FC<
           nodePositions[i * 3 + 0] = nodes[i].position.x;
           nodePositions[i * 3 + 1] = nodes[i].position.y;
           nodePositions[i * 3 + 2] = 0;
-          nodeColors[i * 3 + 0] = settings.colors.background[0];
-          nodeColors[i * 3 + 1] = settings.colors.background[1];
-          nodeColors[i * 3 + 2] = settings.colors.background[2];
+          nodeColors[i * 3 + 0] = live.colors.background[0];
+          nodeColors[i * 3 + 1] = live.colors.background[1];
+          nodeColors[i * 3 + 2] = live.colors.background[2];
         }
         (
           nodeGeometry.getAttribute('position') as THREE.BufferAttribute
@@ -417,19 +429,19 @@ const ShortestPathLabBackground: React.FC<
         let bright = 0.9;
 
         if (isStart) {
-          [r, g, b] = settings.colors.accent; // Use accent color for start
+          [r, g, b] = live.colors.accent; // Use accent color for start
           bright = 1.6;
         } else if (isGoal) {
-          [r, g, b] = settings.colors.secondary; // Use secondary color for goal
+          [r, g, b] = live.colors.secondary; // Use secondary color for goal
           bright = 1.6;
         } else if (inPath) {
-          [r, g, b] = settings.colors.primary; // Use primary color for path
+          [r, g, b] = live.colors.primary; // Use primary color for path
           bright = 1.4;
         } else if (isClosed || isOpen) {
-          [r, g, b] = settings.colors.secondary; // Use secondary for exploratory
+          [r, g, b] = live.colors.secondary; // Use secondary for exploratory
           bright = 1.2 + slowPulse * 0.2;
         } else {
-          [r, g, b] = settings.colors.background; // Use background color
+          [r, g, b] = live.colors.background; // Use background color
           bright = 0.4;
         }
 
@@ -440,7 +452,15 @@ const ShortestPathLabBackground: React.FC<
       (
         nodeGeometry.getAttribute('color') as THREE.BufferAttribute
       ).needsUpdate = true;
-      (nodeMaterial as THREE.PointsMaterial).size = nodeSize;
+      (nodeMaterial as THREE.PointsMaterial).size = live.elementSize * 380;
+      (nodeMaterial as THREE.PointsMaterial).opacity = live.opacity;
+      baseEdgeMaterial.opacity = live.spBaseEdgeAlpha * live.opacity;
+      baseEdgeMaterial.linewidth = live.spBaseEdgeThickness;
+      exploreEdgeMaterial.opacity = 0.9 * live.opacity;
+      exploreEdgeMaterial.linewidth = live.spActionEdgeThickness;
+      finalEdgeMaterial.opacity = live.opacity;
+      finalEdgeMaterial.linewidth = live.spActionEdgeThickness;
+      dotMesh.scale.setScalar(live.spDotSize / 300);
 
       // Advance traversal dot
       const updateDotAlong = (from: number, to: number, dt: number) => {
@@ -448,18 +468,19 @@ const ShortestPathLabBackground: React.FC<
         const b = nodes[to].position;
         const dx = b.x - a.x;
         const dy = b.y - a.y;
-        const speedPerSecond = traversalSpeed; // edges/sec scaled by normalized space
+        const speedPerSecond =
+          live.spTraversalSpeed * live.globalTimeMultiplier; // edges/sec
         const tIncrement = speedPerSecond * dt;
         traversalT += tIncrement;
         const t = Math.min(1, traversalT);
         const x = a.x + dx * t;
         const y = a.y + dy * t;
         dotMesh.position.set(x, y, 0);
-        const glow = 1.0 + dotGlow * Math.sin(timeMs * 0.01);
+        const glow = 1.0 + live.spDotGlow * Math.sin(timeMs * 0.01);
         (dotMaterial as THREE.MeshBasicMaterial).color.setRGB(
-          settings.colors.accent[0] * glow,
-          settings.colors.accent[1] * glow,
-          settings.colors.accent[2] * glow
+          live.colors.accent[0] * glow,
+          live.colors.accent[1] * glow,
+          live.colors.accent[2] * glow
         );
         if (t >= 1) {
           traversalT = 0;
@@ -488,6 +509,13 @@ const ShortestPathLabBackground: React.FC<
             }
             updateDotAlong(traversalEdge.from, traversalEdge.to, dtSec);
           }
+        } else if (foundPath.length === 1) {
+          // Start node is the goal node — the sliders allow it. There is no
+          // edge to walk, so retire the traversal immediately rather than
+          // sitting on a frozen frame forever.
+          traversalActive = false;
+          pendingRegenerate = true;
+          regenerateAt = timeMs + 500;
         } else if (foundPath.length > 1) {
           // Walk full path backwards (goal -> start)
           if (!traversalEdge) {
@@ -527,6 +555,9 @@ const ShortestPathLabBackground: React.FC<
 
     const handleResize = () => {
       renderer.setSize(window.innerWidth, window.innerHeight);
+      // Line2 widths are in screen space, so the materials need to know how
+      // big the screen is or the edges scale wrong after a resize.
+      lineResolution.set(window.innerWidth, window.innerHeight);
       if (composer) {
         composer.setSize(window.innerWidth, window.innerHeight);
       }
@@ -537,16 +568,36 @@ const ShortestPathLabBackground: React.FC<
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', handleResize);
       edgeLines.forEach(l => l.geometry.dispose());
+      baseEdgeMaterial.dispose();
+      exploreEdgeMaterial.dispose();
+      finalEdgeMaterial.dispose();
       nodeGeometry.dispose();
       (nodeMaterial as THREE.Material).dispose();
       dotGeometry.dispose();
       (dotMaterial as THREE.Material).dispose();
+      // The bloom pass carries several full-screen render targets, and this
+      // effect re-runs on every settings change.
+      composer?.dispose();
       renderer.dispose();
+      renderer.forceContextLoss();
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
       }
     };
-  }, [settings]);
+    // Structural only: the graph and the search. Everything else is read live
+    // off settingsRef inside render().
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    settings.spTotalNodes,
+    settings.spEdgeDensity,
+    settings.spHeuristicWeight,
+    settings.spStartNode,
+    settings.spGoalNode,
+    settings.spGlowBloom,
+    settings.spGlowStrength,
+    settings.spGlowRadius,
+    settings.spGlowThreshold,
+  ]);
 
   return (
     <div

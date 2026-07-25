@@ -107,5 +107,7 @@ export const simpleWaveConfig = createBackgroundConfig({
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,
+  // A continuous field has no discrete element to size.
+  omitStandardSettings: ['elementSize'],
   blogPostSection: '#wave-interference',
 });

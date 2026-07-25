@@ -32,6 +32,14 @@ export interface SettingsSchema {
 export interface AnimatedBackgroundProps<TSettings = StandardSettings> {
   className?: string;
   settings: TSettings;
+  // Backgrounds that make sound publish their transport here so the settings
+  // panel can offer a button for it. Without this the controls are reachable
+  // only by keyboard, which on a touch device means not at all.
+  onAudioControlsReady?: (
+    startAudio: () => void,
+    stopAudio: () => void,
+    isPlaying: boolean
+  ) => void;
 }
 
 // Configuration for a background with custom settings
@@ -45,6 +53,7 @@ export interface BackgroundConfig<TCustomSettings = {}> {
   standardSettings: StandardSettings;
   customSettings: TCustomSettings;
   customSettingsSchema: SettingsSchema[];
+  omitStandardSettings?: readonly string[];
   blogPostSection?: string; // Optional link to blog post section
 }
 

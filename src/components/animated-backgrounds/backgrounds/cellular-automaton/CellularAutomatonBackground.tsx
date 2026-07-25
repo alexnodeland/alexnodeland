@@ -35,6 +35,7 @@ const CellularAutomatonBackground: React.FC<
 
   // Structural settings that require rebuilding the grid.
   const { rule, cellSize, generationsPerSecond, initialDensity } = settings;
+  const { globalTimeMultiplier } = settings;
   const perturbationRate = settings.perturbationRate;
   const perturbationRef = useRef(perturbationRate);
   perturbationRef.current = perturbationRate;
@@ -116,7 +117,14 @@ const CellularAutomatonBackground: React.FC<
       // to let it stall honestly.
       const rate = perturbationRef.current;
       if (rate > 0) {
-        const flips = Math.floor(next.length * rate);
+        // Round stochastically rather than down. A typical grid is a few
+        // thousand cells and the slider steps in 0.0002, so flooring made the
+        // first couple of steps above zero flip nothing at all — a dead zone
+        // at the bottom of the control. Carrying the fractional part as a
+        // probability gives the right rate on average at any grid size.
+        const exact = next.length * rate;
+        let flips = Math.floor(exact);
+        if (Math.random() < exact - flips) flips += 1;
         for (let i = 0; i < flips; i++) {
           next[Math.floor(Math.random() * next.length)] = 1;
         }
@@ -266,7 +274,10 @@ const CellularAutomatonBackground: React.FC<
     const geometry = new THREE.PlaneGeometry(2, 2);
     scene.add(new THREE.Mesh(geometry, material));
 
-    const stepIntervalMs = 1000 / Math.max(0.1, generationsPerSecond);
+    // Animation Speed is a master multiplier over this background's own rate,
+    // so it means the same thing here as it does everywhere else.
+    const stepIntervalMs =
+      1000 / Math.max(0.1, generationsPerSecond * globalTimeMultiplier);
     let lastStep = performance.now();
     let lastPopulation = -1;
     let stalledFor = 0;
@@ -330,7 +341,13 @@ const CellularAutomatonBackground: React.FC<
     // from the dependency list — the effect below updates them in place so that
     // nudging a color slider does not restart the simulation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rule, cellSize, generationsPerSecond, initialDensity]);
+  }, [
+    rule,
+    cellSize,
+    generationsPerSecond,
+    initialDensity,
+    globalTimeMultiplier,
+  ]);
 
   // Cosmetic updates go straight to uniforms, leaving the simulation running.
   useEffect(() => {

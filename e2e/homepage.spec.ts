@@ -4,11 +4,17 @@ test.describe('Homepage', () => {
   test('should load homepage successfully', async ({ page }) => {
     await page.goto('/');
 
-    // Check that the page loads with correct title
-    await expect(page).toHaveTitle(/Alex Nodeland/);
+    // Titles and headings are lowercase site-wide, so match case-insensitively
+    // rather than encoding a capitalisation the site does not use.
+    await expect(page).toHaveTitle(/alex nodeland/i);
 
     // Check for basic content
-    await expect(page.getByText('Alex Nodeland').first()).toBeVisible();
+    await expect(
+      page
+        .getByText(/alex nodeland/i)
+        .filter({ visible: true })
+        .first()
+    ).toBeVisible();
   });
 
   test('should have proper meta tags', async ({ page }) => {
@@ -26,11 +32,20 @@ test.describe('Homepage', () => {
     const nav = page.getByRole('navigation');
     await expect(nav).toBeVisible();
 
-    // Check that main navigation links exist
-    await expect(page.getByRole('link', { name: 'home' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'blog' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'projects' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'cv' })).toBeVisible();
+    // Check that main navigation links exist. There is no "home" link: the
+    // brand is the way back, and it is deliberately not rendered on the
+    // homepage itself, so asserting one here could never have passed.
+    // Scoped to the nav and matched exactly: the page body also links to the
+    // blog ("read the blog"), which an unscoped substring match collides with.
+    await expect(
+      nav.getByRole('link', { name: 'blog', exact: true })
+    ).toBeVisible();
+    await expect(
+      nav.getByRole('link', { name: 'projects', exact: true })
+    ).toBeVisible();
+    await expect(
+      nav.getByRole('link', { name: 'cv', exact: true })
+    ).toBeVisible();
   });
 
   test('should have working theme toggle', async ({ page }) => {
@@ -41,7 +56,12 @@ test.describe('Homepage', () => {
     if ((await themeToggle.count()) > 0) {
       await themeToggle.click();
       // Just verify the page still works after clicking
-      await expect(page.getByText('Alex Nodeland').first()).toBeVisible();
+      await expect(
+        page
+          .getByText(/alex nodeland/i)
+          .filter({ visible: true })
+          .first()
+      ).toBeVisible();
     }
   });
 
@@ -51,7 +71,12 @@ test.describe('Homepage', () => {
     await page.goto('/');
 
     // Check that content is still visible
-    await expect(page.getByText('Alex Nodeland').first()).toBeVisible();
+    await expect(
+      page
+        .getByText(/alex nodeland/i)
+        .filter({ visible: true })
+        .first()
+    ).toBeVisible();
     await expect(page.getByRole('navigation')).toBeVisible();
   });
 

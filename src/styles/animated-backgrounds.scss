@@ -63,6 +63,7 @@
     color: var(--text-primary);
     font-size: 0.875rem;
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); // Safari 17 and earlier
     box-shadow: var(--shadow-lg);
     transition: all var(--transition-normal);
     min-width: 280px; // Match keyboard hints width for alignment
@@ -895,11 +896,308 @@
     }
   }
 
+  // Phones get a bottom sheet rather than a full-height sidebar: the point of
+  // these controls is watching the background react, so the sheet claims only
+  // the lower half of the screen and stays see-through enough to read the
+  // animation behind it.
   .settings-sidebar {
+    top: auto;
     left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
+    max-height: 60vh;
+    max-height: 60dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(8, 10, 14, 0.55);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+    padding-bottom: env(safe-area-inset-bottom);
 
     // On mobile, ensure it covers the controls
     z-index: 1003;
+
+    // A sheet comes up from and goes back down to the bottom edge; the
+    // sidebar's horizontal slide reads wrong here.
+    animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &.closing {
+      animation: slideDownToSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    // Grab-handle affordance along the top edge.
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0.45rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2.25rem;
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    // Header, tab strip and footer are fixed furniture; only the control list
+    // takes the leftover height and scrolls.
+    .sidebar-header,
+    .category-tabs,
+    .settings-panel-footer {
+      flex: 0 0 auto;
+    }
+
+    .sidebar-header {
+      padding: 1rem 1rem 0.75rem;
+      border-bottom: none;
+      max-height: 45vh;
+      overflow-y: auto;
+    }
+
+    .settings-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 0.25rem 1rem 1rem 1rem;
+    }
+
+    .settings-panel-footer {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    // The hold-to-play control matters, but at desktop proportions it eats half
+    // the sheet before a single setting is visible.
+    .sidebar-header .background-header .special-hotkeys {
+      margin-top: 0.75rem;
+      margin-bottom: 0;
+      padding: 0.5rem;
+
+      .special-hotkeys-title {
+        font-size: 0.65rem;
+        margin-bottom: 0.35rem;
+      }
+    }
+
+    // The two-column label/control grid runs out of room well before a phone
+    // viewport, so stack them and give the control the full width.
+    .setting-row {
+      grid-template-columns: 1fr;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+
+      .setting-label {
+        font-size: 0.7rem;
+      }
+
+      .setting-input {
+        gap: 0.75rem;
+
+        // Touch targets: a 2px rail with a 1rem thumb is unhittable with a
+        // finger, so pad the hit area out without fattening the visible rail.
+        .slider {
+          height: 1.5rem;
+          background: transparent;
+          background-image: linear-gradient(
+            var(--border-color),
+            var(--border-color)
+          );
+          background-size: 100% 2px;
+          background-position: center;
+          background-repeat: no-repeat;
+
+          &::-webkit-slider-thumb {
+            width: 1.25rem;
+            height: 1.25rem;
+          }
+
+          &::-moz-range-thumb {
+            width: 1.25rem;
+            height: 1.25rem;
+          }
+        }
+
+        .number-input,
+        .select-input {
+          flex: 1;
+          min-width: 0;
+          padding: 0.5rem;
+          font-size: 0.8rem;
+        }
+
+        .color-input {
+          width: 3rem;
+          height: 2.25rem;
+        }
+      }
+    }
+
+    // There is no hover on touch and a tap does not satisfy :focus-visible, so
+    // plain :focus is what actually reveals a control's description here.
+    .setting-row {
+      position: relative;
+
+      .setting-help {
+        position: static; // Hand the tooltip's containing block to the row
+        width: 1.15rem;
+        height: 1.15rem;
+        font-size: 0.65rem;
+
+        &:focus {
+          outline: none;
+          color: var(--text-primary);
+          border-color: var(--primary-color);
+        }
+
+        &:focus .setting-tooltip {
+          opacity: 1;
+          visibility: visible;
+        }
+      }
+
+      // Centring on the help dot pushes the bubble off-screen whenever the
+      // label is short; spanning the row keeps it in view wherever the dot is.
+      .setting-help .setting-tooltip {
+        left: 0;
+        right: 0;
+        transform: none;
+        width: auto;
+        max-width: none;
+        white-space: normal;
+      }
+    }
+
+    // The description is long and mostly re-reading; tuck it behind the header
+    // "i" so the sheet opens straight onto the controls.
+    .background-header .background-controls-header {
+      gap: 0.5rem;
+      margin-bottom: 0;
+
+      .background-name {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .description-toggle {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: 50%;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-style: italic;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+
+      &.open {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+      }
+    }
+
+    .background-description {
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      max-height: 30vh;
+      overflow-y: auto;
+    }
+
+    // Flat, horizontally scrolling category strip — replaces the desktop's
+    // section > accordion nesting, which costs two taps and a scroll before
+    // you reach a control on a phone.
+    .category-tabs {
+      display: flex;
+      gap: 0.35rem;
+      padding: 0.25rem 1rem 0.85rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    .category-tab {
+      flex: 0 0 auto;
+      padding: 0.4rem 0.75rem;
+      background: var(--bg-accent);
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.7rem;
+      text-transform: lowercase;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      -webkit-tap-highlight-color: transparent;
+
+      // Categories a background defines for itself lead; the shared ones read
+      // as secondary so the strip still has the desktop's custom/standard
+      // distinction without a second row of headers.
+      &.standard {
+        opacity: 0.75;
+        border-style: dashed;
+      }
+
+      &.active {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        border-style: solid;
+        color: #05130c;
+        font-weight: 600;
+        opacity: 1;
+      }
+    }
+  }
+
+  // Keep the sheet on the light side in light mode so its text stays legible;
+  // the transparency is what matters, not the tint.
+  [data-theme='light'] .settings-sidebar {
+    background: rgba(255, 255, 255, 0.62);
+    border-top-color: rgba(0, 0, 0, 0.12);
+
+    &::before {
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .category-tab.active {
+      color: #ffffff;
+    }
+  }
+}
+
+@keyframes slideUpSheet {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDownToSheet {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
   }
 }

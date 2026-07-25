@@ -1,5 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { GraphTopologySettings } from './config';
 
@@ -188,6 +191,11 @@ const GraphTopologyBackground: React.FC<
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
 
+  // Live view of the settings for the render loop, which outlives the render
+  // that created it.
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -199,23 +207,39 @@ const GraphTopologyBackground: React.FC<
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    // Use settings with fallbacks
-    const opacity = settings.opacity;
-    const simulationSpeed =
-      settings.animationSpeed || settings.globalTimeMultiplier || 1.0;
+    // Animation Speed is a master multiplier over this background's own rates:
+    // the layout timestep and the annealer's proposal rate. The old
+    // `animationSpeed || globalTimeMultiplier` could never reach the second
+    // operand, since animationSpeed's slider bottoms out at 0.2.
+    //
+    // Read per frame rather than captured: only the settings that determine
+    // the graph itself belong in this effect's dep array, and rebuilding the
+    // scene mid-drag threw away the search that was in progress.
+    const liveSpeedScale = () => settingsRef.current.globalTimeMultiplier;
+    const liveSimulationSpeed = () =>
+      settingsRef.current.animationSpeed * liveSpeedScale();
     const nodeCountParam =
       settings.totalNodes || Math.max(12, Math.min(48, 32));
     const clusterCountParam =
       settings.clusterCount ||
       Math.max(2, Math.min(4, Math.floor(nodeCountParam / 8)));
-    const targetSubgraphSize =
-      settings.requestedNodes || Math.max(3, Math.min(12, 8));
-    const graphScale = settings.scale || 1.0;
-    const edgeThickness = settings.edgeThickness || 2.0;
-    const walkStepsPerSecond = Math.max(
-      0.5,
-      (settings.updateAnimationSpeed || 4) / 2
+    // A subgraph spanning every node has no boundary to cut, so its
+    // conductivity is -Infinity — and once both the current and the proposed
+    // set score -Infinity, deltaE is NaN, every proposal is rejected, and the
+    // annealer sits in its "converged" state from the first frame. The sliders
+    // let both counts reach 16, so keep the subgraph strictly inside the graph.
+    const targetSubgraphSize = Math.min(
+      settings.requestedNodes || Math.max(3, Math.min(12, 8)),
+      nodeCountParam - 1
     );
+    // Scale is baked into the force constants below, so it stays structural.
+    const graphScale = settings.scale || 1.0;
+    // The setting is in proposals per second, so it is used as-is.
+    const liveWalkStepsPerSecond = () =>
+      Math.max(
+        0.1,
+        settingsRef.current.updateAnimationSpeed * liveSpeedScale()
+      );
 
     const rng = mulberry32(1337);
     const { nodes, edges } = createClusteredGraph(
@@ -275,23 +299,31 @@ const GraphTopologyBackground: React.FC<
     bestSet = new Set(currentSet);
     bestScore = calculateSubgraphConductivity(bestSet, edges, nodes.length);
 
-    // Build Three.js geometry for edges (lines) and nodes (instanced circles)
-    const edgeMaterial = new THREE.LineBasicMaterial({
-      color: new THREE.Color(0.1, 0.1, 0.12), // Very dark gray for background edges
-      transparent: true,
-      opacity: opacity * 0.1, // Very faint by default
-      linewidth: 1, // note: most browsers ignore linewidth, we simulate thickness by alpha
-    });
+    // Build Three.js geometry for edges (lines) and nodes (instanced circles).
+    //
+    // Line2 rather than THREE.Line because gl.LINES is one device pixel wide
+    // in every browser, so the width the search state computes below was
+    // discarded. And a material per line rather than one shared one: the loop
+    // below assigns each edge its own colour, opacity and width, and writing
+    // all of that into a single shared material meant every edge rendered
+    // identically — whatever the last one in the loop happened to be.
+    const lineResolution = new THREE.Vector2(
+      window.innerWidth,
+      window.innerHeight
+    );
 
-    const edgeSegments: THREE.Line[] = [];
+    const edgeSegments: Line2[] = [];
     for (const e of edges) {
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(6);
-      geometry.setAttribute(
-        'position',
-        new THREE.BufferAttribute(positions, 3)
-      );
-      const line = new THREE.Line(geometry, edgeMaterial);
+      const geometry = new LineGeometry();
+      geometry.setPositions([0, 0, 0, 0, 0, 0]);
+      const material = new LineMaterial({
+        color: new THREE.Color(0.1, 0.1, 0.12), // Very dark gray for background edges
+        transparent: true,
+        opacity: settings.opacity * 0.1, // Very faint by default; live below
+        linewidth: 1,
+        resolution: lineResolution,
+      });
+      const line = new Line2(geometry, material);
       line.userData = { e };
       scene.add(line);
       edgeSegments.push(line);
@@ -314,7 +346,7 @@ const GraphTopologyBackground: React.FC<
       size: settings.elementSize * 300,
       vertexColors: true,
       transparent: true,
-      opacity,
+      opacity: settings.opacity, // seed; refreshed live in renderFrame
       sizeAttenuation: true,
     });
     const points = new THREE.Points(nodeGeometry, nodeMaterial);
@@ -420,7 +452,7 @@ const GraphTopologyBackground: React.FC<
 
     // Proper MCMC with Metropolis-Hastings for subgraph optimization
     function mcmcStep(now: number) {
-      const stepIntervalMs = 1000 / walkStepsPerSecond;
+      const stepIntervalMs = 1000 / liveWalkStepsPerSecond();
       if (now - lastStepTime < stepIntervalMs) return;
       lastStepTime = now;
       iterationCount++;
@@ -626,7 +658,10 @@ const GraphTopologyBackground: React.FC<
     }
 
     function renderFrame(timeMs: number) {
-      const dt = Math.min(0.05, simulationSpeed * 0.016);
+      const live = settingsRef.current;
+      const opacity = live.opacity;
+      const edgeThickness = live.edgeThickness || 2.0;
+      const dt = Math.min(0.05, liveSimulationSpeed() * 0.016);
       stepLayout(dt);
       mcmcStep(timeMs);
 
@@ -646,12 +681,7 @@ const GraphTopologyBackground: React.FC<
         const e = line.userData.e as GraphEdge;
         const a = nodes[e.source].position;
         const b = nodes[e.target].position;
-        const positions = line.geometry.getAttribute(
-          'position'
-        ) as THREE.BufferAttribute;
-        positions.setXYZ(0, a.x, a.y, 0);
-        positions.setXYZ(1, b.x, b.y, 0);
-        positions.needsUpdate = true;
+        line.geometry.setPositions([a.x, a.y, 0, b.x, b.y, 0]);
 
         // Determine edge state
         const sourceInCurrent = currentSet.has(e.source);
@@ -672,64 +702,62 @@ const GraphTopologyBackground: React.FC<
 
         let color: number[];
         let alpha: number;
+        // Widths are in pixels now that Line2 honours them, so these are a
+        // deliberately narrow spread — the graph reads as a drawing, and the
+        // state hierarchy comes mostly from colour with weight as a hint.
         let linewidth = 1.0;
 
         if (hasConverged && inBestSubgraph) {
           // Converged optimal edges: flash between primary and accent
           const flash = flashPhase > 0 ? 1 : 0;
-          color =
-            flash > 0.5 ? settings.colors.accent : settings.colors.primary;
+          color = flash > 0.5 ? live.colors.accent : live.colors.primary;
           alpha = 1.0; // Full opacity
-          linewidth = 3.0;
+          linewidth = 1.4;
         } else if (inBestSubgraph && inCurrentSubgraph) {
           // Edge in both: bright accent color
-          color = settings.colors.accent;
+          color = live.colors.accent;
           alpha = 1.0;
-          linewidth = 2.5;
+          linewidth = 1.2;
         } else if (inBestSubgraph) {
           // Best only: primary color
-          color = settings.colors.primary;
+          color = live.colors.primary;
           alpha = 0.9;
-          linewidth = 2.0;
+          linewidth = 1.0;
         } else if (inCurrentSubgraph) {
           // Current only: secondary color with pulse
-          color = settings.colors.secondary;
+          color = live.colors.secondary;
           alpha = 0.8 + searchPulse * 0.2;
-          linewidth = 2.0;
+          linewidth = 1.0;
         } else if (touchesCurrent) {
           // Boundary of current: faded secondary
-          color = settings.colors.secondary.map(c => c * 0.5) as [
+          color = live.colors.secondary.map(c => c * 0.5) as [
             number,
             number,
             number,
           ];
           alpha = 0.4;
-          linewidth = 1.0;
+          linewidth = 0.7;
         } else if (touchesBest) {
           // Boundary of best: faded primary
-          color = settings.colors.primary.map(c => c * 0.5) as [
+          color = live.colors.primary.map(c => c * 0.5) as [
             number,
             number,
             number,
           ];
           alpha = 0.4;
-          linewidth = 1.0;
+          linewidth = 0.7;
         } else {
           // Background edge: very dark gray
-          color = settings.colors.background;
+          color = live.colors.background;
           alpha = 0.05 + normalizedWeight * 0.05; // Very faint
-          linewidth = 0.3;
+          linewidth = 0.5;
         }
 
         // Apply settings
-        (line.material as THREE.LineBasicMaterial).color.setRGB(
-          color[0],
-          color[1],
-          color[2]
-        );
-        (line.material as THREE.LineBasicMaterial).opacity = alpha * opacity;
-        (line.material as THREE.LineBasicMaterial).linewidth =
-          linewidth * edgeThickness;
+        const edgeLineMaterial = line.material as LineMaterial;
+        edgeLineMaterial.color.setRGB(color[0], color[1], color[2]);
+        edgeLineMaterial.opacity = alpha * opacity;
+        edgeLineMaterial.linewidth = linewidth * edgeThickness;
       }
 
       // Update node positions and colors
@@ -760,26 +788,26 @@ const GraphTopologyBackground: React.FC<
         if (hasConverged && inBest) {
           // Converged optimal nodes: flash between primary and accent
           if (flashPhase > 0) {
-            [r, g, b] = settings.colors.accent; // Accent
+            [r, g, b] = live.colors.accent; // Accent
           } else {
-            [r, g, b] = settings.colors.primary; // Primary
+            [r, g, b] = live.colors.primary; // Primary
           }
           brightness = 1.5; // Extra bright
         } else if (inBest && inCurrent) {
           // Node in both: bright accent with pulse
-          [r, g, b] = settings.colors.accent;
+          [r, g, b] = live.colors.accent;
           brightness = 1.3 + slowPulse * 0.3;
         } else if (inBest) {
           // Best only: primary color
-          [r, g, b] = settings.colors.primary;
+          [r, g, b] = live.colors.primary;
           brightness = 1.2;
         } else if (inCurrent) {
           // Current only: secondary color with search animation
-          [r, g, b] = settings.colors.secondary;
+          [r, g, b] = live.colors.secondary;
           brightness = 1.1 + searchPulse * 0.3;
         } else {
           // Background nodes: background color, barely visible
-          [r, g, b] = settings.colors.background;
+          [r, g, b] = live.colors.background;
           brightness = 0.1 + normalizedConnectivity * 0.1; // Very dim
         }
 
@@ -802,7 +830,7 @@ const GraphTopologyBackground: React.FC<
       ).needsUpdate = true;
 
       // Dynamic node sizing based on algorithm state
-      const baseNodeSize = settings.elementSize * 400;
+      const baseNodeSize = live.elementSize * 400;
       let dynamicSize = baseNodeSize;
 
       if (hasConverged) {
@@ -815,6 +843,7 @@ const GraphTopologyBackground: React.FC<
       }
 
       (points.material as THREE.PointsMaterial).size = dynamicSize;
+      (points.material as THREE.PointsMaterial).opacity = opacity;
 
       renderer.render(scene, camera);
       animationRef.current = requestAnimationFrame(renderFrame);
@@ -824,6 +853,8 @@ const GraphTopologyBackground: React.FC<
 
     const handleResize = () => {
       renderer.setSize(window.innerWidth, window.innerHeight);
+      // Line2 widths are screen-space, so the materials need the viewport size.
+      lineResolution.set(window.innerWidth, window.innerHeight);
     };
     window.addEventListener('resize', handleResize);
 
@@ -833,15 +864,29 @@ const GraphTopologyBackground: React.FC<
       // Cleanup
       edgeSegments.forEach(l => {
         l.geometry?.dispose?.();
+        (l.material as LineMaterial)?.dispose?.();
       });
       nodeGeometry.dispose();
       (points.material as THREE.Material).dispose();
       renderer.dispose();
+      // dispose() releases three's own objects but leaves the GL context
+      // alive until the canvas is collected. These components rebuild on every
+      // settings change, so without this a slider drag can walk the tab past
+      // the browser's active-context cap and blank the background.
+      renderer.forceContextLoss();
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
       }
     };
-  }, [settings]);
+    // Structural only: these determine the graph itself, so changing one has to
+    // rebuild the scene. Everything else is read live off settingsRef.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    settings.totalNodes,
+    settings.clusterCount,
+    settings.requestedNodes,
+    settings.scale,
+  ]);
 
   return (
     <div
