@@ -1,108 +1,101 @@
 ---
-title: 'Interactive Algorithm Visualizations as My Website Backgrounds'
+title: 'What Is Running Behind This Page'
 date: '2025-09-28'
-description: 'Explore animated visualizations of fundamental algorithms - from cellular automata to pathfinding - that transform abstract computer science into engaging, interactive experiences'
+description: "Six simulations render the backgrounds on this site — Conway's Life, a simulated-annealing graph search, an FM synthesizer, A*, and a finite-difference PDE solver. What each one computes and what the controls do."
 category: 'Projects'
 ---
 
-throughout my career - from researching audio compression to architecting ai systems - i've always been fascinated by the elegant mathematics underlying complex technologies. but there's often a gap between beautiful theory and intuitive understanding.
+the backgrounds on this site are running, not looping. every one is computed per frame in your browser. the gear icon in the corner opens a panel with the parameters for whichever is on screen, and they cycle every twelve seconds unless you turn that off.
 
-that's why i built **interactive algorithm visualizations** right into this website. click the settings gear in any corner and you'll discover a playground of animated backgrounds - each one a living demonstration of fundamental concepts that power our digital world.
+six of them, in cycle order:
 
-## why visualize algorithms?
-
-abstract concepts become concrete when you can see them in action. watch cellular automaton cells evolve, observe pathfinding algorithms explore networks, or see wave interference create complex patterns in real-time. these aren't just pretty graphics - they're educational tools that make complex ideas accessible.
-
-each visualization connects directly to my experience:
-
-- **cellular automata** → ai and complex systems work
-- **wave interference** → audio engineering and signal processing research
-- **graph theory job scheduling** → distributed systems architecture
-- **fm synthesis** → music technology and creative coding
-- **pathfinding algorithms** → optimization concepts i use daily
-- **pde solver** → numerical methods and physical simulation
-
-## the intersection of art and science
-
-these animations represent something i'm passionate about: where technical rigor meets creative expression. they're computational art that teaches fundamental algorithms, and educational tools that happen to be beautiful.
-
-this reflects my broader philosophy - the best technical solutions have inherent elegance. complex systems can be both deeply sophisticated and intuitively understandable when presented thoughtfully.
-
-## explore the algorithms
-
-- [cellular automata: emergence in action](#cellular-automata)
-- [wave interference: mathematical harmony](#wave-interference)
-- [graph theory job scheduling: distributed computing](#job-scheduling)
-- [fm synthesis: mathematical music](#fm-synthesis)
-- [pathfinding algorithms: routing intelligence](#pathfinding)
-- [pde solver: simulating the physical world](#pde-solver)
+| background         | what it is                                       |
+| ------------------ | ------------------------------------------------ |
+| cellular automaton | conway's life, plus five other b/s rules         |
+| simple waves       | three summed sine waves                          |
+| job scheduling     | simulated annealing over a clustered graph       |
+| dual fm oscillator | a working fm synth, oscilloscope and spectrogram |
+| shortest path      | dijkstra, a\*, and greedy search, side by side   |
+| pde solver         | finite-difference heat and wave equations        |
 
 ---
 
-## <a id="cellular-automata"></a>cellular automata: emergence in action
+## <a id="cellular-automata"></a>cellular automaton
 
-emergence has fascinated me since my early research days - the moment when individual components following simple rules suddenly exhibit behaviors no single component could achieve alone.
+a grid of cells, a rule, and a state buffer stepped one generation at a time. each cell counts its eight neighbours on a wrapping torus, then lives, dies, or is born according to the rule — conway's b3/s23 by default, with highlife, maze, coral, day & night and seeds in the dropdown.
 
-i see this constantly in the ai systems i architect. individual neural network weights, simple mathematical functions, yet together they generate language, recognize patterns, make decisions. in distributed computing, simple containers and services create resilient, self-healing systems.
+the shader only draws; the rule runs on a real buffer. newborn cells take the newborn colour and shift toward the established colour the longer they survive, and links are drawn between live neighbours — the same eight-cell neighbourhood the rule is evaluated over.
 
-this visualization captures that same magic - the moment when local interactions become global intelligence.
-
----
-
-## <a id="wave-interference"></a>wave interference: mathematical harmony
-
-my fascination with wave interference started during my audio compression research - discovering how the same mathematics that creates musical harmony also powers noise cancellation, wireless communications, and quantum mechanics.
-
-i spent years working on optimal wavelet bases for audio compression, watching how simple mathematical transformations could capture the essence of complex sounds. there's something profound about how waves - whether sound, light, or radio - follow the same fundamental principles.
-
-this visualization represents the mathematical foundation underlying so much of the signal processing work that shaped my technical perspective.
+random soup under conway settles into still lifes and period-two oscillators within a couple of hundred generations, which for a background is death. `perturbation rate` flips a small fraction of cells each step to keep things moving. set it to zero and it will stall on its own, which is the honest behaviour and worth seeing once.
 
 ---
 
-## <a id="job-scheduling"></a>graph theory job scheduling: distributed computing
+## <a id="wave-interference"></a>simple waves
 
-architecting distributed systems means constantly solving resource allocation puzzles - which workloads run where, how to balance load, how to handle failures gracefully.
+three sine waves summed in a shader. one runs along x, one along y at 0.8× the frequency, one diagonally at 0.6×, each drifting at a different rate. colour maps amplitude: bright where they reinforce, dark where they cancel.
 
-i've spent countless hours designing kubernetes deployments, optimizing aws infrastructure, and building resilient cloud architectures. every decision involves finding the optimal match between job requirements and available resources across complex, dynamic networks.
+this is superposition and nothing more, which is the point — interference is the whole mechanism behind a great deal of signal processing, and it is three lines of arithmetic. i spent a couple of years on wavelet bases for audio compression at stony brook and the thing that stays with me is how little machinery the underlying physics actually needs.
 
-what draws me to this problem is the elegant mathematical structure underlying messy real-world infrastructure. graph theory provides a clean lens for understanding the chaos of distributed computing.
-
----
-
-## <a id="fm-synthesis"></a>fm synthesis: mathematical music
-
-music technology represents everything i love about engineering - rigorous mathematics in service of human creativity and expression.
-
-during my time as artist in residence at cewit, i designed and built audio synthesizers, exploring how mathematical functions could generate emotionally resonant sounds. fm synthesis became a particular obsession - the way simple frequency relationships could create infinite timbral complexity.
-
-this visualization embodies my philosophy that the best technical work serves human creativity. mathematics and engineering aren't just tools - they're instruments for artistic expression.
+turn `wave frequency` up and `wave speed` down to freeze the interference pattern in place.
 
 ---
 
-## <a id="pathfinding"></a>pathfinding algorithms: routing intelligence
+## <a id="job-scheduling"></a>job scheduling
 
-optimization problems define so much of what i do - finding the best path through complex solution spaces, whether architecting systems, designing algorithms, or making strategic technical decisions.
+the most interesting one, and the worst named.
 
-these algorithms represent different philosophies i encounter constantly: the perfectionist approach that guarantees optimal solutions but demands computational resources, the intelligent balance that uses smart heuristics to achieve optimality efficiently, and the pragmatic speedster that sacrifices some optimality for real-time performance.
+it builds a clustered graph: nodes grouped into tight clusters with dense, high-bandwidth links inside each cluster and sparse, high-latency links between them. roughly the shape of a real datacenter. then it searches for the subgraph of size _n_ with the highest total conductivity — the best-connected group of that size.
 
-i chose to visualize pathfinding because it makes visible the invisible trade-offs that shape every technical decision - thoroughness versus speed, optimality versus practicality, perfection versus "good enough." it's the fundamental tension in all engineering work.
+that search is simulated annealing with an exponential cooling schedule. it proposes a swap, accepts it outright if it scores better, and accepts it with a temperature-dependent probability if it scores worse. early on, while it is hot, it takes bad trades freely and wanders. as the temperature drops it stops accepting losses and settles. the two highlight colours are separate things: one is the candidate set it is considering right now, the other is the best set it has found so far. early on they diverge constantly. near the end they lock together.
 
----
+the layout is force-directed and running at the same time, so the graph is still settling while the search runs over it.
 
-## <a id="pde-solver"></a>pde solver: simulating the physical world
-
-partial differential equations sit at the heart of how we model the physical world - heat flowing through materials, waves propagating across surfaces, quantum particles evolving in time. they're the mathematical language nature uses to describe change across space and time simultaneously.
-
-i've always been drawn to numerical methods because they turn continuous mathematics into something a computer can actually compute. finite difference schemes, stability conditions, cfl constraints - these aren't just academic exercises. they're the same techniques used in weather forecasting, structural engineering, and fluid dynamics simulations.
-
-this visualization solves the heat equation and wave equation in real time using explicit finite difference methods. watching thermal diffusion smooth out an initial temperature distribution, or seeing waves reflect off boundaries and interfere with themselves, makes the underlying mathematics tangible in a way that equations on paper never quite achieve.
+set `number of clusters` to 2 and `requested subgraph size` to something close to one cluster's worth of nodes, then watch how long it takes to commit to one side.
 
 ---
 
-## dive in and explore
+## <a id="fm-synthesis"></a>dual fm oscillator
 
-these visualizations represent my attempt to bridge the gap between abstract mathematical concepts and intuitive understanding. every background connects to work i've done, problems i've solved, or domains that have shaped my thinking.
+a functioning synthesizer. two oscillators, where one modulates the other's phase — that is the whole trick behind fm synthesis, and it is why a dx7 could make a bell out of two sine waves when subtractive synths needed a filter bank. the signal then runs through filter, delay, distortion and reverb.
 
-they're computational art with a purpose - making the invisible mathematics that powers our digital world a little more visible, a little more playful, and a lot more engaging.
+top display is an oscilloscope: amplitude against time. bottom is a spectrogram: frequency low-to-high, scrolling left-to-right, brightness as intensity. every bin is a hann-windowed discrete fourier transform of the same samples the oscilloscope is drawing, so the sidebands, the harmonic series of a square wave, and the sum and difference tones from the ring modulator are all measured rather than drawn. watching one signal in both domains at once is the fastest way i know to build intuition for what fm does to a spectrum.
 
-_click the gear icon to start exploring. each visualization is a window into the mathematical foundations of the systems we use every day._
+push `vco 1 fm amount` up slowly and watch the sidebands appear in pairs either side of the carrier, spaced at the modulator frequency.
+
+it makes sound. hold the speaker button in the settings panel.
+
+i built synthesizers as artist in residence at cewit for a year, mostly analogue, and this is the part of the site that most resembles what i actually enjoy doing.
+
+---
+
+## <a id="pathfinding"></a>shortest path
+
+seeded random graph, real priority frontier, and one slider that changes which algorithm you are running.
+
+`heuristic weight` scales the heuristic term in `f = g + w·h`:
+
+- **w = 0** — the heuristic vanishes and it is dijkstra. explores outward in every direction equally. always finds the optimal path, looks at far more of the graph than it needed to.
+- **w = 1** — a\*. the heuristic is admissible, so the path is still optimal, but exploration stretches toward the goal instead of spreading evenly.
+- **w > 1** — greedy. it over-trusts the heuristic, drives almost straight at the goal, and gives up the optimality guarantee to do it.
+
+the shape of the explored region is the thing to watch: a circle, then an ellipse, then a corridor. that is the entire optimality-versus-effort tradeoff rendered as a shape, and it is why i left this one in the rotation.
+
+turn `steps per second` down to about 5 to watch the frontier expand node by node.
+
+---
+
+## <a id="pde-solver"></a>pde solver
+
+explicit finite differences on a grid, solving either the heat equation `∂u/∂t = α∇²u` or the wave equation `∂²u/∂t² = c²∇²u`. the laplacian is a five-point stencil; heat uses forward-time centred-space, wave uses a centred second difference in time. grid runs at 64², 128² or 256².
+
+the parameters that change the physics rather than the look are `boundary condition` and `initial condition`. dirichlet fixes the edge value, so waves reflect inverted. neumann sets the edge derivative to zero, so they reflect upright. periodic wraps, so anything leaving the right edge arrives at the left. pick a gaussian pulse on the wave equation and switch between the three — the difference in reflection is immediate and it is the clearest demonstration of boundary conditions i have found.
+
+you cannot make it explode. explicit schemes are only conditionally stable — heat needs `α·dt·(1/dx² + 1/dy²) ≤ 0.5`, wave needs the cfl condition `c·dt·√(1/dx² + 1/dy²) ≤ 1` — so the timestep is clamped to the stable maximum before every step. push thermal diffusivity to its limit and the simulation slows down rather than diverging.
+
+---
+
+## on the whole thing
+
+they render to webgl or canvas depending on the background, pause when the tab is hidden, and cycle on a twelve-second timer with a 1.2-second crossfade. every parameter you change is live.
+
+the actual reason they exist: a static background is a wasted surface, and i wanted somewhere to put the numerical methods i do not otherwise get to write at work.

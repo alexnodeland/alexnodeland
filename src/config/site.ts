@@ -58,7 +58,7 @@ export const siteConfig: SiteConfig = {
   siteName: 'alex nodeland',
   siteUrl: 'https://alexnodeland.com',
   description:
-    'senior ai engineer & technical consultant specializing in ai system architecture, devops automation, and production-ready ai infrastructure.',
+    'ai engineer and mathematician. agent systems, distributed infrastructure, and audio dsp. previously ceo of a supercomputing startup.',
   author: 'alex nodeland',
 
   // Contact information
@@ -83,7 +83,7 @@ export const siteConfig: SiteConfig = {
   seo: {
     defaultTitle: 'alex nodeland',
     defaultDescription:
-      'senior ai engineer & technical consultant specializing in ai system architecture, devops automation, and production-ready ai infrastructure.',
+      'ai engineer and mathematician. agent systems, distributed infrastructure, and audio dsp. previously ceo of a supercomputing startup.',
     defaultImage: '/images/icon.png',
   },
 

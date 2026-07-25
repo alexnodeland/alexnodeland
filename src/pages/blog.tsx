@@ -66,8 +66,8 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
         <header className="blog-header">
           <h1>blog</h1>
           <p>
-            thoughts on technology, projects, and the occasional deep dive into
-            interesting problems.
+            what i&apos;ve built and what i&apos;ve been quoted saying, going
+            back to 2015.
           </p>
         </header>
 

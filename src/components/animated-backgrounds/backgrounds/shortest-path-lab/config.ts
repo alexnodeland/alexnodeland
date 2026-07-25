@@ -275,7 +275,7 @@ export const shortestPathLabConfig = createBackgroundConfig({
   id: 'shortest-path-lab',
   name: 'Shortest Path (Dijkstra/A*)',
   description:
-    "Comparative visualization of pathfinding algorithms that power GPS navigation, internet routing, and game AI. Dijkstra's algorithm (weight = 0) systematically explores all possibilities to guarantee optimal paths. A* (weight = 1) uses distance heuristics to find optimal paths faster. Greedy search (weight > 1) sacrifices optimality for speed. Yellow patterns show exploration strategy: uniform for Dijkstra, directionally-biased for A*, narrow for greedy. Blue highlights the discovered optimal route. Demonstrates the fundamental trade-off between computational thoroughness and execution speed in network optimization.",
+    'Dijkstra, A*, and greedy best-first are the same search with one number changed. Heuristic Weight scales w in f = g + w*h: at 0 the heuristic vanishes and this is Dijkstra, at 1 it is A* with an admissible heuristic, above 1 it over-trusts the heuristic and gives up the optimality guarantee for speed. Watch the shape of the explored region rather than the path — a circle, then an ellipse, then a corridor. Yellow is explored, blue is the route found. Drop Steps per Second to about 5 to follow the frontier node by node.',
   component: ShortestPathLabBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

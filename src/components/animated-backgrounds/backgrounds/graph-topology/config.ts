@@ -151,7 +151,7 @@ export const graphTopologyConfig = createBackgroundConfig({
   id: 'graph-topology',
   name: 'Job Scheduling',
   description:
-    'Graph-based resource allocation algorithm solving the distributed computing challenge of efficiently assigning jobs to optimal infrastructure clusters. Searches network topology for highly-connected subgraphs - groups of servers, containers, or VMs with strong interconnections that can handle workload requirements. Golden paths show active topology exploration, bright cyan highlights discovered optimal clusters. Powers container orchestration, cloud resource management, and high-performance computing job scheduling.',
+    'Simulated annealing over a clustered graph. The topology is built like a datacenter: dense high-bandwidth links inside each cluster, sparse high-latency links between them. The search looks for the subgraph of the requested size with the highest total conductivity, proposing swaps and accepting worse ones with a temperature-dependent probability that decays on an exponential cooling schedule. Gold is the candidate set under consideration right now; cyan is the best set found so far. Early on they diverge constantly, then lock together as the temperature drops. Layout is force-directed and still settling while the search runs.',
   component: GraphTopologyBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

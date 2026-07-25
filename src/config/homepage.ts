@@ -36,68 +36,68 @@ export interface HomepageConfig {
 export const homepageConfig: HomepageConfig = {
   hero: {
     title: 'alex nodeland',
-    subtitle: 'systems thinker // creative technologist',
+    subtitle: 'math → audio dsp → distributed systems → ai',
   },
   about: {
     paragraphs: [
-      "i transform complex challenges into elegant solutions. whether it's orchestrating ai systems, architecting cloud infrastructure, or bridging technical and creative domains, i bring deep expertise across the full technology stack.",
-      "from startup cto to ai engineering lead, i've spent years turning ambitious ideas into production-ready systems that actually deliver value. currently focused on ai engineering, devops automation, and innovative technical projects.",
-      "ready to solve your toughest technical challenges? let's build something remarkable together.",
+      'i build ai systems, mostly the parts nobody demos: agent orchestration, evaluation loops, and the semantic layer underneath that has to be right before any of it works. currently senior ai engineer at perch insights.',
+      'before that i co-founded archanan in singapore and ran it as ceo for four years — we built cloud emulators of supercomputers so people could develop at scale without waiting in a queue. then led engineering at musiio, a music-ml company soundcloud later acquired. earlier still: wavelet bases for audio compression at stony brook, and firmware for guitar pedals before that.',
+      'i write rust on weekends, mostly audio synthesis and probabilistic programming. the backgrounds on this site are live simulations rather than video — the gear icon opens their controls.',
     ],
   },
   consulting: {
-    title: "let's build something",
+    title: 'consulting',
     description:
-      "stuck on a complex technical challenge? from ai system architecture to strategic technology decisions, i help organizations cut through complexity and build solutions that actually work. whether you need hands-on engineering or strategic guidance, we'll turn your biggest obstacles into competitive advantages.",
+      "i take on a few engagements a year. usually it's a team whose llm prototype works in a demo and falls over in production, and the fix is almost never the model — it's the data model, the evals, or the failure handling. sometimes the question is earlier than that: what to build, or whether to.",
     ctaButtons: {
       primary: {
-        text: 'discuss your challenge',
+        text: 'send me an email',
         action: 'email',
       },
       secondary: {
-        text: 'schedule a strategy call',
+        text: 'book a call',
         action: 'calendar',
       },
     },
   },
   expertise: {
-    title: 'how i can help',
+    title: 'what i work on',
     items: [
       {
         icon: '🤖',
-        title: 'ai system architecture',
+        title: 'ai systems',
         description:
-          'llm orchestration, rag systems, and autonomous ai agent workflows that scale',
+          'agent orchestration, rag, tool use, and the failure modes that only appear under real traffic',
       },
       {
         icon: '⚙️',
-        title: 'cloud & devops',
+        title: 'infrastructure',
         description:
-          'aws, kubernetes, infrastructure as code, and reliable deployment pipelines',
+          'aws, kubernetes, infrastructure as code, and deploy pipelines that nobody has to babysit',
+      },
+      {
+        icon: '📊',
+        title: 'data engineering',
+        description:
+          'pipelines, semantic models, and lineage you can actually audit after the fact',
+      },
+      {
+        icon: '🔍',
+        title: 'evaluation & observability',
+        description:
+          'eval sets, feedback loops, and catching a regression before a customer does',
       },
       {
         icon: '🧠',
         title: 'technical strategy',
         description:
-          'system design, technology assessment, and strategic technical decision-making',
+          'architecture review, build-vs-buy, and deciding which half of the roadmap to cut',
       },
       {
-        icon: '🔧',
-        title: 'full-stack engineering',
-        description:
-          'from databases to frontends, building complete solutions that work',
-      },
-      {
-        icon: '🎨',
+        icon: '🎛️',
         title: 'creative technology',
         description:
-          'bridging art and engineering, from audio processing to interactive systems',
-      },
-      {
-        icon: '🚀',
-        title: 'startup & product leadership',
-        description:
-          'from concept to launch, building teams and products that deliver real value',
+          'audio dsp, synthesis, generative visuals — the part i would do for free anyway',
       },
     ],
   },

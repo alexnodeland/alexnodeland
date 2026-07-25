@@ -14,7 +14,7 @@ const IndexPage: React.FC = () => {
     <Layout>
       <SEO
         title="home"
-        description="Experienced engineer and mathematician with a background in distributed computing and creative technology"
+        description="AI engineer and mathematician. Agent systems, distributed infrastructure, and audio DSP."
       />
       <div className="home">
         <section className="hero">
@@ -108,12 +108,11 @@ const IndexPage: React.FC = () => {
         </section>
 
         <section className="blog-preview">
-          <h2>insights & experiments</h2>
+          <h2>writing</h2>
           <p>
-            exploring the cutting edge of ai engineering, devops automation, and
-            system architecture. dive into my{' '}
-            <a href="/blog">latest insights</a> on building production ai
-            systems.
+            notes on things i&apos;ve built, plus press and research going back
+            to 2015 — supercomputing, audio compression, and whatever i&apos;m
+            currently taking apart. <a href="/blog">read the blog</a>.
           </p>
         </section>
       </div>

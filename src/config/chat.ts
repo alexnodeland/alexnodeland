@@ -122,7 +122,7 @@ export const chatConfig: ChatConfig = {
   },
   interface: {
     welcomeMessage:
-      "Hi! I'm chat, Alex's AI assistant running in your browser. Ask me about his experience, skills, education, or career background.",
+      "I'm chat, a small model running in your browser — no server, no API key. I only know what's in Alex's CV, so ask me about his experience, skills, or education.",
     placeholderText: {
       ready: 'ask about Alex...',
       loading: 'loading model...',
