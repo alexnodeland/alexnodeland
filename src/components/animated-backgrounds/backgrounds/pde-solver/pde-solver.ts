@@ -276,9 +276,12 @@ export function solveHeatEquation(
       const laplacian = d2u_dx2 + d2u_dy2;
       uNew[idx] = uOld[idx] + alpha * dt * laplacian;
 
-      // Apply damping (energy dissipation)
+      // Apply damping (energy dissipation). Per step, matching the wave
+      // solver below and the control's own description — scaling by dt here
+      // (1e-4) made the same slider a no-op on the heat equation while it
+      // flat-lined the wave equation almost instantly.
       if (damping > 0) {
-        uNew[idx] *= 1 - damping * dt;
+        uNew[idx] *= 1 - damping;
       }
     }
   }

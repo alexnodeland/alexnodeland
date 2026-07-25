@@ -117,7 +117,14 @@ const CellularAutomatonBackground: React.FC<
       // to let it stall honestly.
       const rate = perturbationRef.current;
       if (rate > 0) {
-        const flips = Math.floor(next.length * rate);
+        // Round stochastically rather than down. A typical grid is a few
+        // thousand cells and the slider steps in 0.0002, so flooring made the
+        // first couple of steps above zero flip nothing at all — a dead zone
+        // at the bottom of the control. Carrying the fractional part as a
+        // probability gives the right rate on average at any grid size.
+        const exact = next.length * rate;
+        let flips = Math.floor(exact);
+        if (Math.random() < exact - flips) flips += 1;
         for (let i = 0; i < flips; i++) {
           next[Math.floor(Math.random() * next.length)] = 1;
         }
