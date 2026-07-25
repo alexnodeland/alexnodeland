@@ -1,36 +1,147 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { AnimatedBackgroundProps } from '../../core/types';
+import { makeRuleTables, population, stepLife } from './automaton';
 import { CellularAutomatonSettings } from './config';
 
+// Keep the grid bounded regardless of viewport or cell size.
+const MAX_CELLS = 40000;
+
+// Generations of unchanged population before the grid is treated as stalled.
+const STALL_GENERATIONS = 24;
+
+/**
+ * Renders a Life-like cellular automaton.
+ *
+ * The simulation is a genuine state buffer: `current` holds this generation,
+ * `next` is computed from it by counting each cell's eight neighbors on a
+ * wrapping torus and applying the birth/survival rule. The result is uploaded
+ * to a DataTexture each generation and the shader only draws it — the shader
+ * never invents state.
+ *
+ * Texture channels per cell: R = alive now, G = alive last generation,
+ * B = age (generations survived, saturating), A = unused.
+ */
 const CellularAutomatonBackground: React.FC<
   AnimatedBackgroundProps<CellularAutomatonSettings>
 > = ({ className, settings }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  // Cosmetic settings are pushed straight to uniforms so that changing a color
+  // does not restart the simulation.
+  const { colors, connectionLineWidth, cellScale, activityIntensity, opacity } =
+    settings;
+
+  // Structural settings that require rebuilding the grid.
+  const { rule, cellSize, generationsPerSecond, initialDensity } = settings;
+  const perturbationRate = settings.perturbationRate;
+  const perturbationRef = useRef(perturbationRate);
+  perturbationRef.current = perturbationRate;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Scene setup
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
     const renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    const dpr = Math.min(window.devicePixelRatio, 2);
-    renderer.setPixelRatio(dpr);
-
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    // Store references
-    sceneRef.current = scene;
-    rendererRef.current = renderer;
+    const tables = makeRuleTables(rule);
 
-    // Vertex shader for the cellular automaton
+    let cols = 0;
+    let rows = 0;
+    let current = new Uint8Array(0);
+    let next = new Uint8Array(0);
+    let age = new Uint8Array(0);
+    let previous = new Uint8Array(0);
+    let texture: THREE.DataTexture | null = null;
+    let pixels = new Uint8Array(0);
+
+    /** Fills the grid with random soup at the configured density. */
+    const seed = () => {
+      for (let i = 0; i < current.length; i++) {
+        current[i] = Math.random() < initialDensity ? 1 : 0;
+        age[i] = current[i];
+      }
+      previous.set(current);
+    };
+
+    /** (Re)builds the grid and its texture for the current viewport. */
+    const buildGrid = () => {
+      const px = Math.max(4, cellSize);
+      let c = Math.max(8, Math.ceil(window.innerWidth / px));
+      let r = Math.max(8, Math.ceil(window.innerHeight / px));
+
+      // Preserve aspect while staying under the cell budget.
+      if (c * r > MAX_CELLS) {
+        const scale = Math.sqrt(MAX_CELLS / (c * r));
+        c = Math.max(8, Math.floor(c * scale));
+        r = Math.max(8, Math.floor(r * scale));
+      }
+
+      cols = c;
+      rows = r;
+      const size = cols * rows;
+      current = new Uint8Array(size);
+      next = new Uint8Array(size);
+      age = new Uint8Array(size);
+      previous = new Uint8Array(size);
+      pixels = new Uint8Array(size * 4);
+      seed();
+
+      texture?.dispose();
+      texture = new THREE.DataTexture(
+        pixels,
+        cols,
+        rows,
+        THREE.RGBAFormat,
+        THREE.UnsignedByteType
+      );
+      texture.minFilter = THREE.NearestFilter;
+      texture.magFilter = THREE.NearestFilter;
+      texture.needsUpdate = true;
+      return texture;
+    };
+
+    /** Advances the automaton exactly one generation. */
+    const step = () => {
+      stepLife(current, next, cols, rows, tables);
+
+      // Random soup under most rules settles into still lifes and oscillators.
+      // A small perturbation keeps the background moving; set the rate to zero
+      // to let it stall honestly.
+      const rate = perturbationRef.current;
+      if (rate > 0) {
+        const flips = Math.floor(next.length * rate);
+        for (let i = 0; i < flips; i++) {
+          next[Math.floor(Math.random() * next.length)] = 1;
+        }
+      }
+
+      previous.set(current);
+      for (let i = 0; i < next.length; i++) {
+        // Age saturates at 255 so long-lived structures stop shifting color.
+        age[i] = next[i] === 1 ? Math.min(255, age[i] + 1) : 0;
+        current[i] = next[i];
+      }
+    };
+
+    /** Copies simulation state into the texture the shader samples. */
+    const uploadState = () => {
+      for (let i = 0; i < current.length; i++) {
+        const o = i * 4;
+        pixels[o] = current[i] * 255;
+        pixels[o + 1] = previous[i] * 255;
+        pixels[o + 2] = Math.min(255, age[i] * 12);
+        pixels[o + 3] = 255;
+      }
+      if (texture) texture.needsUpdate = true;
+    };
+
     const vertexShader = `
       varying vec2 vUv;
       void main() {
@@ -39,302 +150,201 @@ const CellularAutomatonBackground: React.FC<
       }
     `;
 
-    // Fragment shader for cellular automaton simulation
+    // The shader is a pure renderer: it samples cell state and draws it. All
+    // evolution happens on the CPU in step().
     const fragmentShader = `
-      uniform float uTime;
-      uniform vec2 uResolution;
-
-      // Configurable parameters
-      uniform float uCellSize;
-      uniform float uCellBaseSize;
-      uniform float uCellSizeMultiplier;
-      uniform float uGlobalTimeMultiplier;
-      uniform float uEvolutionSpeed1;
-      uniform float uEvolutionSpeed2;
-      uniform float uDiagonalEvolutionSpeed;
-      uniform float uUpdateAnimationSpeed;
-      uniform float uWaveAmplitude;
+      uniform sampler2D uState;
+      uniform vec2 uGrid;
+      uniform float uStepProgress;
+      uniform float uCellScale;
+      uniform float uLinkWidth;
+      uniform float uActivityIntensity;
       uniform vec3 uColorPrimary;
       uniform vec3 uColorSecondary;
       uniform vec3 uColorAccent;
       uniform vec3 uColorBackground;
       uniform vec3 uColorGrid;
-      uniform float uConnectionLineWidth;
-      uniform float uDiagonalConnectionWeight;
-      uniform float uActivityIntensity;
 
       varying vec2 vUv;
 
-      float hash(vec2 p) {
-        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+      // Alive-ness of a cell, eased between the previous and current
+      // generation so births fade in and deaths fade out.
+      float cellAlpha(vec2 cell) {
+        vec2 uv = (cell + 0.5) / uGrid;
+        vec4 s = texture2D(uState, uv);
+        return mix(s.g, s.r, uStepProgress);
       }
 
-      // Cellular automaton state calculation - Enhanced for concentrated growth communities
-      float getCellState(vec2 pos, float t) {
-        float totalState = 0.0;
-
-        // Create multiple growth centers that slowly evolve
-        vec2 growthCenters[5];
-        growthCenters[0] = vec2(sin(t * 0.15) * 0.8, cos(t * 0.12) * 0.6);
-        growthCenters[1] = vec2(cos(t * 0.18) * 0.7, sin(t * 0.14) * 0.8);
-        growthCenters[2] = vec2(sin(t * 0.11) * 0.9, cos(t * 0.16) * 0.5);
-        growthCenters[3] = vec2(cos(t * 0.13) * 0.6, sin(t * 0.17) * 0.9);
-        growthCenters[4] = vec2(sin(t * 0.19) * 0.5, cos(t * 0.21) * 0.7);
-
-        // Each growth center creates expanding communities
-        for (int i = 0; i < 5; i++) {
-          float communityAge = t - float(i) * 2.0; // Staggered community birth times
-          if (communityAge > 0.0) {
-            vec2 center = growthCenters[i];
-            float distToCenter = length(pos - center);
-
-            // Slow expanding growth with concentrated core
-            float growthRadius = communityAge * 0.3; // Very slow expansion
-            float communityCore = exp(-distToCenter * 8.0); // Strong concentrated center
-
-            // Cellular growth rings that expand slowly
-            float growthRings = sin(distToCenter * 25.0 - communityAge * uEvolutionSpeed1) *
-                               exp(-max(0.0, distToCenter - growthRadius) * 4.0);
-
-            // Community strength based on age and concentration
-            float communityStrength = exp(-communityAge * 0.1) * // Communities fade with age
-                                    (0.4 + 0.6 * communityCore); // Stronger at center
-
-            totalState += growthRings * communityStrength * (0.8 + float(i) * 0.1);
-          }
-        }
-
-        // Slow-moving wave patterns that create substrate for growth
-        float substrate1 = sin(pos.x * 12.0 - t * uEvolutionSpeed2) *
-                          sin(pos.y * 8.0 - t * uEvolutionSpeed1 * 0.8) * 0.3;
-        float substrate2 = sin((pos.x + pos.y) * 10.0 - t * uDiagonalEvolutionSpeed) *
-                          sin((pos.x - pos.y) * 14.0 + t * uEvolutionSpeed2 * 0.7) * 0.25;
-
-        totalState += (substrate1 + substrate2) * uWaveAmplitude * 0.7;
-
-        // Occasional sporadic growth bursts at random locations
-        float sporadicTime = floor(t * 0.2); // Change every 5 seconds
-        vec2 sporadicPos = vec2(hash(vec2(sporadicTime, 1.0)) * 2.0 - 1.0,
-                               hash(vec2(sporadicTime, 2.0)) * 2.0 - 1.0);
-        float sporadicDist = length(pos - sporadicPos);
-        float sporadicBurst = sin(sporadicDist * 30.0 - (t - sporadicTime * 5.0) * 8.0) *
-                            exp(-sporadicDist * 6.0) *
-                            exp(-max(0.0, t - sporadicTime * 5.0) * 2.0);
-
-        totalState += sporadicBurst * 0.4;
-
-        return totalState;
+      float cellAge(vec2 cell) {
+        vec2 uv = (cell + 0.5) / uGrid;
+        return texture2D(uState, uv).b;
       }
 
-      vec3 getAutomatonColor(float state) {
-        // Color mapping using standardized colors
-        if (state < 0.0) {
-          return mix(uColorSecondary, uColorBackground, (state + 1.0));
-        } else if (state < 0.5) {
-          return mix(uColorBackground, uColorPrimary, state * 2.0);
-        } else {
-          return mix(uColorPrimary, uColorAccent, (state - 0.5) * 2.0);
-        }
+      // Distance from p to the segment ab, used to draw neighbor links.
+      float segmentDist(vec2 p, vec2 a, vec2 b) {
+        vec2 pa = p - a;
+        vec2 ba = b - a;
+        float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+        return length(pa - ba * h);
       }
 
       void main() {
-        vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / uResolution.y;
-        vec3 finalColor = vec3(0.0);
-        float adjustedTime = uTime * uGlobalTimeMultiplier;
+        vec2 gridPos = vUv * uGrid;
+        vec2 cell = floor(gridPos);
+        vec2 local = fract(gridPos) - 0.5;
 
-        // Cellular grid parameters
-        vec2 cellPos = floor(uv / uCellSize);
-        vec2 localUv = fract(uv / uCellSize) - 0.5;
-        vec2 worldPos = cellPos * uCellSize;
+        float alpha = cellAlpha(cell);
+        float age = cellAge(cell);
 
-        // Calculate cellular state at this grid position
-        float cellState = getCellState(worldPos, adjustedTime);
+        // Young cells read as the newborn color and mature toward primary,
+        // with the longest-lived structures tinted by the accent color.
+        vec3 cellColor = mix(uColorSecondary, uColorPrimary, smoothstep(0.0, 0.25, age));
+        cellColor = mix(cellColor, uColorAccent, smoothstep(0.5, 1.0, age));
 
-        // Draw cell (alive/dead state visualization)
-        float cellDistance = length(localUv);
-        float cellSize = uCellBaseSize + abs(cellState) * uCellSizeMultiplier;
-        float cellBrightness = smoothstep(cellSize + 0.01, cellSize - 0.01, cellDistance);
+        // Soft square for the cell body. ('half' is reserved in GLSL.)
+        float halfSize = max(0.05, uCellScale * 0.5);
+        vec2 d = abs(local) - vec2(halfSize);
+        float sdf = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+        float body = 1.0 - smoothstep(0.0, 0.08, sdf);
 
-        vec3 cellColor = getAutomatonColor(cellState);
-        finalColor += cellColor * cellBrightness * (2.0 + abs(cellState) * 3.0);
+        vec3 color = uColorBackground;
+        float intensity = body * alpha;
 
-        // Draw neighbor connections (cellular automaton rules visualization)
-        vec2 neighborOffsets[4];
-        neighborOffsets[0] = vec2(1.0, 0.0);   // Right
-        neighborOffsets[1] = vec2(-1.0, 0.0);  // Left
-        neighborOffsets[2] = vec2(0.0, 1.0);   // Up
-        neighborOffsets[3] = vec2(0.0, -1.0);  // Down
+        // Links between live neighbors. These reflect the same eight-cell
+        // neighborhood the rule is evaluated over.
+        if (uLinkWidth > 0.0) {
+          float links = 0.0;
+          for (int i = 0; i < 8; i++) {
+            vec2 off = vec2(0.0);
+            if (i == 0) off = vec2( 1.0,  0.0);
+            if (i == 1) off = vec2(-1.0,  0.0);
+            if (i == 2) off = vec2( 0.0,  1.0);
+            if (i == 3) off = vec2( 0.0, -1.0);
+            if (i == 4) off = vec2( 1.0,  1.0);
+            if (i == 5) off = vec2(-1.0,  1.0);
+            if (i == 6) off = vec2( 1.0, -1.0);
+            if (i == 7) off = vec2(-1.0, -1.0);
 
-        for (int i = 0; i < 4; i++) {
-          vec2 neighborCell = cellPos + neighborOffsets[i];
-          vec2 neighborWorld = neighborCell * uCellSize;
-          float neighborState = getCellState(neighborWorld, adjustedTime);
-
-          // Connection strength based on state difference
-          float connectionStrength = abs(cellState - neighborState);
-          vec3 connectionColor = mix(cellColor, getAutomatonColor(neighborState), 0.5);
-
-          // Draw connection line
-          vec2 lineDir = neighborOffsets[i];
-          vec2 lineStart = localUv;
-          float lineProgress = dot(localUv, lineDir);
-
-          if (lineProgress > 0.0 && lineProgress < uCellSize * 0.5) {
-            vec2 perpDir = vec2(-lineDir.y, lineDir.x);
-            float distFromLine = abs(dot(localUv, perpDir));
-
-            float lineWidth = uConnectionLineWidth * (1.0 + connectionStrength * 2.0);
-            float lineBrightness = smoothstep(lineWidth * 2.0, lineWidth, distFromLine);
-
-            // Animate state updates - propagate through grid
-            vec2 updateDirection = vec2(sin(adjustedTime * 0.8), cos(adjustedTime * 0.6));
-            float updateWave = sin(dot(cellPos, updateDirection) * 2.0 - adjustedTime * uUpdateAnimationSpeed) * 0.5 + 0.5;
-            float updateBrightness = lineBrightness * (0.3 + 0.7 * updateWave);
-
-            finalColor += connectionColor * updateBrightness * connectionStrength * 1.5;
+            float na = cellAlpha(cell + off);
+            float dist = segmentDist(local, vec2(0.0), off * 0.5);
+            float line = 1.0 - smoothstep(0.0, uLinkWidth, dist);
+            links = max(links, line * na * alpha);
           }
+          color = mix(color, uColorGrid, links);
+          intensity = max(intensity, links * 0.55);
         }
 
-        // Draw diagonal neighbor connections for 8-neighbor automaton
-        vec2 diagonalOffsets[4];
-        diagonalOffsets[0] = vec2(1.0, 1.0);   // NE
-        diagonalOffsets[1] = vec2(-1.0, 1.0);  // NW
-        diagonalOffsets[2] = vec2(1.0, -1.0);  // SE
-        diagonalOffsets[3] = vec2(-1.0, -1.0); // SW
-
-        for (int i = 0; i < 4; i++) {
-          vec2 neighborCell = cellPos + diagonalOffsets[i];
-          vec2 neighborWorld = neighborCell * uCellSize;
-          float neighborState = getCellState(neighborWorld, adjustedTime);
-
-          float diagonalConnection = abs(cellState - neighborState) * uDiagonalConnectionWeight;
-          vec3 diagonalColor = mix(cellColor, getAutomatonColor(neighborState), 0.7);
-
-          vec2 lineDir = normalize(diagonalOffsets[i]);
-          float lineProgress = dot(localUv, lineDir);
-
-          if (lineProgress > 0.0 && lineProgress < uCellSize * 0.7) {
-            vec2 perpDir = vec2(-lineDir.y, lineDir.x);
-            float distFromLine = abs(dot(localUv, perpDir));
-
-            float lineWidth = 0.002 * (1.0 + diagonalConnection * 3.0);
-            float lineBrightness = smoothstep(lineWidth * 1.5, lineWidth, distFromLine);
-
-            finalColor += diagonalColor * lineBrightness * diagonalConnection * 0.8;
-          }
-        }
-
-        // Add cellular grid overlay
-        float gridLine = min(
-          smoothstep(0.002, 0.001, abs(localUv.x)),
-          smoothstep(0.002, 0.001, abs(localUv.y))
-        );
-        finalColor += uColorGrid * gridLine * 0.3;
-
-        // Highlight active evolution zones - sweeping across screen
-        float sweepPhase = sin(worldPos.x * 3.0 - adjustedTime * 4.0) * sin(worldPos.y * 2.0 - adjustedTime * 3.0);
-        float evolutionActivity = (sweepPhase * 0.5 + 0.5);
-
-        if (abs(cellState) > 0.2) {
-          finalColor += cellColor * evolutionActivity * uActivityIntensity;
-        }
-
-        gl_FragColor = vec4(finalColor * 1.0, 1.0);
+        color = mix(color, cellColor, body * alpha);
+        gl_FragColor = vec4(color * uActivityIntensity, intensity);
       }
     `;
 
-    // Create shader material with configurable uniforms
+    const stateTexture = buildGrid();
+    uploadState();
+
     const material = new THREE.ShaderMaterial({
       uniforms: {
-        uTime: { value: 0.0 },
-        // Match drawing buffer size (device pixels) to align with gl_FragCoord
-        uResolution: {
-          value: new THREE.Vector2(
-            renderer.domElement.width,
-            renderer.domElement.height
-          ),
-        },
-
-        // Standard settings mapped to uniforms
-        uCellBaseSize: { value: settings.elementSize },
-        uGlobalTimeMultiplier: { value: settings.globalTimeMultiplier },
-        uColorPrimary: { value: new THREE.Vector3(...settings.colors.primary) },
-        uColorSecondary: {
-          value: new THREE.Vector3(...settings.colors.secondary),
-        },
-        uColorAccent: { value: new THREE.Vector3(...settings.colors.accent) },
-        uColorBackground: {
-          value: new THREE.Vector3(...settings.colors.background),
-        },
-        uColorGrid: { value: new THREE.Vector3(...settings.colors.grid) },
-
-        // Custom cellular automaton settings
-        uCellSize: { value: settings.cellSize },
-        uCellSizeMultiplier: { value: settings.cellSizeMultiplier },
-        uEvolutionSpeed1: { value: settings.evolutionSpeed1 },
-        uEvolutionSpeed2: { value: settings.evolutionSpeed2 },
-        uDiagonalEvolutionSpeed: { value: settings.diagonalEvolutionSpeed },
-        uUpdateAnimationSpeed: { value: settings.updateAnimationSpeed },
-        uWaveAmplitude: { value: settings.waveAmplitude },
-        uConnectionLineWidth: { value: settings.connectionLineWidth },
-        uDiagonalConnectionWeight: { value: settings.diagonalConnectionWeight },
-        uActivityIntensity: { value: settings.activityIntensity },
+        uState: { value: stateTexture },
+        uGrid: { value: new THREE.Vector2(cols, rows) },
+        uStepProgress: { value: 1 },
+        uCellScale: { value: cellScale },
+        uLinkWidth: { value: connectionLineWidth },
+        uActivityIntensity: { value: activityIntensity },
+        uColorPrimary: { value: new THREE.Vector3(...colors.primary) },
+        uColorSecondary: { value: new THREE.Vector3(...colors.secondary) },
+        uColorAccent: { value: new THREE.Vector3(...colors.accent) },
+        uColorBackground: { value: new THREE.Vector3(...colors.background) },
+        uColorGrid: { value: new THREE.Vector3(...colors.grid) },
       },
       vertexShader,
       fragmentShader,
       transparent: true,
       blending: THREE.AdditiveBlending,
     });
+    materialRef.current = material;
 
-    // Create a plane geometry
     const geometry = new THREE.PlaneGeometry(2, 2);
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+    scene.add(new THREE.Mesh(geometry, material));
 
-    // Animation loop
-    const animate = (time: number) => {
-      if (material.uniforms.uTime) {
-        material.uniforms.uTime.value = time * 0.001;
+    const stepIntervalMs = 1000 / Math.max(0.1, generationsPerSecond);
+    let lastStep = performance.now();
+    let lastPopulation = -1;
+    let stalledFor = 0;
+    let frameId: number | null = null;
+
+    const animate = (now: number) => {
+      const elapsed = now - lastStep;
+
+      if (elapsed >= stepIntervalMs) {
+        step();
+        uploadState();
+        lastStep = now;
+
+        // A grid whose population stops changing has converged on still lifes
+        // and short oscillators; reseed rather than sit on a frozen frame.
+        const live = population(current);
+        stalledFor = live === lastPopulation ? stalledFor + 1 : 0;
+        lastPopulation = live;
+        if (stalledFor >= STALL_GENERATIONS || live === 0) {
+          seed();
+          uploadState();
+          stalledFor = 0;
+          lastPopulation = -1;
+        }
       }
 
+      material.uniforms.uStepProgress.value = Math.min(
+        1,
+        (now - lastStep) / stepIntervalMs
+      );
       renderer.render(scene, camera);
-      animationFrameRef.current = requestAnimationFrame(animate);
+      frameId = requestAnimationFrame(animate);
     };
 
-    animate(0);
+    frameId = requestAnimationFrame(animate);
 
-    // Handle window resize
     const handleResize = () => {
-      if (renderer && material.uniforms.uResolution) {
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        material.uniforms.uResolution.value.set(
-          renderer.domElement.width,
-          renderer.domElement.height
-        );
-      }
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const rebuilt = buildGrid();
+      uploadState();
+      material.uniforms.uState.value = rebuilt;
+      material.uniforms.uGrid.value.set(cols, rows);
     };
 
     window.addEventListener('resize', handleResize);
 
-    // Cleanup function
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-
+      if (frameId !== null) cancelAnimationFrame(frameId);
       window.removeEventListener('resize', handleResize);
-
-      if (container && renderer.domElement) {
+      if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
-
-      // Clean up Three.js resources
+      texture?.dispose();
       geometry.dispose();
       material.dispose();
       renderer.dispose();
+      materialRef.current = null;
     };
-  }, [settings]);
+    // Cosmetic settings seed the uniforms here but are deliberately excluded
+    // from the dependency list — the effect below updates them in place so that
+    // nudging a color slider does not restart the simulation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rule, cellSize, generationsPerSecond, initialDensity]);
+
+  // Cosmetic updates go straight to uniforms, leaving the simulation running.
+  useEffect(() => {
+    const material = materialRef.current;
+    if (!material) return;
+    material.uniforms.uCellScale.value = cellScale;
+    material.uniforms.uLinkWidth.value = connectionLineWidth;
+    material.uniforms.uActivityIntensity.value = activityIntensity;
+    material.uniforms.uColorPrimary.value.set(...colors.primary);
+    material.uniforms.uColorSecondary.value.set(...colors.secondary);
+    material.uniforms.uColorAccent.value.set(...colors.accent);
+    material.uniforms.uColorBackground.value.set(...colors.background);
+    material.uniforms.uColorGrid.value.set(...colors.grid);
+  }, [cellScale, connectionLineWidth, activityIntensity, colors]);
 
   return (
     <div
@@ -348,7 +358,7 @@ const CellularAutomatonBackground: React.FC<
         height: '100vh',
         zIndex: -1,
         pointerEvents: 'none',
-        opacity: settings.opacity,
+        opacity,
       }}
     />
   );

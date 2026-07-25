@@ -601,7 +601,7 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
   id: 'spectrogram-oscilloscope',
   name: 'Dual FM Oscillator',
   description:
-    "Complete digital audio synthesizer demonstrating frequency modulation synthesis - a technique that creates complex harmonic content by having one oscillator modulate another's frequency. Two VCOs generate basic waveforms, then frequency modulate each other to produce rich timbres, passing through filters, delay, distortion, and reverb. Top display: oscilloscope showing waveform amplitude over time. Bottom: spectrogram showing frequency content evolution (low-to-high, left-to-right), with brightness indicating spectral intensity. Fundamental technique in electronic music production and audio DSP.",
+    "A working FM synthesizer. Two oscillators, one modulating the other's frequency — the trick that let a DX7 make a bell out of two sine waves while subtractive synths needed a filter bank. The signal then runs through filter, delay, distortion, and reverb. Top is an oscilloscope: amplitude against time. Bottom is a spectrogram: frequency low-to-high, scrolling left-to-right, brightness as intensity. Same signal in both domains at once, which is the fastest way to build intuition for what FM does to a spectrum. Hold the speaker button to hear it.",
   component: SpectrogramOscilloscopeBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
