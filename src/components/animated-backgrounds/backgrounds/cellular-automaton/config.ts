@@ -101,6 +101,8 @@ const customSettingsSchema: SettingsSchema[] = [
       value,
       label,
     })),
+    description:
+      "The birth/survival rule in B/S notation: a dead cell is born on a neighbour count in B, a live one survives on a count in S. B3/S23 is Conway's Life. Seeds (B2/S) has no survival counts at all, so every live cell dies each step and the pattern is pure recurrent birth — by far the most volatile option.",
     category: 'Simulation',
   },
   {
@@ -110,6 +112,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 8,
     max: 48,
     step: 1,
+    description:
+      'Pixels per cell, which decides how many cells fit on screen. Smaller cells give a larger grid and finer structure, at more work per generation.',
     category: 'Simulation',
   },
   {
@@ -119,6 +123,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.5,
     max: 20,
     step: 0.5,
+    description:
+      'How often the rule is applied. Low values let you follow individual births and deaths; high values blur into texture.',
     category: 'Simulation',
   },
   {
@@ -128,6 +134,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.05,
     max: 0.8,
     step: 0.01,
+    description:
+      'Fraction of cells alive in the starting soup. Conway is liveliest near 0.3 — much denser and the first few generations mostly die back to the same still lifes.',
     category: 'Simulation',
   },
   {
@@ -137,6 +145,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0,
     max: 0.01,
     step: 0.0002,
+    description:
+      'Fraction of cells switched on at random each generation. Random soup under most rules settles into still lifes and period-two oscillators within a couple of hundred generations; this keeps it moving. Set it to zero to watch the grid stall on its own, which is the honest behaviour.',
     category: 'Simulation',
   },
 
@@ -148,6 +158,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.2,
     max: 1.0,
     step: 0.05,
+    description:
+      'How much of its grid square a live cell fills. Low values read as separated dots; near 1.0 neighbouring cells merge into solid regions.',
     category: 'Visual Effects',
   },
   {
@@ -157,6 +169,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0,
     max: 0.2,
     step: 0.01,
+    description:
+      'Thickness of the links drawn between live neighbours. They trace the same eight-cell neighbourhood the rule is evaluated over. Zero hides them entirely.',
     category: 'Visual Effects',
   },
   {
@@ -166,6 +180,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.5,
     max: 3.0,
     step: 0.1,
+    description: 'Overall brightness multiplier for the grid.',
     category: 'Visual Effects',
   },
 
@@ -174,30 +189,38 @@ const customSettingsSchema: SettingsSchema[] = [
     key: 'colors.primary',
     label: 'Established Cell Color',
     type: 'color',
+    description:
+      'Cells that have survived several generations — the stable structures.',
     category: 'Colors',
   },
   {
     key: 'colors.secondary',
     label: 'Newborn Cell Color',
     type: 'color',
+    description:
+      'Newly born cells. Strong contrast against the established colour makes the growing edge of a pattern obvious.',
     category: 'Colors',
   },
   {
     key: 'colors.accent',
     label: 'Long-Lived Cell Color',
     type: 'color',
+    description:
+      'The colour long-lived cells drift toward, marking the still lifes that have stopped changing.',
     category: 'Colors',
   },
   {
     key: 'colors.background',
     label: 'Background Color',
     type: 'color',
+    description: 'Empty space, where no cell is alive.',
     category: 'Colors',
   },
   {
     key: 'colors.grid',
     label: 'Neighbor Link Color',
     type: 'color',
+    description: 'The links drawn between live neighbours.',
     category: 'Colors',
   },
 ];

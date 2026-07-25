@@ -91,6 +91,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 'heat', label: 'Heat Equation (Diffusion)' },
       { value: 'wave', label: 'Wave Equation (Propagation)' },
     ],
+    description:
+      'Heat diffuses and smooths an initial distribution out; the wave equation propagates and reflects it. Same grid and same solver, different physics.',
     category: 'PDE Configuration',
   },
 
@@ -102,6 +104,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.01,
     max: 0.5,
     step: 0.01,
+    description:
+      'Thermal diffusivity in the heat equation — how fast heat spreads. The timestep is clamped to the stability limit, so pushing this slows the simulation down rather than making it diverge.',
     category: 'Physical Parameters',
   },
   {
@@ -111,6 +115,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.1,
     max: 3.0,
     step: 0.1,
+    description:
+      'Propagation speed in the wave equation. Bound by the CFL condition, so very high values shrink the timestep instead of outrunning the grid.',
     category: 'Physical Parameters',
   },
   {
@@ -120,6 +126,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 0.05,
     step: 0.001,
+    description:
+      'Bleeds energy out of the system each step. At zero energy is conserved and waves ring indefinitely.',
     category: 'Physical Parameters',
   },
 
@@ -133,6 +141,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 128, label: '128×128 (Balanced)' },
       { value: 256, label: '256×256 (Detailed)' },
     ],
+    description:
+      'Resolution of the simulation grid. Higher resolves finer detail at roughly four times the work per step for each doubling.',
     category: 'Grid Configuration',
   },
 
@@ -149,6 +159,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 'interference', label: 'Interference Pattern' },
       { value: 'random', label: 'Random Noise' },
     ],
+    description:
+      'The state the solver starts from. A Gaussian pulse is the cleanest way to see boundary reflections; interference starts with several sources already overlapping.',
     category: 'Initial Conditions',
   },
   {
@@ -158,6 +170,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.1,
     max: 2.0,
     step: 0.1,
+    description: 'Height of the initial disturbance.',
     category: 'Initial Conditions',
   },
   {
@@ -167,6 +180,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 1.0,
     max: 10.0,
     step: 0.5,
+    description:
+      'Spatial frequency of the sine and interference initial conditions.',
     category: 'Initial Conditions',
   },
   {
@@ -176,6 +191,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.02,
     max: 0.3,
     step: 0.01,
+    description:
+      'Width of the Gaussian, square and ring initial conditions. Narrow pulses contain higher spatial frequencies and show grid dispersion sooner.',
     category: 'Initial Conditions',
   },
   {
@@ -185,6 +202,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 2,
     max: 8,
     step: 1,
+    description:
+      'How many sources the interference initial condition starts with.',
     category: 'Initial Conditions',
   },
 
@@ -198,6 +217,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 'neumann', label: 'Neumann (Free)' },
       { value: 'periodic', label: 'Periodic (Wrap)' },
     ],
+    description:
+      'What happens at the left and right edges. Dirichlet fixes the value there, so waves reflect inverted; Neumann fixes the derivative, so they reflect upright; Periodic wraps, so anything leaving one edge arrives at the other. Switching between the three with a Gaussian pulse on the wave equation is the clearest demonstration of what a boundary condition actually does.',
     category: 'Boundary Conditions',
   },
   {
@@ -209,6 +230,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 'neumann', label: 'Neumann (Free)' },
       { value: 'periodic', label: 'Periodic (Wrap)' },
     ],
+    description:
+      'The same choice for the top and bottom edges. Setting the two axes differently — periodic in x, Dirichlet in y — makes a waveguide.',
     category: 'Boundary Conditions',
   },
 
@@ -223,6 +246,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: 'wave', label: 'Wave (Blue-Red)' },
       { value: 'monochrome', label: 'Monochrome' },
     ],
+    description:
+      'Palette mapping field value to colour. Thermal suits the heat equation; the blue-red scale is diverging, so it distinguishes positive from negative better for waves.',
     category: 'Visualization',
   },
   {
@@ -232,6 +257,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 0.5,
     step: 0.01,
+    description:
+      'Displaces the surface vertically by field value, turning the plot into a relief. Zero renders it flat.',
     category: 'Visualization',
   },
   {
@@ -242,6 +269,8 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: true, label: 'Yes' },
       { value: false, label: 'No' },
     ],
+    description:
+      'Draws the grid the solver actually computes on, rather than a smooth surface.',
     category: 'Visualization',
   },
   {
@@ -252,6 +281,7 @@ const customSettingsSchema: SettingsSchema[] = [
       { value: true, label: 'Yes' },
       { value: false, label: 'No' },
     ],
+    description: 'Slowly orbits the camera around the surface.',
     category: 'Visualization',
   },
   {
@@ -261,6 +291,7 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.0,
     max: 2.0,
     step: 0.1,
+    description: 'How fast the view rotates when auto-rotate is on.',
     category: 'Visualization',
   },
 
@@ -269,18 +300,22 @@ const customSettingsSchema: SettingsSchema[] = [
     key: 'colors.positive',
     label: 'Positive Value Color',
     type: 'color',
+    description: 'Colour for values above zero — hot regions, or wave crests.',
     category: 'Colors',
   },
   {
     key: 'colors.negative',
     label: 'Negative Value Color',
     type: 'color',
+    description:
+      'Colour for values below zero. Only the wave equation goes negative; heat with a positive initial condition stays above zero.',
     category: 'Colors',
   },
   {
     key: 'colors.zero',
     label: 'Zero Value Color',
     type: 'color',
+    description: 'Colour at zero, the midpoint of the scale.',
     category: 'Colors',
   },
 ];

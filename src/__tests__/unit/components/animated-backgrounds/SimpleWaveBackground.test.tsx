@@ -9,7 +9,12 @@ describe('SimpleWaveBackground', () => {
       globalTimeMultiplier: 1,
       waveFrequency: 2,
       waveAmplitude: 0.5,
-      colors: { primary: [1, 0, 0], secondary: [0, 1, 0], accent: [0, 0, 1] },
+      colors: {
+        primary: [1, 0, 0],
+        secondary: [0, 1, 0],
+        accent: [0, 0, 1],
+        background: [0, 0, 0],
+      },
     };
     const { container, unmount } = render(
       <SimpleWaveBackground className="bg" settings={settings} />
