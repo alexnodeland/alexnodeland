@@ -129,7 +129,7 @@ export const cvData: CVData = {
         'Moved infrastructure to CloudFormation and CI/CD to GitHub Actions',
         'Added monitoring across the AI pipelines to catch quality regressions before customers did',
         'Built ontological models that gave the data model a consistent vocabulary to work from',
-        'Rewrote the hot query paths and indexing strategy as load grew',
+        'Restructured the Postgres schema as the access patterns became clear and load grew',
         'Coordinated with external development teams on platform integration, and ran project management out of GitHub',
       ],
       skills: [
@@ -153,7 +153,7 @@ export const cvData: CVData = {
         'Delivered a keynote on ChatGPT to a room of CIOs and founders',
         'Advised a blockchain unicorn on engineering process and operational flow',
         'Run technology assessments and build-versus-buy analysis for teams committing to an AI direction',
-        'Led migrations to AI-integrated systems where the cost case held up',
+        'Led migrations to AI-integrated systems, reducing cost and manual effort',
         'Consulted on personal knowledge management systems built around LLMs',
         'Help early-stage startups choose a technology stack they will not have to abandon in a year',
       ],
@@ -302,7 +302,7 @@ export const cvData: CVData = {
       achievements: [
         'Wrote production firmware for digital guitar pedals',
         'Shipped feature releases through a continuous integration process',
-        'Built the testing protocols that brought the bug rate down',
+        'Introduced testing practices to catch firmware defects before release',
         'Wrote the technical documentation and user manuals',
         'Fed customer feedback back into what got built next',
       ],

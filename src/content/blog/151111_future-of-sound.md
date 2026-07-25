@@ -11,7 +11,7 @@ two of them made the article. a bass synthesizer that tracks the pitch of whatev
 
 i had been building audio hardware at pigtronix on long island for a few years by then, so the pedals were not hypothetical. what was new was putting a learning system in the loop: something that proposes a sound, watches which ones you keep, and gets better at proposing.
 
-this was the motiff technologies era — my first company, run out of an undergraduate degree with pigtronix advising. it did not become archanan or anything else, but it is where i learned that shipping hardware and having a good idea are unrelated skills.
+this was the motiff technologies era — my first company, run out of an undergraduate degree with pigtronix advising.
 
 the line i gave the reporter still holds up. music is data processing — it is just data processing where the error metric is whether it sounds good, which is the hard part.
 

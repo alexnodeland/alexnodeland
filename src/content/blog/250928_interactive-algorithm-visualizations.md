@@ -64,7 +64,7 @@ push `vco 1 fm amount` up slowly and watch the sidebands appear in pairs either 
 
 it makes sound. hold the speaker button in the settings panel.
 
-i built synthesizers as artist in residence at cewit for a year, mostly analogue, and this is the part of the site that most resembles what i actually enjoy doing.
+i built synthesizers as artist in residence at cewit for a year, mostly analogue.
 
 ---
 

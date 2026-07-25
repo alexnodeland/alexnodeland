@@ -48,7 +48,7 @@ export const homepageConfig: HomepageConfig = {
   consulting: {
     title: 'consulting',
     description:
-      "i take on a few engagements a year. usually it's a team whose llm prototype works in a demo and falls over in production, and the fix is almost never the model — it's the data model, the evals, or the failure handling. sometimes the question is earlier than that: what to build, or whether to.",
+      "i take on a few engagements a year, split about evenly between two things. sometimes it's an llm prototype that works in a demo and falls over in production, where the fix is almost never the model — it's the data model, the evals, or the failure handling. sometimes it's the earlier question of what to build with ai, or whether to.",
     ctaButtons: {
       primary: {
         text: 'send me an email',
