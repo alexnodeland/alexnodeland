@@ -29,6 +29,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     toggleSettingsPanel,
     closeSettingsPanel,
     audioControls,
+    setAudioControls,
     overlayOpacity,
     setOverlayOpacity,
     currentBackground,
@@ -87,17 +88,22 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     };
   }, [handleKeyDown]);
 
-  // Safety mechanism: ensure background is visible on mount
+  // Safety mechanism: ensure the background is visible on mount. Reads the
+  // overlay through a ref because an empty dep array otherwise pins the check
+  // to the mount-time value, which is always 0 — the guard could never fire.
+  const overlayOpacityRef = useRef(overlayOpacity);
+  overlayOpacityRef.current = overlayOpacity;
+
   useEffect(() => {
-    // Set a short delay to ensure background is visible regardless of cycling state
     const timer = setTimeout(() => {
-      if (overlayOpacity === 1) {
+      if (overlayOpacityRef.current === 1) {
         // If overlay is still black after 500ms, make background visible
         setOverlayOpacity(0);
       }
     }, 500);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
   // ===== Background cycling with fade to black overlay =====
@@ -201,13 +207,35 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     }
   }, [state.showSettingsPanel, state.closingSettingsPanel]);
 
+  // Backgrounds that make sound hand their transport up through this; the
+  // settings panel's play button is the only way to reach it without a
+  // keyboard. Held in a ref-stable callback so publishing controls cannot
+  // remount the background that just published them.
+  const publishAudioControls = useCallback(
+    (startAudio: () => void, stopAudio: () => void, isPlaying: boolean) => {
+      setAudioControls({ startAudio, stopAudio, isPlaying });
+    },
+    [setAudioControls]
+  );
+
+  // A silent background must not inherit the previous one's transport.
+  useEffect(() => {
+    return () => {
+      setAudioControls({ startAudio: null, stopAudio: null, isPlaying: false });
+    };
+  }, [state.currentBackgroundId, setAudioControls]);
+
   // Render current background
   const renderCurrentBackground = () => {
     if (!currentBackground) return null;
 
     const BackgroundComponent = currentBackground.component;
     return (
-      <BackgroundComponent className={className} settings={currentSettings} />
+      <BackgroundComponent
+        className={className}
+        settings={currentSettings}
+        onAudioControlsReady={publishAudioControls}
+      />
     );
   };
 

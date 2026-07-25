@@ -82,6 +82,7 @@ jest.mock('../../../../components/BackgroundProvider', () => ({
     },
     overlayOpacity: 0,
     setOverlayOpacity: jest.fn(),
+    setAudioControls: jest.fn(),
     currentBackground: {
       id: 'one',
       name: 'One',

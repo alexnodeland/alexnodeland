@@ -116,7 +116,18 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
             setState(prev => ({
               ...prev,
               ...parsedState,
-              settings: { ...prev.settings, ...parsedState.settings },
+              // Merge per background rather than swapping each background's
+              // settings object wholesale. A blob saved before a setting
+              // existed has no key for it, and taking the blob whole would
+              // hand the background `undefined` where it expects a number —
+              // which reaches three.js as NaN and makes things silently
+              // vanish. Defaults underneath, saved values on top.
+              settings: Object.fromEntries(
+                Object.entries(prev.settings).map(([id, defaults]) => [
+                  id,
+                  { ...defaults, ...(parsedState.settings?.[id] ?? {}) },
+                ])
+              ),
               showSettingsPanel: false, // Never restore panel open state
               closingSettingsPanel: false,
             }));

@@ -20,6 +20,12 @@ const CAMERA_POSITION: [number, number, number] = [0, 1.5, 2.5];
 export const CAMERA_DISTANCE = Math.hypot(...CAMERA_POSITION);
 export const BASE_FOV_DEGREES = 50;
 
+// Solver steps per second at an animation speed of 1 (five per frame at 60fps,
+// which is the rate this was tuned at), and a ceiling so a long frame or a
+// backgrounded tab cannot come back and run thousands of steps at once.
+const BASE_STEPS_PER_SECOND = 300;
+const MAX_STEPS_PER_FRAME = 40;
+
 /**
  * Vertical FOV for a given viewport.
  *
@@ -61,8 +67,14 @@ const PDESolverBackground: React.FC<
   const configRef = useRef<PDESolverConfig | null>(null);
   const timeAccumulatorRef = useRef<number>(0);
 
+  // Live view of the settings for the animation loop, which outlives the
+  // render that created it.
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     // Initialize Three.js scene
     const scene = new THREE.Scene();
@@ -82,7 +94,7 @@ const PDESolverBackground: React.FC<
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // Create PDE solver configuration
@@ -109,33 +121,42 @@ const PDESolverBackground: React.FC<
     directionalLight.position.set(5, 10, 7);
     scene.add(directionalLight);
 
-    // Animation loop
+    // Animation loop. Everything the loop reads per frame comes off
+    // settingsRef, not the captured `settings`: this effect only re-runs for
+    // the structural settings in its dep array, so a captured value would
+    // leave height scale, colours, rotation and speed frozen at whatever they
+    // were when the simulation was last rebuilt.
     let lastTime = performance.now();
     const animate = () => {
       const currentTime = performance.now();
       const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
       lastTime = currentTime;
 
-      if (stateRef.current && configRef.current) {
-        // Accumulate time and step solver multiple times per frame
-        timeAccumulatorRef.current += deltaTime * settings.globalTimeMultiplier;
-        const stepsPerFrame = 5; // Run multiple solver steps per visual frame
+      const live = settingsRef.current;
 
-        for (let i = 0; i < stepsPerFrame; i++) {
-          stepPDESolver(
-            stateRef.current,
-            configRef.current,
-            settings.equationType
-          );
+      if (stateRef.current && configRef.current) {
+        // Solver steps are whole, so bank the fractional part rather than
+        // rounding it away — that is what makes speeds below 1 slow the
+        // simulation down instead of doing nothing.
+        timeAccumulatorRef.current +=
+          deltaTime * live.globalTimeMultiplier * BASE_STEPS_PER_SECOND;
+        const steps = Math.min(
+          MAX_STEPS_PER_FRAME,
+          Math.floor(timeAccumulatorRef.current)
+        );
+        timeAccumulatorRef.current -= steps;
+
+        for (let i = 0; i < steps; i++) {
+          stepPDESolver(stateRef.current, configRef.current, live.equationType);
         }
 
         // Update mesh geometry
-        updateMeshGeometry(meshRef.current!, stateRef.current, settings);
+        updateMeshGeometry(meshRef.current!, stateRef.current, live);
 
         // Auto-rotate camera
-        if (settings.autoRotate && meshRef.current) {
+        if (live.autoRotate && meshRef.current) {
           meshRef.current.rotation.z +=
-            settings.rotationSpeed * 0.001 * deltaTime * 60;
+            live.rotationSpeed * 0.001 * deltaTime * 60;
         }
       }
 
@@ -175,11 +196,16 @@ const PDESolverBackground: React.FC<
         }
       }
 
-      if (rendererRef.current && containerRef.current) {
-        containerRef.current.removeChild(rendererRef.current.domElement);
+      if (rendererRef.current) {
+        container.removeChild(rendererRef.current.domElement);
         rendererRef.current.dispose();
+        rendererRef.current.forceContextLoss();
       }
     };
+    // Deps are intentionally structural only — everything else the animation
+    // loop needs is read live off settingsRef. Listing `settings` here would
+    // tear the simulation down and re-seed it on every slider tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     settings.equationType,
     settings.gridSize,
@@ -230,18 +256,23 @@ const PDESolverBackground: React.FC<
 /**
  * Create PDE solver configuration from settings
  */
-// Internal constants for spatial/temporal discretization
-const SPATIAL_STEP = 0.01;
+// Internal constants for spatial/temporal discretization. The domain is fixed
+// and dx follows from the grid, not the other way round: with dx pinned, each
+// resolution step doubled the physical size of the sheet instead of resolving
+// the same scene more finely, and shoved the initial disturbance — placed at a
+// fraction of the domain — off toward one corner.
+const DOMAIN_SIZE = 1.28;
 const TIME_STEP = 0.0001;
 
 function createPDEConfig(settings: PDESolverSettings): PDESolverConfig {
   const gridSize = settings.gridSize;
+  const spatialStep = DOMAIN_SIZE / gridSize;
 
   return {
     gridSizeX: gridSize,
     gridSizeY: gridSize,
-    dx: SPATIAL_STEP,
-    dy: SPATIAL_STEP,
+    dx: spatialStep,
+    dy: spatialStep,
     dt: TIME_STEP,
     alpha: settings.alpha,
     c: settings.waveSpeed,

@@ -354,12 +354,25 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         return (
           <div className="setting-input">
             <select
-              value={value}
-              onChange={e => handleSettingChange(setting.key, e.target.value)}
+              value={String(value)}
+              // A DOM select only ever hands back a string. Several schemas
+              // declare boolean or numeric option values, and storing "false"
+              // for them is worse than useless — it is truthy, so the "no"
+              // choice reads as yes. Map the selection back to the value the
+              // schema actually declared.
+              onChange={e => {
+                const chosen = setting.options?.find(
+                  option => String(option.value) === e.target.value
+                );
+                handleSettingChange(
+                  setting.key,
+                  chosen ? chosen.value : e.target.value
+                );
+              }}
               className="select-input"
             >
               {setting.options?.map(option => (
-                <option key={option.value} value={option.value}>
+                <option key={String(option.value)} value={String(option.value)}>
                   {option.label?.toLowerCase?.() || ''}
                 </option>
               ))}

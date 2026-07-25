@@ -304,10 +304,12 @@ const ShortestPathLabBackground: React.FC<
       if (pendingRegenerate && timeMs >= regenerateAt) {
         // regenerate graph with same parameters and a new seed
         // cleanup old edges
+        // Geometries are per-line and must go; the three materials are shared
+        // and get re-attached to the rebuilt lines below, so disposing them
+        // here only forces a shader recompile on every regeneration.
         edgeLines.forEach(l => {
           scene.remove(l);
           l.geometry.dispose();
-          (l.material as THREE.Material).dispose();
         });
         edgeLines.length = 0;
         seed = (seed * 1664525 + 1013904223) >>> 0; // LCG step for new seed
@@ -488,6 +490,13 @@ const ShortestPathLabBackground: React.FC<
             }
             updateDotAlong(traversalEdge.from, traversalEdge.to, dtSec);
           }
+        } else if (foundPath.length === 1) {
+          // Start node is the goal node — the sliders allow it. There is no
+          // edge to walk, so retire the traversal immediately rather than
+          // sitting on a frozen frame forever.
+          traversalActive = false;
+          pendingRegenerate = true;
+          regenerateAt = timeMs + 500;
         } else if (foundPath.length > 1) {
           // Walk full path backwards (goal -> start)
           if (!traversalEdge) {
@@ -537,11 +546,18 @@ const ShortestPathLabBackground: React.FC<
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', handleResize);
       edgeLines.forEach(l => l.geometry.dispose());
+      baseEdgeMaterial.dispose();
+      exploreEdgeMaterial.dispose();
+      finalEdgeMaterial.dispose();
       nodeGeometry.dispose();
       (nodeMaterial as THREE.Material).dispose();
       dotGeometry.dispose();
       (dotMaterial as THREE.Material).dispose();
+      // The bloom pass carries several full-screen render targets, and this
+      // effect re-runs on every settings change.
+      composer?.dispose();
       renderer.dispose();
+      renderer.forceContextLoss();
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
       }

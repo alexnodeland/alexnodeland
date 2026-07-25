@@ -208,8 +208,15 @@ const GraphTopologyBackground: React.FC<
     const clusterCountParam =
       settings.clusterCount ||
       Math.max(2, Math.min(4, Math.floor(nodeCountParam / 8)));
-    const targetSubgraphSize =
-      settings.requestedNodes || Math.max(3, Math.min(12, 8));
+    // A subgraph spanning every node has no boundary to cut, so its
+    // conductivity is -Infinity — and once both the current and the proposed
+    // set score -Infinity, deltaE is NaN, every proposal is rejected, and the
+    // annealer sits in its "converged" state from the first frame. The sliders
+    // let both counts reach 16, so keep the subgraph strictly inside the graph.
+    const targetSubgraphSize = Math.min(
+      settings.requestedNodes || Math.max(3, Math.min(12, 8)),
+      nodeCountParam - 1
+    );
     const graphScale = settings.scale || 1.0;
     const edgeThickness = settings.edgeThickness || 2.0;
     const walkStepsPerSecond = Math.max(
@@ -837,6 +844,11 @@ const GraphTopologyBackground: React.FC<
       nodeGeometry.dispose();
       (points.material as THREE.Material).dispose();
       renderer.dispose();
+      // dispose() releases three's own objects but leaves the GL context
+      // alive until the canvas is collected. These components rebuild on every
+      // settings change, so without this a slider drag can walk the tab past
+      // the browser's active-context cap and blank the background.
+      renderer.forceContextLoss();
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
       }

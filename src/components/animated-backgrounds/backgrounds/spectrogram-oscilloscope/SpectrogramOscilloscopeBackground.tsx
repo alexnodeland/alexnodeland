@@ -863,6 +863,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
       geometry.dispose();
       material.dispose();
       renderer.dispose();
+      renderer.forceContextLoss();
     };
   }, [settings, stableStartAudio, stableStopAudio]);
 
