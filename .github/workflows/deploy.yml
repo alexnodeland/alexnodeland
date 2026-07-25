@@ -63,14 +63,20 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
+      # Only .cache is restored, never public. Restoring a previous public/
+      # lets Gatsby keep a stale index.html that references an old
+      # styles.<hash>.css while writing the new stylesheet beside it,
+      # unreferenced — a CSS-only change then deploys with no visible effect
+      # and a green build. Reproduced locally; see the subtitle-halo commit.
+      # .cache holds the expensive work (transforms, image processing) and is
+      # keyed on lockfile + source so it invalidates correctly on its own.
       - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: |
-            public
-            .cache
-          key: ${{ runner.os }}-gatsby-build-${{ hashFiles('public') }}
+          path: .cache
+          key: ${{ runner.os }}-gatsby-build-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'gatsby-*.ts', 'gatsby-*.js') }}
           restore-keys: |
+            ${{ runner.os }}-gatsby-build-${{ hashFiles('package-lock.json') }}-
             ${{ runner.os }}-gatsby-build-
 
       - name: Install dependencies
