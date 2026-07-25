@@ -19,9 +19,10 @@ test.describe('CV Page', () => {
   test('should have export functionality', async ({ page }) => {
     await page.goto('/cv');
 
-    // Check that export buttons exist
+    // Check that export controls exist. The PDF is typeset by LaTeX at build
+    // time and served from static/cv/, so it is a link rather than a button.
     await expect(
-      page.getByRole('button', { name: /download pdf/i })
+      page.getByRole('link', { name: /download pdf/i })
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: /download docx/i })
@@ -48,24 +49,18 @@ test.describe('CV Page', () => {
     }
   });
 
-  test('should export PDF when PDF button is clicked', async ({ page }) => {
+  test('should point the PDF link at the built artifact', async ({ page }) => {
     await page.goto('/cv');
 
-    // Set up download promise
-    const downloadPromise = page.waitForEvent('download');
+    const pdfLink = page.getByRole('link', { name: /download pdf/i });
+    await expect(pdfLink).toHaveAttribute('href', '/cv/alex-nodeland-cv.pdf');
 
-    // Click PDF export button
-    const pdfButton = page.getByRole('button', { name: /download pdf/i });
-    await pdfButton.click();
-
-    // Wait for download to start (or timeout gracefully)
-    try {
-      const download = await downloadPromise;
-      expect(download.suggestedFilename()).toMatch(/\.pdf$/);
-    } catch (error) {
-      // Download might not work in test environment, just verify button works
-      await expect(pdfButton).toBeVisible();
-    }
+    // Switching to the one-page view swaps in the one-page artifact.
+    await page.getByRole('button', { name: /one page/i }).click();
+    await expect(pdfLink).toHaveAttribute(
+      'href',
+      '/cv/alex-nodeland-resume.pdf'
+    );
   });
 
   test('should export DOCX when DOCX button is clicked', async ({ page }) => {

@@ -1,21 +1,32 @@
 import React, { useState } from 'react';
 import { CVData } from '../../config/cv';
 import {
+  CVVariant,
   downloadMarkdown,
   exportCVAsDOCX,
   exportCVAsMarkdown,
-  exportCVAsPDF,
 } from '../../lib/utils/export';
+
+// The PDFs are typeset by LaTeX at build time rather than generated in the
+// browser — see scripts/build-cv.js — so the PDF button is a plain download
+// link at the artifact for whichever length is on screen.
+const PDF_ARTIFACTS: Record<CVVariant, string> = {
+  resume: '/cv/alex-nodeland-resume.pdf',
+  full: '/cv/alex-nodeland-cv.pdf',
+};
 
 interface CVExportButtonsProps {
   resumeData: CVData;
   resumeElementId: string;
+  /** Which length is on screen; picks the artifact and the DOCX layout. */
+  variant?: CVVariant;
   className?: string;
 }
 
 const CVExportButtons: React.FC<CVExportButtonsProps> = ({
   resumeData,
   resumeElementId: _resumeElementId,
+  variant = 'full',
   className = '',
 }) => {
   const [isExporting, setIsExporting] = useState(false);
@@ -140,31 +151,14 @@ const CVExportButtons: React.FC<CVExportButtonsProps> = ({
     }
   };
 
-  const handlePDFExport = async () => {
-    setIsExporting(true);
-    try {
-      // PDF export initiated
-      await exportCVAsPDF(
-        resumeData,
-        `${resumeData.personal.name.replace(/\s+/g, '_')}_Resume.pdf`
-      );
-    } catch (error) {
-      console.error('PDF export failed:', error);
-      alert(
-        `Failed to export PDF: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   const handleDOCXExport = async () => {
     setIsExporting(true);
     try {
       // DOCX export initiated
       await exportCVAsDOCX(
         resumeData,
-        `${resumeData.personal.name.replace(/\s+/g, '_')}_Resume.docx`
+        `${resumeData.personal.name.replace(/\s+/g, '_')}_Resume.docx`,
+        variant
       );
     } catch (error) {
       console.error('DOCX export failed:', error);
@@ -234,13 +228,9 @@ const CVExportButtons: React.FC<CVExportButtonsProps> = ({
       </div>
 
       <div className="export-actions">
-        <button
-          onClick={handlePDFExport}
-          disabled={isExporting}
-          className="export-button pdf"
-        >
-          {isExporting ? 'generating...' : '📄 download pdf'}
-        </button>
+        <a href={PDF_ARTIFACTS[variant]} download className="export-button pdf">
+          📄 download pdf
+        </a>
         <button
           onClick={handleDOCXExport}
           disabled={isExporting}

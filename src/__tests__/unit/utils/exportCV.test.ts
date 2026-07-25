@@ -1,22 +1,4 @@
 // Mock the modules first
-jest.mock('jspdf', () => {
-  const mockPdf = {
-    setFontSize: jest.fn().mockReturnThis(),
-    setFont: jest.fn().mockReturnThis(),
-    splitTextToSize: jest.fn().mockReturnValue(['test line']),
-    text: jest.fn().mockReturnThis(),
-    line: jest.fn().mockReturnThis(),
-    setLineWidth: jest.fn().mockReturnThis(),
-    addPage: jest.fn().mockReturnThis(),
-    save: jest.fn().mockReturnThis(),
-  };
-
-  return {
-    __esModule: true,
-    default: jest.fn(() => mockPdf),
-  };
-});
-
 jest.mock('docx', () => ({
   Document: jest.fn(),
   Packer: {
@@ -24,34 +6,30 @@ jest.mock('docx', () => ({
   },
   Paragraph: jest.fn(),
   TextRun: jest.fn(),
-  AlignmentType: { CENTER: 'center' },
+  Table: jest.fn(),
+  TableRow: jest.fn(),
+  TableCell: jest.fn(),
+  AlignmentType: { CENTER: 'center', RIGHT: 'right' },
+  BorderStyle: { SINGLE: 'single', NONE: 'none' },
+  TableLayoutType: { FIXED: 'fixed' },
+  WidthType: { DXA: 'dxa' },
 }));
 
 jest.mock('file-saver', () => ({
   saveAs: jest.fn(),
 }));
 
-jest.mock('html2canvas', () => ({
-  __esModule: true,
-  default: jest.fn().mockResolvedValue({
-    toDataURL: jest.fn().mockReturnValue('data:image/png;base64,test'),
-  }),
-}));
-
 import {
   downloadMarkdown,
   exportCVAsDOCX,
   exportCVAsMarkdown,
-  exportCVAsPDF,
 } from '../../../lib/utils/export';
 import { CVData } from '../../../types/cv';
 
 // Get the mocked modules
-const mockJsPDF = require('jspdf').default;
 const mockDocument = require('docx').Document;
 const mockPacker = require('docx').Packer;
 const mockSaveAs = require('file-saver').saveAs;
-// const mockHtml2Canvas = require('html2canvas').default;
 
 describe('exportCV Utility Functions', () => {
   const mockCVData: CVData = {
@@ -129,92 +107,6 @@ describe('exportCV Utility Functions', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe('exportCVAsPDF', () => {
-    it('should create PDF with correct structure', async () => {
-      await exportCVAsPDF(mockCVData, 'test-resume.pdf');
-
-      expect(mockJsPDF).toHaveBeenCalledWith('p', 'mm', 'a4');
-      const mockPdfInstance = mockJsPDF.mock.results[0].value;
-      expect(mockPdfInstance.save).toHaveBeenCalledWith('test-resume.pdf');
-    });
-
-    it('should handle resume data correctly', async () => {
-      await exportCVAsPDF(mockCVData);
-
-      const mockPdfInstance = mockJsPDF.mock.results[0].value;
-      // Check that text methods were called
-      expect(mockPdfInstance.setFontSize).toHaveBeenCalled();
-      expect(mockPdfInstance.setFont).toHaveBeenCalled();
-      expect(mockPdfInstance.text).toHaveBeenCalled();
-      expect(mockPdfInstance.splitTextToSize).toHaveBeenCalled();
-    });
-
-    it('should use default filename when not provided', async () => {
-      await exportCVAsPDF(mockCVData);
-
-      const mockPdfInstance = mockJsPDF.mock.results[0].value;
-      expect(mockPdfInstance.save).toHaveBeenCalledWith('resume.pdf');
-    });
-
-    it('should handle errors gracefully', async () => {
-      // Reset the mock to get a fresh instance
-      mockJsPDF.mockClear();
-      const mockPdfInstance = {
-        setFontSize: jest.fn().mockReturnThis(),
-        setFont: jest.fn().mockReturnThis(),
-        splitTextToSize: jest.fn().mockReturnValue(['test line']),
-        text: jest.fn().mockReturnThis(),
-        line: jest.fn().mockReturnThis(),
-        setLineWidth: jest.fn().mockReturnThis(),
-        addPage: jest.fn().mockReturnThis(),
-        save: jest.fn().mockImplementation(() => {
-          throw new Error('PDF generation failed');
-        }),
-      };
-      mockJsPDF.mockReturnValue(mockPdfInstance);
-
-      await expect(exportCVAsPDF(mockCVData)).rejects.toThrow(
-        'PDF generation failed'
-      );
-    });
-
-    it('should handle empty resume data', async () => {
-      const emptyCVData: CVData = {
-        personal: {
-          name: '',
-          title: '',
-          location: '',
-          email: '',
-          website: '',
-          summary: '',
-        },
-        experience: [],
-        education: [],
-        skills: {
-          technical: [],
-          soft: [],
-        },
-        certifications: [],
-      };
-
-      // Reset the mock to ensure clean state
-      mockJsPDF.mockClear();
-      const mockPdfInstance = {
-        setFontSize: jest.fn().mockReturnThis(),
-        setFont: jest.fn().mockReturnThis(),
-        splitTextToSize: jest.fn().mockReturnValue(['test line']),
-        text: jest.fn().mockReturnThis(),
-        line: jest.fn().mockReturnThis(),
-        setLineWidth: jest.fn().mockReturnThis(),
-        addPage: jest.fn().mockReturnThis(),
-        save: jest.fn().mockReturnThis(),
-      };
-      mockJsPDF.mockReturnValue(mockPdfInstance);
-
-      await expect(exportCVAsPDF(emptyCVData)).resolves.not.toThrow();
-    });
   });
 
   describe('exportCVAsMarkdown', () => {
@@ -392,28 +284,6 @@ describe('exportCV Utility Functions', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle PDF generation errors', async () => {
-      // Reset the mock to get a fresh instance
-      mockJsPDF.mockClear();
-      const mockPdfInstance = {
-        setFontSize: jest.fn().mockReturnThis(),
-        setFont: jest.fn().mockReturnThis(),
-        splitTextToSize: jest.fn().mockReturnValue(['test line']),
-        text: jest.fn().mockReturnThis(),
-        line: jest.fn().mockReturnThis(),
-        setLineWidth: jest.fn().mockReturnThis(),
-        addPage: jest.fn().mockReturnThis(),
-        save: jest.fn().mockImplementation(() => {
-          throw new Error('PDF save failed');
-        }),
-      };
-      mockJsPDF.mockReturnValue(mockPdfInstance);
-
-      await expect(exportCVAsPDF(mockCVData)).rejects.toThrow(
-        'PDF save failed'
-      );
-    });
-
     it('should handle DOCX generation errors', async () => {
       mockPacker.toArrayBuffer.mockRejectedValue(
         new Error('DOCX generation failed')

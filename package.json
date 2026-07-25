@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "build:worker": "npx webpack --config webpack.worker.config.js",
-    "build": "npm run build:worker && gatsby build",
+    "build:cv": "node scripts/build-cv.js",
+    "build": "npm run build:worker && npm run build:cv && gatsby build",
     "develop": "npm run build:worker && gatsby develop",
     "start": "npm run build:worker && gatsby develop",
     "serve": "gatsby serve",
@@ -67,7 +68,6 @@
     "gatsby-transformer-sharp": "^5.15.0",
     "highlight.js": "^11.11.1",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-helmet": "^6.1.0",

@@ -80,3 +80,11 @@ quality-fix:
 # Re-archive the press articles linked from the blog (local copies + Wayback)
 archive-press:
     ./scripts/archive-press.sh
+
+# Typeset the downloadable CV PDFs from src/config/cv.ts (needs pdflatex)
+cv:
+    npm run build:cv
+
+# Same, but keep the generated .tex next to the PDFs for debugging the template
+cv-debug:
+    node scripts/build-cv.js --keep
