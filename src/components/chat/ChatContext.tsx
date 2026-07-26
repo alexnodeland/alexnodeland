@@ -16,6 +16,7 @@ import {
 import {
   ChatMessage,
   ChatModel,
+  ChatMessageStats,
   ChatSource,
   ModelLoadingState,
   WorkerRequest,
@@ -561,12 +562,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             isGeneratingRef.current = false;
             setIsGenerating(false);
 
-            // Per-turn prefill/decode split from the worker. Parked on window
-            // for `npm run eval:chat` to read; the UI does not use it, and
-            // nothing depends on it existing.
-            if ((data as any).timing && typeof window !== 'undefined') {
+            // Per-turn cost, rendered under the message and also parked on
+            // window for `npm run eval:chat` to read.
+            const timing = (data as any).timing as ChatMessageStats | undefined;
+            if (timing && typeof window !== 'undefined') {
               const w = window as any;
-              (w.__chatTimings ??= []).push((data as any).timing);
+              (w.__chatTimings ??= []).push(timing);
             }
 
             const finalText = Array.isArray((data as any).output)
@@ -591,6 +592,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                     ...last,
                     content: cleanContent,
                     sources: finalSources ?? last.sources,
+                    stats: timing ?? last.stats,
                   };
                   return newMessages;
                 }
@@ -604,6 +606,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                   content: parsed.content,
                   thinking: parsed.thinking || last.thinking,
                   sources: finalSources ?? last.sources,
+                  stats: timing ?? last.stats,
                 };
               } else if (finalText) {
                 const parsed = parseThinkingBlocks(finalText);

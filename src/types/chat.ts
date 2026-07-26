@@ -23,6 +23,25 @@ export interface ChatMessage {
   /** Attached as soon as retrieval finishes, then narrowed to the sources the
    *  finished answer actually cited. */
   sources?: ChatSource[];
+  /** What it cost to produce this answer, shown under it. */
+  stats?: ChatMessageStats;
+}
+
+/** Per-answer cost, measured in the worker and rendered under the message. */
+export interface ChatMessageStats {
+  /** Corpus search, including embedding the question. */
+  retrievalMs: number;
+  /** Reading the prompt — null if the cache covered all of it. */
+  prefillMs: number | null;
+  /** Writing the answer. */
+  decodeMs: number;
+  promptTokens: number;
+  outputTokens: number;
+  /** Whether the system-prompt KV cache was reused for this turn. */
+  systemKvHit: boolean;
+  /** Tokens the cache covered, so a hit can show what it saved. */
+  systemKvCovered: number;
+  device: string;
 }
 
 // Per-model generation parameters bundled in one flat object.

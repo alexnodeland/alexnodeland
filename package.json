@@ -29,7 +29,9 @@
     "format": "prettier --write src/**/*.{ts,tsx,js,jsx,scss,md}",
     "code-quality": "npm run type-check && npm run lint && npm run format",
     "code-quality:fix": "npm run type-check && npm run lint:fix && npm run format",
-    "prepare": "husky"
+    "prepare": "husky",
+    "eval:chat:baseline": "node scripts/chat-eval.mjs --out .eval/baseline.json",
+    "eval:chat:compare": "node scripts/chat-eval.mjs --baseline .eval/baseline.json"
   },
   "repository": {
     "type": "git",

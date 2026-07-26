@@ -80,6 +80,11 @@ static/*.wasm
 # blob does not churn in diffs on every content edit.
 static/chat-index.json
 
+# Eval run artifacts. Scored JSON per run, used by --baseline for regression
+# gating and by any automated search over prompts or configs. Machine output,
+# not source; the committed reference is whatever you choose to promote.
+.eval/
+
 # Playwright MCP artifacts and ad-hoc screenshots
 .playwright-mcp/
 
