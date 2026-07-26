@@ -1,3 +1,6 @@
+@import 'variables';
+@import 'mixins';
+
 .cv {
   max-width: 900px;
   margin: 0 auto;
@@ -49,6 +52,7 @@ section[id] {
 
   p {
     color: var(--text-secondary);
+    @include over-background;
     font-size: 1.1rem;
     line-height: 1.6;
     font-style: italic;
@@ -114,7 +118,7 @@ section[id] {
   }
 
   li.active a {
-    color: var(--primary-color);
+    color: var(--ink-primary);
     background: var(--bg-accent);
     border-color: var(--primary-color);
   }
@@ -223,7 +227,7 @@ section[id] {
         transition: color var(--transition-fast);
 
         &:hover {
-          color: var(--primary-color);
+          color: var(--ink-primary);
         }
       }
     }
@@ -289,8 +293,12 @@ section[id] {
   }
 }
 
-// New section title style for direct layout
+// Section titles sit on the animated background, not on a card — so they are
+// white with a halo in both themes. Following --text-primary put them at
+// #212121 in the light theme, which is invisible against the dark stage.
 .cv-section-title {
+  color: white;
+  @include over-background;
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
   padding-bottom: 0.5rem;
@@ -302,7 +310,6 @@ section[id] {
   text-transform: lowercase;
   letter-spacing: -0.02em;
   position: relative;
-  color: var(--text-primary);
 }
 
 // Shared card style for experience, education, and certifications
@@ -334,8 +341,7 @@ section[id] {
     opacity: 0.5;
   }
 
-  &:hover {
-    transform: translateY(-2px);
+  @include reading-emphasis {
     box-shadow: 0 4px 20px rgba(0, 255, 136, 0.1);
     border-color: var(--border-active);
 
@@ -343,6 +349,8 @@ section[id] {
       opacity: 1;
     }
   }
+
+  @include hover-lift;
 }
 
 .experience-item {
@@ -391,29 +399,95 @@ section[id] {
   }
 }
 
-// Remove accent top line for collapsible cards
+// Collapsible cards trade the top gradient hairline for a left rail, the same
+// marker `.about` and the blog previews use. It reads as a state, not an
+// ornament: flat while the card is just sitting there, brighter for whichever
+// entry the scroll has arrived at, and full accent once the entry is open.
 .cv-card.cv-collapse::before {
-  content: none !important;
-  display: none !important;
-  background: none !important;
-  height: 0 !important;
+  content: '';
+  top: 0;
+  right: auto;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  height: auto;
+  border-radius: 0;
+  background: var(--border-color);
+  opacity: 1;
+  transition:
+    background var(--transition-normal),
+    width var(--transition-normal);
 }
 
+.cv-collapse.is-active::before {
+  background: var(--border-active);
+}
+
+.cv-collapse[open] {
+  border-color: var(--border-active);
+
+  &::before {
+    width: 4px;
+    background: linear-gradient(
+      180deg,
+      var(--accent-cyan) 0%,
+      var(--primary-color) 100%
+    );
+  }
+}
+
+// The whole summary is the toggle — it fills the collapsed card edge to edge —
+// so it has to look like it, rather than leaving the chevron as the only cue.
 .cv-collapse-summary {
   padding: 1.25rem 1.5rem;
   cursor: pointer;
   display: block;
+  transition: background var(--transition-fast);
+
+  // Clipped by the card's overflow, so the ring goes inside rather than being
+  // sliced into a stray line along the bottom edge.
+  &:focus-visible {
+    outline-offset: -4px;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: var(--bg-hover);
+    }
+  }
 
   .summary-right {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
   .cv-collapse-chevron {
-    transition: transform var(--transition-normal);
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    line-height: 1;
+    transition: all var(--transition-normal);
   }
+}
+
+.cv-collapse.is-active .cv-collapse-chevron,
+.cv-collapse-summary:hover .cv-collapse-chevron {
+  border-color: var(--border-active);
+  color: var(--text-primary);
+}
+
+.cv-collapse[open] .cv-collapse-chevron {
+  border-color: var(--accent-cyan);
+  color: var(--ink-cyan);
 }
 
 // Collapsed institution line style
@@ -449,8 +523,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
+// Separator between the summary and what it opens. Inset from the card edges
+// so it reads as a divider rather than a seam, and with the same buffer above
+// and below the rule as the summary keeps under its own last line.
 .cv-collapse-details {
-  padding: 0 1.5rem 1.25rem 1.5rem;
+  margin: 0 1.5rem;
+  padding: 1.5rem 0 1.75rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .experience-duration {
@@ -473,7 +552,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     position: relative;
 
     &::marker {
-      color: var(--primary-color);
+      color: var(--ink-primary);
     }
   }
 }
@@ -521,8 +600,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   display: inline-flex;
   align-items: center;
   padding: 0.6rem 1.2rem;
-  background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
-  color: white;
+  background: linear-gradient(135deg, var(--fill-purple), var(--accent-pink));
+  color: var(--on-fill);
   border-radius: var(--radius-md);
   font-size: 0.925rem;
   font-weight: 500;
@@ -703,7 +782,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       font-size: 0.9rem;
 
       a {
-        color: var(--primary-color);
+        color: var(--ink-primary);
         text-decoration: none;
 
         &:hover {
@@ -748,7 +827,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     position: relative;
 
     &::marker {
-      color: var(--primary-color);
+      color: var(--ink-primary);
     }
   }
 }
@@ -827,7 +906,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     position: relative;
 
     &::marker {
-      color: var(--primary-color);
+      color: var(--ink-primary);
     }
   }
 }
@@ -836,10 +915,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 .skill-category-direct {
   margin-bottom: 1.5rem;
 
+  // On the background alongside the chips rather than on a card, so it takes
+  // the same treatment as the section titles above it.
   .skill-subtitle {
     font-size: 1.2rem;
     margin-bottom: 1rem;
-    color: var(--text-primary);
+    color: white;
+    @include over-background;
     font-family:
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
       monospace;
@@ -864,7 +946,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   &.technical {
     background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-    color: white;
+    color: var(--on-fill);
     border: 1px solid transparent;
   }
 
@@ -874,17 +956,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       var(--primary-color),
       var(--accent-cyan)
     );
-    color: white;
+    color: var(--on-fill);
     border: 1px solid transparent;
   }
 
   &.language {
-    background: linear-gradient(
-      135deg,
-      var(--accent-pink),
-      var(--accent-purple)
-    );
-    color: white;
+    background: linear-gradient(135deg, var(--accent-pink), var(--fill-purple));
+    color: var(--on-fill);
     border: 1px solid transparent;
   }
 
@@ -994,7 +1072,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         .result-type {
           font-size: 0.8rem;
           font-weight: 500;
-          color: var(--accent-color);
+          color: var(--ink-pink);
           font-family:
             'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
             monospace;
@@ -1045,6 +1123,11 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     border: 2px solid transparent;
     border-radius: var(--radius-md);
     font-weight: 500;
+    // Stated rather than inherited: the pdf button is an <a> at a prebuilt
+    // artifact while the other two are <button>s, so without this they sit at
+    // 1rem and the UA's 13.33px respectively, side by side in the same row.
+    font-size: 0.9rem;
+    line-height: 1.2;
     font-family:
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
       monospace;
@@ -1088,7 +1171,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
     &.pdf {
       background: var(--primary-color);
-      color: white;
+      color: var(--on-fill);
       border-color: var(--primary-color);
 
       &:hover:not(:disabled) {
@@ -1107,7 +1190,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
     &.docx {
       background: var(--secondary-color);
-      color: white;
+      color: var(--on-fill);
       border-color: var(--secondary-color);
 
       &:hover:not(:disabled) {
@@ -1199,11 +1282,11 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       border-radius: var(--radius-sm);
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       font-size: 0.85rem;
-      color: var(--primary-color);
+      color: var(--ink-primary);
     }
 
     a {
-      color: var(--primary-color);
+      color: var(--ink-primary);
       text-decoration: none;
 
       &:hover {
@@ -1485,7 +1568,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
     .contact-value {
       &:hover {
-        color: var(--accent-blue);
+        color: var(--ink-blue);
       }
     }
   }
@@ -1561,26 +1644,26 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     }
   }
 
+  // No card here: the chips are the content, and certifications right below it
+  // has never had one either. Carding only this one, and only in this theme,
+  // was the odd one out.
   .skills-section {
-    background: var(--bg-card);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-
     .skill-tag {
       &.technical {
         background: var(--accent-cyan);
-        color: white;
+        color: var(--on-fill);
         box-shadow: 0 2px 6px rgba(0, 172, 193, 0.3);
       }
 
       &.soft {
         background: var(--primary-color);
-        color: white;
+        color: var(--on-fill);
         box-shadow: 0 2px 6px rgba(0, 168, 84, 0.3);
       }
 
       &.language {
         background: var(--accent-pink);
-        color: white;
+        color: var(--on-fill);
         box-shadow: 0 2px 6px rgba(233, 30, 99, 0.3);
       }
 
@@ -1593,10 +1676,10 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     .certification-chip {
       background: linear-gradient(
         135deg,
-        var(--accent-purple),
+        var(--fill-purple),
         var(--accent-pink)
       );
-      color: white;
+      color: var(--on-fill);
       box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);
 
       &:hover {
@@ -1679,7 +1762,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
       code {
         background: var(--bg-card);
-        color: var(--accent-blue);
+        color: var(--ink-blue);
         border: 1px solid var(--border-color);
       }
     }

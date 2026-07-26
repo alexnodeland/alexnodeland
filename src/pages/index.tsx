@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layout, SEO } from '../components';
 import { getCTAButtonURL, homepageConfig } from '../config';
+import { useScrollSpy } from '../lib/hooks';
 import developmentIcon from '../images/development.png';
 import gearIcon from '../images/gear.png';
 import observabilityIcon from '../images/observability.png';
@@ -10,6 +11,11 @@ import systemsIcon from '../images/systems.png';
 import '../styles/index.scss';
 
 const IndexPage: React.FC = () => {
+  // The grid used to sit lit up wherever a tap left it, on cards that go
+  // nowhere when clicked. Reading position drives the highlight instead.
+  const { containerRef: expertiseRef, isActive: isExpertiseActive } =
+    useScrollSpy<HTMLDivElement>('.expertise-item');
+
   return (
     <Layout>
       <SEO
@@ -81,7 +87,7 @@ const IndexPage: React.FC = () => {
 
         <section className="expertise">
           <h2>{homepageConfig.expertise.title}</h2>
-          <div className="expertise-grid">
+          <div className="expertise-grid" ref={expertiseRef}>
             {homepageConfig.expertise.items.map((item, index) => {
               const expertiseImages = [
                 systemsIcon, // ai system architecture
@@ -93,7 +99,12 @@ const IndexPage: React.FC = () => {
               ];
               const iconSrc = expertiseImages[index] ?? developmentIcon;
               return (
-                <div key={index} className="expertise-item">
+                <div
+                  key={index}
+                  className={`expertise-item${
+                    isExpertiseActive(index) ? ' is-active' : ''
+                  }`}
+                >
                   <span className="expertise-icon">
                     <img src={iconSrc} alt={item.title} />
                   </span>

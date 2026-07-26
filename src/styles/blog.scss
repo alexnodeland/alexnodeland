@@ -32,6 +32,7 @@
 
   p {
     color: var(--text-secondary);
+    @include over-background;
     font-size: 1.1rem;
     line-height: 1.6;
     font-style: italic;
@@ -144,9 +145,9 @@
           background: linear-gradient(
             135deg,
             var(--accent-pink),
-            var(--accent-purple)
+            var(--fill-purple)
           );
-          color: white;
+          color: var(--on-fill);
           border-color: transparent;
           box-shadow: 0 0 15px rgba(255, 0, 128, 0.4);
         }
@@ -219,7 +220,7 @@
 
       &.active {
         border-color: var(--accent-pink);
-        color: var(--accent-pink);
+        color: var(--ink-pink);
 
         &:hover {
           box-shadow: 0 0 10px rgba(255, 0, 128, 0.2);
@@ -284,11 +285,22 @@
     border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   }
 
-  &:hover {
+  @include reading-emphasis {
     background: var(--bg-hover);
-    transform: translateY(-2px);
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
     border-color: var(--border-active);
+
+    // The rail is the quiet marker of which post you are on; it goes from a
+    // flat tint to the full gradient rather than appearing out of nothing.
+    &::before {
+      width: 4px;
+    }
+  }
+
+  @include hover-lift;
+
+  &::before {
+    transition: width var(--transition-normal);
   }
 }
 
@@ -306,8 +318,8 @@
 }
 
 .post-category {
-  background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
-  color: white;
+  background: linear-gradient(135deg, var(--accent-pink), var(--fill-purple));
+  color: var(--on-fill);
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
@@ -333,7 +345,7 @@
     transition: color var(--transition-fast);
 
     &:hover {
-      color: var(--primary-color);
+      color: var(--ink-primary);
     }
   }
 }
@@ -352,7 +364,7 @@
 }
 
 .read-more {
-  color: var(--primary-color);
+  color: var(--ink-primary);
   text-decoration: none;
   font-weight: 500;
   font-family:
@@ -362,7 +374,7 @@
   transition: all var(--transition-fast);
 
   &:hover {
-    color: var(--primary-dark);
+    color: var(--ink-primary);
     text-decoration: underline;
     text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
   }
@@ -500,7 +512,7 @@
     border-radius: var(--radius-sm);
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 0.9rem;
-    color: var(--accent-cyan);
+    color: var(--ink-cyan);
     border: 1px solid var(--border-color);
   }
 
@@ -538,13 +550,13 @@
   }
 
   a {
-    color: var(--accent-blue);
+    color: var(--ink-blue);
     text-decoration: none;
     font-weight: 500;
     transition: all var(--transition-fast);
 
     &:hover {
-      color: var(--accent-cyan);
+      color: var(--ink-cyan);
       text-decoration: underline;
       text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
     }
@@ -611,14 +623,17 @@
   border-top: 1px solid var(--border-color);
 }
 
+// Below the post card, so it sits on the background: white with a halo rather
+// than the green ink, which is tuned for a white card and disappears here.
 .back-to-blog {
-  color: var(--primary-color);
+  color: white;
+  @include over-background;
   text-decoration: none;
   font-weight: 500;
   transition: all var(--transition-fast);
 
   &:hover {
-    color: var(--primary-dark);
+    color: var(--primary-color);
     text-decoration: underline;
   }
 }
@@ -745,7 +760,7 @@
 
       &.active {
         background: var(--accent-blue);
-        color: white;
+        color: var(--on-fill);
         box-shadow: 0 2px 10px rgba(33, 150, 243, 0.3);
       }
     }
@@ -772,7 +787,7 @@
       );
     }
 
-    &:hover {
+    @include reading-emphasis {
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
       border-color: var(--accent-cyan);
     }
@@ -782,7 +797,7 @@
       color: var(--text-primary);
 
       &:hover {
-        color: var(--accent-blue);
+        color: var(--ink-blue);
       }
     }
 
@@ -793,24 +808,24 @@
     }
 
     .read-more {
-      color: var(--accent-blue);
+      color: var(--ink-blue);
 
       &:hover {
-        color: var(--accent-pink);
+        color: var(--ink-pink);
       }
     }
   }
 
   .post-category {
     background: var(--accent-blue);
-    color: white;
+    color: var(--on-fill);
     box-shadow: 0 2px 6px rgba(33, 150, 243, 0.3);
   }
 
   .post-content {
     code {
       background: var(--bg-hover);
-      color: var(--accent-blue);
+      color: var(--ink-blue);
       border: 1px solid var(--border-color);
     }
 
@@ -830,10 +845,10 @@
     }
 
     a {
-      color: var(--accent-blue);
+      color: var(--ink-blue);
 
       &:hover {
-        color: var(--accent-pink);
+        color: var(--ink-pink);
         text-shadow: 0 0 6px rgba(233, 30, 99, 0.3);
       }
     }

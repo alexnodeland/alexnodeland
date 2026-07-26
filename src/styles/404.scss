@@ -1,3 +1,8 @@
+@import 'variables';
+@import 'mixins';
+
+// This page has no card of its own — it sits straight on the animated
+// background in both themes, so both lines carry the halo.
 .not-found {
   text-align: center;
   padding: 4rem 2rem;
@@ -7,11 +12,14 @@
   h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
+    color: var(--text-primary);
+    @include over-background;
   }
 
   p {
     font-size: 1.2rem;
     color: var(--text-secondary);
+    @include over-background;
     margin-bottom: 2rem;
   }
 }
@@ -24,7 +32,7 @@
     var(--primary-color),
     var(--secondary-color)
   );
-  color: white;
+  color: var(--on-fill);
   text-decoration: none;
   border-radius: var(--radius-lg);
   font-weight: 600;
@@ -51,16 +59,16 @@
   }
 }
 
-// Light mode - text on dark background
+// The stage behind the backgrounds is dark in both themes, so the light theme
+// only needs the same white the dark theme already uses.
 [data-theme='light'] {
   .not-found {
     h1 {
       color: white;
-      text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
     }
 
     p {
-      color: rgba(255, 255, 255, 0.8);
+      color: rgba(255, 255, 255, 0.9);
     }
   }
 }

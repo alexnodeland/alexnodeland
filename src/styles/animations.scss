@@ -1,11 +1,20 @@
 // Animation keyframes and utilities
 
+// Every page title that glows sits directly on the animated background, so the
+// legibility halo has to ride along inside the keyframes: an animated
+// text-shadow replaces the static one outright, which is why the dark halos
+// written next to these rules never actually rendered.
 @keyframes glow {
   from {
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.9),
+      0 0 12px rgba(0, 0, 0, 0.6),
+      0 0 20px rgba(0, 255, 136, 0.3);
   }
   to {
     text-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.9),
+      0 0 12px rgba(0, 0, 0, 0.6),
       0 0 30px rgba(0, 255, 136, 0.6),
       0 0 40px rgba(0, 255, 136, 0.3);
   }

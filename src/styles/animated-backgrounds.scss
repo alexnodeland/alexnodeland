@@ -1,5 +1,21 @@
 // Animated backgrounds styles using design system variables
 
+// The simulations render into a canvas that sits at 90% opacity, so whatever is
+// behind it shows through and becomes part of the picture. Letting that be the
+// theme's page colour is what made the set look inconsistent between themes:
+// against the light theme's near-white base the sparse backgrounds — the
+// cellular automaton, the graph — washed out into pale fields, while the dense
+// ones — the PDE solver, the spectrogram — barely moved. Pinning it to one
+// constant near-black in both themes is what makes the six read as one set, and
+// it is what the white chrome layered over them already assumes.
+.background-stage {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: var(--bg-stage);
+}
+
 // Background controls container (bottom-left)
 .background-controls {
   position: fixed;
@@ -57,13 +73,14 @@
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     position: relative; // anchor tooltips and nav buttons to toolbar
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    // Floating surface, not a page surface: this sits over whichever
+    // background is running, so it takes the opaque floating tone rather than
+    // the near-clear control tint, which let the background read through it.
+    background: var(--bg-floating);
+    border: 1px solid var(--border-floating);
     border-radius: var(--radius-lg);
     color: var(--text-primary);
     font-size: 0.875rem;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px); // Safari 17 and earlier
     box-shadow: var(--shadow-lg);
     transition: all var(--transition-normal);
     min-width: 280px; // Match keyboard hints width for alignment
@@ -86,7 +103,7 @@
     }
 
     .background-name {
-      color: var(--primary-color);
+      color: var(--ink-primary);
       font-weight: 600;
       font-size: 0.875rem;
       text-align: center;
@@ -95,20 +112,28 @@
 
   .keyboard-hint {
     font-size: 0.6875rem;
-    color: var(--text-muted);
+    // Sits on the animated background with no surface under it, so it takes
+    // the halo rather than relying on the background staying dark.
+    color: var(--text-secondary);
+    @include over-background;
     text-align: left;
-    opacity: 0.6;
+    opacity: 0.85;
     font-family: inherit;
     width: 280px; // Fixed width to prevent jumping
 
+    // No surface behind these either, so the key caps carry their own rather
+    // than borrowing the page's — --bg-accent is a 3%-to-5% wash that simply
+    // disappears against the background.
     kbd {
-      background: var(--bg-accent);
-      border: 1px solid var(--border-color);
+      background: var(--bg-floating);
+      border: 1px solid var(--border-floating);
       border-radius: var(--radius-sm);
       padding: 0.125rem 0.25rem;
       margin: 0 0.125rem;
       font-size: 0.625rem;
       font-family: inherit;
+      color: var(--text-primary);
+      text-shadow: none;
     }
   }
 }
@@ -169,7 +194,7 @@
         margin-bottom: 0.75rem;
 
         .background-name {
-          color: var(--primary-color);
+          color: var(--ink-primary);
           font-weight: 600;
           font-size: 1rem; // Match chat panel font sizing
         }
@@ -223,7 +248,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.375rem;
-        color: var(--primary-color);
+        color: var(--ink-primary);
         text-decoration: none;
         font-size: 0.75rem;
         font-weight: 500;
@@ -258,7 +283,7 @@
         .special-hotkeys-title {
           font-size: 0.75rem;
           font-weight: 600;
-          color: var(--primary-color);
+          color: var(--ink-primary);
           margin-bottom: 0.5rem;
           font-family: inherit;
           letter-spacing: 0.5px;
@@ -328,7 +353,7 @@
             &.active {
               background: rgba(0, 255, 136, 0.2);
               border-color: var(--primary-color);
-              color: var(--primary-color);
+              color: var(--ink-primary);
               transform: translateY(0);
 
               kbd {
@@ -399,7 +424,7 @@
 
       &.open {
         background: var(--bg-accent);
-        color: var(--primary-color);
+        color: var(--ink-primary);
         border-left: 2px solid var(--primary-color);
       }
 
@@ -433,7 +458,7 @@
 
       &.open .category-toggle {
         transform: rotate(90deg); // down
-        color: var(--primary-color);
+        color: var(--ink-primary);
       }
     }
 
@@ -684,7 +709,7 @@
           margin-right: 0.5rem;
           font-size: 0.625rem;
           font-family: inherit;
-          color: var(--primary-color);
+          color: var(--ink-primary);
         }
       }
     }
@@ -719,20 +744,22 @@
       justify-content: center;
       gap: 0.25rem;
       font-size: 0.6875rem;
-      color: var(--text-muted);
-      opacity: 0.7; // Slightly more visible
+      color: var(--text-secondary);
+      opacity: 0.9;
       font-family: inherit;
       padding-top: 0.5rem;
 
+      // Key caps were a white wash on a white border, which only ever showed
+      // up on the dark panel; on the light theme's they vanished entirely.
       kbd {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--bg-accent);
+        border: 1px solid var(--border-color);
         border-radius: var(--radius-sm);
         padding: 0.125rem 0.3rem;
         font-size: 0.625rem;
         font-family: inherit;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        color: var(--primary-color);
+        color: var(--ink-primary);
       }
     }
   }
@@ -782,7 +809,7 @@
   line-height: 1;
 
   &:hover {
-    color: var(--primary-color);
+    color: var(--ink-primary);
     background: var(--bg-accent);
   }
 }
@@ -1102,7 +1129,7 @@
       transition: all var(--transition-fast);
 
       &.open {
-        color: var(--primary-color);
+        color: var(--ink-primary);
         border-color: var(--primary-color);
       }
     }

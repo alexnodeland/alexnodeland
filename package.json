@@ -17,6 +17,7 @@
     "test:integration": "jest --testPathPattern=__tests__/integration",
     "test:e2e": "playwright test",
     "eval:chat": "node scripts/chat-eval.mjs",
+    "audit:contrast": "node scripts/audit-contrast.mjs",
     "test:e2e:ui": "playwright test --ui",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:coverage:full": "node scripts/test-coverage.js",
