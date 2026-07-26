@@ -136,17 +136,18 @@ at it. To remove one, delete its entry — there's no other registry to update.
 
 ### Measured lineup (July 2026, M-series Mac, WebGPU)
 
-All from `EVAL_MODEL=<name> npm run eval:chat` on the same battery:
+From `just eval-models "<name>"`. **The battery grew during this work, so the
+`n` column matters** — rows measured on different sets are not directly
+comparable to each other, only to the default model as measured at the same
+time. Re-measure with `just eval-models` before leaning on any of it.
 
-| model                         | passed    | load     | median answer | median output | download |
-| ----------------------------- | --------- | -------- | ------------- | ------------- | -------- |
-| **lfm-1.2b** (default)        | **42/43** | 21s      | **1.4s**      | **48 tok**    | 760MB    |
-| lfm-1.2b-thinking _(dropped)_ | 35/43     | 42s      | 5.3s          | 658 tok       | 810MB    |
-| qwen-0.6b _(dropped)_         | 11/12 †   | 18s      | ~4.3s         | ~300 tok      | 600MB    |
-| lfm-230m _(rejected)_         | 8/13 †    | **8.9s** | **0.8s**      | 14 tok        | 200MB    |
-
-† scored on the earlier 12/13-case battery, before it was expanded; not
-directly comparable to the 43-case numbers above.
+| model                         | passed    | n   | load     | median answer | median output | download |
+| ----------------------------- | --------- | --- | -------- | ------------- | ------------- | -------- |
+| **lfm-1.2b** (default)        | **59/68** | 68  | 21s      | **1.4s**      | **48 tok**    | 760MB    |
+| lfm-1.2b (same, earlier set)  | 42/43     | 43  | 21s      | 1.4s          | 48 tok        | 760MB    |
+| lfm-1.2b-thinking _(dropped)_ | 35/43     | 43  | 42s      | 5.3s          | 658 tok       | 810MB    |
+| qwen-0.6b _(dropped)_         | 11/12     | 12  | 18s      | ~4.3s         | ~300 tok      | 600MB    |
+| lfm-230m _(rejected)_         | 8/13      | 13  | **8.9s** | **0.8s**      | 14 tok        | 200MB    |
 
 Four results here are worth knowing before changing the model, because none of
 them is what you would guess:
