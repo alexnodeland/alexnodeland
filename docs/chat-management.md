@@ -52,8 +52,9 @@ links to the pages the answer came from. The pieces:
   pages behind those numbers as links under the message
   (`MessageSources.tsx`). If the model forgets to cite, the top retrieved
   pages are shown instead.
-- **Cost, shown** — `MessageStats.tsx` renders total time, tokens written,
-  tokens/sec and whether the KV cache hit, under each answer. It is the
+- **Cost, shown** — `MessageStats.tsx` renders decode rate and how much of the
+  prompt the KV cache covered, under each answer. Two numbers, because the
+  rest is derivable from them and is on hover. It is the
   fastest way to notice a regression in ordinary use; the reset-path cache
   problem showed up there as prefill tripling. Note that anything rendered
   inside the message bubble has to be stripped in `assistantAnswers()` or it
@@ -143,7 +144,7 @@ time. Re-measure with `just eval-models` before leaning on any of it.
 
 | model                         | passed    | n   | load     | median answer | median output | download |
 | ----------------------------- | --------- | --- | -------- | ------------- | ------------- | -------- |
-| **lfm-1.2b** (default)        | **59/68** | 68  | 21s      | **1.4s**      | **48 tok**    | 760MB    |
+| **lfm-1.2b** (default)        | **56/68** | 68  | 21s      | **2.1s**      | **63 tok**    | 760MB    |
 | lfm-1.2b (same, earlier set)  | 42/43     | 43  | 21s      | 1.4s          | 48 tok        | 760MB    |
 | lfm-1.2b-thinking _(dropped)_ | 35/43     | 43  | 42s      | 5.3s          | 658 tok       | 810MB    |
 | qwen-0.6b _(dropped)_         | 11/12     | 12  | 18s      | ~4.3s         | ~300 tok      | 600MB    |
@@ -506,7 +507,7 @@ run in a visible browser window.
 
 #### Baseline results (July 2026, M-series Mac, LFM2.5-1.2B-Instruct q4f16)
 
-**59/68 cases pass, objective 0.900.** Cold WebGPU load **~21s**. Per answer: TTFA **~0.9s**
+**56/68 cases pass, objective 0.856.** Cold WebGPU load **~21s**. Per answer: TTFA **~0.9s**
 median, **~1.4s** to a finished answer, decode **~145 tok/s**. Refused
 questions come back in **~0.1s** because no generation runs at all.
 
