@@ -113,29 +113,33 @@ const WelcomeScreen: React.FC = () => {
         </div>
 
         <div className="welcome-actions">
-          <div
-            className="model-picker"
-            role="radiogroup"
-            aria-label="Choose a model"
-          >
-            {availableModels.map(model => (
-              <button
-                key={model.id}
-                role="radio"
-                aria-checked={model.id === selectedModel}
-                className={`model-option ${model.id === selectedModel ? 'selected' : ''}`}
-                onClick={() => setSelectedModel(model.id)}
-              >
-                <span className="model-option-name">
-                  {model.name}
-                  <span className="model-option-size">{model.size}</span>
-                </span>
-                <span className="model-option-description">
-                  {model.description}
-                </span>
-              </button>
-            ))}
-          </div>
+          {/* Hidden when there is nothing to choose between — a radiogroup with
+              a single radio is just a label the visitor can click. */}
+          {availableModels.length > 1 && (
+            <div
+              className="model-picker"
+              role="radiogroup"
+              aria-label="Choose a model"
+            >
+              {availableModels.map(model => (
+                <button
+                  key={model.id}
+                  role="radio"
+                  aria-checked={model.id === selectedModel}
+                  className={`model-option ${model.id === selectedModel ? 'selected' : ''}`}
+                  onClick={() => setSelectedModel(model.id)}
+                >
+                  <span className="model-option-name">
+                    {model.name}
+                    <span className="model-option-size">{model.size}</span>
+                  </span>
+                  <span className="model-option-description">
+                    {model.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           <p className="download-note">
             downloads once ({modelSize}), cached forever
           </p>

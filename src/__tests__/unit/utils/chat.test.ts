@@ -186,25 +186,31 @@ describe('Chat Utilities', () => {
   });
 
   describe('AVAILABLE_MODELS', () => {
-    it('should contain the LFM model', () => {
-      const lfmModel = AVAILABLE_MODELS.find(
-        m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+    it('should contain the instruct default', () => {
+      const instruct = AVAILABLE_MODELS.find(
+        m => m.id === 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX'
       );
-      expect(lfmModel).toBeDefined();
-      expect(lfmModel?.name).toBe('lfm-1.2b-thinking');
-      expect(lfmModel?.alwaysThinks).toBe(true);
-      expect(lfmModel?.generationProfile?.topP).toBe(0.1);
+      expect(instruct).toBeDefined();
+      expect(instruct?.name).toBe('lfm-1.2b');
+      expect(instruct?.alwaysThinks).toBe(false);
+      expect(instruct?.generationProfile?.topP).toBeUndefined();
     });
 
-    it('should contain the Qwen model', () => {
-      const qwenModel = AVAILABLE_MODELS.find(
-        m => m.id === 'onnx-community/Qwen3-0.6B-ONNX'
-      );
-      expect(qwenModel).toBeDefined();
-      expect(qwenModel?.name).toBe('qwen-0.6b');
-      expect(qwenModel?.dtype).toBe('q4f16');
-      expect(qwenModel?.alwaysThinks).toBe(false);
-      expect(qwenModel?.generationProfile?.topP).toBeUndefined();
+    it('should decode greedily on the non-thinking models', () => {
+      // Grounded extraction has a right answer sitting in the retrieved
+      // passages; sampling can only wander away from it.
+      AVAILABLE_MODELS.filter(m => !m.alwaysThinks).forEach(model => {
+        expect(model.generationProfile?.doSample).toBe(false);
+      });
+    });
+
+    it('should run every model at q4f16 on WebGPU', () => {
+      // Not just a size choice: these checkpoints declare kv_cache_dtype
+      // float16 for q4f16, so this dtype is also what gets an fp16 KV cache in
+      // GPU buffers. Plain q4 silently falls back to float32.
+      AVAILABLE_MODELS.forEach(model => {
+        expect(model.dtype).toBe('q4f16');
+      });
     });
 
     it('should have generationProfile for each model', () => {
@@ -233,17 +239,10 @@ describe('Chat Utilities', () => {
   });
 
   describe('getModelById', () => {
-    it('should return model when ID exists', () => {
-      const model = getModelById('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
+    it('should return the instruct model when ID exists', () => {
+      const model = getModelById('LiquidAI/LFM2.5-1.2B-Instruct-ONNX');
       expect(model).toBeDefined();
-      expect(model?.id).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
-      expect(model?.name).toBe('lfm-1.2b-thinking');
-    });
-
-    it('should return Qwen model when ID exists', () => {
-      const model = getModelById('onnx-community/Qwen3-0.6B-ONNX');
-      expect(model).toBeDefined();
-      expect(model?.name).toBe('qwen-0.6b');
+      expect(model?.name).toBe('lfm-1.2b');
     });
 
     it('should return undefined when ID does not exist', () => {

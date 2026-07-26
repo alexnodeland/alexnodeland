@@ -29,9 +29,12 @@ module.exports = {
     },
   },
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+    '^.+\\.(js|jsx|mjs|ts|tsx)$': 'babel-jest',
   },
-  moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx', 'json'],
+  // .mjs is how the retrieval and prompt modules are written so that the
+  // browser worker, plain Node eval scripts, and these tests can all import
+  // the same file without a build step in between.
+  moduleFileExtensions: ['js', 'jsx', 'mjs', 'ts', 'tsx', 'json'],
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/.cache/',

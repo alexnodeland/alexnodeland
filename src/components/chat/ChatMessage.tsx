@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { ChatMessage as ChatMessageType } from '../../types/chat';
 import { useChat } from './ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
+import MessageSources from './MessageSources';
 import ThinkingBlock from './ThinkingBlock';
 
 const formatTime = (date: Date) => {
@@ -139,6 +140,10 @@ const MessageItem = React.memo<MessageItemProps>(
               <p>{displayContent}</p>
             ))}
 
+          {message.role === 'assistant' && message.sources && (
+            <MessageSources sources={message.sources} />
+          )}
+
           <div className="message-timestamp">
             <span className="timestamp-text">
               {formatTime(message.timestamp)}
@@ -195,6 +200,10 @@ const MessageItem = React.memo<MessageItemProps>(
   (prev, next) =>
     prev.message.content === next.message.content &&
     prev.message.thinking === next.message.thinking &&
+    // Sources arrive before the first token and are narrowed again when the
+    // answer lands, both times without touching content — omitting them here
+    // would memoize the citation list away entirely.
+    prev.message.sources === next.message.sources &&
     prev.isExpanded === next.isExpanded &&
     prev.isLastMessage === next.isLastMessage &&
     prev.isGenerating === next.isGenerating
