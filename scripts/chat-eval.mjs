@@ -985,17 +985,41 @@ async function assistantAnswers(page) {
   );
 }
 
-/** Titles of the source chips rendered under the nth assistant message. */
+/**
+ * Hrefs of the sources listed under the nth assistant message.
+ *
+ * The list lives in a popover, so it has to be opened before it is in the DOM
+ * at all. Reading it through the same button a visitor clicks also means a
+ * broken toggle fails the eval, rather than passing it with zero sources.
+ */
 async function assistantSources(page, index) {
-  return page.$$eval(
+  const opened = await page.$$eval(
     '.chat-message.assistant .message-content',
     (els, i) => {
-      const el = els[i];
-      if (!el) return [];
-      return [...el.querySelectorAll('.message-sources .source-chip')].map(
-        chip => chip.getAttribute('href') || ''
-      );
+      const toggle = els[i]?.querySelector('.message-sources .sources-toggle');
+      if (!toggle) return false;
+      if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
+      return true;
     },
+    index
+  );
+  if (!opened) return [];
+
+  await page.waitForFunction(
+    i =>
+      !!document
+        .querySelectorAll('.chat-message.assistant .message-content')
+        [i]?.querySelector('.sources-popover'),
+    index,
+    { timeout: 2000 }
+  );
+
+  return page.$$eval(
+    '.chat-message.assistant .message-content',
+    (els, i) =>
+      [...(els[i]?.querySelectorAll('.sources-popover .source-row') ?? [])].map(
+        row => row.getAttribute('href') || ''
+      ),
     index
   );
 }
@@ -1233,11 +1257,6 @@ async function main() {
     );
   }
 
-  // Summary before teardown. Closing first means a hang or throw in
-  // browser.close() swallows the entire report after the run has already
-  // done all its work.
-  await browser.close().catch(() => {});
-
   // Per-category breakdown. Two models can post the same total and be wrong
   // about entirely different things; the shape is what tells you which one to
   // ship, and which direction a change moved.
@@ -1327,6 +1346,22 @@ async function main() {
   if (process.env.EVAL_JSON === '1') {
     console.log(JSON.stringify(results, null, 2));
   }
+
+  // Teardown last, and on a leash.
+  //
+  // This used to run before the summary, and browser.close() reliably hangs
+  // after a WebGPU session — the run would grade all 68 cases, write the
+  // artifact, and then sit at 0% CPU forever having printed no report. Two
+  // full runs were lost to it before the cause was obvious, because a hung
+  // process and a slow one look identical from outside.
+  //
+  // Nothing after this point needs the browser, so a close that will not
+  // return is not a reason to keep the process alive.
+  await Promise.race([
+    browser.close().catch(() => {}),
+    new Promise(r => setTimeout(r, 10000)),
+  ]);
+  process.exit(process.exitCode ?? 0);
 }
 
 main().catch(e => {
