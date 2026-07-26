@@ -246,6 +246,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
 
   return (
     <>
+      {/* Constant backing the simulations composite onto, so the set reads the
+          same in both themes rather than picking up the page colour. */}
+      <div className="background-stage" aria-hidden="true" />
       {renderCurrentBackground()}
       <div
         style={{

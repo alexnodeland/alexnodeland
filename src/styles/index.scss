@@ -26,6 +26,7 @@
 .hero-subtitle {
   font-size: 1.25rem;
   color: var(--text-secondary);
+  @include over-background;
   line-height: 1.6;
   max-width: 600px;
   margin: 0 auto;
@@ -141,8 +142,10 @@
 .expertise {
   margin-bottom: 4rem;
 
+  // Sits on the animated background, not in a card, in both themes.
   h2 {
     margin-bottom: 2rem;
+    @include over-background;
   }
 }
 
@@ -196,16 +199,22 @@
     background: var(--accent-yellow);
   }
 
-  &:hover {
+  @include reading-emphasis {
     background: var(--bg-hover);
     border-color: var(--border-active);
-    transform: translateY(-2px);
     box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
 
     &::before {
       transform: scaleX(1);
     }
+
+    .expertise-icon {
+      opacity: 1;
+      transform: scale(1.1);
+    }
   }
+
+  @include hover-lift;
 
   .expertise-icon {
     font-size: 2.5rem;
@@ -225,11 +234,6 @@
         opacity var(--transition-normal),
         filter var(--transition-normal);
     }
-  }
-
-  &:hover .expertise-icon {
-    opacity: 1;
-    transform: scale(1.1);
   }
 
   // Dark mode image inversion for expertise icons (black line PNGs -> white lines)
@@ -276,12 +280,13 @@
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
-  &:hover {
+  @include reading-emphasis {
     background: var(--bg-hover);
-    transform: translateY(-2px);
     box-shadow: 0 0 20px rgba(255, 0, 255, 0.1);
     border-color: var(--border-active);
   }
+
+  @include hover-lift;
 
   h2 {
     margin-bottom: 1.5rem;
@@ -307,13 +312,13 @@
     font-style: italic;
 
     a {
-      color: var(--accent-pink);
+      color: var(--ink-pink);
       text-decoration: none;
       font-weight: 500;
       transition: all var(--transition-fast);
 
       &:hover {
-        color: var(--accent-blue);
+        color: var(--ink-blue);
         text-decoration: underline;
         text-shadow: 0 0 10px rgba(0, 128, 255, 0.5);
       }
@@ -375,10 +380,6 @@
 
   .expertise-item {
     padding: 1.5rem 1rem;
-
-    &:hover {
-      transform: translateY(-1px);
-    }
   }
 
   .blog-preview {
@@ -436,9 +437,12 @@
     }
   }
 
-  // Section titles not in cards - on dark background
-  h2:not(.consulting h2):not(.about h2):not(.blog-preview h2) {
+  // Section titles that sit on the animated background rather than in a card.
+  // Scoped to `.home`: every page's stylesheet lands in one bundle, and
+  // unscoped this painted the CV's section titles white on their white cards.
+  .home h2:not(.consulting h2):not(.about h2):not(.blog-preview h2) {
     color: white;
+    @include over-background;
   }
 
   .about {
@@ -502,18 +506,18 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     border: 1px solid var(--border-color);
 
-    &:hover {
+    @include reading-emphasis {
       background: var(--bg-hover);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       border-color: var(--accent-blue);
+
+      .expertise-icon img {
+        opacity: 1;
+      }
     }
 
     .expertise-icon img {
       opacity: 0.8;
-    }
-
-    &:hover .expertise-icon img {
-      opacity: 1;
     }
 
     // Text inside white cards
@@ -530,7 +534,7 @@
     background: var(--bg-card);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
-    &:hover {
+    @include reading-emphasis {
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
       border-color: var(--accent-purple);
     }
@@ -544,10 +548,10 @@
       color: var(--text-secondary);
 
       a {
-        color: var(--accent-blue);
+        color: var(--ink-blue);
 
         &:hover {
-          color: var(--accent-pink);
+          color: var(--ink-pink);
           text-shadow: 0 0 8px rgba(233, 30, 99, 0.3);
         }
       }

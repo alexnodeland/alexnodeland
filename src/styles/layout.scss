@@ -1,3 +1,6 @@
+@import 'variables';
+@import 'mixins';
+
 // CSS Custom Properties for dynamic header height calculation
 :root {
   --header-height: calc(
@@ -199,10 +202,17 @@
   box-shadow: none; // Remove box shadow for transparency
 }
 
-// Header always has blur to match content (light theme)
-// [data-theme='light'] .fixed-header-container.scrolled .header-fixed {
-//   backdrop-filter: blur(3px);
-// }
+// Once anything is scrolled under it, the header stops being a tint over the
+// background and becomes a bar over the page's own cards. Its nav is white in
+// both themes, so without this the links land white-on-white the moment a card
+// passes beneath them. Same scrim in both themes, for the same reason the
+// background stage is.
+.fixed-header-container.scrolled .header-fixed {
+  background: rgba(10, 12, 16, 0.72);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+}
 
 [data-theme='light'] .footer-link {
   background: transparent; // Fully transparent
@@ -293,6 +303,7 @@
   font-size: 1.75rem;
   font-weight: 600;
   color: var(--text-primary);
+  @include over-background;
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
@@ -314,7 +325,7 @@
   }
 
   &:hover {
-    color: var(--accent-color);
+    color: var(--ink-pink);
     transform: translateY(-1px);
 
     &::after {
@@ -327,7 +338,7 @@
   color: white; // White text on dark background
 
   &:hover {
-    color: var(--accent-pink);
+    color: var(--ink-pink);
   }
 }
 
@@ -353,6 +364,7 @@
   width: 2.75rem;
   height: 2.75rem;
   color: var(--text-primary);
+  @include over-background;
   position: relative;
   overflow: hidden;
 
@@ -401,6 +413,7 @@
 .nav-link {
   text-decoration: none;
   color: var(--text-primary);
+  @include over-background;
   font-weight: 500;
   font-size: 1rem;
   white-space: nowrap;
@@ -428,7 +441,7 @@
   }
 
   &:hover {
-    color: var(--accent-color);
+    color: var(--ink-pink);
     background: rgba(231, 76, 60, 0.1);
     transform: translateY(-1px);
 
@@ -442,7 +455,7 @@
   color: white; // White text on dark background
 
   &:hover {
-    color: var(--accent-pink);
+    color: var(--ink-pink);
     background: rgba(233, 30, 99, 0.15);
   }
 }
@@ -558,13 +571,16 @@
 }
 
 // Dark mode icon inversion
+// The icons are black line art inverted to white in both themes, since they
+// sit on the animated background rather than on a page surface. The drop
+// shadow is the icon equivalent of the text halo — without it they vanish into
+// the brighter backgrounds.
 [data-theme='dark'] .footer-link .icon {
-  filter: invert(1);
+  filter: invert(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
 }
 
-// Light mode icons - invert for visibility on dark background
 [data-theme='light'] .footer-link .icon {
-  filter: invert(1);
+  filter: invert(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
   opacity: 0.9;
 
   &:hover {
@@ -574,6 +590,7 @@
 
 .footer-copyright {
   color: var(--text-muted);
+  @include over-background;
   font-size: 0.8rem;
   margin: 0;
   font-weight: 400;
@@ -584,7 +601,7 @@
 }
 
 [data-theme='light'] .footer-copyright {
-  color: rgba(255, 255, 255, 0.6); // Light text on dark background
+  color: rgba(255, 255, 255, 0.85); // Light text on dark background
 }
 
 @media (max-width: 768px) {

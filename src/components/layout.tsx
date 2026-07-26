@@ -35,17 +35,24 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   React.useEffect(() => {
-    const handleScroll = () => {
-      if (typeof window !== 'undefined') {
-        // Apply blur when scrolled more than 50px
-        setIsScrolled(window.scrollY > 50);
-      }
+    if (typeof window === 'undefined') return;
+
+    // The page scrolls inside `.layout`, not the window, so `window.scrollY`
+    // stays at 0 and this never fired. Scroll events do not bubble either —
+    // capturing on the document catches the one from the panel.
+    const handleScroll = (event: Event) => {
+      const target = event.target as HTMLElement | Document | null;
+      const top =
+        target instanceof HTMLElement ? target.scrollTop : window.scrollY;
+      setIsScrolled(top > 50);
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', handleScroll);
-      return () => window.removeEventListener('scroll', handleScroll);
-    }
+    document.addEventListener('scroll', handleScroll, {
+      capture: true,
+      passive: true,
+    });
+    return () =>
+      document.removeEventListener('scroll', handleScroll, { capture: true });
   }, []);
 
   // Determine CSS classes based on panel states

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useScrollSpy } from '../../lib/hooks';
 import { ExperienceItem } from '../../types';
 
 interface CVExperienceSectionProps {
@@ -10,13 +11,21 @@ const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
   experiences,
   className,
 }) => {
+  const { containerRef, isActive } = useScrollSpy<HTMLElement>(
+    'details.cv-collapse'
+  );
+
   return (
     <section
       className={`experience-section${className ? ` ${className}` : ''}`}
+      ref={containerRef}
     >
       <h2 className="cv-section-title">Experience</h2>
       {experiences.map((exp, index) => (
-        <details key={index} className="cv-card cv-collapse">
+        <details
+          key={index}
+          className={`cv-card cv-collapse${isActive(index) ? ' is-active' : ''}`}
+        >
           <summary className="cv-collapse-summary">
             <div className="experience-header">
               <h3>

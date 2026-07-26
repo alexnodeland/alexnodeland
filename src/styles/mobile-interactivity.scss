@@ -11,20 +11,17 @@ $mobile-breakpoint: 768px;
 .mobile-interactivity-launcher {
   display: none;
 
+  // Bottom edge and height are shared with the chat launcher in the opposite
+  // corner, so the two read as one row of chrome rather than two loose pills.
   @media (max-width: $mobile-breakpoint) {
     display: block;
     position: fixed;
-    bottom: 1.75rem;
-    left: 1.75rem;
+    bottom: 1rem;
+    left: 1rem;
     z-index: 1000;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     animation: slideInFromLeftWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)
       forwards;
-  }
-
-  @media (max-width: 480px) {
-    bottom: 1rem;
-    left: 1rem;
   }
 }
 
@@ -32,26 +29,28 @@ $mobile-breakpoint: 768px;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  min-height: 3rem; // Matches the chat launcher's circle
+  padding: 0 1rem;
+  // Was hardcoded dark glass with white text, which in light mode landed as an
+  // unreadable smudge over the white cards. Same floating surface as the chat
+  // launcher, so it follows the theme the way the rest of the chrome does.
+  background: var(--bg-floating);
+  border: 1px solid var(--border-floating);
   border-radius: var(--radius-lg);
-  color: #fff;
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: lowercase;
   letter-spacing: -0.01em;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-lg);
   transition: all var(--transition-normal);
   -webkit-tap-highlight-color: transparent;
 
   svg {
     flex-shrink: 0;
-    color: var(--primary-color);
+    color: var(--ink-primary);
   }
 
   &:active {
@@ -66,6 +65,11 @@ $mobile-breakpoint: 768px;
 
 .mobile-explore {
   display: none;
+
+  // Explore mode is a dark scrim over the full-bleed background in both
+  // themes, so its accent stays the bright cut rather than following
+  // --ink-primary down to the light theme's darker green.
+  --explore-accent: #00ff88;
 
   @media (max-width: $mobile-breakpoint) {
     display: block;
@@ -215,7 +219,7 @@ $mobile-breakpoint: 768px;
   -webkit-tap-highlight-color: transparent;
 
   &:active {
-    color: var(--primary-color);
+    color: var(--explore-accent);
     background: rgba(255, 255, 255, 0.08);
   }
 }
@@ -242,7 +246,7 @@ $mobile-breakpoint: 768px;
 
   .mobile-explore-title {
     max-width: 100%;
-    color: var(--primary-color);
+    color: var(--explore-accent);
     font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: -0.01em;

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useScrollSpy } from '../../lib/hooks';
 import { EducationItem } from '../../types';
 
 interface CVEducationSectionProps {
@@ -10,11 +11,21 @@ const CVEducationSection: React.FC<CVEducationSectionProps> = ({
   education,
   className,
 }) => {
+  const { containerRef, isActive } = useScrollSpy<HTMLElement>(
+    'details.cv-collapse'
+  );
+
   return (
-    <section className={`education-section${className ? ` ${className}` : ''}`}>
+    <section
+      className={`education-section${className ? ` ${className}` : ''}`}
+      ref={containerRef}
+    >
       <h2 className="cv-section-title">Education</h2>
       {education.map((edu, index) => (
-        <details key={index} className="cv-card cv-collapse">
+        <details
+          key={index}
+          className={`cv-card cv-collapse${isActive(index) ? ' is-active' : ''}`}
+        >
           <summary className="cv-collapse-summary">
             <div className="education-header">
               <h3>{edu.degree}</h3>

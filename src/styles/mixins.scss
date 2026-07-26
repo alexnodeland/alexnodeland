@@ -23,7 +23,7 @@
 @mixin button-primary {
   @include button-base;
   background: var(--accent-color);
-  color: white;
+  color: var(--on-fill);
   border-color: var(--accent-color);
   box-shadow: var(--shadow-sm);
   position: relative;
@@ -91,7 +91,7 @@
   &:hover {
     background: var(--bg-secondary);
     border-color: var(--retro-green);
-    color: var(--retro-green);
+    color: var(--ink-primary);
     transform: translateY(-2px);
     box-shadow:
       0 0 20px rgba(0, 255, 136, 0.3),
@@ -107,6 +107,20 @@
   }
 }
 
+// Text that sits directly on the animated background rather than on a page
+// surface — the nav, the footer, page titles above the cards.
+//
+// The backgrounds do not follow the theme: the same six run in both, from a
+// near-black graph to a saturated yellow PDE field. So this cannot be solved
+// with a colour, and the text carries its own halo instead — a tight, nearly
+// opaque layer that holds an edge against a bright cell, plus a wider soft one
+// that fills the gaps between cells.
+@mixin over-background {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 12px rgba(0, 0, 0, 0.6);
+}
+
 @mixin academic-underline {
   position: relative;
 
@@ -120,6 +134,34 @@
     height: 3px;
     background: var(--accent-color);
     border-radius: 2px;
+  }
+}
+
+// The emphasis a card takes on when it is the one being read — either because
+// a pointer is over it or because the scroll position has arrived at it. Both
+// routes get the same treatment so the site has one idea of "this one".
+//
+// Hover is gated on a real pointer: on touch it latches after a tap and leaves
+// a card lit for the rest of the session, on cards that mostly go nowhere.
+@mixin reading-emphasis {
+  &.is-active {
+    @content;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @content;
+    }
+  }
+}
+
+// Movement reserved for pointer hover. Tying a lift to the scroll position
+// makes a list wobble as you read down it.
+@mixin hover-lift($distance: -2px) {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      transform: translateY($distance);
+    }
   }
 }
 

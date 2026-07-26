@@ -89,12 +89,12 @@ body {
 }
 
 a {
-  color: var(--primary-color);
+  color: var(--ink-primary);
   text-decoration: none;
   transition: color var(--transition-fast);
 
   &:hover {
-    color: var(--primary-dark);
+    color: var(--ink-primary);
   }
 }
 
@@ -200,16 +200,19 @@ img {
 /* Selection styling */
 ::selection {
   background: var(--primary-color);
-  color: white;
+  color: var(--on-fill);
 }
 
 [data-theme='light'] ::selection {
   background: var(--accent-blue);
-  color: white;
+  color: var(--on-fill);
 }
 
-/* Focus styles */
-*:focus {
+/* Focus styles. :focus-visible rather than :focus, so the ring answers the
+   keyboard and does not fire on every mouse click — on the CV's collapsible
+   cards a clicked <summary> kept its ring, which the card's overflow clipped
+   into a stray rule sitting right on top of the content it had just opened. */
+*:focus-visible {
   outline: 2px solid var(--primary-color);
   outline-offset: 2px;
 }

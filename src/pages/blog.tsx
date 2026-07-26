@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { graphql, Link } from 'gatsby';
 import { Layout, SEO } from '../components';
+import { useScrollSpy } from '../lib/hooks';
 import { BlogPageProps } from '../types';
 import '../styles/blog.scss';
 
@@ -52,6 +53,11 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
   }, [allPosts, searchTerm, selectedCategory, sortOrder]);
+
+  // Marks whichever post is at the reading position, so the list tracks the
+  // scroll the same way the expertise grid and the CV entries do.
+  const { containerRef: postsRef, isActive: isPostActive } =
+    useScrollSpy<HTMLDivElement>('.post-preview');
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -139,9 +145,14 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
               </p>
             </div>
           ) : (
-            <div className="posts-list">
-              {filteredPosts.map(post => (
-                <article key={post.id} className="post-preview">
+            <div className="posts-list" ref={postsRef}>
+              {filteredPosts.map((post, index) => (
+                <article
+                  key={post.id}
+                  className={`post-preview${
+                    isPostActive(index) ? ' is-active' : ''
+                  }`}
+                >
                   <div className="post-meta">
                     <time dateTime={post.frontmatter.date}>
                       {new Date(post.frontmatter.date).toLocaleDateString(

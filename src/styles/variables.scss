@@ -16,6 +16,42 @@
   --text-secondary: #b0b0b0; // Light gray
   --text-muted: #808080; // Medium gray
 
+  // --- Accents as text -----------------------------------------------------
+  // The palette above is tuned for fills, glows and hairlines. Set as words on
+  // a card it has to clear 4.5:1 on its own, which the bright cuts already do
+  // against the near-black surfaces here — so in this theme the inks are the
+  // accents unchanged. The light theme redefines them; nothing that renders an
+  // accent as `color` should reach past these.
+  --ink-primary: #00ff88;
+  --ink-cyan: #00d4ff;
+  --ink-pink: #ff0080;
+  --ink-blue: #0080ff;
+  --ink-purple: #ff00ff;
+  --ink-yellow: #ffaa00;
+
+  // Text on a solid accent fill. Every accent in this palette is a bright
+  // mid-tone in both themes — white on top of one lands between 1.3:1 and
+  // 3.8:1 — so filled buttons and tags take near-black, which clears AA on all
+  // of them. Purple is the exception and is handled where it is used.
+  --on-fill: #0a0a0a;
+
+  // Purple as a fill. Every other accent is bright enough in both themes to
+  // carry --on-fill; the light theme's purple is not, and it is usually paired
+  // with pink in a gradient, so it gets a brighter cut rather than the pair
+  // switching to white text and failing on the pink end instead.
+  --fill-purple: #ff00ff;
+
+  // The constant backing the animated backgrounds composite onto. Deliberately
+  // the same in both themes — see the note on .background-stage.
+  --bg-stage: #07080a;
+
+  // Chrome that floats over the animated backgrounds rather than sitting on a
+  // page surface. Opaque on purpose: the backgrounds run from near-black to
+  // saturated yellow, and any translucency at all picks up the hard edge of
+  // whatever card happens to be passing behind it.
+  --bg-floating: #0e1014;
+  --border-floating: rgba(255, 255, 255, 0.16);
+
   // Backgrounds - Consistent black theme
   --bg-primary: #0a0a0a; // Deep black (main background)
   --bg-secondary: rgba(
@@ -74,7 +110,21 @@
   // Text colors - much darker for crisp readability
   --text-primary: #212121; // Almost black - crisp and clear
   --text-secondary: #616161; // Dark gray - good contrast
-  --text-muted: #9e9e9e; // Medium gray - still readable
+  --text-muted: #6e6e6e; // Medium gray - quiet, still clears AA on a card
+
+  // Accents as text: the same hues taken down until they read as words on a
+  // white card. The fill cuts above only manage 2.2:1 to 3.1:1 there.
+  --ink-primary: #00703a;
+  --ink-cyan: #006c7a;
+  --ink-pink: #c2185b;
+  --ink-blue: #1565c0;
+  --ink-purple: #7b1fa2;
+  --ink-yellow: #8a4b00;
+
+  --fill-purple: #ba68c8;
+
+  --bg-floating: #ffffff;
+  --border-floating: rgba(0, 0, 0, 0.12);
 
   // Backgrounds - subtle but distinct layers
   --bg-primary: #f8f9fa; // Very light gray - not pure white
