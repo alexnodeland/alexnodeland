@@ -1,5 +1,16 @@
 // Chat types for Transformers.js integration
 
+/** A page from Alex's site that a grounded answer drew on. Produced by
+ *  retrieval in the worker and rendered under the message. */
+export interface ChatSource {
+  /** Bracket number the model cites this passage as, e.g. [2]. */
+  n: number;
+  id: string;
+  title: string;
+  url: string;
+  kind: 'cv' | 'blog' | 'project' | 'home';
+}
+
 // Core chat types
 export interface ChatMessage {
   id: string;
@@ -9,6 +20,9 @@ export interface ChatMessage {
   // Optional thinking block content
   thinking?: string;
   isThinkingExpanded?: boolean;
+  /** Attached as soon as retrieval finishes, then narrowed to the sources the
+   *  finished answer actually cited. */
+  sources?: ChatSource[];
 }
 
 // Per-model generation parameters bundled in one flat object.
@@ -81,7 +95,11 @@ export interface WorkerResponse {
     | 'error'
     | 'check_complete'
     | 'interrupted'
-    | 'reset_complete';
+    | 'reset_complete'
+    // Retrieved passages, sent before generation starts
+    | 'sources'
+    // The search index failed to load; the model still works, but ungrounded
+    | 'retriever_error';
   data?: any;
   file?: string;
   progress?: number;
@@ -92,6 +110,9 @@ export interface WorkerResponse {
   state?: 'thinking' | 'answering';
   // modelId of the model that finished loading (attached to 'ready')
   modelId?: string;
+  sources?: ChatSource[];
+  /** Wall-clock milliseconds retrieval took, for the eval harness. */
+  retrievalMs?: number;
 }
 
 // Generation parameters

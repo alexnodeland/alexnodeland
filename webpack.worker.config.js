@@ -12,7 +12,7 @@ module.exports = {
   },
   target: 'webworker',
   resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx'],
+    extensions: ['.js', '.mjs', '.jsx', '.ts', '.tsx'],
     fallback: {
       // Web worker polyfills
       fs: false,

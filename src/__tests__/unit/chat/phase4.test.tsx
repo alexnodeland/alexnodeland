@@ -27,14 +27,14 @@ describe('Phase 4A: Model Switching with Cache', () => {
       expect(AVAILABLE_MODELS.length).toBeGreaterThanOrEqual(1);
 
       const modelIds = AVAILABLE_MODELS.map(m => m.id);
-      expect(modelIds).toContain('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
+      expect(modelIds).toContain('LiquidAI/LFM2.5-1.2B-Instruct-ONNX');
 
       // Verify the model has all required properties
       const lfmModel = AVAILABLE_MODELS.find(
-        m => m.id === 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+        m => m.id === 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX'
       );
       expect(lfmModel).toBeDefined();
-      expect(lfmModel?.name).toBe('lfm-1.2b-thinking');
+      expect(lfmModel?.name).toBe('lfm-1.2b');
       expect(lfmModel?.contextWindow).toBe(16384);
       expect(lfmModel?.device).toBe('webgpu');
     });
@@ -109,9 +109,9 @@ describe('Phase 4A: Model Switching with Cache', () => {
 
   describe('getModelById', () => {
     it('should return correct model for valid ID', () => {
-      const model = getModelById('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
+      const model = getModelById('LiquidAI/LFM2.5-1.2B-Instruct-ONNX');
       expect(model).toBeDefined();
-      expect(model?.name).toBe('lfm-1.2b-thinking');
+      expect(model?.name).toBe('lfm-1.2b');
     });
 
     it('should return undefined for invalid ID', () => {
@@ -123,7 +123,7 @@ describe('Phase 4A: Model Switching with Cache', () => {
   describe('getRecommendedContextWindow', () => {
     it('should return model context window for normal models', () => {
       const contextWindow = getRecommendedContextWindow(
-        'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+        'LiquidAI/LFM2.5-1.2B-Instruct-ONNX'
       );
       expect(contextWindow).toBe(16384);
     });
@@ -294,20 +294,20 @@ describe('Integration Tests', () => {
     expect(ModelCache.getCachedModels()).toHaveLength(0);
 
     // Set a model as loading
-    ModelCache.setModelLoading('LiquidAI/LFM2.5-1.2B-Thinking-ONNX', 'webgpu');
-    expect(ModelCache.isModelCached('LiquidAI/LFM2.5-1.2B-Thinking-ONNX')).toBe(
+    ModelCache.setModelLoading('LiquidAI/LFM2.5-1.2B-Instruct-ONNX', 'webgpu');
+    expect(ModelCache.isModelCached('LiquidAI/LFM2.5-1.2B-Instruct-ONNX')).toBe(
       false
     );
 
     // Mark as ready
-    ModelCache.setModelReady('LiquidAI/LFM2.5-1.2B-Thinking-ONNX', 'webgpu');
-    expect(ModelCache.isModelCached('LiquidAI/LFM2.5-1.2B-Thinking-ONNX')).toBe(
+    ModelCache.setModelReady('LiquidAI/LFM2.5-1.2B-Instruct-ONNX', 'webgpu');
+    expect(ModelCache.isModelCached('LiquidAI/LFM2.5-1.2B-Instruct-ONNX')).toBe(
       true
     );
 
     // Get recommended context for this model
     const contextWindow = getRecommendedContextWindow(
-      'LiquidAI/LFM2.5-1.2B-Thinking-ONNX'
+      'LiquidAI/LFM2.5-1.2B-Instruct-ONNX'
     );
     expect(contextWindow).toBe(16384);
 

@@ -75,6 +75,10 @@ static/worker.js.LICENSE.txt
 static/*.mjs
 static/*.mjs.LICENSE.txt
 static/*.wasm
+# Chat retrieval index, embedded from src/ by `npm run build:index`. Generated
+# at build time like the worker bundle and the CV PDFs, so the base64 vector
+# blob does not churn in diffs on every content edit.
+static/chat-index.json
 
 # Playwright MCP artifacts and ad-hoc screenshots
 .playwright-mcp/

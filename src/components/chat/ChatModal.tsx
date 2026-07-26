@@ -113,29 +113,32 @@ const ChatModal: React.FC = () => {
         <h3 className="chat-title">Chat</h3>
         <div className="chat-header-controls">
           <ThinkingToggle key="thinking-toggle" />
-          <div className="model-selector">
-            <select
-              value={selectedModel}
-              onChange={e => setSelectedModel(e.target.value)}
-              aria-label="Select AI model"
-              className="model-select"
-            >
-              {availableModels.map(model => {
-                const isCached = cachedModels?.includes(model.id);
-                const displayName = model.name;
-                const sizeInfo = model.size ? ` (${model.size})` : '';
-                return (
-                  <option
-                    key={model.id}
-                    value={model.id}
-                    title={`${model.description}${sizeInfo}${isCached ? ' - Cached' : ''}`}
-                  >
-                    {displayName}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+          {/* A picker with one option is a control that does nothing. */}
+          {availableModels.length > 1 && (
+            <div className="model-selector">
+              <select
+                value={selectedModel}
+                onChange={e => setSelectedModel(e.target.value)}
+                aria-label="Select AI model"
+                className="model-select"
+              >
+                {availableModels.map(model => {
+                  const isCached = cachedModels?.includes(model.id);
+                  const displayName = model.name;
+                  const sizeInfo = model.size ? ` (${model.size})` : '';
+                  return (
+                    <option
+                      key={model.id}
+                      value={model.id}
+                      title={`${model.description}${sizeInfo}${isCached ? ' - Cached' : ''}`}
+                    >
+                      {displayName}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
           {messages.length > 0 && (
             <button
               className="chat-export-button"

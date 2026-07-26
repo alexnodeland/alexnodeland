@@ -10,13 +10,13 @@ import { chatConfig } from '../../config/chat';
 import {
   AVAILABLE_MODELS,
   createRollingContext,
-  estimateTokens,
   ModelCache,
   parseThinkingBlocks,
 } from '../../lib/utils/chat';
 import {
   ChatMessage,
   ChatModel,
+  ChatSource,
   ModelLoadingState,
   WorkerRequest,
   WorkerResponse,
@@ -65,12 +65,12 @@ const loadConfigFor = (modelId: string) => {
   return def ? { dtype: def.dtype, dtypeWasm: def.dtypeWasm } : {};
 };
 
-/** Builds the full 'load' request payload, including the warmup prompt so the
- * worker can compile WebGPU shaders at real prefill shapes during loading. */
+/** Builds the full 'load' request payload. The system prompt is no longer sent
+ * with it — the worker owns that text so it stays byte-identical across turns
+ * and its warmup KV cache keeps matching. */
 const loadRequestDataFor = (modelId: string) => ({
   modelId,
   modelConfig: loadConfigFor(modelId),
-  warmupPrompt: chatConfig.generation.getSystemPrompt(modelId),
 });
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
@@ -273,24 +273,23 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     try {
       const modelDef = AVAILABLE_MODELS.find(m => m.id === selectedModel);
-      const systemPrompt = chatConfig.generation.getSystemPrompt(selectedModel);
 
-      // Model-aware rolling context: budget = model window − system prompt (CV)
-      // tokens − tokens reserved for the model's own output.
+      // Model-aware rolling context: budget = model window − the room the
+      // worker is about to spend on instructions and retrieved passages −
+      // tokens reserved for the model's own output.
       const modelContext =
         modelDef?.contextWindow ?? chatConfig.behavior.contextWindow;
-      const reservedOutput = modelDef?.generationProfile?.maxTokens ?? 1024;
-      const systemTokens = estimateTokens(systemPrompt);
+      const reservedOutput = modelDef?.generationProfile?.maxTokens ?? 512;
       const budget = Math.max(
         512,
-        modelContext - systemTokens - reservedOutput
+        modelContext - chatConfig.behavior.groundingReserve - reservedOutput
       );
       const contextMessages = createRollingContext(msgs, budget);
 
-      // Off-topic handling lives in the worker's topic guard (a cheap
-      // CV-free classification pass), NOT in per-message prompt notes —
-      // in-prompt rules stop working after a few answered turns, and
-      // history rewrites would break the worker's KV prefix reuse.
+      // Off-topic handling is decided by retrieval in the worker: if nothing
+      // in the corpus is close enough to the question, there is nothing to
+      // ground an answer in and the canned refusal is returned. That replaced
+      // two classifier generations that used to run before every answer.
 
       // Always-thinking models reason regardless of the toggle
       const effectiveReasonEnabled = modelDef?.alwaysThinks
@@ -303,11 +302,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           messages: contextMessages,
           modelId: selectedModel,
           reasonEnabled: effectiveReasonEnabled,
-          systemPrompt,
-          guard: {
-            prompts: chatConfig.generation.guardPrompts,
-            refusal: chatConfig.generation.refusalMessage,
-          },
           modelConfig: modelDef
             ? {
                 generationProfile: modelDef.generationProfile,
@@ -487,6 +481,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           case 'ready': {
             setModelState({ status: 'ready', progress: [] });
             setIsGenerating(false);
+            // Load phase split (download / warmup / index) for the eval.
+            if ((data as any).timing && typeof window !== 'undefined') {
+              (window as any).__chatLoadTiming = (data as any).timing;
+            }
             // Use the modelId the worker actually loaded (B7), not the current
             // selection which may have changed during the load.
             const loadedModel = data.modelId || selectedModelRef.current;
@@ -508,6 +506,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             setIsGenerating(true);
             setTokensPerSecond(0);
             addMessage({ role: 'assistant', content: '', thinking: '' });
+            break;
+          case 'sources': {
+            // Retrieval finishes in milliseconds; the first token is hundreds
+            // away. Attaching sources now means the visitor can see what the
+            // answer is being drawn from while it is still being written.
+            const sources = (data.sources || []) as ChatSource[];
+            setMessages((prev: ChatMessage[]) => {
+              const newMessages = [...prev];
+              const last = newMessages[newMessages.length - 1];
+              if (last && last.role === 'assistant') {
+                newMessages[newMessages.length - 1] = { ...last, sources };
+              }
+              return newMessages;
+            });
+            break;
+          }
+          case 'retriever_error':
+            console.warn('[chat] search index unavailable:', data.data);
             break;
           case 'update': {
             // Feed the stall watchdog — tokens are flowing.
@@ -545,9 +561,21 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             isGeneratingRef.current = false;
             setIsGenerating(false);
 
+            // Per-turn prefill/decode split from the worker. Parked on window
+            // for `npm run eval:chat` to read; the UI does not use it, and
+            // nothing depends on it existing.
+            if ((data as any).timing && typeof window !== 'undefined') {
+              const w = window as any;
+              (w.__chatTimings ??= []).push((data as any).timing);
+            }
+
             const finalText = Array.isArray((data as any).output)
               ? (data as any).output.join('')
               : String((data as any).output || '');
+            // Narrowed by the worker to what the answer actually cited.
+            const finalSources = (data.sources || undefined) as
+              | ChatSource[]
+              | undefined;
 
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
@@ -562,6 +590,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                   newMessages[newMessages.length - 1] = {
                     ...last,
                     content: cleanContent,
+                    sources: finalSources ?? last.sources,
                   };
                   return newMessages;
                 }
@@ -574,6 +603,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                   ...last,
                   content: parsed.content,
                   thinking: parsed.thinking || last.thinking,
+                  sources: finalSources ?? last.sources,
                 };
               } else if (finalText) {
                 const parsed = parseThinkingBlocks(finalText);

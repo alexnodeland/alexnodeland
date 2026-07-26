@@ -83,7 +83,7 @@ describe('Chat Types', () => {
 
     it('should allow extended properties', () => {
       const model: ChatModel = {
-        id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
+        id: 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX',
         name: 'lfm-1.2b',
         description: 'efficient reasoning model',
         size: '~1.2GB',
@@ -210,11 +210,11 @@ describe('Chat Types', () => {
     it('should validate load request with data', () => {
       const request: WorkerRequest = {
         type: 'load',
-        data: { modelId: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX' },
+        data: { modelId: 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX' },
       };
 
       expect(request.type).toBe('load');
-      expect(request.data.modelId).toBe('LiquidAI/LFM2.5-1.2B-Thinking-ONNX');
+      expect(request.data.modelId).toBe('LiquidAI/LFM2.5-1.2B-Instruct-ONNX');
     });
 
     it('should validate generate request', () => {

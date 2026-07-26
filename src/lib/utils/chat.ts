@@ -106,79 +106,86 @@ export async function detectWebGPUSupport(): Promise<boolean> {
 /**
  * Available AI models for the chat interface.
  * Single source of truth for model selection and per-model configuration.
+ *
+ * Every entry runs at `q4f16` on WebGPU, which is not just a size choice.
+ * Both LFM checkpoints declare `kv_cache_dtype: float16` for that dtype in
+ * their `transformers.js_config`, so picking it also gets an fp16 key-value
+ * cache held in GPU buffers instead of a float32 one round-tripping through
+ * CPU memory. Decoding is bandwidth-bound, so that is worth more than the
+ * download saving. Plain `q4` silently forfeits it.
+ *
+ * All three decode greedily. Grounded extraction from retrieved passages has
+ * a right answer sitting in the context; sampling can only wander away from
+ * it, and greedy skips the sampler's per-token work.
  */
+// NOTE: `LiquidAI/LFM2.5-350M-ONNX` looks like it belongs here — a third the
+// download of the 1.2B, and with retrieval doing the grounding, a model that
+// size is plausibly enough. It was tried and removed.
+//
+// It downloads, emits no error to the console or the worker, and then simply
+// never reaches a ready state: measured at 10 minutes of polling with the
+// worker's 'ready' message never arriving, so the chat sits permanently
+// unusable behind a disabled send button. One suspect is that its config
+// declares `use_external_data_format` as a bare boolean where the 1.2B uses a
+// per-file map, but that was not confirmed. Whatever the cause, an option that
+// silently does nothing is worse than one less choice.
+//
+// Re-test with `EVAL_MODEL=lfm-350m npm run eval:chat` before adding it back;
+// that harness now fails loudly on a model that never becomes ready.
+//
+// NOTE: `LiquidAI/LFM2.5-230M-ONNX` was measured and rejected too, on quality
+// rather than mechanics. It is genuinely fast — 8.9s to load against 21s,
+// ~0.8s per answer against 1.7s, 200MB against 760MB — and it scored 8/12
+// where the 1.2B scores 12/12. The disqualifying answer was the hallucination
+// probe: asked whether Alex knows COBOL, with his skills list in context, it
+// replied "Yes, Alex knows COBOL." Confidently inventing a skill on someone's
+// professional site is a worse outcome for them than a slower answer.
+//
+// Two fixes were tried. Reformatting the SOURCES block so it no longer looks
+// like the citation syntax stopped it reproducing the source list verbatim —
+// that change stayed, because it also made the 1.2B pass the multi-turn case —
+// but the model then collapsed into "Answer: X" stubs. And q8, the obvious
+// response to 4-bit being harsh on a 230M, never reaches a ready state at all;
+// this repo is q4-only in practice.
+//
+// Re-measure with `EVAL_MODEL=lfm-230m npm run eval:chat` before reinstating.
 export const AVAILABLE_MODELS: ChatModel[] = [
   {
     id: 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX',
     name: 'lfm-1.2b',
-    description: 'fast, grounded answers — starts responding immediately',
+    description: 'default — the best answers that still feel instant',
     size: '~760MB',
     contextWindow: 16384,
     device: 'webgpu',
     dtype: 'q4f16',
-    dtypeWasm: 'auto',
+    dtypeWasm: 'q4',
     fallbackDevice: 'wasm',
     supportsThinking: false,
     alwaysThinks: false,
     templateOptions: {},
     generationProfile: {
-      maxTokens: 1024,
-      maxTokensWasm: 512,
+      // A grounded answer is two or three sentences plus citations. The cap is
+      // a runaway guard, not a length target — the prompt sets the length.
+      maxTokens: 512,
+      maxTokensWasm: 384,
       temperature: 0.0,
       temperatureWasm: 0.0,
-      topK: 40,
-      topKWasm: 20,
+      topK: 0,
+      topKWasm: 0,
       repetitionPenalty: 1.05,
       doSample: false,
     },
   },
-  {
-    id: 'LiquidAI/LFM2.5-1.2B-Thinking-ONNX',
-    name: 'lfm-1.2b-thinking',
-    description: 'reasons step-by-step before answering — slower but thorough',
-    size: '~810MB',
-    contextWindow: 16384,
-    device: 'webgpu',
-    dtype: 'q4',
-    dtypeWasm: 'auto',
-    fallbackDevice: 'wasm',
-    supportsThinking: true,
-    alwaysThinks: true,
-    templateOptions: {},
-    generationProfile: {
-      maxTokens: 4096,
-      maxTokensWasm: 2048,
-      temperature: 0.05,
-      temperatureWasm: 0.0,
-      topK: 40,
-      topKWasm: 20,
-      topP: 0.1,
-      repetitionPenalty: 1.05,
-    },
-  },
-  {
-    id: 'onnx-community/Qwen3-0.6B-ONNX',
-    name: 'qwen-0.6b',
-    description: 'smallest and lightest option, with optional reasoning',
-    size: '~600MB',
-    contextWindow: 16384,
-    device: 'webgpu',
-    dtype: 'q4f16',
-    dtypeWasm: 'auto',
-    fallbackDevice: 'wasm',
-    supportsThinking: true,
-    alwaysThinks: false,
-    templateOptions: { add_special_tokens: false },
-    generationProfile: {
-      maxTokens: 4096,
-      maxTokensWasm: 2048,
-      temperature: 0.3,
-      temperatureWasm: 0.0,
-      topK: 40,
-      topKWasm: 20,
-      repetitionPenalty: 1.05,
-    },
-  },
+  // NOTE: `LiquidAI/LFM2.5-1.2B-Thinking-ONNX` was here and was measured out.
+  // On the 43-case battery it scored 35/43 against the instruct model's 42/43 —
+  // worse in every single category — while taking 5.3s to a median answer
+  // against 1.4s, 12.1s at worst against 2.4s, and 658 median output tokens
+  // against 48. Reasoning tokens are spent before the visitor sees anything,
+  // so that cost is entirely in perceived latency, and it bought nothing.
+  // Re-measure with `EVAL_MODEL=lfm-1.2b-thinking npm run eval:chat` before
+  // reinstating. The thinking machinery it needed is still in place:
+  // ThinkingToggle hides itself when no model sets supportsThinking, and
+  // thinkTagStreamer still strips <think> blocks out of the stream.
 ];
 
 /**
