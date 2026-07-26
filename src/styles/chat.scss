@@ -874,6 +874,45 @@
       margin-top: 0.25rem;
     }
 
+    // What the answer cost. Deliberately the quietest thing in the bubble —
+    // it is there for the curious, and must never compete with the answer.
+    .message-stats {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.3rem;
+      margin-top: 0.5rem;
+      font-size: 0.6875rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+      opacity: 0.75;
+      transition: opacity var(--transition-normal);
+
+      &:hover {
+        opacity: 1;
+      }
+
+      .stat {
+        cursor: help;
+        white-space: nowrap;
+      }
+
+      .stat-sep {
+        opacity: 0.4;
+      }
+
+      .stat-cache {
+        &.is-hit {
+          color: var(--accent-cyan);
+        }
+        // A miss is information, not an error — it is normal on the first turn
+        // of a conversation. Muted rather than coloured.
+        &.is-miss {
+          opacity: 0.7;
+        }
+      }
+    }
+
     // Pages the answer was grounded in. Rendered as a quiet row rather than a
     // numbered footnote list: it should read as "here is where to go next",
     // not as apparatus.

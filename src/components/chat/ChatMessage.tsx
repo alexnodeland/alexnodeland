@@ -3,6 +3,7 @@ import { ChatMessage as ChatMessageType } from '../../types/chat';
 import { useChat } from './ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
 import MessageSources from './MessageSources';
+import MessageStats from './MessageStats';
 import ThinkingBlock from './ThinkingBlock';
 
 const formatTime = (date: Date) => {
@@ -144,6 +145,10 @@ const MessageItem = React.memo<MessageItemProps>(
             <MessageSources sources={message.sources} />
           )}
 
+          {message.role === 'assistant' && message.stats && (
+            <MessageStats stats={message.stats} />
+          )}
+
           <div className="message-timestamp">
             <span className="timestamp-text">
               {formatTime(message.timestamp)}
@@ -204,6 +209,7 @@ const MessageItem = React.memo<MessageItemProps>(
     // answer lands, both times without touching content — omitting them here
     // would memoize the citation list away entirely.
     prev.message.sources === next.message.sources &&
+    prev.message.stats === next.message.stats &&
     prev.isExpanded === next.isExpanded &&
     prev.isLastMessage === next.isLastMessage &&
     prev.isGenerating === next.isGenerating

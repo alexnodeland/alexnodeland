@@ -962,7 +962,18 @@ async function load(modelId, modelConfig = {}) {
 }
 
 /**
- * Reset conversation context and stopping criteria
+ * Reset conversation context and stopping criteria.
+ *
+ * Clearing the chat drops the system-prompt KV cache, so the first question
+ * afterwards re-prefills ~850 tokens. Reseeding here to avoid that was tried
+ * and reverted: the reseed is a GPU forward pass, the next question's query
+ * embedding is also on the GPU, and they collide. Prefill fell from ~2000ms to
+ * ~600ms while retrieval rose from ~25ms to ~2000ms, and time-to-first-token
+ * went from 2.1s to 2.8s — strictly worse.
+ *
+ * It also only ever mattered because the eval clears between most cases.
+ * Visitors rarely clear a chat, so this was optimising for the shape of the
+ * test rather than the shape of the traffic.
  */
 function reset() {
   stopping_criteria.reset();

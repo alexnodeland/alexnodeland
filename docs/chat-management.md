@@ -52,6 +52,13 @@ links to the pages the answer came from. The pieces:
   pages behind those numbers as links under the message
   (`MessageSources.tsx`). If the model forgets to cite, the top retrieved
   pages are shown instead.
+- **Cost, shown** — `MessageStats.tsx` renders total time, tokens written,
+  tokens/sec and whether the KV cache hit, under each answer. It is the
+  fastest way to notice a regression in ordinary use; the reset-path cache
+  problem showed up there as prefill tripling. Note that anything rendered
+  inside the message bubble has to be stripped in `assistantAnswers()` or it
+  gets graded as part of the answer — this row was, briefly, and corrupted a
+  whole run.
 - **Thinking models** — models that support reasoning stream a `<think>...
 </think>` block before the answer. The worker strips these tags from the
   visible stream in real time (`thinkTagStreamer.js`) and tags each streamed
@@ -326,6 +333,34 @@ own build step because it must ship as a plain, CSP-safe script:
 
 ## 🧪 Evaluation
 
+Everything below is on the justfile — `just --list` shows the eval recipes.
+Prefer them: `scripts/eval-run.mjs` owns the production build, the server
+lifecycle, repeats and the exported artifacts, and doing that by hand in a
+shell loop is how several ten-minute runs were lost.
+
+| recipe                      | what it does                                              |
+| --------------------------- | --------------------------------------------------------- |
+| `just eval-retrieval`       | retrieval only, ~2s, no browser or model                  |
+| `just eval-retrieval-sweep` | grid-search the gate thresholds                           |
+| `just eval`                 | one graded chat run against the current build             |
+| `just eval-fresh`           | rebuild first, then run                                   |
+| `just eval-repeat 3`        | average three runs                                        |
+| `just eval-models a,b 2`    | batch across models                                       |
+| `just eval-csv`             | long-format CSV, one row per case per run                 |
+| `just eval-report <dir>`    | rebuild reports from a finished run's raw artifacts       |
+| `just eval-promote`         | make the current state the reference                      |
+| `just eval-gate`            | diff against that reference; non-zero exit on a real drop |
+
+Runs land in `.eval/runs/<timestamp>/` (gitignored) as `raw-*.json` per run,
+plus `summary.json` and `cases.csv`. The CSV is long-format — one row per
+case per run, with score, critique and the full timing split — so a notebook
+can group it however it likes, and `read_csv(...).to_parquet(...)` is a line
+away if you want columnar.
+
+Each graded run writes its own artifact **incrementally**, and aggregation is
+a separate step (`--report`), so an interrupted batch loses only the run in
+flight rather than the hour before it.
+
 There are two harnesses, and you almost always want the fast one first.
 
 ```bash
@@ -381,18 +416,40 @@ script drives the real chat UI in a fresh browser context and records:
 
 #### Graded cases
 
-43 cases in six categories, and the summary reports each category separately —
-two models can post the same total while being wrong about entirely different
-things, and the shape is what tells you which to ship.
+68 cases in eleven categories, scored **continuously** rather than pass/fail,
+and reported per category — two models can post the same total while being
+wrong about entirely different things.
 
-| category        | n   | what it probes                                                          |
-| --------------- | --- | ----------------------------------------------------------------------- |
-| `grounding`     | 13  | single-passage lookups, including deliberately obscure ones             |
-| `synthesis`     | 6   | answers that need more than one passage                                 |
-| `multi-turn`    | 6   | anaphora, topic switches, recovering after a refusal                    |
-| `false-premise` | 7   | questions assuming a degree, award, book, motive or age he doesn't have |
-| `gate-refuse`   | 6   | off-topic, coding help, arithmetic, prompt injection                    |
-| `gate-answer`   | 5   | typos, bare entities, vague openers — must **not** be refused           |
+| category        | n   | what it probes                                                                           |
+| --------------- | --- | ---------------------------------------------------------------------------------------- |
+| `grounding`     | 13  | single-passage lookups, including deliberately obscure ones                              |
+| `false-premise` | 10  | questions assuming a degree, award, book, talk, co-author, motive or age he doesn't have |
+| `gate-refuse`   | 9   | off-topic, coding help, arithmetic, roleplay, prompt extraction                          |
+| `synthesis`     | 6   | answers that need more than one passage                                                  |
+| `multi-turn`    | 6   | anaphora, topic switches, recovering after a refusal                                     |
+| `gate-answer`   | 5   | typos, bare entities, vague openers — must **not** be refused                            |
+| `robustness`    | 5   | shouting, no punctuation, a rambling paragraph, gibberish                                |
+| `coverage`      | 4   | several facts that must _all_ appear, for partial credit                                 |
+| `privacy`       | 4   | salary, address, family, phone — absent by design and must stay absent                   |
+| `temporal`      | 3   | durations and ordering, which invite arithmetic                                          |
+| `ambiguity`     | 3   | a corpus entity referred to without being named                                          |
+
+Scores are continuous because a binary verdict is a poor optimisation signal:
+a change that turns a completely wrong answer into a nearly-right one shows up
+as no movement, so anything hill-climbing on this set would be climbing a
+staircase in the dark. A case earns `grounded` (0.6) + `coverage` (0.2) +
+`sources` (0.1) + `hygiene` (0.1), with one hard zero — asserting something
+`forbidden`, because no credit elsewhere offsets telling a visitor a
+falsehood. The run's mean is the **objective**, and it is what to optimise.
+
+Every lost point also carries a written `critique` naming what went wrong.
+That is the half a score cannot provide, and the half a prompt-optimisation
+loop needs in order to draft a better candidate.
+
+`expectSource` asserts _which page_ was cited, which is a far more robust test
+of a retrieval system than matching a phrase: "wrote about choosing a wavelet
+basis for audio compression", citing the wavelets post, is correct, and no
+sensible substring list was going to accept it.
 
 **The set is sized to show movement, which is the whole point.** The previous
 twelve-case version was passed completely by the default model, so it could
@@ -448,7 +505,7 @@ run in a visible browser window.
 
 #### Baseline results (July 2026, M-series Mac, LFM2.5-1.2B-Instruct q4f16)
 
-**42/43 cases pass.** Cold WebGPU load **~21s**. Per answer: TTFA **~0.9s**
+**59/68 cases pass, objective 0.900.** Cold WebGPU load **~21s**. Per answer: TTFA **~0.9s**
 median, **~1.4s** to a finished answer, decode **~145 tok/s**. Refused
 questions come back in **~0.1s** because no generation runs at all.
 
