@@ -66,7 +66,7 @@ the earlier version had twelve cases and the model passed all twelve. that felt 
 
 expanding it immediately found a whole failure class the small set never touched. asked where i got my MBA — i don't have one — the model reported a doctorate i never finished. asked how old i am, it worked it out from my job dates and offered "early thirties." asked why i left a company, it invented a motive and hedged it with "probably."
 
-it currently sits at 59/68. that is the point. the gap is where the work is — dates it gets wrong, gibberish it answers instead of refusing, and a couple of roleplay prompts that still talk it out of its job.
+it currently sits at 56/68. that is the point. the gap is where the work is — dates it gets wrong, gibberish it answers instead of refusing, and a couple of roleplay prompts that still talk it out of its job.
 
 each case is scored continuously rather than pass/fail, and every lost point comes with a written note about what went wrong, because "worse" is not enough to act on and "invented a credential the question assumed" is.
 
