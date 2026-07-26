@@ -51,7 +51,10 @@ links to the pages the answer came from. The pieces:
 - **Citations** — answers cite passages as `[1]`, and the UI renders the
   pages behind those numbers as links under the message
   (`MessageSources.tsx`). If the model forgets to cite, the top retrieved
-  pages are shown instead.
+  pages are shown instead. They sit behind an "N sources" toggle rather than
+  inline: the bubble is 28rem wide and a blog title is not, so inline chips
+  had to truncate, and a row reading "Optimal Wavelet Bases For A…" three
+  times over is not worth the line it occupies.
 - **Cost, shown** — `MessageStats.tsx` renders decode rate and how much of the
   prompt the KV cache covered, under each answer. Two numbers, because the
   rest is derivable from them and is on hover. It is the
@@ -472,7 +475,9 @@ Case options:
   that"), and each gap read as a model regression.
 - `forbidden` — must not appear. For false-premise cases this is the load-
   bearing half: what matters is that the falsehood was not asserted.
-- `wantSources: true` — fails if no source chip was rendered.
+- `wantSources: true` — fails if no source was listed. The harness opens the
+  sources popover through the same button a visitor clicks, so a broken
+  toggle fails the eval rather than quietly passing it with zero sources.
 - `reset: true` — clears the conversation first. Without it the last case
   would carry forty turns of unrelated history, and every result would depend
   on the order cases happen to be listed in.
@@ -507,21 +512,33 @@ run in a visible browser window.
 
 #### Baseline results (July 2026, M-series Mac, LFM2.5-1.2B-Instruct q4f16)
 
-**56/68 cases pass, objective 0.856.** Cold WebGPU load **~21s**. Per answer: TTFA **~0.9s**
-median, **~1.4s** to a finished answer, decode **~145 tok/s**. Refused
-questions come back in **~0.1s** because no generation runs at all.
+**55/68 cases pass, objective 0.844** — two consecutive runs, same figure to
+three places. Cold WebGPU load **~21s**. Per answer: TTFA **~1.2s** median,
+**~1.8s** to a finished answer, decode **~134 tok/s**. Refused questions come
+back in **~0.1s** because no generation runs at all.
+
+Measure on an otherwise idle machine. An orphaned eval browser sharing the
+GPU pushes mean prefill from ~1.3s to ~2.0s, and nothing in the output says
+so.
 
 The harness also prints a per-turn budget, and that is the line to read
 before optimising anything:
 
 ```
-budget  retrieval 26ms | prefill 689ms (1683 tok) | decode 388ms (53 tok)
-cache   system-prompt KV hit on 12/12 turns, covered 817 tok
+budget  retrieval 25ms | prefill 1326ms (1584 tok) | decode 611ms (64 tok)
+cache   system-prompt KV hit on 15/68 turns (hit×15, no-cache×53)
 ```
 
 **Prefill is the larger half, not decode** — about 2:1 before the KV cache
 work and still the bigger of the two after. The instinct is to chase
 tokens/sec; tokens/sec is the smaller number here.
+
+The 15/68 hit rate is an artefact of the harness, not of the product: most
+cases set `reset: true`, and a reset deliberately does not reseed the cache
+(measured worse — see the model notes). In ordinary use every follow-up
+hits, covering the ~975-token cached prefix, which is 51–66% of a typical
+prompt. The percentage falls slightly as a conversation grows, because the
+cached part is fixed and the prompt around it is not.
 
 Where the speed comes from, in rough order of contribution:
 
@@ -665,6 +682,18 @@ WASM...'` if the GPU path fails mid-generation.
   (never the prompt) for the final `complete` message. Run
   `npm run eval:chat` — `GLOBAL_FORBIDDEN` checks are designed to catch
   exactly this regression.
+
+**An eval run grades every case and then never prints the summary:**
+
+- It is finished; the process is stuck in `browser.close()`, which hangs
+  reliably after a WebGPU session. Teardown now runs after the report and
+  behind a 10s race, so this should not recur — but if a run does sit at 0%
+  CPU, everything it measured is already on disk. `just eval-report
+.eval/runs/<stamp>` rebuilds the summary from the raw artifacts without
+  re-running anything.
+- Also check for orphaned runs first: `pgrep -fl chat-eval`. Two eval
+  browsers on one GPU roughly doubles prefill, which reads as a
+  performance regression and is not one.
 
 **Chat doesn't know about content I just added:**
 
