@@ -431,6 +431,7 @@ async function seedPrefixKv(
       opts.add_special_tokens = modelConfig.templateOptions.add_special_tokens;
     }
 
+    const seedStart = performance.now();
     const system = { role: 'system', content: Retriever.systemPrompt };
     let kept = history;
     let inputs = tokenizer.apply_chat_template([system, ...kept], opts);
@@ -459,8 +460,13 @@ async function seedPrefixKv(
         : null;
     const covered = past ? Object.keys(past).length : 0;
     const tokens = inputs.input_ids.dims[inputs.input_ids.dims.length - 1];
+    // How long this pass took is the whole question of whether the cache is
+    // worth having. It is supposed to be free — the visitor is reading — but
+    // it is a real prefill over a growing prefix, and on WASM it is slow
+    // enough to matter, so it is reported rather than assumed.
+    const seedMs = Math.round(performance.now() - seedStart);
     prefixKv.lastSeed = covered
-      ? `ok:${covered}@${tokens}tok/${kept.length}msg`
+      ? `ok:${covered}@${tokens}tok/${kept.length}msg/${seedMs}ms`
       : 'no-present-outputs';
 
     if (covered) {
@@ -842,11 +848,23 @@ async function generate({ messages, reasonEnabled = false, modelConfig = {} }) {
     // Deliberately after the 'complete' message: the visitor has their answer,
     // so this forward pass costs them nothing, and the next question starts
     // however far into the conversation this reaches.
-    const nextHistory = [
-      ...(turn.history || []),
-      { role: 'user', content: turn.question || '' },
-      { role: 'assistant', content: answerText.replace(/\s*\[\d+\]/g, '') },
-    ];
+    //
+    // Only WebGPU gets the growing prefix. The seed is a real prefill, and on
+    // WASM a prefill of this size is slow enough that it stops being free —
+    // it would hold the worker for seconds after the answer, where the next
+    // question is waiting. WASM keeps the system message alone, which is what
+    // both devices had before, so the fallback path gets no worse.
+    const nextHistory =
+      device === 'webgpu'
+        ? [
+            ...(turn.history || []),
+            { role: 'user', content: turn.question || '' },
+            {
+              role: 'assistant',
+              content: answerText.replace(/\s*\[\d+\]/g, ''),
+            },
+          ]
+        : [];
     await seedPrefixKv(modelId, tokenizer, model, modelConfig, nextHistory);
   } catch (error) {
     self.postMessage({

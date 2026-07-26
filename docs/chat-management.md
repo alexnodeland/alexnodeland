@@ -39,8 +39,10 @@ links to the pages the answer came from. The pieces:
   (`navigator.gpu.requestAdapter()`). If available it loads the model on
   `device: 'webgpu'` with the model's GPU `dtype`; otherwise (or if WebGPU
   fails at load/generate time) it falls back to `device: 'wasm'` using the
-  model's `dtypeWasm`. All models decode greedily — grounded extraction has a
-  right answer sitting in the context, and sampling can only wander from it.
+  model's `dtypeWasm`. That fallback is **untested as a working experience** —
+  see [The WASM fallback](#the-wasm-fallback) for what it actually does. All
+  models decode greedily — grounded extraction has a right answer sitting in
+  the context, and sampling can only wander from it.
 - **One model**, `lfm-1.2b` (LFM2.5-1.2B-Instruct), defined in
   `src/lib/utils/chat.ts` as `AVAILABLE_MODELS`. Four alternatives were
   measured and dropped — see
@@ -243,6 +245,12 @@ Measured over one seven-turn conversation:
 gap widens with every turn. Before this the cache covered 975 tokens forever,
 so its _share_ of the prompt fell as the conversation grew.
 
+**WebGPU only.** The seed is a real prefill, and on WASM a prefill of this
+size stops being free — it would hold the worker for seconds after the answer,
+with the next question already waiting. On WASM the cached prefix stays the
+system message alone, which is what both devices had before, so the fallback
+is no worse than it was. See [The WASM fallback](#the-wasm-fallback).
+
 `MAX_PREFIX_TOKENS` (3072) caps it. Past that the prefix stops growing and
 covers the first N tokens instead, which is still valid — history is dropped
 from the **end**, never the start, because dropping the oldest turn produces a
@@ -263,6 +271,56 @@ Two layouts were measured and not taken, both in `cache-prefix-probe.mjs`:
   repeated retrieval matches. Measured no better than doing nothing (4,578
   tokens vs 4,548), because it only pays when the retrieved set matches
   exactly in the same order, which is rarer than it sounds.
+
+### The WASM fallback
+
+**Measured, and it does not currently reach a usable state for this model.**
+Forcing the fallback (see below) on an M-series Mac in headless Chrome:
+
+| stage                    | what happened                             |
+| ------------------------ | ----------------------------------------- |
+| download                 | 810MB of `model_q4.onnx_data`, then again |
+| session creation, warmup | still not ready after 5 minutes           |
+
+Two separate problems, neither of them caused by the retrieval or caching
+work — the load path is identical on both devices apart from the WebGPU-gated
+seed:
+
+1. **The weights download twice.** At 91% the browser logs
+   `Failed to execute 'put' on 'Cache': Unexpected internal error`, the cache
+   write is abandoned, and transformers.js starts the 810MB file over. The
+   WebGPU build uses `model_q4f16.onnx_data`, which is smaller and stays under
+   whatever limit this trips.
+2. **The session never finishes.** After the weights land, the worker sits with
+   the send button disabled and no error for as long as it is given. A 1.2B
+   graph in single-threaded ORT WASM is a plausible cause, but it has not been
+   isolated.
+
+So `fallbackDevice: 'wasm'` is a code path that exists and is exercised — the
+banner appears, the device is reported, generation parameters switch to their
+WASM variants — but no measurement in this document was taken on it, and
+nothing here should be read as a claim that a visitor without WebGPU gets a
+working chat. Fixing it most likely means a smaller checkpoint for that path
+rather than tuning this one.
+
+To force it, rewrite the worker on its way to the browser so `navigator.gpu`
+is undefined in the _worker's_ scope. Patching the page's `navigator` does
+nothing — the feature detection runs in the worker, which has its own
+`WorkerNavigator`, and the first attempt at this measured WebGPU while
+reporting WASM:
+
+```js
+await page.route('**/worker.js*', async route => {
+  const res = await route.fetch();
+  await route.fulfill({
+    status: 200,
+    headers: { ...res.headers(), 'content-type': 'text/javascript' },
+    body:
+      `try{Object.defineProperty(navigator,'gpu',{get:()=>undefined,configurable:true})}catch(e){}\n` +
+      (await res.text()),
+  });
+});
+```
 
 ## 📚 The Retrieval Index
 
