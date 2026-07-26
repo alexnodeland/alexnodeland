@@ -46,6 +46,12 @@ the fix was one function call. it also turned out to matter that this model is a
 
 i only found it because i had started printing the hit rate. it read `0/12`.
 
+once it worked, the number it printed raised a better question. the cached part was 975 tokens and stayed 975 tokens no matter how long the conversation ran, so the _share_ of each prompt it covered went down as you talked — 55%, then 51%. a cache that stops growing is a cache that matters less the longer you use it.
+
+a cache can only skip a prefix that matches token for token, so what it can possibly cover is decided by the order the prompt is assembled in. it turned out there was more of that order that never changes than i had assumed: earlier questions have their retrieved passages stripped out, and earlier answers have their citation markers removed, and both of those edits happen exactly once — when a turn stops being the current one. after that the history is frozen. so it can all be carried forward, and the cached region grows by one exchange per turn instead of standing still. seven turns in it covers 1,290 tokens rather than 975, and the conversation is prefilling about a quarter fewer tokens than it was.
+
+i also measured two rearrangements that looked better and were not. keeping every turn's passages in the prompt forever caches the most on paper, and spends it on carrying stale context that used to make it answer turn four out of turn one. pinning the passages to a fixed position so a repeated search matches came out no better than doing nothing at all, because retrieval has to return the same set in the same order for that to pay, which is rarer than it sounds. both are still in the repo as a two-second script that measures the ceiling before anyone writes the code.
+
 ## three things i was wrong about
 
 **smaller is not faster.** i tried a model with half the parameters expecting roughly half the latency. it was two to four times _slower_, because it wrote several hundred words where the larger one writes forty. decoding is per-token. verbosity swamps everything.

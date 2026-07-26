@@ -102,6 +102,10 @@ eval-retrieval:
 eval-retrieval-sweep:
     node scripts/retrieval-eval.mjs --sweep
 
+# How much of each turn a KV cache could cover — tokenizer only, no model.
+cache-prefix:
+    node scripts/cache-prefix-probe.mjs
+
 # One graded chat run against the current production build.
 eval:
     node scripts/eval-run.mjs

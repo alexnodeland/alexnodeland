@@ -325,31 +325,50 @@ class Retriever {
 // Global stopping criteria for interrupting generation
 const stopping_criteria = new InterruptableStoppingCriteria();
 
-// Cached KV for the *system prompt*, which is the only stable prefix a turn
-// has.
+/**
+ * How many tokens the reusable prefix is allowed to reach.
+ *
+ * The cache holds float16 key/value tensors for every layer, in GPU memory, on
+ * top of a model that is already 760MB resident. The prefix also has to be
+ * prefilled again after every answer, and that pass is only free while it is
+ * shorter than the time the visitor spends reading. Past this point the cache
+ * stops growing and simply covers the first N tokens, which is still a valid
+ * prefix — just not a complete one.
+ */
+const MAX_PREFIX_TOKENS = 3072;
+
+// Cached KV for the longest prefix that survives from one turn to the next.
 //
 // This used to be a rolling cache of the whole previous turn, on the
 // transformers.js llama-3.2-webgpu pattern, which works when the prompt grows
-// append-only. It no longer does: pruneHistory strips the SOURCES block out of
-// each turn once the next one arrives, so the stored sequence stops being a
-// prefix of the new one and the check failed every single time — the cache was
-// dead weight holding GPU tensors.
+// append-only. It does not: pruneHistory strips the SOURCES block out of each
+// turn once the next one arrives, so the stored sequence stopped being a
+// prefix of the new one and the check failed every single time.
 //
-// What survives every turn is the system prompt, unchanged since it stopped
-// carrying the CV. Prefilling it is ~330 tokens, about a fifth of a turn's
-// prefill and the largest piece still recoverable without rewriting how
-// history is handled.
-const systemKv = {
-  cache: null, // past_key_values covering the system prompt alone
-  tokens: null, // array of BigInt token ids the cache covers
+// What it settled on instead was the system prompt alone — genuinely stable,
+// but it stops growing, so a long conversation caches a shrinking fraction of
+// itself. The prefix that is *actually* stable is the system prompt plus the
+// pruned history: earlier questions with their SOURCES already stripped, and
+// earlier answers with their citation markers already removed. Both of those
+// rewrites happen once, when the turn stops being the live one, and never
+// again — so from the next turn's point of view history is append-only and
+// every token of it can be carried.
+//
+// See `node scripts/cache-prefix-probe.mjs` for the measurement this is built
+// on, including the two layouts that were considered and rejected.
+const prefixKv = {
+  cache: null, // past_key_values covering `tokens`
+  tokens: null, // token ids the cache covers
   modelId: null,
+  turns: 0, // how many history messages are inside it, for telemetry
   lastSeed: 'never-run', // diagnostic, surfaced in the generation timing
 };
 
 function clearKvCache() {
-  systemKv.cache = null;
-  systemKv.tokens = null;
-  systemKv.modelId = null;
+  prefixKv.cache = null;
+  prefixKv.tokens = null;
+  prefixKv.modelId = null;
+  prefixKv.turns = 0;
 }
 
 /**
@@ -359,14 +378,14 @@ function clearKvCache() {
  * Single use is the important part: generate() consumes and extends whatever
  * past_key_values it is given, so handing the same object to a second
  * generation would feed it a cache that already has another conversation's
- * tokens appended. The slot is refilled by seedSystemKv after the answer has
+ * tokens appended. The slot is refilled by seedPrefixKv after the answer has
  * streamed, where the cost is off the visitor's critical path.
  */
-function takeSystemKv(modelId, ids) {
-  const { cache, tokens } = systemKv;
+function takePrefixKv(modelId, ids) {
+  const { cache, tokens, turns } = prefixKv;
   if (!cache) return { cache: null, reason: 'no-cache' };
   if (!tokens) return { cache: null, reason: 'no-tokens' };
-  if (systemKv.modelId !== modelId) return { cache: null, reason: 'model' };
+  if (prefixKv.modelId !== modelId) return { cache: null, reason: 'model' };
   // Strictly shorter: generation must have at least the new tokens to encode
   if (tokens.length >= ids.length) return { cache: null, reason: 'too-long' };
   for (let i = 0; i < tokens.length; i++) {
@@ -375,18 +394,34 @@ function takeSystemKv(modelId, ids) {
     }
   }
   clearKvCache();
-  return { cache, reason: 'hit', covered: tokens.length };
+  return { cache, reason: 'hit', covered: tokens.length, turns };
 }
 
 /**
- * Runs a forward pass over the system prompt alone and keeps its KV.
+ * Runs a forward pass over the system prompt plus `history` and keeps its KV.
  *
  * Templated with add_generation_prompt: false so the token sequence is a
  * genuine prefix of any full conversation. If a model's template does not
- * make it one, takeSystemKv's prefix check simply never matches and the only
+ * make it one, takePrefixKv's prefix check simply never matches and the only
  * cost is this forward pass.
+ *
+ * `history` must be the pruned form — questions with their SOURCES stripped,
+ * answers with their citation markers removed — because that is what the next
+ * turn will template. Handing it the raw messages produces a cache that misses
+ * on every turn and reports a `prefix@` reason saying exactly where.
+ *
+ * History is dropped from the *end* when the prefix would exceed the cap.
+ * Dropping the oldest turn instead would leave a sequence that is no longer a
+ * prefix of anything, which the check would then reject on every turn — the
+ * cache has to grow from the front or not at all.
  */
-async function seedSystemKv(modelId, tokenizer, model, modelConfig = {}) {
+async function seedPrefixKv(
+  modelId,
+  tokenizer,
+  model,
+  modelConfig = {},
+  history = []
+) {
   try {
     const opts = { add_generation_prompt: false, return_dict: true };
     if (
@@ -395,10 +430,19 @@ async function seedSystemKv(modelId, tokenizer, model, modelConfig = {}) {
     ) {
       opts.add_special_tokens = modelConfig.templateOptions.add_special_tokens;
     }
-    const inputs = tokenizer.apply_chat_template(
-      [{ role: 'system', content: Retriever.systemPrompt }],
-      opts
-    );
+
+    const system = { role: 'system', content: Retriever.systemPrompt };
+    let kept = history;
+    let inputs = tokenizer.apply_chat_template([system, ...kept], opts);
+    while (
+      kept.length &&
+      inputs.input_ids.dims[inputs.input_ids.dims.length - 1] >
+        MAX_PREFIX_TOKENS
+    ) {
+      kept = kept.slice(0, -1);
+      inputs = tokenizer.apply_chat_template([system, ...kept], opts);
+    }
+
     const out = await model({ ...inputs });
 
     // A raw forward pass returns the cache under `present*` names; it is
@@ -414,18 +458,22 @@ async function seedSystemKv(modelId, tokenizer, model, modelConfig = {}) {
         ? model.getPastKeyValues(out, null)
         : null;
     const covered = past ? Object.keys(past).length : 0;
-    systemKv.lastSeed = covered ? `ok:${covered}` : 'no-present-outputs';
+    const tokens = inputs.input_ids.dims[inputs.input_ids.dims.length - 1];
+    prefixKv.lastSeed = covered
+      ? `ok:${covered}@${tokens}tok/${kept.length}msg`
+      : 'no-present-outputs';
 
     if (covered) {
-      systemKv.cache = past;
-      systemKv.tokens = Array.from(inputs.input_ids.data);
-      systemKv.modelId = modelId;
+      prefixKv.cache = past;
+      prefixKv.tokens = Array.from(inputs.input_ids.data);
+      prefixKv.modelId = modelId;
+      prefixKv.turns = kept.length;
     }
   } catch (e) {
     // A pure optimisation — never let it break generation.
     const why = e && e.message ? e.message : String(e);
     clearKvCache();
-    systemKv.lastSeed = `threw: ${why.slice(0, 90)}`;
+    prefixKv.lastSeed = `threw: ${why.slice(0, 90)}`;
   }
 }
 
@@ -504,6 +552,11 @@ async function prepareTurn(messages) {
     messages: [...history, { role: 'user', content: prompt }],
     sources,
     result,
+    // Kept so the post-answer seed can build the prefix the *next* turn will
+    // template: this history, plus this question in its pruned form, plus the
+    // answer once it exists.
+    history,
+    question,
   };
 }
 
@@ -679,9 +732,9 @@ async function generate({ messages, reasonEnabled = false, modelConfig = {} }) {
       genParams.top_p = profile.topP;
     }
 
-    // Skip re-prefilling the system prompt, which is byte-identical on every
-    // turn. Consumed here and refilled after the answer has streamed.
-    const kv = takeSystemKv(modelId, inputs.input_ids.data);
+    // Skip re-prefilling the part of the prompt the last turn already
+    // computed. Consumed here and refilled after the answer has streamed.
+    const kv = takePrefixKv(modelId, inputs.input_ids.data);
     const pastKV = kv.cache;
     const usedSystemKv = kv.reason === 'hit';
 
@@ -774,16 +827,27 @@ async function generate({ messages, reasonEnabled = false, modelConfig = {} }) {
         systemKvHit: usedSystemKv,
         systemKvReason: kv.reason,
         systemKvCovered: kv.covered ?? 0,
-        systemKvSeed: systemKv.lastSeed,
+        systemKvTurns: kv.turns ?? 0,
+        systemKvSeed: prefixKv.lastSeed,
         device,
       },
     });
 
-    // Refill the system-prompt cache for the next turn. Deliberately after the
-    // 'complete' message: the visitor has their answer, so this forward pass
-    // costs them nothing, and the next question starts a few hundred tokens
-    // further along.
-    await seedSystemKv(modelId, tokenizer, model, modelConfig);
+    // Refill the cache for the next turn, over the prefix that turn will
+    // actually start with: this turn's history, plus the question in the
+    // pruned form it takes once it stops being live, plus the answer with its
+    // citation markers removed — the same two rewrites pruneHistory does, so
+    // the token sequence matches rather than nearly matching.
+    //
+    // Deliberately after the 'complete' message: the visitor has their answer,
+    // so this forward pass costs them nothing, and the next question starts
+    // however far into the conversation this reaches.
+    const nextHistory = [
+      ...(turn.history || []),
+      { role: 'user', content: turn.question || '' },
+      { role: 'assistant', content: answerText.replace(/\s*\[\d+\]/g, '') },
+    ];
+    await seedPrefixKv(modelId, tokenizer, model, modelConfig, nextHistory);
   } catch (error) {
     self.postMessage({
       status: 'error',
@@ -908,10 +972,11 @@ async function load(modelId, modelConfig = {}) {
       await model.generate({ ...inputs, max_new_tokens: 1, do_sample: false });
 
       // On WebGPU, prefill the system prompt and keep its KV so the first
-      // question skips those tokens. Every later turn gets the same treatment
-      // from seedSystemKv, which refills this after each answer.
+      // question skips those tokens. There is no history yet, so this is the
+      // one seed that covers the system message alone; seedPrefixKv extends it
+      // by a turn after every answer.
       if (device === 'webgpu') {
-        await seedSystemKv(modelId, tokenizer, model, modelConfig);
+        await seedPrefixKv(modelId, tokenizer, model, modelConfig, []);
       }
     } catch (warmupErr) {
       if (device === 'webgpu') {

@@ -201,6 +201,8 @@ Two properties are worth preserving if you edit it:
   make question-dependent belongs in the user turn instead (see
   `buildGroundedTurn`), or the cache stops matching and that saving is gone
   silently. `npm run eval:chat` prints the hit rate; watch it after editing.
+  It is the floor of what the cache covers, not the whole of it — see
+  [What the cache covers](#what-the-cache-covers).
 - **It is model-independent.** The old prompt had per-architecture suffixes;
   with retrieval doing the grounding work, one prompt behaves consistently
   across all three models, and the eval no longer shows a gap that a
@@ -209,6 +211,58 @@ Two properties are worth preserving if you edit it:
 The refusal string is `REFUSAL_MESSAGE` in the same file. It is returned by
 the worker directly, without a generation, whenever the gate declines — so
 editing it changes the text with no effect on latency or model behavior.
+
+### What the cache covers
+
+A KV cache can only skip a **token-for-token prefix**, so how much it can
+possibly cover is decided by the order the prompt is assembled in, not by the
+cache code. `just cache-prefix` measures that ceiling with the tokenizer
+alone — no model, no browser, about two seconds — and is the thing to run
+before changing prompt layout.
+
+The cached prefix is the system message **plus the pruned history**: earlier
+questions with their SOURCES stripped, earlier answers with their citation
+markers removed. Those are the only two rewrites `pruneHistory` performs, they
+happen once when a turn stops being live, and they never happen again — so
+from the next turn's point of view history is append-only and every token of
+it can be carried. `seedPrefixKv` re-prefills that prefix after each answer,
+where the visitor is reading and the pass is free; `takePrefixKv` hands it to
+the next generation and verifies the prefix token by token first, so a
+mismatch costs a miss and never a wrong answer.
+
+Measured over one seven-turn conversation:
+
+| turn | prompt | cached | to prefill | vs system-only |
+| ---- | ------ | ------ | ---------- | -------------- |
+| 1    | 1786   | 975    | 811        | 811            |
+| 3    | 1705   | 1071   | 634        | 730            |
+| 5    | 1869   | 1155   | 714        | 894            |
+| 7    | 2122   | 1290   | 832        | 1147           |
+
+17% fewer prefill tokens across the conversation, 27% by turn seven, and the
+gap widens with every turn. Before this the cache covered 975 tokens forever,
+so its _share_ of the prompt fell as the conversation grew.
+
+`MAX_PREFIX_TOKENS` (3072) caps it. Past that the prefix stops growing and
+covers the first N tokens instead, which is still valid — history is dropped
+from the **end**, never the start, because dropping the oldest turn produces a
+sequence that is no longer a prefix of anything and would miss on every
+subsequent turn.
+
+Two layouts were measured and not taken, both in `cache-prefix-probe.mjs`:
+
+- **Append-only** — keep each turn's passages in place and append only what is
+  new, so nothing is ever rewritten and the whole conversation caches. Best on
+  paper (83% cached vs 60%), but the win is concentrated entirely in turns
+  where retrieval returns nothing new; context grows without bound (4,476
+  tokens by turn six against 1,927); and it reinstates exactly the stale
+  passages that were removed for answering turn four out of turn one's
+  context. Worth revisiting only with multi-turn eval coverage well beyond the
+  current six cases.
+- **Sources before history** — pin the SOURCES block to a fixed offset so a
+  repeated retrieval matches. Measured no better than doing nothing (4,578
+  tokens vs 4,548), because it only pays when the retrieved set matches
+  exactly in the same order, which is rarer than it sounds.
 
 ## 📚 The Retrieval Index
 
@@ -512,14 +566,27 @@ run in a visible browser window.
 
 #### Baseline results (July 2026, M-series Mac, LFM2.5-1.2B-Instruct q4f16)
 
-**55/68 cases pass, objective 0.844** — two consecutive runs, same figure to
-three places. Cold WebGPU load **~21s**. Per answer: TTFA **~1.2s** median,
-**~1.8s** to a finished answer, decode **~134 tok/s**. Refused questions come
-back in **~0.1s** because no generation runs at all.
+**55–56/68 cases pass, objective 0.844–0.856** across three runs of the same
+tree. Cold WebGPU load **~21s**. Per answer: TTFA **~1.2s** median, **~1.8s**
+to a finished answer, decode **~134 tok/s**. Refused questions come back in
+**~0.1s** because no generation runs at all.
 
 Measure on an otherwise idle machine. An orphaned eval browser sharing the
 GPU pushes mean prefill from ~1.3s to ~2.0s, and nothing in the output says
 so.
+
+**Use the no-cache cases as a control before believing a timing change.** The
+53 cases that reset the conversation take an identical code path regardless of
+how the cache is built, so their ms-per-prompt-token is a direct read on how
+fast the machine was that run. It moved 0.981 → 1.102 (+12%) between two runs
+of code that could not have affected it. Any latency delta smaller than that
+is the machine, not the change:
+
+```
+node -e "const r=require('./.eval/runs/<stamp>/raw-default-1.json');
+const m=r.cases.filter(c=>c.timing?.prefillMs!=null&&!c.timing.systemKvHit);
+console.log(m.reduce((n,c)=>n+c.timing.prefillMs/c.timing.promptTokens,0)/m.length)"
+```
 
 The harness also prints a per-turn budget, and that is the line to read
 before optimising anything:
@@ -560,6 +627,8 @@ Where the speed comes from, in rough order of contribution:
 4. **The always-present passages moved into the system prompt.** They are
    identical every turn, so putting them there rather than in the user turn
    roughly doubles what the cache covers — 817 tokens instead of ~330.
+   The cache then keeps growing past that — see
+   [What the cache covers](#what-the-cache-covers).
 5. **q4f16 everywhere.** Both LFM checkpoints map that dtype to an fp16 KV
    cache; transformers.js then keeps the cache in GPU buffers rather than
    round-tripping it through CPU memory. The Thinking model was on plain
