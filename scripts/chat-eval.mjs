@@ -1246,7 +1246,7 @@ async function main() {
           ? `[ret ${timing.retrievalMs}ms + prefill ${timing.prefillMs}ms ` +
             `(${timing.promptTokens}tok) + decode ${timing.decodeMs}ms ` +
             `(${timing.outputTokens}tok) kv:${timing.systemKvReason}` +
-            `${timing.systemKvHit ? `/${timing.systemKvCovered}tok` : ''}] `
+            `${timing.systemKvHit ? `/${timing.systemKvCovered}tok+${timing.systemKvTurns ?? 0}msg` : ''}] `
           : '') +
         `tps=${tpsMax ? tpsMax.toFixed(1) : '?'} ` +
         `src=${sources.length} ` +

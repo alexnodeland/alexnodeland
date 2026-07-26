@@ -37,10 +37,13 @@ export interface ChatMessageStats {
   decodeMs: number;
   promptTokens: number;
   outputTokens: number;
-  /** Whether the system-prompt KV cache was reused for this turn. */
+  /** Whether the reusable prompt prefix was carried over for this turn. */
   systemKvHit: boolean;
   /** Tokens the cache covered, so a hit can show what it saved. */
   systemKvCovered: number;
+  /** History messages folded into that prefix — 0 on the first question,
+   *  growing by two per turn as the conversation amortises. */
+  systemKvTurns?: number;
   device: string;
 }
 
