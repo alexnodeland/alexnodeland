@@ -274,38 +274,68 @@ Two layouts were measured and not taken, both in `cache-prefix-probe.mjs`:
 
 ### The WASM fallback
 
-**Measured, and it does not currently reach a usable state for this model.**
-Forcing the fallback (see below) on an M-series Mac in headless Chrome:
+**Root-caused, and it cannot work with this checkpoint.** ORT's CPU provider
+has no kernel for the op the quantized exports use on the embedding table:
 
-| stage                    | what happened                             |
-| ------------------------ | ----------------------------------------- |
-| download                 | 810MB of `model_q4.onnx_data`, then again |
-| session creation, warmup | still not ready after 5 minutes           |
+```
+Can't create a session. ERROR_CODE: 9
+Could not find an implementation for GatherBlockQuantized(1)
+node with name '/model/embed_tokens/Gather_Quant'
+```
 
-Two separate problems, neither of them caused by the retrieval or caching
-work — the load path is identical on both devices apart from the WebGPU-gated
-seed:
+`q4` and `q8` both hit it — transformers.js maps `q8` to `model_quantized`,
+and every quantized export of LFM2.5-1.2B block-quantizes the embeddings. The
+only exports that avoid the op are `fp16` (2.35GB) and `fp32` (4.7GB), neither
+of which is a browser download. WebGPU is unaffected because its provider
+_does_ implement the op — this is a CPU-provider gap, not a bad export.
 
-1. **The weights download twice.** At 91% the browser logs
-   `Failed to execute 'put' on 'Cache': Unexpected internal error`, the cache
-   write is abandoned, and transformers.js starts the 810MB file over. The
-   WebGPU build uses `model_q4f16.onnx_data`, which is smaller and stays under
-   whatever limit this trips.
-2. **The session never finishes.** After the weights land, the worker sits with
-   the send button disabled and no error for as long as it is given. A 1.2B
-   graph in single-threaded ORT WASM is a plausible cause, but it has not been
-   isolated.
+Nothing is wrong with ORT WASM itself. Measured on the same machine, in the
+same browser, through `AutoModelForCausalLM` with `device: 'wasm'`:
 
-So `fallbackDevice: 'wasm'` is a code path that exists and is exercised — the
-banner appears, the device is reported, generation parameters switch to their
-WASM variants — but no measurement in this document was taken on it, and
-nothing here should be read as a claim that a visitor without WebGPU gets a
-working chat. Fixing it most likely means a smaller checkpoint for that path
-rather than tuning this one.
+| model                   | session create | decode    | result           |
+| ----------------------- | -------------- | --------- | ---------------- |
+| SmolLM2-135M q4         | 19s            | 21 tok/s  | works            |
+| SmolLM2-1.7B q4         | 105s           | 1.3 tok/s | works, unusably  |
+| Qwen2.5-1.5B q4         | —              | —         | `std::bad_alloc` |
+| **LFM2.5-1.2B q4 / q8** | —              | —         | missing kernel   |
 
-To force it, rewrite the worker on its way to the browser so `navigator.gpu`
-is undefined in the _worker's_ scope. Patching the page's `navigator` does
-nothing — the feature detection runs in the worker, which has its own
+So the size band that fits the WASM heap and decodes fast enough is roughly
+135M–360M, which is the band already rejected for fabricating answers (the
+230M answered both "does Alex know COBOL?" and "has Alex worked at Google?"
+with a flat yes). 1.3 tok/s means a 60-token answer takes ~45s of decode on
+top of prefilling ~1,800 prompt tokens.
+
+**Threads are not the constraint, so do not reach for cross-origin
+isolation.** It was tried: serving with `Cross-Origin-Opener-Policy:
+same-origin` and `Cross-Origin-Embedder-Policy: credentialless` does produce
+`crossOriginIsolated: true` with SharedArrayBuffer and all 16 cores, and the
+huggingface.co and jsdelivr fetches still succeed under `credentialless`. The
+load failed in exactly the same way. The blocker is a missing kernel; no
+number of threads supplies one.
+
+What the fallback does now, having been fixed:
+
+- **Fails in ~55s instead of never.** Loading with no WebGPU used to attempt
+  WebGPU-or-WASM, fail, then retry the _identical_ wasm/dtype pair — a second
+  810MB download to reach the same error. The retry now only happens when the
+  first attempt was WebGPU.
+- **Says so.** A load failure used to write "I ran into an error while
+  generating the response" into the message list, and because the error notice
+  only renders while `messages` is empty, that message hid the notice. The chat
+  went quiet with a disabled input and no explanation. Load failures no longer
+  touch the message list, so the notice and its retry button appear.
+- **In plain words.** `explainLoadFailure` in the worker translates the missing
+  kernel and the out-of-memory cases into what the visitor should do, keeping
+  the raw text in parentheses for bug reports.
+
+To make it genuinely work, the options are a different checkpoint on that path
+(smaller, WASM-compatible, and a quality number from `just eval`), or serving
+retrieval-only results without generation — the index and the hybrid search
+need no model at all and run in ~25ms on CPU.
+
+To force the fallback, rewrite the worker on its way to the browser so
+`navigator.gpu` is undefined in the _worker's_ scope. Patching the page's
+`navigator` does nothing — detection runs in the worker, which has its own
 `WorkerNavigator`, and the first attempt at this measured WebGPU while
 reporting WASM:
 
