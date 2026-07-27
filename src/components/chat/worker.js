@@ -190,8 +190,15 @@ class TextGenerationPipeline {
       });
       device = supportsWebGPU ? 'webgpu' : 'wasm';
     } catch (e) {
-      // If WebGPU path fails at load time (common on Firefox with partial
+      // If the WebGPU path fails at load time (common on Firefox with partial
       // support), retry with a safe CPU configuration.
+      //
+      // Only from WebGPU. A machine with no WebGPU at all already made this
+      // exact call, so retrying it downloads the whole checkpoint a second
+      // time to reach the same failure — 850MB and ninety seconds to arrive
+      // at the identical error, twice as slowly. Measured doing precisely
+      // that before this guard existed.
+      if (!supportsWebGPU) throw e;
       model = await AutoModelForCausalLM.from_pretrained(modelId, {
         dtype: wasmDtype,
         device: 'wasm',
@@ -1039,9 +1046,45 @@ async function load(modelId, modelConfig = {}) {
   } catch (error) {
     self.postMessage({
       status: 'error',
-      data: error.message || 'Failed to load model',
+      data: explainLoadFailure(error),
     });
   }
+}
+
+/**
+ * Turns an ONNX Runtime load failure into something a visitor can act on.
+ *
+ * The raw text is a kernel name — "Could not find an implementation for
+ * GatherBlockQuantized(1) node with name '/model/embed_tokens/Gather_Quant'" —
+ * which is precise and useless to everyone but whoever is debugging it. Both
+ * cases below are the same underlying situation: no WebGPU, so the model went
+ * to the CPU backend, and the CPU backend cannot run this checkpoint.
+ *
+ * The detail is kept on the end rather than dropped, because it is the only
+ * thing that makes a bug report actionable.
+ */
+function explainLoadFailure(error) {
+  const raw = (error && error.message) || String(error) || 'Failed to load';
+
+  // Every quantized export of this model block-quantizes the embedding table,
+  // and ORT's CPU provider has no kernel for that op. See the WASM notes in
+  // docs/chat-management.md.
+  if (/Could not find an implementation|NOT_IMPLEMENTED/i.test(raw)) {
+    return (
+      "This browser can't run the chat. It has no WebGPU, so the model fell " +
+      'back to the CPU engine, which is missing an operation this model needs. ' +
+      `Chrome or Edge on a desktop will work. (${raw})`
+    );
+  }
+  // 32-bit address space; a model of this size does not fit the WASM heap.
+  if (/bad_alloc|out of memory|Aborted\(OOM|Cannot enlarge memory/i.test(raw)) {
+    return (
+      'This browser ran out of memory loading the model. It has no WebGPU, so ' +
+      'it tried to load into the CPU engine, which cannot hold a model this ' +
+      `size. Chrome or Edge on a desktop will work. (${raw})`
+    );
+  }
+  return raw;
 }
 
 /**

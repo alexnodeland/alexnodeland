@@ -108,6 +108,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     null
   );
   const isGeneratingRef = useRef(false); // Synchronous concurrent-generation guard
+  // Mirrors modelState.status for reads inside the worker message handler,
+  // which has to decide load-failure vs generation-failure *before* calling
+  // setModelState — an updater function does not run synchronously, so a flag
+  // set inside one is still unset on the next line.
+  const modelStatusRef = useRef<ModelLoadingState['status']>('idle');
   const selectedModelRef = useRef(selectedModel); // Latest model for worker callbacks
   const MODEL_READY_KEY = 'chat-loaded-model';
 
@@ -116,6 +121,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   useEffect(() => {
     selectedModelRef.current = selectedModel;
   }, [selectedModel]);
+
+  useEffect(() => {
+    modelStatusRef.current = modelState.status;
+  }, [modelState.status]);
 
   const USE_CHAT_WORKER = typeof window !== 'undefined';
 
@@ -632,6 +641,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             const errMsg = String(data.data ?? 'Worker error');
             // Generation errors keep the model 'ready' (it's still loaded);
             // only load failures move status to 'error'.
+            const isLoadFailure =
+              !wasGenerating && modelStatusRef.current !== 'ready';
             setModelState((prev: ModelLoadingState) => {
               if (prev.status === 'ready' || wasGenerating) {
                 return prev;
@@ -639,6 +650,18 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
               return { ...prev, status: 'error', error: errMsg };
             });
             setIsGenerating(false);
+
+            // A load failure must not write a message. The error notice that
+            // carries the reason and the retry button only renders while
+            // `messages` is empty, so pushing "I ran into an error while
+            // generating the response" here hid the one piece of UI built to
+            // report this — the chat went silent, with a disabled input and no
+            // explanation, which is how the WASM path looked for twenty
+            // minutes before this was traced. There is also no response being
+            // generated at that point, so the text was wrong twice over.
+            if (isLoadFailure) {
+              break;
+            }
 
             setMessages((prev: ChatMessage[]) => {
               const newMessages = [...prev];
