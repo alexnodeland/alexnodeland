@@ -328,10 +328,62 @@ What the fallback does now, having been fixed:
   kernel and the out-of-memory cases into what the visitor should do, keeping
   the raw text in parentheses for bug reports.
 
-To make it genuinely work, the options are a different checkpoint on that path
-(smaller, WASM-compatible, and a quality number from `just eval`), or serving
-retrieval-only results without generation — the index and the hybrid search
-need no model at all and run in ~25ms on CPU.
+#### Is a different runtime the answer? No — but a different checkpoint might be
+
+Surveyed July 2026, because "ONNX Runtime is missing a kernel" invites the
+reasonable-sounding fix of using something other than ONNX Runtime.
+
+[wllama](https://github.com/ngxson/wllama) is llama.cpp compiled to WASM, and
+it is the best CPU stack available. It would fix every _mechanical_ problem
+hit above — GGUF carries llama.cpp's own kernels so there is no export gap,
+weights cache in OPFS rather than the Cache API that failed on 810MB, and
+models above the 2GB ArrayBuffer cap are split into ≤512MB chunks. Threads
+still want COOP/COEP, which `credentialless` supplies.
+
+It does not fix the arithmetic. A ~1.1B model on WASM CPU runs **2–5 tok/s**
+even with llama.cpp's hand-tuned SIMD, against the 1.3 tok/s measured here
+through ORT. Our turn is ~1,800 prefill tokens and ~65 output tokens, so a
+single answer lands somewhere in the minutes. **No CPU stack makes a 1.2B
+usable in a browser** — that is a 40–100× gap, not an engineering gap.
+
+What this survey did turn up is that **the 350M's rejection deserves
+re-testing**. It was dropped from the lineup for never becoming ready, which —
+given that its 1.2B sibling fails session creation outright on the CPU
+provider — looks much more like an ONNX export problem than a model problem.
+`LFM2.5-350M-Q4_K_M.gguf` is an official 229MB build, llama.cpp supports the
+LFM2 architecture natively (LiquidAI publishes the GGUFs), and 350M is inside
+the band that runs at a usable rate on CPU. That is the one concrete route to
+a working fallback, and it needs a `just eval` number before it ships: if it
+scores near the 230M's 8/13, the honest error is the better product.
+
+The alternative that needs no model at all is serving retrieval-only results —
+the index and hybrid search run in ~25ms on CPU and would give a WASM visitor
+the passages and links without prose.
+
+#### Do not switch runtimes for speed on WebGPU either
+
+[Llamas on the Web](https://arxiv.org/html/2605.20706v1) benchmarks exactly
+this choice, and the result cuts against the intuition:
+
+- On **prefill**, a llama.cpp-based WebGPU engine reaches only 79% of
+  transformers.js and 49% of WebLLM. Prefill is our larger half at roughly 2:1,
+  so that swap makes the half that matters worse.
+- On **decode**, the same engine is 45–69% faster than both.
+- The real lever is **subgroup matrices**: hand-written WebGPU with them is
+  205% faster than transformers.js on prefill. That is what the
+  [LFM2 WebGPU kernels Space](https://huggingface.co/spaces/webml-community/lfm2-webgpu-kernels)
+  is doing — 53 compute shaders and 358 subgroup references in one 669KB file,
+  no ONNX Runtime anywhere. It runs the 230M, the model rejected here for
+  fabricating, and it is WebGPU-only with no CPU path at all.
+- WebGPU's mandatory bounds-checking costs 14–23% of prefill, up to 42% on some
+  devices. Nothing to be done about that from here.
+- **Firefox WebGPU is reported at ~1 tok/s against Chrome's 52** on the same M4
+  Pro. Untested here, but it means "has WebGPU" is not the same as "will be
+  usable", and is worth measuring before trusting the feature check.
+
+For calibration, prefill here measures ~1,200 tok/s (828 uncached tokens in
+660ms), so there is no evidence the current runtime is the thing holding this
+back.
 
 To force the fallback, rewrite the worker on its way to the browser so
 `navigator.gpu` is undefined in the _worker's_ scope. Patching the page's

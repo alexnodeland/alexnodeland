@@ -1,5 +1,5 @@
 import { Link } from 'gatsby';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { ChatSource } from '../../types/chat';
 import { useChat } from './ChatContext';
 
@@ -32,6 +32,9 @@ const MessageSources: React.FC<MessageSourcesProps> = ({ sources }) => {
   const { setChatOpen } = useChat();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Ties the button to the list it opens. Several of these render in one
+  // conversation, so the id has to be per-instance rather than a constant.
+  const listId = useId();
 
   // Close on an outside click or Escape. Without this the panel survives
   // scrolling away from it, and several can end up open at once in a long
@@ -64,6 +67,7 @@ const MessageSources: React.FC<MessageSourcesProps> = ({ sources }) => {
         type="button"
         className={`sources-toggle ${open ? 'is-open' : ''}`}
         aria-expanded={open}
+        aria-controls={listId}
         aria-label={`${label} for this answer`}
         onClick={() => setOpen(v => !v)}
       >
@@ -84,7 +88,7 @@ const MessageSources: React.FC<MessageSourcesProps> = ({ sources }) => {
       </button>
 
       {open && (
-        <ul className="sources-popover">
+        <ul className="sources-popover" id={listId}>
           {sources.map(source => {
             const external = /^https?:/.test(source.url);
             const body = (

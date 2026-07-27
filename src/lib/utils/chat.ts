@@ -130,6 +130,18 @@ export async function detectWebGPUSupport(): Promise<boolean> {
 // per-file map, but that was not confirmed. Whatever the cause, an option that
 // silently does nothing is worse than one less choice.
 //
+// TREAT THAT VERDICT AS UNPROVEN. It was reached while a failed load produced
+// exactly this signature — no notice, no console error, a disabled send button
+// forever — because the error handler wrote its message into the transcript,
+// which suppressed the notice meant to report it. "Never becomes ready" and
+// "failed instantly and said nothing" were indistinguishable from outside.
+// That is fixed (see ChatContext's error case), so a re-test now either
+// reports the real reason or clears the model.
+//
+// The 1.2B's own CPU-backend failure is `GatherBlockQuantized` having no
+// kernel there, which is an ONNX export property rather than a model property
+// — one more reason to suspect the export rather than the 350M.
+//
 // Re-test with `EVAL_MODEL=lfm-350m npm run eval:chat` before adding it back;
 // that harness now fails loudly on a model that never becomes ready.
 //
