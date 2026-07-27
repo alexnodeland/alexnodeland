@@ -86,4 +86,8 @@ each one looked exactly like a regression. if you are optimising against a numbe
 
 ask it "archanan?" — just the word — and it recites where that company sits in my timeline instead of telling you what it was. the answer is being pulled out of the career summary that sits in every prompt, and i have not found a way to stop that without breaking the follow-up questions the summary is there to serve.
 
+and if your browser has no webgpu, it does not work at all. it now says so in about a minute instead of sitting there with a disabled box, which took some finding — the failure was reported correctly by the part that failed, and then hidden by the part that was supposed to display it. the error message it wrote went into the transcript, and the notice carrying the real reason only appears when the transcript is empty. so the more precisely it reported the problem, the more thoroughly it concealed it.
+
+the reason it can't fall back to your cpu is narrower than "too slow", though it is also too slow. every compressed version of this model stores its vocabulary in a format the cpu engine has no code to read — the gpu engine does, which is why one works and one doesn't. and the fix isn't a faster cpu engine: the best one available runs a model this size at two to five words a second, which is not a chat, it's correspondence.
+
 it also will not tell you anything that is not on this site, which is most things. that is the design, not a limitation to be fixed. it can tell you where i worked and what i have built; it cannot tell you what i think about your architecture. for that, [email me](mailto:alex@ournature.studio).
