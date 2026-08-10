@@ -456,6 +456,37 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     };
   }, []);
 
+  // The window's top edge is dynamic now — it sits below the hero and rises
+  // as the hero collapses — so its live position is published for the two
+  // sidebars, whose height must match the window's at all times. A
+  // ResizeObserver catches every cause of movement (collapse, hero swap,
+  // viewport resize), since each one changes the flex-sized panel's height.
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const panel = windowRef.current;
+    if (!panel) return;
+    let frame = 0;
+    const publish = () => {
+      frame = 0;
+      const top = Math.round(panel.getBoundingClientRect().top);
+      document.documentElement.style.setProperty('--window-top', `${top}px`);
+    };
+    const request = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(publish);
+    };
+    publish();
+    const observer = new ResizeObserver(request);
+    observer.observe(panel);
+    window.addEventListener('resize', request);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', request);
+      if (frame) window.cancelAnimationFrame(frame);
+      document.documentElement.style.removeProperty('--window-top');
+    };
+  }, []);
+
   // The collapse choreography needs real widths: at full collapse the title
   // parks on the left edge and the tagline on the right, each travelling half
   // of its leftover space, and the tagline rises to the title's centerline.

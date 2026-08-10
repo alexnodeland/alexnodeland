@@ -12,6 +12,7 @@ export function createBackgroundConfig<
 >(config: {
   id: string;
   name: string;
+  shortName: string;
   description: string;
   component: React.ComponentType<any>;
   customSettings: TCustomSettings;
@@ -30,6 +31,7 @@ export function createBackgroundConfig<
   return {
     id: config.id,
     name: config.name,
+    shortName: config.shortName,
     description: config.description,
     component: config.component,
     standardSettings,
@@ -67,6 +69,7 @@ export function toLegacyConfig(config: BackgroundConfig<any>) {
   return {
     id: config.id,
     name: config.name,
+    shortName: config.shortName,
     description: config.description,
     component: config.component,
     defaultSettings: getCompleteSettings(config),

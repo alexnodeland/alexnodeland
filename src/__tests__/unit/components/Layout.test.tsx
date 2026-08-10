@@ -590,7 +590,9 @@ describe('Layout Component', () => {
       render(<TestWrapper pathname="/blog/a-post">{mockChildren}</TestWrapper>);
 
       const heroRegion = document.querySelector('.site-hero') as HTMLElement;
-      expect(observe).not.toHaveBeenCalled();
+      // The window-top publisher observes the panel on every page; what a
+      // hero-less path must never do is observe (measure) the hero region.
+      expect(observe).not.toHaveBeenCalledWith(heroRegion);
       expect(heroRegion.style.getPropertyValue('--title-shift')).toBe('');
       expect(heroRegion.style.getPropertyValue('--sub-scale')).toBe('');
     });

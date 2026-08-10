@@ -24,15 +24,16 @@
 // conversion path is meaning, not decoration. It is the only place on the site
 // that still fills with an accent, which is what makes it read as the accent.
 //
-// Hover stays in the family — brighter pink rather than the old hop to blue,
+// The conversion action takes the site's one action colour — the last pink
+// left with it. Hover stays in the family: brighter green,
 // which made the button look like a different control on the way to being
 // clicked — and the coloured halo is gone; elevation comes from the shadow
 // scale like everything else.
 @mixin button-primary {
   @include button-base;
-  background: var(--accent-pink);
+  background: var(--primary-color);
   color: var(--on-fill);
-  border-color: var(--accent-pink);
+  border-color: var(--primary-color);
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;

@@ -34,14 +34,17 @@
     // control on the field.
     @include capsule-housing;
     // Rests quiet like a nav segment, brightens on hover — one label colour
-    // across every capsule on the field.
+    // across every capsule on the field. Fixed to the page selector's
+    // footprint so the rail reads as one kit.
+    width: var(--rail-width);
+    height: var(--rail-height);
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
     color: var(--text-secondary);
     font-size: 0.875rem;
     cursor: pointer;
     transition: all var(--transition-normal);
-    // The rail's footprint — the nav capsule at the top of the screen is built
-    // to the same box, so the two align down the right edge.
-    min-width: var(--rail-width);
 
     &:hover {
       border-color: rgba(255, 255, 255, 0.45);
@@ -138,7 +141,9 @@
 // tokens live in variables.scss and are shared with .layout.
 .chat-sidebar {
   position: fixed;
-  top: var(--window-inset);
+  // The window's live top edge, published by the shell — the sidebar's height
+  // matches the window's at all times, including mid-collapse.
+  top: var(--window-top, var(--window-inset));
   right: var(--window-inset);
   // Rides above the floating pills, exactly as the window does
   bottom: var(--window-inset-bottom);

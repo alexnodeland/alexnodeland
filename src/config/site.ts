@@ -76,7 +76,7 @@ export const siteConfig: SiteConfig = {
 
   // External services
   services: {
-    calendar: 'https://cal.com/alexnodeland',
+    calendar: 'https://calendar.app.google/7oLHq1BcGKtaU8Sn9',
   },
 
   // SEO and meta

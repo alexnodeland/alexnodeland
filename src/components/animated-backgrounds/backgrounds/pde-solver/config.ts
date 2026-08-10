@@ -333,6 +333,7 @@ const customSettingsSchema: SettingsSchema[] = [
 export const pdeSolverConfig = createBackgroundConfig({
   id: 'pde-solver',
   name: 'PDE Solver: Heat & Wave Equations',
+  shortName: 'pde solver',
   description:
     'Explicit finite differences on a grid, solving the heat equation (∂u/∂t = α∇²u) or the wave equation ' +
     '(∂²u/∂t² = c²∇²u). The Laplacian is a five-point stencil; heat uses FTCS, wave a centered second difference in time. ' +

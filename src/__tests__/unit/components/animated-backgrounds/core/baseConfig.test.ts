@@ -15,6 +15,7 @@ describe('baseConfig helpers', () => {
   const config = createBackgroundConfig({
     id: 'dummy',
     name: 'Dummy Background',
+    shortName: 'dummy',
     description: 'Testing background config helpers',
     component: Dummy,
     customSettings: { foo: 1 },

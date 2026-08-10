@@ -362,7 +362,7 @@
 
 // One machined capsule housing the page links — a single control with
 // segments, not a row of loose boxes (capsule-housing lives in mixins.scss).
-// Its box is the chat pill's box: --rail-width across, and a height built from
+// Its box matches the chat pill's height; width is natural — the rail aligns
 // the same arithmetic (see --rail-height in variables.scss) so the two read as
 // one column of controls rather than two similar objects.
 .nav-menu {
@@ -371,7 +371,6 @@
   align-items: center;
   justify-content: space-evenly;
   flex-wrap: nowrap;
-  min-width: var(--rail-width);
   padding: var(--rail-housing-pad);
   @include capsule-housing;
 }
