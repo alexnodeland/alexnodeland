@@ -1,13 +1,8 @@
 import React from 'react';
 import { Layout, SEO } from '../components';
 import { getCTAButtonURL, homepageConfig } from '../config';
+import { expertiseIcons } from '../components/expertise-icons';
 import { useScrollSpy } from '../lib/hooks';
-import developmentIcon from '../images/development.png';
-import gearIcon from '../images/gear.png';
-import observabilityIcon from '../images/observability.png';
-import reportIcon from '../images/report.png';
-import strategyIcon from '../images/strategy.png';
-import systemsIcon from '../images/systems.png';
 import '../styles/index.scss';
 
 const IndexPage: React.FC = () => {
@@ -89,15 +84,10 @@ const IndexPage: React.FC = () => {
           <h2>{homepageConfig.expertise.title}</h2>
           <div className="expertise-grid" ref={expertiseRef}>
             {homepageConfig.expertise.items.map((item, index) => {
-              const expertiseImages = [
-                systemsIcon, // ai system architecture
-                gearIcon, // devops & infrastructure
-                reportIcon, // data engineering
-                observabilityIcon, // mlops & monitoring
-                strategyIcon, // technical leadership
-                developmentIcon, // ai product development
-              ];
-              const iconSrc = expertiseImages[index] ?? developmentIcon;
+              // Drawn as a set, in config order. The icon is decorative — the
+              // title sits directly beneath it and does the labelling — so the
+              // svg is hidden from assistive tech rather than repeating it.
+              const Icon = expertiseIcons[index];
               return (
                 <div
                   key={index}
@@ -105,9 +95,7 @@ const IndexPage: React.FC = () => {
                     isExpertiseActive(index) ? ' is-active' : ''
                   }`}
                 >
-                  <span className="expertise-icon">
-                    <img src={iconSrc} alt={item.title} />
-                  </span>
+                  <span className="expertise-icon">{Icon && <Icon />}</span>
                   <div className="expertise-title">{item.title}</div>
                   <div className="expertise-description">
                     {item.description}
