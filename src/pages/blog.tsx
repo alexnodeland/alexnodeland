@@ -1,9 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { graphql, Link } from 'gatsby';
-import { Layout, SEO } from '../components';
+import { Dropdown, Layout, SEO } from '../components';
+import { DropdownOption } from '../components/ui/Dropdown';
 import { useScrollSpy } from '../lib/hooks';
 import { BlogPageProps } from '../types';
 import '../styles/blog.scss';
+
+// Newest-first is the default, so it is the one the trigger reads on arrival.
+const SORT_OPTIONS: DropdownOption[] = [
+  { value: 'desc', label: 'newest first' },
+  { value: 'asc', label: 'oldest first' },
+];
+
+// The tag filter's "no filter" option. A null category is what the rest of
+// the page tests for; the dropdown needs a string, so this is the stand-in.
+const ALL_TAGS = '__all__';
 
 const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
   // Filter for blog posts only
@@ -65,6 +76,30 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
     setSortOrder('desc');
   };
 
+  const hasFilters =
+    Boolean(searchTerm || selectedCategory) || sortOrder !== 'desc';
+
+  // "all" plus one option per tag the posts actually carry, so the menu can
+  // never offer a filter that would empty the list.
+  const tagOptions: DropdownOption[] = useMemo(
+    () => [
+      { value: ALL_TAGS, label: 'all' },
+      ...categories.map(category => ({
+        value: category,
+        label: category.toLowerCase(),
+      })),
+    ],
+    [categories]
+  );
+
+  const tagLabel =
+    tagOptions.find(option => option.value === (selectedCategory ?? ALL_TAGS))
+      ?.label ?? 'all';
+
+  const sortLabel =
+    SORT_OPTIONS.find(option => option.value === sortOrder)?.label ??
+    'newest first';
+
   const hero = (
     <header className="blog-header">
       <h1>
@@ -81,62 +116,50 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
     <Layout hero={hero} collapsibleHero>
       <SEO title="blog" />
       <div className="blog-page">
-        {/* Search and Filter Controls */}
-        <div className="blog-controls">
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="search posts..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-          </div>
+        {/* The two pickers and the reset, loose chips sticky to the top of
+            the window's scroll — the same row the CV carries. */}
+        <div className="blog-control-bar">
+          <Dropdown
+            ariaLabel="Filter posts by tag"
+            triggerLabel={tagLabel}
+            options={tagOptions}
+            value={selectedCategory ?? ALL_TAGS}
+            onSelect={value =>
+              setSelectedCategory(value === ALL_TAGS ? null : value)
+            }
+            className="blog-tag-dropdown"
+          />
 
-          <div className="filter-container">
-            <div className="category-filters">
-              <button
-                className={`filter-btn ${selectedCategory === null ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(null)}
-              >
-                all
-              </button>
-              {categories.map(category => (
-                <button
-                  key={category}
-                  className={`filter-btn ${selectedCategory === category ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category.toLowerCase()}
-                </button>
-              ))}
-            </div>
+          <Dropdown
+            ariaLabel="Sort posts by date"
+            triggerLabel={sortLabel}
+            options={SORT_OPTIONS}
+            value={sortOrder}
+            onSelect={value => setSortOrder(value as 'desc' | 'asc')}
+            className="blog-sort-dropdown"
+          />
 
-            <div className="sort-container">
-              <label htmlFor="sort-select" className="sort-label">
-                sort by date:
-              </label>
-              <select
-                id="sort-select"
-                value={sortOrder}
-                onChange={e => setSortOrder(e.target.value as 'desc' | 'asc')}
-                className="sort-select"
-              >
-                <option value="desc">newest first</option>
-                <option value="asc">oldest first</option>
-              </select>
-            </div>
+          <button
+            type="button"
+            className="ui-chip-button blog-clear-chip"
+            onClick={clearFilters}
+            disabled={!hasFilters}
+          >
+            clear filters
+          </button>
+        </div>
 
-            <button
-              className={`clear-filters-btn ${searchTerm || selectedCategory || sortOrder !== 'desc' ? 'active' : 'disabled'}`}
-              onClick={clearFilters}
-              disabled={
-                !(searchTerm || selectedCategory || sortOrder !== 'desc')
-              }
-            >
-              clear filters
-            </button>
-          </div>
+        {/* Somewhere to type rather than a piece of chrome, so it keeps its
+            own panel below the row. */}
+        <div className="blog-search-panel">
+          <input
+            type="text"
+            placeholder="search posts..."
+            aria-label="Search posts"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
         </div>
 
         <div className="blog-content">

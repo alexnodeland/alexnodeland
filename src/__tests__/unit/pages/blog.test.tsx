@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 import BlogPage from '../../../pages/blog';
 
@@ -22,6 +23,9 @@ jest.mock('../../../components', () => ({
   SEO: ({ title }: { title?: string }) => (
     <div data-testid="seo" data-title={title} />
   ),
+  // The real dropdown — the controls under test are the shared component, so
+  // mocking it here would test nothing.
+  Dropdown: jest.requireActual('../../../components/ui/Dropdown').default,
 }));
 
 // Mock SCSS
@@ -85,32 +89,124 @@ describe('Blog Page', () => {
     expect(screen.getByText('Alpha Post')).toBeInTheDocument();
   });
 
-  it('filters by search and category and sorts', () => {
+  const tagTrigger = () =>
+    screen.getByRole('button', { name: 'Filter posts by tag' });
+  const sortTrigger = () =>
+    screen.getByRole('button', { name: 'Sort posts by date' });
+  const clearChip = () => screen.getByRole('button', { name: 'clear filters' });
+
+  const pick = async (
+    user: ReturnType<typeof userEvent.setup>,
+    trigger: HTMLElement,
+    optionName: string
+  ) => {
+    await user.click(trigger);
+    await user.click(screen.getByRole('option', { name: optionName }));
+  };
+
+  const titlesInOrder = () =>
+    screen.getAllByRole('article').map(article => {
+      const heading = article.querySelector('h2, h3');
+      return heading?.textContent ?? '';
+    });
+
+  it('offers the tags the posts actually carry, and no others', async () => {
+    const user = userEvent.setup();
     render(<BlogPage data={mockData as any} />);
-    // search by title
+
+    // The old row of filter buttons and the native select are both gone.
+    expect(document.querySelector('select')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'ai' })
+    ).not.toBeInTheDocument();
+
+    expect(tagTrigger()).toHaveTextContent('all');
+    await user.click(tagTrigger());
+    expect(screen.getAllByRole('option').map(o => o.textContent)).toEqual([
+      'all',
+      'tech',
+      'ai',
+    ]);
+  });
+
+  it('filters by tag through the dropdown', async () => {
+    const user = userEvent.setup();
+    render(<BlogPage data={mockData as any} />);
+
+    await pick(user, tagTrigger(), 'ai');
+
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByText('Alpha Post')).toBeInTheDocument();
+    expect(tagTrigger()).toHaveTextContent('ai');
+
+    // And back to everything.
+    await pick(user, tagTrigger(), 'all');
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+  });
+
+  it('sorts by date through the dropdown', async () => {
+    const user = userEvent.setup();
+    render(<BlogPage data={mockData as any} />);
+
+    // Newest first is the default and the trigger says so.
+    expect(sortTrigger()).toHaveTextContent('newest first');
+    expect(titlesInOrder()).toEqual(['Zeta Post', 'Alpha Post']);
+
+    await pick(user, sortTrigger(), 'oldest first');
+
+    expect(sortTrigger()).toHaveTextContent('oldest first');
+    expect(titlesInOrder()).toEqual(['Alpha Post', 'Zeta Post']);
+  });
+
+  it('still filters by search, from its own panel', () => {
+    render(<BlogPage data={mockData as any} />);
+
     const search = screen.getByPlaceholderText(
       'search posts...'
     ) as HTMLInputElement;
     fireEvent.change(search, { target: { value: 'alpha' } });
+
     expect(screen.getAllByRole('article')).toHaveLength(1);
     expect(screen.getByText('Alpha Post')).toBeInTheDocument();
+  });
 
-    // clear via button
-    const clearBtn = screen.getByText('clear filters') as HTMLButtonElement;
-    fireEvent.click(clearBtn);
+  it('enables the clear chip only when something is filtered, and resets everything', async () => {
+    const user = userEvent.setup();
+    render(<BlogPage data={mockData as any} />);
+
+    expect(clearChip()).toBeDisabled();
+
+    await pick(user, tagTrigger(), 'ai');
+    await pick(user, sortTrigger(), 'oldest first');
+    fireEvent.change(screen.getByPlaceholderText('search posts...'), {
+      target: { value: 'alpha' },
+    });
+    expect(clearChip()).toBeEnabled();
+
+    await user.click(clearChip());
+
     expect(screen.getAllByRole('article')).toHaveLength(2);
+    expect(tagTrigger()).toHaveTextContent('all');
+    expect(sortTrigger()).toHaveTextContent('newest first');
+    expect(
+      (screen.getByPlaceholderText('search posts...') as HTMLInputElement).value
+    ).toBe('');
+    expect(clearChip()).toBeDisabled();
+  });
 
-    // filter by category
-    const aiBtn = screen.getByRole('button', { name: 'ai' });
-    fireEvent.click(aiBtn);
+  it('drives the pickers from the keyboard', async () => {
+    const user = userEvent.setup();
+    render(<BlogPage data={mockData as any} />);
+
+    tagTrigger().focus();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('listbox')).toHaveFocus();
+
+    // all → tech → ai, then take it.
+    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+
+    expect(tagTrigger()).toHaveFocus();
+    expect(tagTrigger()).toHaveTextContent('ai');
     expect(screen.getAllByRole('article')).toHaveLength(1);
-    expect(screen.getByText('Alpha Post')).toBeInTheDocument();
-
-    // sort order asc (oldest first)
-    const sort = screen.getByLabelText('sort by date:');
-    fireEvent.change(sort, { target: { value: 'asc' } });
-    const articlesAsc = screen.getAllByRole('article');
-    // with AI filter still active only one item remains
-    expect(articlesAsc).toHaveLength(1);
   });
 });

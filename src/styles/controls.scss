@@ -1,0 +1,188 @@
+// Shared control chrome — the dropdown that every control row on the site
+// uses (see src/components/ui/Dropdown.tsx). It lives here, imported once by
+// global.scss, rather than in the page stylesheets: two pages drawing their
+// own copy of a trigger is how the CV row and the blog row drift apart.
+//
+// The page stylesheets own the rows themselves (which chips, in what order,
+// with what page-specific state); the chips' material comes from the
+// `frosted-chip`, `floating-panel` and `sticky-control-row` mixins.
+
+@import 'variables';
+@import 'mixins';
+
+// A trigger and the panel it opens. The panel is positioned against this, so
+// the box has to establish the containing block.
+.ui-dropdown {
+  position: relative;
+  flex: 0 0 auto;
+
+  // Right-justified — and stays that way whatever sits between it and the
+  // left end of its row.
+  &.align-end {
+    margin-left: auto;
+  }
+}
+
+// Not a native <select>, so it does not get to look like one.
+.ui-dropdown-trigger {
+  @include frosted-chip;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:focus-visible {
+    outline: none;
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  // Open is a real state, and it is marked the way every other current thing
+  // on the site is marked — white wash, brighter hairline, brighter type.
+  &.is-open {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.45);
+  }
+
+  .ui-dropdown-caret {
+    font-size: 0.7rem;
+    line-height: 1;
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+  }
+
+  &.is-open .ui-dropdown-caret {
+    transform: rotate(180deg);
+  }
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ui-dropdown-menu {
+  @include floating-panel;
+  left: 0;
+  min-width: 100%;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+
+  // Hung from the right edge when the trigger is, so a wide menu grows inward
+  // instead of off the window.
+  .ui-dropdown.align-end & {
+    left: auto;
+    right: 0;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.ui-dropdown-option {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-fast);
+
+  // One highlight for both routes in: the pointer and the arrow keys set the
+  // same active index, so hover and keyboard cannot disagree about which item
+  // Enter would take.
+  &.is-active {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  // The current value is a value, not a hover — marked with the 8% wash and
+  // the brighter hairline every other active state on the site uses.
+  &.is-selected {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.45);
+
+    &.is-active {
+      background: rgba(255, 255, 255, 0.11);
+    }
+  }
+
+  &[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// A menu whose items do something rather than select something — the CV's
+// downloads — takes the link colour under the cursor, the one place green is
+// allowed to mean anything. The trigger stays neutral chrome either way.
+.ui-dropdown.tone-action .ui-dropdown-option.is-active {
+  color: var(--ink-primary);
+}
+
+// A plain chip: the same material as a trigger, for a control that acts on
+// click instead of opening a panel. The blog's "clear filters" is one.
+.ui-chip-button {
+  @include frosted-chip;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+
+  &:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:focus-visible {
+    outline: none;
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  // Nothing to clear is not an error, so it recedes rather than greys out
+  // hard: the chip keeps its frosting and drops its contrast.
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: var(--text-muted);
+  }
+}
+
+// A 120ms fade is small, but it is still motion arriving unasked in the
+// corner of the eye — so it is the menu appearing, without the travel.
+@media (prefers-reduced-motion: reduce) {
+  .ui-dropdown-menu {
+    animation: none;
+  }
+
+  .ui-dropdown-trigger .ui-dropdown-caret {
+    transition: none;
+  }
+}

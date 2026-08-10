@@ -204,3 +204,65 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 24px rgba(0, 0, 0, 0.3);
 }
+
+// A sticky row of loose controls at the top of the window's own scroll. There
+// is no bar: the row itself is nothing but a flex container, and each chip in
+// it carries its own material (see `frosted-chip`). The gaps between the chips
+// are dead to the pointer, so scroll and clicks aimed at the document pass
+// straight through the row instead of being caught by an invisible strip.
+@mixin sticky-control-row {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.4rem 0;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+// A loose floating control with nothing behind it, so it has to hold its own
+// over whatever scrolls underneath — including white headings. The window's
+// scrim token laid down twice (0.38 over 0.38 composites to ~0.62) over a
+// blur well past the window's own, which reads as a frosted chip catching the
+// simulation rather than as a collision with the text below it.
+@mixin frosted-chip {
+  background-color: var(--window-scrim);
+  background-image: linear-gradient(var(--window-scrim), var(--window-scrim));
+  backdrop-filter: blur(calc(var(--window-blur) * 2.4));
+  -webkit-backdrop-filter: blur(calc(var(--window-blur) * 2.4)); // Safari ≤17
+  border: 1px solid var(--border-floating);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+// The panel a chip opens. Same doubled scrim as the chip itself, so a menu
+// reads as the chip growing rather than as a different material arriving.
+@mixin floating-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  z-index: 20;
+  background-color: var(--window-scrim);
+  background-image: linear-gradient(var(--window-scrim), var(--window-scrim));
+  backdrop-filter: blur(calc(var(--window-blur) * 2));
+  -webkit-backdrop-filter: blur(calc(var(--window-blur) * 2)); // Safari ≤17
+  border: 1px solid var(--border-floating);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  transform-origin: top center;
+  animation: dropdown-in 120ms ease-out;
+}

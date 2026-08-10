@@ -1,15 +1,15 @@
 import React from 'react';
 import { CVData } from '../../config/cv';
 import { CVVariant } from '../../lib/utils/export';
-import CVDropdown, { CVDropdownOption } from './CVDropdown';
+import Dropdown, { DropdownOption } from '../ui/Dropdown';
 import useCVExport, { CVExportFormat } from './useCVExport';
 
-const VIEW_OPTIONS: CVDropdownOption[] = [
+const VIEW_OPTIONS: DropdownOption[] = [
   { value: 'full', label: 'full cv' },
   { value: 'resume', label: 'one page' },
 ];
 
-const DOWNLOAD_OPTIONS: CVDropdownOption[] = [
+const DOWNLOAD_OPTIONS: DropdownOption[] = [
   // The trigger already says "download" — the options are just the formats.
   { value: 'pdf', label: 'pdf' },
   { value: 'docx', label: 'docx' },
@@ -46,7 +46,7 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
 
   return (
     <div className={`cv-control-bar ${className}`.trim()}>
-      <CVDropdown
+      <Dropdown
         ariaLabel="Choose CV length"
         triggerLabel={viewLabel}
         options={VIEW_OPTIONS}
@@ -55,7 +55,7 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
         className="cv-view-dropdown"
       />
 
-      <CVDropdown
+      <Dropdown
         ariaLabel="Download the CV"
         triggerLabel={isExporting ? 'generating...' : 'download'}
         options={DOWNLOAD_OPTIONS}
