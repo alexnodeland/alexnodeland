@@ -44,7 +44,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ data }) => {
 
         <footer className="post-footer">
           <Link to="/blog" className="back-to-blog">
-            ← Back to Blog
+            ← back to blog
           </Link>
         </footer>
       </div>

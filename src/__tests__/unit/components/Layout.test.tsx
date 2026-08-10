@@ -189,7 +189,9 @@ describe('Layout Component', () => {
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     expect(
-      screen.getByText('© 2025 all rights reserved, test author')
+      screen.getByText(
+        `© ${new Date().getFullYear()} all rights reserved, test author`
+      )
     ).toBeInTheDocument();
   });
 

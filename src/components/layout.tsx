@@ -320,7 +320,8 @@ const LayoutInner: React.FC<LayoutProps> = ({
                   })}
                 </div>
                 <p className="footer-copyright">
-                  © 2025 all rights reserved, {siteConfig.author.toLowerCase()}
+                  © {new Date().getFullYear()} all rights reserved,{' '}
+                  {siteConfig.author.toLowerCase()}
                 </p>
               </div>
             </footer>
