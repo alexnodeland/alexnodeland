@@ -166,6 +166,35 @@ const LayoutInner: React.FC<LayoutProps> = ({
     };
   }, [shouldCollapse]);
 
+  // The veil only exists once something is actually under it: opacity tracks
+  // the window's scroll over its first ~90px, so page tops read at full
+  // strength at rest and the overscroll bounce never drags a gradient along.
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const panel = windowRef.current;
+    if (!panel) return;
+    let frame = 0;
+    let last = -1;
+    const apply = () => {
+      frame = 0;
+      const o =
+        Math.round(Math.min(Math.max(panel.scrollTop / 90, 0), 1) * 20) / 20;
+      if (o === last) return;
+      last = o;
+      panel.style.setProperty('--veil-strength', String(o));
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(apply);
+    };
+    apply();
+    panel.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      panel.removeEventListener('scroll', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
   // The collapse choreography needs real widths: at full collapse the title
   // parks on the left edge and the tagline on the right, each travelling half
   // of its leftover space, and the tagline rises to the title's centerline.

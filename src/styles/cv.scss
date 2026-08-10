@@ -225,6 +225,9 @@ section[id] {
 .cv-collapse {
   padding: 0;
   overflow: hidden;
+  // When single-open repositions a card, it lands clear of the floating
+  // control chips and the veil rather than sliding underneath them.
+  scroll-margin-top: 76px;
 
   summary {
     list-style: none;
