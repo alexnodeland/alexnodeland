@@ -60,6 +60,13 @@
   // the rest of a wide display. The side inset below is the floor once the
   // viewport shrinks to meet it.
   --window-max-width: 1240px;
+  // The resolved side offset — every rule that positions the window's left or
+  // right edge (including panel open/close transition states) must use this,
+  // or the frame animates out to the raw inset and snaps back.
+  --window-side: max(
+    var(--window-inset),
+    calc((100vw - var(--window-max-width)) / 2)
+  );
   // The bottom inset is deeper than the sides: the floating pills (background
   // label bottom-left, chat bottom-right) live on the field below the window,
   // not on top of it. The pill stack (pill + keyboard hint) reaches ~7.2rem

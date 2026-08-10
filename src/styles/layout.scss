@@ -86,8 +86,8 @@
   top: var(--window-inset); // Header overlays the panel top transparently
   // Hug the content column: on wide viewports the frame stops at
   // --window-max-width and the field takes the rest; the inset is the floor.
-  left: max(var(--window-inset), calc((100vw - var(--window-max-width)) / 2));
-  right: max(var(--window-inset), calc((100vw - var(--window-max-width)) / 2));
+  left: var(--window-side);
+  right: var(--window-side);
   bottom: var(--window-inset-bottom); // Rides just above the floating pills
   // Grounds the panel on the field; the field is animated and often bright,
   // so this reads as depth rather than as a visible shadow shape.
@@ -123,26 +123,28 @@
     right: calc(28rem + var(--window-inset));
   }
 
-  // During closing animations, animate back smoothly
+  // During closing animations, animate straight back to the resolved side
+  // offset — the raw inset here made the frame fly to the screen edge and
+  // snap back once the closing class dropped.
   &.settings-panel-closing {
-    left: var(--window-inset);
+    left: var(--window-side);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   &.chat-panel-closing {
-    right: var(--window-inset);
+    right: var(--window-side);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   // Handle mixed states - one opening, one closing
   &.settings-panel-closing.chat-panel-open {
-    left: var(--window-inset);
+    left: var(--window-side);
     right: calc(28rem + var(--window-inset));
   }
 
   &.settings-panel-open.chat-panel-closing {
     left: calc(28rem + var(--window-inset));
-    right: var(--window-inset);
+    right: var(--window-side);
   }
 }
 
@@ -175,8 +177,8 @@
   .layout.settings-panel-closing,
   .layout.chat-panel-open,
   .layout.chat-panel-closing {
-    left: var(--window-inset);
-    right: var(--window-inset);
+    left: var(--window-side);
+    right: var(--window-side);
     width: auto;
     transform: translateX(0);
     opacity: 0.3; // Dim instead of resize
@@ -184,8 +186,8 @@
 
   // On mobile, both panels open still just dims content
   .layout.settings-panel-open.chat-panel-open {
-    left: var(--window-inset);
-    right: var(--window-inset);
+    left: var(--window-side);
+    right: var(--window-side);
     opacity: 0.3;
   }
 }
@@ -199,8 +201,7 @@
   background: transparent;
   border: none;
   // Sit on the window's top edge, tracking the same content-hugging geometry
-  margin: var(--window-inset)
-    max(var(--window-inset), calc((100vw - var(--window-max-width)) / 2)) 0;
+  margin: var(--window-inset) var(--window-side) 0;
   box-shadow: none;
   transition: all var(--transition-normal);
   border-radius: var(--radius-lg);
