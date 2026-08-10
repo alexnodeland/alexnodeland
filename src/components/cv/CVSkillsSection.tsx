@@ -35,19 +35,6 @@ const CVSkillsSection: React.FC<CVSkillsSectionProps> = ({
           ))}
         </div>
       </div>
-
-      {skills.languages && skills.languages.length > 0 && (
-        <div className="skill-category-direct">
-          <h3 className="skill-subtitle">Languages</h3>
-          <div className="skill-tags">
-            {skills.languages.map((language, index) => (
-              <span key={index} className="skill-tag language">
-                {language}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </section>
   );
 };

@@ -259,9 +259,6 @@ const skillsBlock = (
     cvData.skills.soft.length > 0
       ? [line('Soft', cvData.skills.soft)]
       : []),
-    ...(cvData.skills.languages && cvData.skills.languages.length > 0
-      ? [line('Languages', cvData.skills.languages)]
-      : []),
   ];
 };
 

@@ -1,9 +1,10 @@
 import { Link } from 'gatsby';
 import React, { useState } from 'react';
 import {
+  CVControlBar,
+  CVSearch,
   EducationSection,
   ExperienceSection,
-  ExportButtons,
   Layout,
   SEO,
   SkillsSection,
@@ -33,35 +34,9 @@ const CVPage: React.FC = () => {
     <Layout hero={hero} collapsibleHero>
       <SEO title="cv" description="Complete resume and CV for Alex Nodeland" />
       <div className="cv">
-        <div
-          className="cv-view-toggle"
-          role="group"
-          aria-label="Choose CV length"
-        >
-          <button
-            type="button"
-            className={`cv-view-button ${view === 'full' ? 'active' : ''}`}
-            onClick={() => setView('full')}
-            aria-pressed={view === 'full'}
-          >
-            full cv
-          </button>
-          <button
-            type="button"
-            className={`cv-view-button ${view === 'resume' ? 'active' : ''}`}
-            onClick={() => setView('resume')}
-            aria-pressed={view === 'resume'}
-          >
-            one page
-          </button>
-        </div>
+        <CVControlBar resumeData={data} view={view} onViewChange={setView} />
 
-        <ExportButtons
-          resumeData={data}
-          resumeElementId="resume-content"
-          variant={view}
-          className="cv-export"
-        />
+        <CVSearch resumeData={data} />
 
         <div className="cv-overview-contact">
           <div className="overview-section">
