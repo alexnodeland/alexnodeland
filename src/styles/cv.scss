@@ -215,6 +215,19 @@ section[id] {
   }
 }
 
+// The glyph and the name, as one block — so the duration chip beside them can
+// wrap under the pair on a phone rather than pushing the glyph onto a line of
+// its own.
+.cv-entry-title {
+  display: flex;
+  // Top-aligned: a role title that wraps would otherwise leave its glyph
+  // floating halfway down the block.
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 200px;
+}
+
 // The glyph that opens an entry's title row — the counterpart to the repo mark
 // on a project card. Quiet, and the same box on all three pages.
 .cv-entry-icon {
@@ -227,6 +240,11 @@ section[id] {
     width: 18px;
     height: 18px;
   }
+
+  // Centred on the title's first line, not on the whole title.
+  .cv-entry-title & {
+    margin-top: 0.15rem;
+  }
 }
 
 .experience-header {
@@ -238,8 +256,7 @@ section[id] {
 
   h3 {
     margin: 0;
-    flex: 1;
-    min-width: 200px;
+    min-width: 0;
     color: var(--text-primary);
     font-size: var(--text-h4);
     font-family:
@@ -633,8 +650,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   h3 {
     margin: 0;
-    flex: 1;
-    min-width: 200px;
+    min-width: 0;
     color: var(--text-primary);
     font-size: var(--text-h4);
     font-family:

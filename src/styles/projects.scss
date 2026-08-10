@@ -132,7 +132,9 @@
 
 .project-header {
   display: flex;
-  align-items: center;
+  // Top-aligned rather than centred: a repo name that wraps would otherwise
+  // leave its glyph floating halfway down the block.
+  align-items: flex-start;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
@@ -142,6 +144,8 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  // Centred on the title's first line, not on the whole title.
+  margin-top: 0.15rem;
 
   // One glyph size across the three list pages (the blog and cv marks are
   // drawn on a 24 viewBox, this one on 16 — the box is what has to agree).

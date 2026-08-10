@@ -20,10 +20,12 @@ const CVEducationSection: React.FC<CVEducationSectionProps> = ({
         <details key={index} className="cv-card cv-collapse">
           <summary className="cv-collapse-summary">
             <div className="education-header">
-              <span className="cv-entry-icon">
-                <GraduationIcon />
-              </span>
-              <h3>{edu.degree}</h3>
+              <div className="cv-entry-title">
+                <span className="cv-entry-icon">
+                  <GraduationIcon />
+                </span>
+                <h3>{edu.degree}</h3>
+              </div>
               <div className="summary-right">
                 <span className="education-duration">{edu.duration}</span>
                 <span className="cv-collapse-chevron" aria-hidden>
