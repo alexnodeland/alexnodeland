@@ -107,16 +107,23 @@ const Shortcuts: React.FC = () => {
   return (
     <>
       {/* Bottom-centre of the field, below the spectrogram's audio indicator
-          rather than beside it. Quiet enough to ignore, and a button because
-          it does something. */}
+          rather than beside it. At rest it is the key cap alone — the word is
+          a caption for a glyph that already says what it is — and it unrolls
+          on hover or keyboard focus. The name is carried by the label rather
+          than by the text, so it reads the same whether the word is out or
+          not. A button, because it does something. */}
       <button
         type="button"
         className="shortcuts-hint"
         onClick={toggle}
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-label="keyboard shortcuts"
       >
-        <kbd>?</kbd> shortcuts
+        <kbd>?</kbd>
+        <span className="shortcuts-hint-label" aria-hidden="true">
+          shortcuts
+        </span>
       </button>
 
       {open && (
