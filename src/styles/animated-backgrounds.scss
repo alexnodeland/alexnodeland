@@ -69,9 +69,14 @@
     // green here made the one word on the toolbar look clickable while the
     // whole toolbar was in fact the button.
     .background-name {
-      color: var(--text-primary);
+      color: var(--text-secondary);
       font-size: 0.875rem;
       text-align: center;
+      transition: color var(--transition-fast);
+    }
+
+    &:hover .background-name {
+      color: var(--text-primary);
     }
   }
 

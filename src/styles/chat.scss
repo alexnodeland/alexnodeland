@@ -33,7 +33,9 @@
     // capsule above — one machined housing language for every floating
     // control on the field.
     @include capsule-housing;
-    color: var(--text-primary);
+    // Rests quiet like a nav segment, brightens on hover — one label colour
+    // across every capsule on the field.
+    color: var(--text-secondary);
     font-size: 0.875rem;
     cursor: pointer;
     transition: all var(--transition-normal);
@@ -42,20 +44,26 @@
     &:hover {
       border-color: rgba(255, 255, 255, 0.45);
       transform: translateY(-1px);
+      color: var(--text-primary);
+
+      .chat-icon-inner {
+        color: var(--text-primary);
+      }
     }
 
     &:active {
       transform: translateY(0);
     }
 
-    // Matches the background launcher in the opposite corner: the pill is the
-    // control, so its label is white and the glyph goes with it.
+    // Matches the background launcher in the opposite corner and the nav
+    // segments: quiet at rest, white on hover.
     .chat-icon-inner {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      color: var(--text-primary);
+      color: var(--text-secondary);
+      transition: color var(--transition-fast);
 
       svg {
         flex-shrink: 0;

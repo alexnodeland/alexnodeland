@@ -184,7 +184,10 @@
 }
 
 .post-title {
-  margin-bottom: var(--space-3);
+  // A card title, not a page heading: without a size of its own the h2
+  // inherited the page scale (and its 4rem top margin).
+  font-size: var(--text-h4);
+  margin: 0 0 var(--space-3);
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
@@ -204,7 +207,7 @@
 
 .post-description {
   color: var(--text-secondary);
-  font-size: var(--text-h4);
+  font-size: var(--text-body);
   margin-bottom: var(--space-3);
   line-height: 1.6;
 }
