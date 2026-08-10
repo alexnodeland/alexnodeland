@@ -69,9 +69,30 @@
   );
   // The bottom inset is deeper than the sides: the floating pills (background
   // label bottom-left, chat bottom-right) live on the field below the window,
-  // not on top of it. The pill stack (pill + keyboard hint) reaches ~7.2rem
-  // up from the viewport bottom — the window rides just above it.
-  --window-inset-bottom: 8rem;
+  // not on top of it. With the keyboard-hint rows gone — the shortcuts live
+  // behind `?` now — a pill is 2.875rem of housing sitting 2rem off the
+  // bottom, so the stack tops out at ~4.9rem and the window clears it with
+  // room to spare rather than by a hairline.
+  --window-inset-bottom: 6.5rem;
+
+  // The right-hand rail: the nav capsule at the top of the screen and the chat
+  // pill at the bottom, one column of floating controls on the field. They
+  // take these rather than the window's own offsets, so their right edges
+  // agree at every viewport width — the window's side inset opens up on wide
+  // displays and would pull them apart.
+  --rail-inset: 2rem;
+  --rail-width: 280px;
+  // The chat pill's height, spelled out: a 20px icon in 0.75rem of padding
+  // inside a 1px hairline. The nav capsule is built to land on the same number
+  // (see .nav-link's line-height and paddings in layout.scss).
+  --rail-height: 2.875rem;
+  --rail-housing-pad: 0.25rem;
+  // What has to be left clear at the top of the field for the capsule: its
+  // offset, its height, and a breath. A page with no hero uses this so the
+  // window's top edge never slides under the capsule.
+  --rail-clearance: calc(
+    var(--rail-inset) + var(--rail-height) + var(--space-2)
+  );
   --window-scrim: rgba(7, 8, 10, 0.38);
   --window-blur: 5px;
   --window-border: var(--border-floating);
@@ -94,9 +115,15 @@
 
   @media (max-width: 768px) {
     --window-inset: 0.75rem;
-    // Pills move to 1rem and the chat icon shrinks to a 3rem disc.
+    // Pills move to 1rem and the chat icon shrinks to a 3rem disc. The bottom
+    // inset is unchanged: the hint rows were already hidden at this width, so
+    // there was nothing there to reclaim.
     --window-inset-bottom: 4.75rem;
     --gutter: var(--space-4);
+    // The rail moves in with the pills, and the capsule takes its natural
+    // width rather than the pill's footprint (the pill is a 3rem disc here).
+    --rail-inset: 1rem;
+    --rail-height: 3rem;
   }
 
   @media (max-width: 480px) {

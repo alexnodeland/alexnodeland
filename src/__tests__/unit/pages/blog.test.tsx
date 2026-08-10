@@ -5,21 +5,9 @@ import BlogPage from '../../../pages/blog';
 
 // Mock components barrel to avoid animated backgrounds
 jest.mock('../../../components', () => ({
-  // The page hero renders above the window now, as a Layout prop rather than
-  // as part of the page's children — so the mock has to put it back in the
-  // tree or every assertion about a page title fails on a structural change.
-  Layout: ({
-    children,
-    hero,
-  }: {
-    children: React.ReactNode;
-    hero?: React.ReactNode;
-  }) => (
-    <div data-testid="layout">
-      <div data-testid="layout-hero">{hero}</div>
-      {children}
-    </div>
-  ),
+  // No Layout here: the shell wraps the page (wrapPageElement) rather than the
+  // page rendering it, and the hero it wears is resolved from the path — both
+  // are covered by the Layout tests. A page renders only its own content now.
   SEO: ({ title }: { title?: string }) => (
     <div data-testid="seo" data-title={title} />
   ),
@@ -78,11 +66,12 @@ const mockData = {
 };
 
 describe('Blog Page', () => {
-  it('renders layout, SEO, header and posts list', () => {
+  it('renders SEO and the posts list, and no hero of its own', () => {
     render(<BlogPage data={mockData as any} />);
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
     expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'blog');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('blog');
+    // The "alex → blog" title and its tagline live in the hero registry the
+    // shell reads, not here.
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
     // two blog posts shown (non-blog source filtered out)
     expect(screen.getAllByRole('article')).toHaveLength(2);
     expect(screen.getByText('Zeta Post')).toBeInTheDocument();

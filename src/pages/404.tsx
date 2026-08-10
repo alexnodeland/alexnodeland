@@ -1,12 +1,13 @@
 import { Link } from 'gatsby';
 import React from 'react';
-import Layout from '../components/layout';
 import SEO from '../components/seo';
 import '../styles/404.scss';
 
+// No hero: the shell resolves one per path, and a path it does not know is a
+// path with nothing to title. The window frame is all the page gets.
 const NotFoundPage: React.FC = () => {
   return (
-    <Layout>
+    <>
       <SEO title="404" />
       <div className="not-found">
         <h1>404: Not Found</h1>
@@ -15,7 +16,7 @@ const NotFoundPage: React.FC = () => {
           ← Back to Home
         </Link>
       </div>
-    </Layout>
+    </>
   );
 };
 

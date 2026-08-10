@@ -1,6 +1,5 @@
 import { graphql, Link } from 'gatsby';
 import React from 'react';
-import Layout from '../components/layout';
 import SEO from '../components/seo';
 import '../styles/blog.scss';
 
@@ -8,11 +7,13 @@ interface BlogPostProps {
   data: any;
 }
 
+// A post carries its own title inside the window, so the shell wears no hero
+// here — the hero region collapses to nothing and the window takes the room.
 const BlogPost: React.FC<BlogPostProps> = ({ data }) => {
   const post = data.markdownRemark;
 
   return (
-    <Layout>
+    <>
       <SEO
         title={post.frontmatter.title}
         description={post.frontmatter.description}
@@ -48,7 +49,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ data }) => {
           </Link>
         </footer>
       </div>
-    </Layout>
+    </>
   );
 };
 

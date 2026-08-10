@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { graphql, Link } from 'gatsby';
-import { Dropdown, Layout, SEO } from '../components';
+import { Dropdown, SEO } from '../components';
 import { DropdownOption } from '../components/ui/Dropdown';
 import { useScrollSpy } from '../lib/hooks';
 import { BlogPageProps } from '../types';
@@ -100,20 +100,8 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
     SORT_OPTIONS.find(option => option.value === sortOrder)?.label ??
     'newest first';
 
-  const hero = (
-    <header className="blog-header">
-      <h1>
-        <Link to="/" className="hero-crumb" data-brand-anchor>
-          alex
-        </Link>
-        <span className="hero-crumb-sep"> → </span>blog
-      </h1>
-      <p>notes and press, back to 2015.</p>
-    </header>
-  );
-
   return (
-    <Layout hero={hero} collapsibleHero>
+    <>
       <SEO title="blog" />
       <div className="blog-page">
         {/* The two pickers and the reset, loose chips sticky to the top of
@@ -217,7 +205,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
           )}
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -3,12 +3,6 @@ import React from 'react';
 import { homepageConfig } from '../../../config';
 import IndexPage from '../../../pages/index';
 
-// Mock the Layout and SEO components
-jest.mock('../../../components/layout', () => {
-  return function MockLayout({ children }: { children: React.ReactNode }) {
-    return <div data-testid="layout">{children}</div>;
-  };
-});
 jest.mock('../../../components/seo', () => {
   return function MockSEO({
     title,
@@ -32,35 +26,26 @@ jest.mock('../../../styles/index.scss', () => ({}));
 
 // Fully mock components barrel to avoid animated backgrounds side effects
 jest.mock('../../../components', () => ({
-  // The page hero renders above the window now, as a Layout prop rather than
-  // as part of the page's children — so the mock has to put it back in the
-  // tree or every assertion about a page title fails on a structural change.
-  Layout: ({
-    children,
-    hero,
-  }: {
-    children: React.ReactNode;
-    hero?: React.ReactNode;
-  }) => (
-    <div data-testid="layout">
-      <div data-testid="layout-hero">{hero}</div>
-      {children}
-    </div>
-  ),
+  // No Layout here: the shell wraps the page (wrapPageElement) rather than the
+  // page rendering it, and the hero it wears is resolved from the path — both
+  // are covered by the Layout tests. A page renders only its own content now.
   SEO: ({ title, description }: { title?: string; description?: string }) => (
     <div data-testid="seo" data-title={title} data-description={description} />
   ),
 }));
 
 describe('Index Page', () => {
-  it('renders hero and SEO', () => {
-    render(<IndexPage />);
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
+  it('renders its SEO and its content, and no hero of its own', () => {
+    const { container } = render(<IndexPage />);
     expect(screen.getByTestId('seo')).toHaveAttribute(
       'data-title',
       'alex nodeland'
     );
-    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+    // The cover lives in the hero registry the shell reads, so the page has no
+    // h1 at all — what it owns is the prose and the sections.
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(container.querySelector('.home')).not.toBeNull();
+    expect(screen.getByText('consulting')).toBeInTheDocument();
   });
 
   it('draws one expertise icon per card, hidden from assistive tech', () => {
