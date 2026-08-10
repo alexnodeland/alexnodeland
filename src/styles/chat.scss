@@ -87,7 +87,10 @@
 // Responsive design - match background manager behavior
 @media (max-width: 768px) {
   .chat-icon-container {
-    // The offsets follow --rail-inset, which narrows in the token layer here.
+    // Flush with the window's right edge on a phone — the panel is the
+    // alignment grid here, so both corner buttons share its side token
+    // rather than the viewport rail inset desktop uses.
+    right: var(--window-side);
     z-index: 1001; // Above mobile notice button, below chat sidebar
 
     .chat-icon {

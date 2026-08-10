@@ -20,7 +20,10 @@ $mobile-breakpoint: 768px;
     display: block;
     position: fixed;
     bottom: var(--rail-inset-bottom);
-    left: var(--rail-inset-left);
+    // Flush with the window's left edge, not the viewport's: on a phone the
+    // panel is the alignment grid, so the button shares its side token (the
+    // chat launcher mirrors this on the right).
+    left: var(--window-side);
     z-index: 1000;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     animation: slideInFromLeftWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)
