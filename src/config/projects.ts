@@ -102,7 +102,7 @@ export const projectsConfig: ProjectsConfig = {
       tags: ['tool', 'cli', 'audio'],
       url: 'https://github.com/alexnodeland/sleeve',
       stars: 1,
-      category: 'audio-dsp',
+      category: 'misc',
     },
     {
       name: 'llmcomposer',
