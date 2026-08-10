@@ -321,14 +321,10 @@
   overflow: auto; // Allow scrolling within the panel
   border: 1px solid var(--window-border);
 
-  // The window shows no scrollbar of its own: a bar riding the frame reads as
-  // chrome bolted onto the panel and breaks the device-screen metaphor. On
-  // systems set to always-show scrollbars it rendered as a full-height white
-  // strip. Scrolling is untouched; inner scrollables keep their thin bars.
-  scrollbar-width: none; // Firefox
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  // The window shows no scrollbar of its own — a bar riding the frame reads as
+  // chrome bolted onto the panel and breaks the device-screen metaphor. That
+  // is now true of every scrollable on the site and is stated once, in
+  // global.scss; this note is what it used to say here.
 }
 
 // Responsive design for panel sliding behavior
@@ -380,16 +376,12 @@
   flex-wrap: nowrap;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
-  // The chat pill lives below the sidebars and never has to dodge them; this
-  // one sits at their top edge, so it steps aside by the same arithmetic the
-  // stage uses. Nothing to align with while a panel is open anyway.
-  &.chat-panel-open {
-    right: calc(28rem + 2 * var(--window-inset));
-  }
-
-  &.chat-panel-closing {
-    right: var(--rail-inset);
-  }
+  // The capsule does not dodge. It used to slide inward by the sidebar's width
+  // whenever the chat opened, which put the one fixed landmark on the field in
+  // motion every time a panel came and went — and the panel's own top edge
+  // starts below it anyway (the sidebars hang from --window-top, under the
+  // rail), so there was nothing to dodge. The rail is the still thing the
+  // page moves against; it stays where it is.
 }
 
 // One machined capsule housing the page links — a single control with
