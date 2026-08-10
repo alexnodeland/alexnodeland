@@ -41,7 +41,6 @@ const mockCVData: CVData = {
   ],
   skills: {
     technical: ['JavaScript', 'TypeScript', 'React'],
-    soft: ['Leadership', 'Communication'],
   },
   certifications: [
     {

@@ -10,6 +10,10 @@ const CVSkillsSection: React.FC<CVSkillsSectionProps> = ({
   skills,
   className,
 }) => {
+  // The soft-skills list is gone from both views. Nine unfalsifiable adjectives
+  // sat directly under fifteen achievement bullets that had already shown the
+  // same thing; the reader learned nothing from the row that the roles above
+  // it had not already earned.
   return (
     <section className={`skills-section${className ? ` ${className}` : ''}`}>
       <h2 className="cv-section-title">Skills</h2>
@@ -19,17 +23,6 @@ const CVSkillsSection: React.FC<CVSkillsSectionProps> = ({
         <div className="skill-tags">
           {skills.technical.map((skill, index) => (
             <span key={index} className="skill-tag technical">
-              {skill}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="skill-category-direct">
-        <h3 className="skill-subtitle">Soft Skills</h3>
-        <div className="skill-tags">
-          {skills.soft.map((skill, index) => (
-            <span key={index} className="skill-tag soft">
               {skill}
             </span>
           ))}

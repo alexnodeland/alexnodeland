@@ -237,11 +237,7 @@ const education = (cvData: CVData, variant: CVVariant, m: Metrics): Block[] =>
     new Paragraph({ children: [], spacing: { after: m.entrySpacing } }),
   ]);
 
-const skillsBlock = (
-  cvData: CVData,
-  variant: CVVariant,
-  m: Metrics
-): Paragraph[] => {
+const skillsBlock = (cvData: CVData, m: Metrics): Paragraph[] => {
   const line = (label: string, items: string[]) =>
     new Paragraph({
       children: [
@@ -251,22 +247,14 @@ const skillsBlock = (
       spacing: { after: 60 },
     });
 
-  return [
-    line('Technical', cvData.skills.technical),
-    // Soft skills read as filler beside fifteen achievement bullets.
-    ...(variant === 'full' &&
-    cvData.skills.soft &&
-    cvData.skills.soft.length > 0
-      ? [line('Soft', cvData.skills.soft)]
-      : []),
-  ];
+  return [line('Technical', cvData.skills.technical)];
 };
 
 /**
  * Builds the Word document for `cvData`.
  *
  * `variant` decides how much is on the page: `resume` is the one-pager and
- * drops per-role skills, coursework, soft skills and certifications; `full`
+ * drops per-role skills, coursework and certifications; `full`
  * keeps everything.
  */
 export const buildCVDocument = (
@@ -282,7 +270,7 @@ export const buildCVDocument = (
     sectionHeading('Education', m),
     ...education(cvData, variant, m),
     sectionHeading('Skills', m),
-    ...skillsBlock(cvData, variant, m),
+    ...skillsBlock(cvData, m),
   ];
 
   if (

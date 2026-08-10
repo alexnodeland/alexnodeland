@@ -63,8 +63,7 @@ export const searchCV = (
     }
   });
 
-  const allSkills = [...resumeData.skills.technical, ...resumeData.skills.soft];
-  allSkills.forEach((skill, index) => {
+  resumeData.skills.technical.forEach((skill, index) => {
     if (skill.toLowerCase().includes(searchLower)) {
       results.push({
         id: `skill-${index}`,
