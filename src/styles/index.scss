@@ -60,11 +60,10 @@
 
 // Animations are now in animations.scss
 
+// Plain prose on the scrim — the owner pulled the outline off this one and
+// consulting below; the boxes now belong to the expertise cards alone.
 .about {
   margin-bottom: var(--space-7);
-  padding: var(--space-5);
-  @include outline-block;
-  border-radius: var(--radius-lg);
   position: relative;
 
   p {
@@ -92,9 +91,6 @@
 // semantic-colour rule is spent entirely on the buttons — that is the
 // conversion path, and it is the only thing here that needs to be found.
 .consulting {
-  @include outline-block;
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
   margin-bottom: var(--space-7);
   position: relative;
 
@@ -144,6 +140,9 @@
   gap: var(--space-4);
 }
 
+// A static schematic panel — the owner stripped the hover lift, the reading
+// emphasis and the wipe hairline: the cards state what the work is, and the
+// icons carry the only motion.
 .expertise-item {
   @include outline-block;
   padding: var(--space-5) var(--space-4);
@@ -151,39 +150,6 @@
   text-align: center;
   position: relative;
   overflow: hidden;
-  transition: all var(--transition-normal);
-
-  // A hairline that wipes in when the card is the one being read. It used to
-  // be a different accent colour per card — six hues carrying no information
-  // beyond "this is the fourth one" — so it is now one neutral rule.
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.35);
-    transform: scaleX(0);
-    transition: transform var(--transition-normal);
-  }
-
-  // Outlines, so the emphasis is in the hairline rather than in a fill.
-  @include reading-emphasis {
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: var(--shadow-md);
-
-    &::before {
-      transform: scaleX(1);
-    }
-
-    .expertise-icon {
-      opacity: 1;
-      transform: scale(1.1);
-    }
-  }
-
-  @include hover-lift;
 
   // The icons are inline svg drawn as a set: one stroke weight, colour taken
   // from the surrounding text colour rather than baked in.
@@ -192,7 +158,6 @@
     display: block;
     color: var(--text-primary);
     opacity: 0.8;
-    transition: all var(--transition-normal);
 
     svg {
       width: 64px;
@@ -221,52 +186,9 @@
   }
 }
 
-.blog-preview {
-  @include outline-block;
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--space-7);
-  transition: all var(--transition-normal);
-  position: relative;
-
-  @include reading-emphasis {
-    box-shadow: var(--shadow-md);
-    border-color: rgba(255, 255, 255, 0.4);
-  }
-
-  @include hover-lift;
-
-  h2 {
-    margin-bottom: var(--space-4);
-  }
-
-  p {
-    line-height: 1.6;
-    margin-bottom: 0;
-    font-style: italic;
-
-    // A link, so it takes the site's link colour rather than a decorative
-    // pink that hops to blue on hover.
-    a {
-      color: var(--ink-primary);
-      text-decoration: none;
-      transition: all var(--transition-fast);
-
-      &:hover {
-        text-decoration: underline;
-      }
-    }
-  }
-}
-
 @media (max-width: 768px) {
-  .about {
-    padding: var(--space-4);
-    margin-bottom: var(--space-6);
-  }
-
+  .about,
   .consulting {
-    padding: var(--space-4);
     margin-bottom: var(--space-6);
   }
 
@@ -294,11 +216,6 @@
 
   .expertise-item {
     padding: var(--space-4) var(--space-3);
-  }
-
-  .blog-preview {
-    padding: var(--space-4) var(--space-3);
-    margin-bottom: var(--space-6);
   }
 }
 

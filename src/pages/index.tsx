@@ -30,6 +30,32 @@ const IndexPage: React.FC = () => {
           </div>
         </section>
 
+        <section className="expertise">
+          <h2>{homepageConfig.expertise.title}</h2>
+          <div className="expertise-grid" ref={expertiseRef}>
+            {homepageConfig.expertise.items.map((item, index) => {
+              // Drawn as a set, in config order. The icon is decorative — the
+              // title sits directly beneath it and does the labelling — so the
+              // svg is hidden from assistive tech rather than repeating it.
+              const Icon = expertiseIcons[index];
+              return (
+                <div
+                  key={index}
+                  className={`expertise-item${
+                    isExpertiseActive(index) ? ' is-active' : ''
+                  }`}
+                >
+                  <span className="expertise-icon">{Icon && <Icon />}</span>
+                  <div className="expertise-title">{item.title}</div>
+                  <div className="expertise-description">
+                    {item.description}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
         <section className="consulting">
           <h2>{homepageConfig.consulting.title}</h2>
           <p>{homepageConfig.consulting.description}</p>
@@ -77,41 +103,6 @@ const IndexPage: React.FC = () => {
               {homepageConfig.consulting.ctaButtons.secondary.text}
             </a>
           </div>
-        </section>
-
-        <section className="expertise">
-          <h2>{homepageConfig.expertise.title}</h2>
-          <div className="expertise-grid" ref={expertiseRef}>
-            {homepageConfig.expertise.items.map((item, index) => {
-              // Drawn as a set, in config order. The icon is decorative — the
-              // title sits directly beneath it and does the labelling — so the
-              // svg is hidden from assistive tech rather than repeating it.
-              const Icon = expertiseIcons[index];
-              return (
-                <div
-                  key={index}
-                  className={`expertise-item${
-                    isExpertiseActive(index) ? ' is-active' : ''
-                  }`}
-                >
-                  <span className="expertise-icon">{Icon && <Icon />}</span>
-                  <div className="expertise-title">{item.title}</div>
-                  <div className="expertise-description">
-                    {item.description}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="blog-preview">
-          <h2>writing</h2>
-          <p>
-            notes on things i&apos;ve built, plus press and research going back
-            to 2015 — supercomputing, audio compression, and whatever i&apos;m
-            currently taking apart. <a href="/blog">read the blog</a>.
-          </p>
         </section>
       </div>
     </>

@@ -46,6 +46,8 @@ export interface AnimatedBackgroundProps<TSettings = StandardSettings> {
 export interface BackgroundConfig<TCustomSettings = {}> {
   id: string;
   name: string;
+  /** Compact label for the launcher pill; the full name stays in settings. */
+  shortName: string;
   description: string;
   component: React.ComponentType<
     AnimatedBackgroundProps<StandardSettings & TCustomSettings>
@@ -73,6 +75,7 @@ export type BackgroundManagerState = {
 export interface AnimatedBackgroundConfig {
   id: string;
   name: string;
+  shortName: string;
   description: string;
   component: React.ComponentType<any>;
   defaultSettings: any;

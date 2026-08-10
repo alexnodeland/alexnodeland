@@ -297,6 +297,7 @@ const customSettingsSchema: SettingsSchema[] = [
 export const shortestPathLabConfig = createBackgroundConfig({
   id: 'shortest-path-lab',
   name: 'Shortest Path (Dijkstra/A*)',
+  shortName: 'pathfinding',
   description:
     'Dijkstra, A*, and greedy best-first are the same search with one number changed. Heuristic Weight scales w in f = g + w*h: at 0 the heuristic vanishes and this is Dijkstra, at 1 it is A* with an admissible heuristic, above 1 it over-trusts the heuristic and gives up the optimality guarantee for speed. Watch the shape of the explored region rather than the path — a circle, then an ellipse, then a corridor. Yellow is explored, blue is the route found. Drop Steps per Second to about 5 to follow the frontier node by node.',
   component: ShortestPathLabBackground,

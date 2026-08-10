@@ -270,7 +270,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
       {/* Background Controls */}
       <BackgroundControls
         currentBackgroundId={state.currentBackgroundId}
-        currentBackgroundName={currentBackground?.name || 'Unknown'}
+        currentBackgroundName={
+          currentBackground?.shortName || currentBackground?.name || 'unknown'
+        }
         showSettingsPanel={
           state.showSettingsPanel || state.closingSettingsPanel
         }

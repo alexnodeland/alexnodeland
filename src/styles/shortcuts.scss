@@ -8,13 +8,14 @@
 // This is the same information behind `?`, plus a quiet line at the foot of
 // the screen so it is still discoverable.
 
-// The hint. Bottom-centre of the field, deliberately below the spectrogram's
-// audio indicator (which sits at 2rem) so the two never share a line.
+// The hint. Bottom-centre of the field, on the same row as the two pills —
+// its box spans the rail height so its text sits centred on their line.
 .shortcuts-hint {
   position: fixed;
-  bottom: 0.75rem;
+  bottom: 2rem;
   left: 50%;
   transform: translateX(-50%);
+  height: var(--rail-height);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -41,13 +42,20 @@
   }
 
   // Neutral, for the same reason as the close button below: it opens a list,
-  // it is not a link or a result.
+  // it is not a link or a result. Plain :focus is covered too — some browsers
+  // fire it on click where :focus-visible would not, and the global ring is
+  // green.
+  &:focus,
   &:focus-visible {
     outline: none;
     color: var(--text-primary);
     opacity: 1;
     background: rgba(255, 255, 255, 0.07);
     border-radius: var(--radius-sm);
+  }
+
+  kbd {
+    color: var(--text-primary); // Never the link green, in any state
   }
 }
 
@@ -117,7 +125,7 @@
 // same brighten-and-wash the dropdown triggers use instead.
 .shortcuts-close {
   background: none;
-  border: 1px solid transparent;
+  border: none;
   color: var(--text-secondary);
   cursor: pointer;
   font-family: inherit;
@@ -127,19 +135,13 @@
   border-radius: var(--radius-sm);
   transition:
     color var(--transition-fast),
-    background var(--transition-fast),
-    border-color var(--transition-fast);
+    background var(--transition-fast);
 
-  &:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.07);
-  }
-
+  &:hover,
   &:focus-visible {
     outline: none;
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.07);
   }
 }
 

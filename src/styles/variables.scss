@@ -81,7 +81,9 @@
   // agree at every viewport width — the window's side inset opens up on wide
   // displays and would pull them apart.
   --rail-inset: 2rem;
-  --rail-width: 280px;
+  // The page selector's natural width — the chat and settings pills pin to
+  // it, so the three rail controls share one footprint.
+  --rail-width: 13.5rem;
   // The chat pill's height, spelled out: a 20px icon in 0.75rem of padding
   // inside a 1px hairline. The nav capsule is built to land on the same number
   // (see .nav-link's line-height and paddings in layout.scss).

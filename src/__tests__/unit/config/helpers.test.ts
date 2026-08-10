@@ -213,7 +213,9 @@ describe('Configuration Helper Functions', () => {
     });
 
     it('should return calendar URL for calendar action', () => {
-      expect(getCTAButtonURL('calendar')).toBe('https://cal.com/alexnodeland');
+      expect(getCTAButtonURL('calendar')).toBe(
+        'https://calendar.app.google/7oLHq1BcGKtaU8Sn9'
+      );
     });
 
     it('should return custom URL for url action', () => {

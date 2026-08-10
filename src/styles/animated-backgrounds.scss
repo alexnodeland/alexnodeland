@@ -37,17 +37,21 @@
   // Combined toolbar - now clickable to open settings
   .background-toolbar {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    // Fixed to the page selector's footprint, like the chat pill.
+    width: var(--rail-width);
+    height: var(--rail-height);
+    box-sizing: border-box;
     position: relative; // anchor tooltips and nav buttons to toolbar
     // The same machined housing as the nav capsule and the chat pill — one
-    // language for every floating control on the field.
+    // language for every floating control on the field. Ink rests quiet like
+    // the other capsules (the cog inherits it) and brightens on hover.
     @include capsule-housing;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     font-size: 0.875rem;
     transition: all var(--transition-normal);
-    min-width: var(--rail-width); // The rail's footprint, shared with the pills
     cursor: pointer; // Indicate clickable
 
     &:hover {
@@ -63,19 +67,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 0.5rem;
+
+      .toolbar-glyph {
+        flex-shrink: 0;
+      }
     }
 
     // The name of whatever is currently running. It is a label, not a link —
     // green here made the one word on the toolbar look clickable while the
     // whole toolbar was in fact the button.
     .background-name {
-      color: var(--text-secondary);
+      color: inherit;
       font-size: 0.875rem;
       text-align: center;
-      transition: color var(--transition-fast);
     }
 
-    &:hover .background-name {
+    &:hover {
       color: var(--text-primary);
     }
   }
@@ -88,7 +96,9 @@
 // .layout uses; change them there, not here.
 .settings-sidebar {
   position: fixed;
-  top: var(--window-inset);
+  // The window's live top edge, published by the shell — the sidebar's height
+  // matches the window's at all times, including mid-collapse.
+  top: var(--window-top, var(--window-inset));
   left: var(--window-inset);
   // Rides above the floating pills, exactly as the window does
   bottom: var(--window-inset-bottom);
@@ -715,10 +725,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem; // match category-header for aligned left indent
-  border-top: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+  // A quiet group label, not a band: the near-black borders and the tinted
+  // background vanished over the scrim and left odd-looking gaps around an
+  // invisible box. One white-alpha hairline above, snug space below.
+  padding: 0.9rem 1rem 0.35rem;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
 }
 
 .settings-sidebar .section-left {
