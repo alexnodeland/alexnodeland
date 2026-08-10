@@ -432,13 +432,6 @@
   // is gone with them: it belongs to .main, which narrows it here for the
   // whole site at once.
 
-  // Two compact chips and a reset fit one line on a phone; below that the
-  // reset wraps under them rather than shrinking the pickers to initials.
-  .blog-control-bar {
-    flex-wrap: wrap;
-    row-gap: var(--space-2);
-  }
-
   .post-preview {
     padding: var(--space-4);
   }

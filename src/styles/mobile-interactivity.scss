@@ -12,12 +12,15 @@ $mobile-breakpoint: 768px;
   display: none;
 
   // Bottom edge and height are shared with the chat launcher in the opposite
-  // corner, so the two read as one row of chrome rather than two loose pills.
+  // corner, so the two read as one row of chrome rather than two loose pills —
+  // which is why the offsets are the rail's tokens rather than a matching pair
+  // of hand-set values. They carry the display's safe area with them, so a
+  // phone with a home indicator lifts both pills by the same amount.
   @media (max-width: $mobile-breakpoint) {
     display: block;
     position: fixed;
-    bottom: 1rem;
-    left: 1rem;
+    bottom: var(--rail-inset-bottom);
+    left: var(--rail-inset-left);
     z-index: 1000;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     animation: slideInFromLeftWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)
@@ -25,30 +28,28 @@ $mobile-breakpoint: 768px;
   }
 }
 
+// Icon-only, like the chat launcher across the row: a rounded square on the
+// site's one corner radius, with the picture glyph saying what it opens.
 .mobile-interactivity-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  min-height: 3rem; // Matches the chat launcher's circle
-  padding: 0 1rem;
+  justify-content: center;
+  width: 3rem; // Matches the chat launcher's box
+  height: 3rem;
+  padding: 0;
   // Same floating surface as the chat launcher rather than its own hardcoded
   // glass, so the two pieces of mobile chrome stay in step.
   background: var(--bg-floating);
   border: 1px solid var(--border-floating);
   border-radius: var(--radius-lg);
   color: var(--text-primary);
-  font-family: inherit;
-  font-size: 0.8rem;
-  text-transform: lowercase;
-  letter-spacing: -0.01em;
   cursor: pointer;
   box-shadow: var(--shadow-lg);
   transition: all var(--transition-normal);
   -webkit-tap-highlight-color: transparent;
 
-  // The glyph sits directly beside the word it illustrates, so it takes the
-  // label's colour rather than the link green — it is not a link, and this is
-  // the only piece of chrome on the page that was tinted.
+  // The glyph is the whole label, so it takes the text colour rather than the
+  // link green — it is not a link.
   svg {
     flex-shrink: 0;
     color: currentColor;

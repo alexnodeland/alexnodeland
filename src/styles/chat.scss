@@ -14,8 +14,11 @@
 // Chat Icon Styles
 .chat-icon-container {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  // The rail's own offsets, not a matching pair of hand-set values: the pill
+  // is the bottom of the same column the nav capsule tops, and these carry the
+  // display's safe area with them (see --rail-inset-* in variables.scss).
+  bottom: var(--rail-inset-bottom);
+  right: var(--rail-inset-right);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -84,14 +87,16 @@
 // Responsive design - match background manager behavior
 @media (max-width: 768px) {
   .chat-icon-container {
-    bottom: 1rem;
-    right: 1rem;
+    // The offsets follow --rail-inset, which narrows in the token layer here.
     z-index: 1001; // Above mobile notice button, below chat sidebar
 
     .chat-icon {
       padding: 0.75rem;
       min-width: auto;
-      border-radius: 50%;
+      // A rounded square, not a circle — the one corner radius the rest of
+      // the chrome carries, and the same box as the backgrounds launcher in
+      // the opposite corner.
+      border-radius: var(--radius-lg);
       width: 3rem;
       height: 3rem;
       display: flex;
@@ -107,24 +112,10 @@
   }
 
   // The phone treatment of .chat-sidebar lives below the base rule rather than
-  // here — see the note there. Only the parts that don't fight the base rule
-  // for the same properties stay in this block.
-  .chat-sidebar {
-    .chat-sidebar-footer {
-      .chat-keyboard-hints {
-        display: none; // Hide persistent keyboard hints on mobile
-      }
-    }
-
-    // Safe area insets for notched phones
-    .chat-header {
-      padding-top: max(1rem, env(safe-area-inset-top));
-    }
-
-    .chat-input-container {
-      padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-    }
-  }
+  // here — see the note there. Nothing that shares a property with the base
+  // rule can live in this block: media queries add no specificity, so the base
+  // declaration simply wins. This block is deliberately empty of .chat-sidebar
+  // rules for that reason.
 
   .chat-modal {
     width: calc(100vw - 2rem);
@@ -503,6 +494,25 @@
 
     &.closing {
       animation: slideOutToBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    // Edge to edge means edge to edge: the sheet runs under the status bar and
+    // the home indicator, so its first and last rows have to hold themselves
+    // clear of both. The floor stays the desktop padding — `env()` is zero on
+    // a phone with no cut-out, and this is not the place to lose a rem.
+    .chat-header {
+      padding-top: max(1.5rem, env(safe-area-inset-top));
+    }
+
+    .chat-input-container {
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    // The shortcuts are a keyboard's affordance, and this width has no
+    // keyboard until one slides up over the sheet. The same reasoning hides
+    // the `?` hint on the field (see shortcuts.scss).
+    .chat-sidebar-footer {
+      display: none;
     }
   }
 }

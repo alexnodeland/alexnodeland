@@ -198,12 +198,21 @@
   z-index: 10;
   display: flex;
   align-items: center;
+  // One row, strictly — a control that cannot fit shrinks and ellipsizes
+  // (see .ui-dropdown in controls.scss) rather than ever dropping below the
+  // others.
+  flex-wrap: nowrap;
   gap: var(--space-2);
   padding: 0.4rem 0;
   pointer-events: none;
 
   > * {
     pointer-events: auto;
+    min-width: 0;
+  }
+
+  @media (max-width: 480px) {
+    gap: var(--space-1);
   }
 }
 
