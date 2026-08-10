@@ -48,7 +48,9 @@ describe('MobileInteractivity', () => {
       const launcher = screen.getByRole('button', {
         name: /explore the animated background/i,
       });
-      expect(launcher).toHaveTextContent('backgrounds');
+      // Icon-only: the picture glyph is the whole label, no text beside it.
+      expect(launcher.querySelector('svg')).not.toBeNull();
+      expect(launcher).toHaveTextContent(/^$/);
 
       fireEvent.click(launcher);
       expect(mockSetContentHidden).toHaveBeenCalledWith(true);

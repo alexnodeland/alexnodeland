@@ -14,7 +14,11 @@
 // the box has to establish the containing block.
 .ui-dropdown {
   position: relative;
-  flex: 0 0 auto;
+  // Shrinkable: a control row is strictly one line, so when the row runs out
+  // of width the chip gives up label characters (ellipsis, below) instead of
+  // ever wrapping under its neighbours.
+  flex: 0 1 auto;
+  min-width: 0;
 
   // Right-justified — and stays that way whatever sits between it and the
   // left end of its row.
@@ -30,6 +34,13 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.75rem;
+  max-width: 100%;
+
+  .ui-dropdown-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   &:hover {
     color: var(--text-primary);
@@ -153,6 +164,13 @@
   display: inline-flex;
   align-items: center;
   padding: 0.4rem 0.75rem;
+  // Same one-row contract as the dropdowns: shrink and ellipsize, never wrap.
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:hover:not(:disabled) {
     color: var(--text-primary);
@@ -202,6 +220,13 @@
       monospace;
     font-size: 1rem;
     text-transform: lowercase;
+    // The type stays at 1rem at every width on purpose: iOS zooms the page
+    // when a field smaller than 16px takes focus, and a search box that
+    // rearranges the whole layout under the thumb is worse than a long
+    // placeholder. So the placeholder gives way instead — the CV's names three
+    // sections and runs past a phone's field, and a clean elision reads as a
+    // sentence continuing rather than as a word cut in half.
+    text-overflow: ellipsis;
     transition: all var(--transition-fast);
 
     // Focus is a state of a text field rather than a result, so it says so
@@ -216,6 +241,58 @@
     &::placeholder {
       color: var(--text-secondary);
       text-transform: lowercase;
+    }
+  }
+}
+
+// --- The chips on a phone ---------------------------------------------------
+// A chip is 32px of housing under a pointer, which is a comfortable target for
+// a cursor and a mean one for a thumb. On touch widths the padding opens up
+// until the box clears 40px — the number the rail's own controls are built to
+// (see --rail-height) — without changing the type or the frosting, so the row
+// reads exactly the same and is simply easier to hit.
+@media (max-width: 768px) {
+  .ui-dropdown-trigger,
+  .ui-chip-button {
+    padding-block: 0.65rem;
+  }
+
+  // Options are hit with the same thumb, so the menu opens up with the chip.
+  .ui-dropdown-option {
+    padding-block: 0.55rem;
+  }
+}
+
+// Narrow phones. The rows are two pickers and a reset against ~340px of
+// column, and at the padding above the blog's row misses one line by a dozen
+// pixels — so the chips give back the horizontal breath they never needed at
+// this width. The vertical padding, which is what the thumb is aiming at, is
+// untouched.
+@media (max-width: 480px) {
+  .ui-dropdown-trigger,
+  .ui-chip-button {
+    padding-inline: 0.5rem;
+  }
+}
+
+// The narrowest phones. A control row is strictly one line (see
+// sticky-control-row in mixins.scss), so at 320px the blog's three chips have
+// ~262px between them and their full labels need every trick: smaller type,
+// tighter housing, a closer caret. This is the floor at which "all",
+// "newest first" and "clear filters" all still read whole — below the numbers
+// here the labels would start giving up characters to ellipsis instead.
+@media (max-width: 360px) {
+  .ui-dropdown-trigger,
+  .ui-chip-button {
+    font-size: 0.7rem;
+    padding-inline: 0.4rem;
+  }
+
+  .ui-dropdown-trigger {
+    gap: 0.3rem;
+
+    .ui-dropdown-caret {
+      font-size: 0.6rem;
     }
   }
 }

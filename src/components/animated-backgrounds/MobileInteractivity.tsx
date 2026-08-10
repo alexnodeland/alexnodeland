@@ -11,7 +11,7 @@ import '../../styles/mobile-interactivity.scss';
  * leaves touch devices with nothing, so this renders the same capabilities as
  * an explicit three-state flow:
  *
- *   browsing  — the site as normal, with a "backgrounds" pill offering the
+ *   browsing  — the site as normal, with a picture-glyph button offering the
  *               way in.
  *   explore   — page content is hidden (the same `isContentHidden` flag the
  *               H key toggles), leaving the background full-bleed behind a
@@ -103,8 +103,8 @@ const MobileInteractivity: React.FC = () => {
           aria-label="Explore the animated backgrounds"
         >
           <svg
-            width="18"
-            height="18"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             aria-hidden="true"
@@ -123,7 +123,6 @@ const MobileInteractivity: React.FC = () => {
               strokeLinejoin="round"
             />
           </svg>
-          <span className="mobile-interactivity-label">backgrounds</span>
         </button>
       </div>
     );
