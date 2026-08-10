@@ -19,7 +19,7 @@ const IndexPage: React.FC = () => {
   // the same on every page now, so nothing about it lives here.
   const hero = (
     <section className="hero">
-      <h1>{homepageConfig.hero.title}</h1>
+      <h1 data-brand-anchor>{homepageConfig.hero.title}</h1>
       {/* The subtitle is also the map of the projects page: each segment
           links to its section anchor there. */}
       <p className="hero-subtitle">

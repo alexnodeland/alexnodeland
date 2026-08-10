@@ -67,11 +67,13 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
 
   const hero = (
     <header className="blog-header">
-      <h1>blog</h1>
-      <p>
-        what i&apos;ve built and what i&apos;ve been quoted saying, going back
-        to 2015.
-      </p>
+      <h1>
+        <Link to="/" className="hero-crumb" data-brand-anchor>
+          alex
+        </Link>
+        <span className="hero-crumb-sep"> → </span>blog
+      </h1>
+      <p>notes and press, back to 2015.</p>
     </header>
   );
 

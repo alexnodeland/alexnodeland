@@ -43,11 +43,28 @@ const CreativeTechnologyIcon: ExpertiseIcon = ({ className }) => (
       strokeLinejoin="round"
     />
 
-    {/* two faders */}
+    {/* two faders — a track with a filled cap riding it. A full-width tick
+        crossing the track read as a dagger, not a slider. */}
     <path d="M17.5 26.5 V37.5" />
-    <path d="M14.5 30.5 H20.5" />
+    <rect
+      x="15.25"
+      y="29"
+      width="4.5"
+      height="3"
+      rx="1"
+      fill="currentColor"
+      stroke="none"
+    />
     <path d="M30.5 26.5 V37.5" />
-    <path d="M27.5 34.5 H33.5" />
+    <rect
+      x="28.25"
+      y="33"
+      width="4.5"
+      height="3"
+      rx="1"
+      fill="currentColor"
+      stroke="none"
+    />
   </svg>
 );
 

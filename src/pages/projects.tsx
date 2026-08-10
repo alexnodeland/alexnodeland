@@ -1,3 +1,4 @@
+import { Link } from 'gatsby';
 import React from 'react';
 import { Layout, SEO } from '../components';
 import { projectsConfig, getLanguageColor } from '../config';
@@ -98,7 +99,13 @@ const ProjectsPage: React.FC = () => {
 
   const hero = (
     <header className="projects-header">
-      <h1>{projectsConfig.title}</h1>
+      <h1>
+        <Link to="/" className="hero-crumb" data-brand-anchor>
+          alex
+        </Link>
+        <span className="hero-crumb-sep"> → </span>
+        {projectsConfig.title}
+      </h1>
       <p>{projectsConfig.subtitle}</p>
     </header>
   );
