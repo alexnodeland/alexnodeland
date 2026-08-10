@@ -36,6 +36,9 @@
 // Section Titles
 .projects-section {
   margin-bottom: var(--space-6);
+  // Anchor targets land inside the window's inner scroll; keep the section
+  // title clear of the fixed header when a hero-subtitle link brings us here.
+  scroll-margin-top: calc(var(--header-height) + var(--space-3));
 }
 
 // On the animated background rather than on a card, like the CV's section
@@ -60,10 +63,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--space-4);
-
-  &.featured-grid {
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  }
 }
 
 // Project Card
@@ -130,20 +129,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-// "featured" is an editorial label, not a status — same neutral chip as the
-// tags below it, one size smaller.
-.featured-badge {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.25rem 0.5rem;
-  background: var(--bg-hover);
-  border: 1px solid var(--border-active);
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
 }
 
 .project-description {
@@ -321,10 +306,6 @@
 
   .projects-grid {
     grid-template-columns: 1fr;
-
-    &.featured-grid {
-      grid-template-columns: 1fr;
-    }
   }
 
   .project-card-content {
@@ -350,11 +331,6 @@
 @media (max-width: 480px) {
   .project-header {
     flex-wrap: wrap;
-  }
-
-  .featured-badge {
-    order: 3;
-    width: auto;
   }
 
   .project-footer {

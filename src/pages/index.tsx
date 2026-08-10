@@ -1,3 +1,4 @@
+import { Link } from 'gatsby';
 import React from 'react';
 import { Layout, SEO } from '../components';
 import { getCTAButtonURL, homepageConfig } from '../config';
@@ -20,7 +21,18 @@ const IndexPage: React.FC = () => {
       <div className="home">
         <section className="hero">
           <h1>{homepageConfig.hero.title}</h1>
-          <p className="hero-subtitle">{homepageConfig.hero.subtitle}</p>
+          {/* The subtitle is also the map of the projects page: each segment
+              links to its section anchor there. */}
+          <p className="hero-subtitle">
+            {homepageConfig.hero.subtitleLinks.map((link, index) => (
+              <React.Fragment key={link.href}>
+                {index > 0 && ' → '}
+                <Link to={link.href} className="hero-subtitle-link">
+                  {link.label}
+                </Link>
+              </React.Fragment>
+            ))}
+          </p>
         </section>
 
         <section className="about">

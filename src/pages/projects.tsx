@@ -12,7 +12,7 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
       href={project.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`project-card ${project.featured ? 'featured' : ''}`}
+      className="project-card"
     >
       <div className="project-card-content">
         <div className="project-header">
@@ -28,7 +28,6 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
             </svg>
           </div>
           <h3 className="project-name">{project.name}</h3>
-          {project.featured && <span className="featured-badge">featured</span>}
         </div>
 
         <p className="project-description">{project.description}</p>
@@ -71,13 +70,29 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
 };
 
 const ProjectsPage: React.FC = () => {
-  const featuredProjects = projectsConfig.projects.filter(p => p.featured);
+  // The page scrolls inside the fixed window (.layout), not the document, so
+  // the browser's own fragment navigation has nothing to scroll. Resolve the
+  // hash to its section and scroll the container ourselves.
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const scrollToHash = () => {
+      const id = window.location.hash.slice(1);
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    const timer = window.setTimeout(scrollToHash, 100);
+    window.addEventListener('hashchange', scrollToHash);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('hashchange', scrollToHash);
+    };
+  }, []);
+
   const categorySections = projectsConfig.categories
     .map(category => ({
       ...category,
-      projects: projectsConfig.projects.filter(
-        p => !p.featured && p.category === category.id
-      ),
+      projects: projectsConfig.projects.filter(p => p.category === category.id),
     }))
     .filter(section => section.projects.length > 0);
 
@@ -93,19 +108,12 @@ const ProjectsPage: React.FC = () => {
           <p>{projectsConfig.subtitle}</p>
         </header>
 
-        {featuredProjects.length > 0 && (
-          <section className="projects-section">
-            <h2 className="section-title">featured</h2>
-            <div className="projects-grid featured-grid">
-              {featuredProjects.map(project => (
-                <ProjectCard key={project.name} project={project} />
-              ))}
-            </div>
-          </section>
-        )}
-
         {categorySections.map(section => (
-          <section key={section.id} className="projects-section">
+          <section
+            key={section.id}
+            id={section.id}
+            className="projects-section"
+          >
             <h2 className="section-title">{section.title}</h2>
             <div className="projects-grid">
               {section.projects.map(project => (

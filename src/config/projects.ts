@@ -1,4 +1,13 @@
-export type ProjectCategory = 'apps' | 'tools' | 'libraries' | 'experiments';
+// The sections mirror the hero subtitle — math → audio dsp → distributed
+// systems → ai — plus a misc catch-all, and the subtitle links here by
+// anchor. The old groupings (featured / apps / tools / libraries /
+// experiments) live on as tags on each card.
+export type ProjectCategory =
+  | 'math'
+  | 'audio-dsp'
+  | 'distributed-systems'
+  | 'ai'
+  | 'misc';
 
 export interface GitHubProject {
   name: string;
@@ -7,8 +16,7 @@ export interface GitHubProject {
   tags: string[];
   url: string;
   stars?: number;
-  featured?: boolean;
-  category?: ProjectCategory;
+  category: ProjectCategory;
 }
 
 export interface ProjectsConfig {
@@ -22,178 +30,251 @@ export const projectsConfig: ProjectsConfig = {
   title: 'projects',
   subtitle:
     "a collection of open source projects, experiments, and tools i've built or contributed to.",
+  // Section order is by current identity — ai first — not by the hero
+  // subtitle's chronology; the subtitle links land on anchors, so order here
+  // is free to differ.
   categories: [
-    { id: 'apps', title: 'apps' },
-    { id: 'tools', title: 'tools' },
-    { id: 'libraries', title: 'libraries' },
-    { id: 'experiments', title: 'experiments' },
+    { id: 'ai', title: 'ai' },
+    { id: 'math', title: 'math' },
+    { id: 'audio-dsp', title: 'audio dsp' },
+    { id: 'distributed-systems', title: 'distributed systems' },
+    { id: 'misc', title: 'misc' },
   ],
   projects: [
-    // --- featured ---
+    // --- math ---
     {
       name: 'fugue',
       description:
         'a type-safe, monadic probabilistic programming library for rust.',
       language: 'Rust',
-      tags: ['bayesian', 'monads', 'ppl', 'probabilistic-programming'],
+      tags: ['featured', 'library', 'ppl', 'probabilistic-programming'],
       url: 'https://github.com/alexnodeland/fugue',
       stars: 12,
-      featured: true,
+      category: 'math',
     },
+    {
+      name: 'fugue-evo',
+      description:
+        'a probabilistic genetic algorithm library for rust — evolution as inference.',
+      language: 'Rust',
+      tags: ['library', 'evolutionary-algorithms', 'inference'],
+      url: 'https://github.com/alexnodeland/fugue-evo',
+      stars: 2,
+      category: 'math',
+    },
+    {
+      name: 'bentokaze',
+      description:
+        'a linear programming calculator that minimizes bento cost while meeting nutritional requirements.',
+      language: 'Python',
+      tags: ['experiment', 'linear-programming', 'optimization'],
+      url: 'https://github.com/alexnodeland/bentokaze',
+      stars: 2,
+      category: 'math',
+    },
+
+    // --- audio dsp ---
     {
       name: 'quiver',
       description:
         'a modular audio synthesis library using arrow-style combinators and graph-based patching.',
       language: 'Rust',
-      tags: ['category-theory', 'dsp', 'modular-synthesizers'],
+      tags: ['featured', 'library', 'category-theory', 'modular-synthesizers'],
       url: 'https://github.com/alexnodeland/quiver',
       stars: 3,
-      featured: true,
+      category: 'audio-dsp',
     },
+    {
+      name: 'auracle',
+      description:
+        'a synthesizer that searches for your sound — preference-learning evolutionary synthesis on fugue-evo and quiver.',
+      language: 'Rust',
+      tags: ['app', 'synthesis', 'preference-learning'],
+      url: 'https://github.com/alexnodeland/auracle',
+      stars: 1,
+      category: 'audio-dsp',
+    },
+    {
+      name: 'sleeve',
+      description:
+        'one long video in, a tagged album out — slices a recording into a properly tagged release.',
+      language: 'Rust',
+      tags: ['tool', 'cli', 'audio'],
+      url: 'https://github.com/alexnodeland/sleeve',
+      stars: 1,
+      category: 'audio-dsp',
+    },
+    {
+      name: 'llmcomposer',
+      description:
+        'compose music with an llm copilot — a research exploration of cross-modal musical understanding in language models.',
+      language: 'Python',
+      tags: ['experiment', 'music', 'llm'],
+      url: 'https://github.com/alexnodeland/llmcomposer',
+      stars: 1,
+      category: 'audio-dsp',
+    },
+
+    // --- distributed systems ---
+    {
+      name: 'reflex',
+      description: 'a template for real-time ai agent systems.',
+      language: 'Python',
+      tags: ['tool', 'real-time', 'agents'],
+      url: 'https://github.com/alexnodeland/reflex',
+      stars: 4,
+      category: 'distributed-systems',
+    },
+    {
+      name: 'qcsim',
+      description:
+        'a simple quantum circuit simulator in python — fundamental gates and circuit assembly on numpy.',
+      language: 'Python',
+      tags: ['experiment', 'quantum-computing', 'simulation'],
+      url: 'https://github.com/alexnodeland/QCSim',
+      stars: 1,
+      category: 'distributed-systems',
+    },
+
+    // --- ai ---
     {
       name: 'principled',
       description:
         'specification-driven development on human work platforms, powered by claude code.',
       language: 'Shell',
-      tags: ['claude-code', 'spec-driven', 'workflow'],
+      tags: ['featured', 'tool', 'claude-code', 'spec-driven'],
       url: 'https://github.com/alexnodeland/principled',
       stars: 3,
-      featured: true,
+      category: 'ai',
     },
-    // --- apps ---
     {
-      name: 'curio-rss',
+      name: 'curator',
       description:
-        'local-first macos rss & read-later reader that lives in your notes — plain-markdown export, no telemetry.',
+        'local-first knowledge plane — any markdown vault, one embedded index, mcp for agents, and a deterministic librarian.',
       language: 'Rust',
-      tags: ['rss', 'local-first', 'macos', 'tauri'],
-      url: 'https://github.com/alexnodeland/curio-rss',
-      stars: 2,
-      category: 'apps',
+      tags: ['tool', 'mcp', 'local-first'],
+      url: 'https://github.com/alexnodeland/curator',
+      stars: 1,
+      category: 'ai',
     },
+    {
+      name: 'vanilla-react',
+      description: 'dead simple react agent framework written in python.',
+      language: 'Python',
+      tags: ['library', 'agents', 'react-pattern'],
+      url: 'https://github.com/alexnodeland/vanilla-react',
+      stars: 8,
+      category: 'ai',
+    },
+    {
+      name: 'crewlit',
+      description:
+        'brings the power of crewai to your browser, making multi-agent ai systems accessible to everyone.',
+      language: 'Python',
+      tags: ['app', 'multi-agent', 'streamlit'],
+      url: 'https://github.com/alexnodeland/crewlit',
+      stars: 26,
+      category: 'ai',
+    },
+    {
+      name: 'finance-crew',
+      description:
+        'ai-powered market analysis, strategy development, and risk management for day traders, using crewai.',
+      language: 'Python',
+      tags: ['tool', 'multi-agent', 'finance'],
+      url: 'https://github.com/alexnodeland/finance-crew',
+      stars: 12,
+      category: 'ai',
+    },
+    {
+      name: 'resume-crew',
+      description:
+        'helps job seekers tailor their resumes and prepare for interviews, using crewai.',
+      language: 'Python',
+      tags: ['tool', 'multi-agent'],
+      url: 'https://github.com/alexnodeland/resume-crew',
+      stars: 9,
+      category: 'ai',
+    },
+    {
+      name: 'ai-engineering-workspace',
+      description:
+        'consistent, reproducible development environments for ai engineering work.',
+      language: 'Docker',
+      tags: ['tool', 'devcontainers', 'reproducibility'],
+      url: 'https://github.com/alexnodeland/ai-engineering-workspace',
+      stars: 2,
+      category: 'ai',
+    },
+
+    // --- misc ---
     {
       name: 'md-share',
       description:
         'a lightweight markdown renderer that speaks six dialects, reads itself aloud, and compresses your whole document into a shareable url. no backend.',
       language: 'TypeScript',
-      tags: ['markdown', 'renderer', 'url-sharing'],
+      tags: ['app', 'markdown', 'url-sharing'],
       url: 'https://github.com/alexnodeland/md-share',
       stars: 2,
-      category: 'apps',
+      category: 'misc',
     },
     {
-      name: 'StatusBar',
+      name: 'curio-rss',
       description:
-        'swiftui menu bar app that monitors multiple status pages simultaneously.',
-      language: 'Swift',
-      tags: ['swiftui', 'menu-bar', 'status-monitoring'],
-      url: 'https://github.com/alexnodeland/StatusBar',
+        'local-first macos rss & read-later reader that lives in your notes — plain-markdown export, no telemetry.',
+      language: 'Rust',
+      tags: ['app', 'rss', 'local-first', 'macos'],
+      url: 'https://github.com/alexnodeland/curio-rss',
       stars: 2,
-      category: 'apps',
+      category: 'misc',
+    },
+    {
+      name: 'tome',
+      description:
+        'a personal library for technical documentation — read any docs site offline, search everything, let your agent read along over mcp.',
+      language: 'HTML',
+      tags: ['app', 'documentation', 'local-first', 'mcp'],
+      url: 'https://github.com/alexnodeland/tome',
+      category: 'misc',
     },
     {
       name: 'no-doze',
       description:
         'keep your mac awake from the menu bar — a free, open-source caffeinate wrapper with a 100%-tested core.',
       language: 'Swift',
-      tags: ['macos', 'menu-bar', 'caffeinate'],
+      tags: ['app', 'macos', 'menu-bar'],
       url: 'https://github.com/alexnodeland/no-doze',
       stars: 1,
-      category: 'apps',
+      category: 'misc',
     },
-    // --- tools ---
     {
       name: 'claude-telegram',
       description:
         'telegram-to-claude code bridge — control your codebase from your phone.',
       language: 'TypeScript',
-      tags: ['ai-agent', 'claude-code', 'mcp', 'telegram'],
+      tags: ['tool', 'claude-code', 'telegram'],
       url: 'https://github.com/alexnodeland/claude-telegram',
       stars: 4,
-      category: 'tools',
+      category: 'misc',
     },
     {
-      name: 'obsidian-github-projects',
+      name: 'statusbar',
       description:
-        'manage github projects v2 with kanban boards directly in obsidian.',
-      language: 'TypeScript',
-      tags: ['obsidian', 'github', 'kanban', 'productivity'],
-      url: 'https://github.com/alexnodeland/obsidian-github-projects',
-      stars: 5,
-      category: 'tools',
-    },
-    {
-      name: 'fugue-evo',
-      description: 'a probabilistic genetic algorithm library for rust.',
-      language: 'Rust',
-      tags: ['genetic-algorithms', 'probabilistic', 'rust'],
-      url: 'https://github.com/alexnodeland/fugue-evo',
+        'swiftui menu bar app that monitors multiple status pages simultaneously.',
+      language: 'Swift',
+      tags: ['app', 'macos', 'menu-bar'],
+      url: 'https://github.com/alexnodeland/StatusBar',
       stars: 2,
-      featured: true,
-    },
-    // --- libraries ---
-    {
-      name: 'artifactr',
-      description:
-        'a template backend for collaborating on artifacts with agents.',
-      language: 'Python',
-      tags: ['agents', 'fastapi', 'pydantic-ai', 'template'],
-      url: 'https://github.com/alexnodeland/artifactr',
-      category: 'libraries',
+      category: 'misc',
     },
     {
-      name: 'reflex',
-      description: 'real-time ai agent template project.',
-      language: 'Python',
-      tags: ['ai-agent', 'real-time', 'template'],
-      url: 'https://github.com/alexnodeland/reflex',
-      stars: 4,
-      category: 'libraries',
-    },
-    // --- experiments ---
-    {
-      name: 'crewlit',
-      description:
-        'crewlit brings the power of crewai to your browser, making multi-agent ai systems accessible to everyone.',
-      language: 'Python',
-      tags: [
-        'llm',
-        'multi-agent-systems',
-        'retrieval-augmented-generation',
-        'webapp',
-      ],
-      url: 'https://github.com/alexnodeland/crewlit',
-      stars: 26,
-      category: 'experiments',
-    },
-    {
-      name: 'finance-crew',
-      description:
-        'an ai-powered tool that helps day traders analyze markets, develop strategies, and manage risks using crewai.',
-      language: 'Python',
-      tags: ['ai', 'trading', 'crewai', 'agents'],
-      url: 'https://github.com/alexnodeland/finance-crew',
-      stars: 12,
-      category: 'experiments',
-    },
-    {
-      name: 'resume-crew',
-      description:
-        'an ai-powered tool that helps job seekers tailor their resumes and prepare for interviews using crewai.',
-      language: 'Python',
-      tags: ['ai', 'resume', 'crewai', 'career'],
-      url: 'https://github.com/alexnodeland/resume-crew',
-      stars: 9,
-      category: 'experiments',
-    },
-    {
-      name: 'vanilla-react',
-      description: 'dead simple react agent framework written in python.',
-      language: 'Python',
-      tags: ['agents', 'llm', 'openai-api'],
-      url: 'https://github.com/alexnodeland/vanilla-react',
-      stars: 8,
-      category: 'experiments',
+      name: 'homebrew-tap',
+      description: 'homebrew tap for alexnodeland projects.',
+      language: 'Ruby',
+      tags: ['tool', 'homebrew', 'packaging'],
+      url: 'https://github.com/alexnodeland/homebrew-tap',
+      stars: 1,
+      category: 'misc',
     },
   ],
 };
@@ -219,6 +300,7 @@ export const getLanguageColor = (language: string): string => {
     HTML: '#e34c26',
     CSS: '#563d7c',
     SCSS: '#c6538c',
+    Docker: '#384d54',
   };
 
   return colors[language] || '#6e7681';
