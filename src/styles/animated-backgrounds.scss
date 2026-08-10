@@ -139,25 +139,24 @@
   }
 }
 
-// Settings sidebar (matches chat panel floating effect)
+// Settings sidebar — a floating peer of the content window, not a drawer bolted
+// to the screen edge. It takes the window's own insets, scrim, blur, hairline
+// and shadow, so the two read as two devices sitting on one desk rather than as
+// a page with a tray pulled out of it. Every value here is the same token
+// .layout uses; change them there, not here.
 .settings-sidebar {
   position: fixed;
-  top: calc(1rem + 3px); // Match main content - start below rainbow border
-  left: 1rem; // Match main content left margin
-  bottom: 1rem; // Match main content bottom margin
+  top: var(--window-inset);
+  left: var(--window-inset);
+  // Rides above the floating pills, exactly as the window does
+  bottom: var(--window-inset-bottom);
   width: 28rem;
-  background: rgba(0, 0, 0, 0.7); // Match chat panel transparency
-  backdrop-filter: blur(20px); // Match chat panel blur
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 2px solid var(--border-color); // Primary border to separate from main content
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-lg); // Full border radius like main content
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+  border: 1px solid var(--window-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
   color: var(--text-primary);
   z-index: 1002; // Above controls
   display: flex;

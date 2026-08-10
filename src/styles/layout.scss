@@ -21,53 +21,62 @@
 }
 
 // Fixed header container that holds both rainbow border and header
+//
+// The container carries the header's entire horizontal geometry, and it carries
+// exactly the geometry .layout does. It used to span the viewport and shift by a
+// bare 28rem while .header-fixed set its own side margins off --window-side —
+// two different answers to "where is the window's edge", which agreed only while
+// both panels were shut. The moment one opened, the container moved by one
+// amount and the margins by another and the nav lurched sideways. Every offset
+// below is now the same expression .layout uses, so the header tracks the window
+// frame through every open, close and mixed state.
 .fixed-header-container {
   position: fixed;
   top: 0;
-  left: 0;
-  right: 0;
+  left: var(--window-side);
+  right: var(--window-side);
   z-index: 1000;
   pointer-events: none; // Allow clicks to pass through empty areas
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   // Shifted state when settings panel is open - resize and reposition
   &.settings-panel-open {
-    left: 28rem;
+    left: calc(28rem + 2 * var(--window-inset));
     // Keep right unchanged unless chat panel is also open
   }
 
   // Shifted state when chat panel is open - resize and reposition from right
   &.chat-panel-open {
-    right: 28rem;
+    right: calc(28rem + 2 * var(--window-inset));
     // Keep left unchanged unless settings panel is also open
   }
 
   // Both panels open - squeezed between both
   &.settings-panel-open.chat-panel-open {
-    left: 28rem;
-    right: 28rem;
+    left: calc(28rem + 2 * var(--window-inset));
+    right: calc(28rem + 2 * var(--window-inset));
   }
 
   // During closing animations, animate back smoothly
   &.settings-panel-closing {
-    left: 0;
+    left: var(--window-side);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   &.chat-panel-closing {
-    right: 0;
+    right: var(--window-side);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   // Handle mixed states - one opening, one closing
   &.settings-panel-closing.chat-panel-open {
-    left: 0;
-    right: 28rem;
+    left: var(--window-side);
+    right: calc(28rem + 2 * var(--window-inset));
   }
 
   &.settings-panel-open.chat-panel-closing {
-    left: 28rem;
-    right: 0;
+    left: calc(28rem + 2 * var(--window-inset));
+    right: var(--window-side);
   }
 }
 
@@ -107,20 +116,20 @@
 
   // Shifted state when settings panel is open - resize and reposition
   &.settings-panel-open {
-    left: calc(28rem + var(--window-inset));
+    left: calc(28rem + 2 * var(--window-inset));
     // Keep right unchanged unless chat panel is also open
   }
 
   // Shifted state when chat panel is open - resize and reposition from right
   &.chat-panel-open {
-    right: calc(28rem + var(--window-inset));
+    right: calc(28rem + 2 * var(--window-inset));
     // Keep left unchanged unless settings panel is also open
   }
 
   // Both panels open - squeezed between both
   &.settings-panel-open.chat-panel-open {
-    left: calc(28rem + var(--window-inset));
-    right: calc(28rem + var(--window-inset));
+    left: calc(28rem + 2 * var(--window-inset));
+    right: calc(28rem + 2 * var(--window-inset));
   }
 
   // During closing animations, animate straight back to the resolved side
@@ -139,11 +148,11 @@
   // Handle mixed states - one opening, one closing
   &.settings-panel-closing.chat-panel-open {
     left: var(--window-side);
-    right: calc(28rem + var(--window-inset));
+    right: calc(28rem + 2 * var(--window-inset));
   }
 
   &.settings-panel-open.chat-panel-closing {
-    left: calc(28rem + var(--window-inset));
+    left: calc(28rem + 2 * var(--window-inset));
     right: var(--window-side);
   }
 }
@@ -162,12 +171,15 @@
 // Responsive design for panel sliding behavior
 @media (max-width: 768px) {
   // On mobile, dim content when any panel is open (panels take full width)
+  // The header keeps the window's own side offset here rather than snapping to
+  // the viewport edge: --window-side floors to the inset at these widths, so
+  // this is where the header already sits, and the dim is the only change.
   .fixed-header-container.settings-panel-open,
   .fixed-header-container.settings-panel-closing,
   .fixed-header-container.chat-panel-open,
   .fixed-header-container.chat-panel-closing {
-    left: 0;
-    right: 0;
+    left: var(--window-side);
+    right: var(--window-side);
     width: auto;
     transform: translateX(0);
     opacity: 0.3; // Dim instead of resize
@@ -200,8 +212,10 @@
   // moving underneath it.
   background: transparent;
   border: none;
-  // Sit on the window's top edge, tracking the same content-hugging geometry
-  margin: var(--window-inset) var(--window-side) 0;
+  // Sit on the window's top edge. The side offsets are the container's job now
+  // — it already carries the window's exact geometry in every panel state, and
+  // a second copy of that arithmetic here is what made the nav jump.
+  margin: var(--window-inset) 0 0;
   box-shadow: none;
   transition: all var(--transition-normal);
   border-radius: var(--radius-lg);
