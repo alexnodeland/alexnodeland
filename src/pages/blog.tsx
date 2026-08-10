@@ -151,7 +151,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
 
         {/* Somewhere to type rather than a piece of chrome, so it keeps its
             own panel below the row. */}
-        <div className="blog-search-panel">
+        <div className="ui-search-panel blog-search-panel">
           <input
             type="text"
             placeholder="search posts..."

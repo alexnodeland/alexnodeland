@@ -8,6 +8,30 @@
   position: relative;
 }
 
+// The projects row of chrome: category on the left, sort beside it, reset at
+// the far end. No bar groups them — they float as loose chips, each carrying
+// its own frosting, so they still read while cards scroll underneath.
+// Geometry and material are the shared ones; see `sticky-control-row` in
+// mixins.scss and .ui-dropdown / .ui-chip-button / .ui-search-panel in
+// controls.scss.
+.projects-control-bar {
+  @include sticky-control-row;
+  margin-bottom: var(--space-5);
+}
+
+// The reset takes the far end of the row, whatever is to its left.
+.projects-clear-chip {
+  margin-left: auto;
+}
+
+// A search that empties the page still has to say so, rather than leaving the
+// controls floating over nothing.
+.projects-empty {
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: var(--space-5) 0;
+}
+
 // The page hero, rendered on the field above the window (see .site-hero in
 // layout.scss, which owns its column and its padding).
 .projects-header {
@@ -269,7 +293,14 @@
 }
 
 // Responsive Design
+// Two compact chips and a reset fit one line on a phone; below that the
+// reset wraps under them rather than shrinking the pickers to initials.
 @media (max-width: 768px) {
+  .projects-control-bar {
+    flex-wrap: wrap;
+    row-gap: var(--space-2);
+  }
+
   .projects-page {
     padding-bottom: var(--space-5);
   }

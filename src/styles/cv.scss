@@ -786,49 +786,10 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   margin-bottom: var(--space-5);
 }
 
-// The CV's find-in-document field, in a panel of its own below the control
-// row rather than wedged into it. It is somewhere to type rather than a piece
-// of chrome, its results are long, and in flow they push the document down
-// instead of covering it — so it takes the outline treatment every other block
-// inside the window takes.
+// Only the results list is the CV's own — the panel and its field come from
+// .ui-search-panel in controls.scss. The CV is the one page whose search
+// returns a list rather than filtering what is already on screen.
 .cv-search-panel {
-  @include outline-block;
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--space-5);
-  position: relative;
-
-  // The same 4% wash the blog's search field takes: a text field has to look
-  // like one, and a bare outline inside the outlined panel reads as a nested
-  // panel rather than as an input.
-  .search-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-floating);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    font-size: 1rem;
-    text-transform: lowercase;
-    transition: all var(--transition-fast);
-
-    // Focus is a state, but it is a state of a text field rather than a
-    // result, so it says so with a brighter hairline instead of a colour.
-    &:focus {
-      outline: none;
-      border-color: rgba(255, 255, 255, 0.45);
-      background: rgba(255, 255, 255, 0.07);
-    }
-
-    &::placeholder {
-      color: var(--text-secondary);
-      text-transform: lowercase;
-    }
-  }
-
   // In flow rather than floating — it pushes the page down instead of
   // overlaying it — so it is an outline like everything else.
   .search-results {
