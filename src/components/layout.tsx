@@ -26,6 +26,14 @@ interface LayoutProps {
 // the top of the frame, not halfway down the page.
 const HERO_COLLAPSE_RANGE = 160;
 
+// What the title is scaled to at full collapse, and the space left between it
+// and the tagline once the two share a row. Both are duplicated in the
+// stylesheet (the 0.45 the h1's scale() counts down by is 1 - TITLE_SCALE);
+// they live here too because the fit calculation below needs numbers, and CSS
+// cannot measure text.
+const TITLE_SCALE = 0.55;
+const COLLAPSED_GAP = 24;
+
 // Inner Layout component that uses the settings panel context
 const LayoutInner: React.FC<LayoutProps> = ({
   children,
@@ -43,6 +51,7 @@ const LayoutInner: React.FC<LayoutProps> = ({
   const [isHomePage, setIsHomePage] = React.useState(false);
   const stageRef = React.useRef<HTMLDivElement>(null);
   const windowRef = React.useRef<HTMLDivElement>(null);
+  const heroRef = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -95,6 +104,50 @@ const LayoutInner: React.FC<LayoutProps> = ({
       if (frame) window.cancelAnimationFrame(frame);
       stage.style.removeProperty('--hero-collapse');
     };
+  }, [shouldCollapse]);
+
+  // The collapse choreography needs real widths: at full collapse the title
+  // parks on the left edge and the tagline on the right, each travelling half
+  // of its leftover space, and the tagline rises to the title's centerline.
+  // CSS can't measure text, so the distances are published here as pixel
+  // custom properties and the stylesheet scales them by --hero-collapse.
+  React.useLayoutEffect(() => {
+    const el = heroRef.current;
+    if (!shouldCollapse || !el) return;
+
+    const measure = () => {
+      const h1 = el.querySelector('h1');
+      const sub = el.querySelector('p');
+      // The page owns the element the two sit in, so that — not the hero
+      // region, which is padded — is the column they travel across. A page is
+      // free to pass a hero of some other shape; it just gets no split.
+      const container = h1?.parentElement;
+      if (!h1 || !sub || !container) return;
+
+      const width = container.clientWidth;
+      const subWidth = sub.offsetWidth;
+      el.style.setProperty(
+        '--title-shift',
+        `${(width - h1.offsetWidth) / 2}px`
+      );
+      el.style.setProperty('--sub-shift', `${(width - subWidth) / 2}px`);
+      el.style.setProperty(
+        '--row-lift',
+        `${(h1.offsetHeight + sub.offsetHeight) / 2}px`
+      );
+      // Whether the tagline actually fits beside the shrunken title. Most of
+      // them do, and this is 1; the projects tagline is nearly the full column
+      // wide, so it scales down — pinned to its right edge — by exactly the
+      // amount it overruns rather than colliding with the title.
+      const room = width - h1.offsetWidth * TITLE_SCALE - COLLAPSED_GAP;
+      const scale = subWidth > 0 ? Math.min(1, room / subWidth) : 1;
+      el.style.setProperty('--sub-scale', String(scale));
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
   }, [shouldCollapse]);
 
   // Determine CSS classes based on panel states. The stage carries them for
@@ -161,6 +214,7 @@ const LayoutInner: React.FC<LayoutProps> = ({
           {hero && (
             <section
               className={`site-hero${shouldCollapse ? ' is-collapsible' : ''}`}
+              ref={heroRef}
             >
               {hero}
             </section>
