@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSettingsPanel } from '../SettingsPanelContext';
+import Dropdown from '../ui/Dropdown';
 import { useChat } from './ChatContext';
 import ChatErrorBoundary from './ChatErrorBoundary';
 import ChatInput from './ChatInput';
@@ -95,6 +96,21 @@ const ChatModal: React.FC = () => {
     return () => clearTimeout(timer);
   }, [isChatPanelOpen, messages]);
 
+  // The model picker is the site's own dropdown, not a native <select>: the
+  // platform widget was the one piece of chrome in the panel that belonged to
+  // the OS rather than to the page. A cached model says so in its label —
+  // that is the only thing the old <option> title attribute was carrying that
+  // a listbox row cannot.
+  const modelOptions = availableModels.map(model => ({
+    value: model.id,
+    label: `${model.name}${model.size ? ` · ${model.size}` : ''}${
+      cachedModels?.includes(model.id) ? ' · cached' : ''
+    }`,
+  }));
+  const selectedModelLabel =
+    availableModels.find(model => model.id === selectedModel)?.name ??
+    selectedModel;
+
   if (!isChatPanelOpen) return null;
 
   // Debug logging for welcome screen conditions (removed console.log for ESLint compliance)
@@ -115,29 +131,15 @@ const ChatModal: React.FC = () => {
           <ThinkingToggle key="thinking-toggle" />
           {/* A picker with one option is a control that does nothing. */}
           {availableModels.length > 1 && (
-            <div className="model-selector">
-              <select
-                value={selectedModel}
-                onChange={e => setSelectedModel(e.target.value)}
-                aria-label="Select AI model"
-                className="model-select"
-              >
-                {availableModels.map(model => {
-                  const isCached = cachedModels?.includes(model.id);
-                  const displayName = model.name;
-                  const sizeInfo = model.size ? ` (${model.size})` : '';
-                  return (
-                    <option
-                      key={model.id}
-                      value={model.id}
-                      title={`${model.description}${sizeInfo}${isCached ? ' - Cached' : ''}`}
-                    >
-                      {displayName}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+            <Dropdown
+              ariaLabel="Select AI model"
+              triggerLabel={selectedModelLabel}
+              options={modelOptions}
+              value={selectedModel}
+              onSelect={setSelectedModel}
+              align="end"
+              className="model-selector"
+            />
           )}
           {messages.length > 0 && (
             <button

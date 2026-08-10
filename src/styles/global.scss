@@ -158,24 +158,24 @@ img {
   padding: 0 1rem;
 }
 
-/* Scrollbar styling. The main scrollbar rides the window frame itself, so it
-   is chrome, not content — neutral, and quiet enough not to read as a design
-   element against the hairline border. */
+/* No scrollbars, anywhere. The content window has hidden its own since it
+   became a device screen rather than a page — a bar riding the frame reads as
+   chrome bolted onto the panel — and every other scrollable on the site is
+   inside one of the floating panels, where a 6px grey rail is the one element
+   drawn by the operating system instead of by us. On machines set to
+   always-show scrollbars they were solid strips down the settings sidebar and
+   the chat transcript.
+
+   Scrolling itself is untouched: wheel, trackpad, keyboard, drag and
+   scrollIntoView all behave exactly as they did. This is stated once, here,
+   rather than as a per-component override each new scrollable has to remember
+   to repeat. */
+* {
+  scrollbar-width: none; /* Firefox */
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.38);
+  display: none; /* WebKit / Blink */
 }
 
 /* Selection styling */

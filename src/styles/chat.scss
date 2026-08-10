@@ -248,37 +248,26 @@
       }
     }
 
+    // The model picker is the shared listbox now (see .ui-dropdown in
+    // controls.scss and src/components/ui/Dropdown.tsx), so all that is left
+    // here is where it sits: one chip in a row of header controls, at the
+    // header's own small size, with its panel free to hang past the header's
+    // lower edge.
     .model-selector {
-      .model-select {
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 0.5rem 0.75rem;
+      .ui-dropdown-trigger {
         font-size: 0.75rem;
-        font-family: 'JetBrains Mono', 'Fira Code', monospace;
-        cursor: pointer;
-        min-width: 140px;
-        transition: all var(--transition-normal);
-        text-transform: lowercase;
+        padding: 0.4rem 0.6rem;
+        max-width: 11rem;
 
-        &:focus {
-          outline: none;
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 2px var(--primary-color);
+        .ui-dropdown-value {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
+      }
 
-        &:hover {
-          border-color: var(--border-active);
-          background: var(--bg-hover);
-        }
-
-        option {
-          padding: 0.375rem;
-          background: var(--bg-primary);
-          color: var(--text-primary);
-          font-family: inherit;
-        }
+      .ui-dropdown-option {
+        font-size: 0.75rem;
       }
     }
 
@@ -342,25 +331,6 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-
-    // Custom scrollbar styling
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: var(--bg-hover);
-      border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: var(--border-color);
-      border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-thumb:hover {
-      background: var(--border-active);
-    }
   }
 
   // Chat input container - positioned at bottom
@@ -593,36 +563,8 @@
       flex-direction: column;
       gap: 0.25rem;
 
-      .model-select {
-        background: transparent;
-        color: var(--text-primary);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.8rem;
-        cursor: pointer;
-        min-width: 160px;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
-        // The site has one focus ring and it is green; this select had a
-        // magenta one of its own.
-        &:focus {
-          outline: none;
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 2px var(--primary-color);
-        }
-
-        &:hover {
-          background: var(--bg-hover);
-          border-color: var(--border-active);
-        }
-
-        option {
-          padding: 0.25rem;
-          background: var(--bg-primary);
-          color: var(--text-primary);
-        }
-      }
+      // The native <select> this block dressed is gone — the model picker is
+      // the shared listbox now (see .ui-dropdown in controls.scss).
 
       .model-info {
         .model-details {
@@ -725,24 +667,6 @@
     flex-direction: column;
     gap: 1rem;
     background: transparent;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: var(--bg-hover);
-      border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: var(--border-color);
-      border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-thumb:hover {
-      background: var(--border-active);
-    }
   }
 
   .chat-input-container {
@@ -1913,25 +1837,6 @@
   overflow-y: auto;
   min-height: 0; // Allow flex child to shrink
   height: 100%; // Ensure it takes full height
-
-  // Custom scrollbar styling
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: var(--bg-hover);
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: var(--border-active);
-  }
 
   .welcome-content {
     max-width: 340px;
