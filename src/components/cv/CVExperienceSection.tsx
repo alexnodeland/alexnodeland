@@ -1,33 +1,31 @@
 import React from 'react';
-import { useScrollSpy } from '../../lib/hooks';
 import { ExperienceItem } from '../../types';
+import { BriefcaseIcon } from '../ui/EntryIcons';
 
 interface CVExperienceSectionProps {
   experiences: ExperienceItem[];
   className?: string;
 }
 
+// The list used to light whichever entry the scroll had arrived at. That is
+// gone: on a page of collapsible cards, the only thing that should mark a card
+// is the pointer on it or the fact that it is the one you opened.
 const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
   experiences,
   className,
 }) => {
-  const { containerRef, isActive } = useScrollSpy<HTMLElement>(
-    'details.cv-collapse'
-  );
-
   return (
     <section
       className={`experience-section${className ? ` ${className}` : ''}`}
-      ref={containerRef}
     >
       <h2 className="cv-section-title">Experience</h2>
       {experiences.map((exp, index) => (
-        <details
-          key={index}
-          className={`cv-card cv-collapse${isActive(index) ? ' is-active' : ''}`}
-        >
+        <details key={index} className="cv-card cv-collapse">
           <summary className="cv-collapse-summary">
             <div className="experience-header">
+              <span className="cv-entry-icon">
+                <BriefcaseIcon />
+              </span>
               <h3>
                 {exp.title}, {exp.company}
               </h3>

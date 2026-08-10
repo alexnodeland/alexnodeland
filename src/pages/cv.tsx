@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  CertificateIcon,
   CVControlBar,
   CVSearch,
   EducationSection,
@@ -115,55 +116,33 @@ const CVPage: React.FC = () => {
           </section>
 
           {data.certifications && data.certifications.length > 0 && (
-            <section id="cv-certifications">
+            <section id="cv-certifications" className="certifications-section">
               <h2 className="cv-section-title">Certifications</h2>
-              <div className="certifications-container">
-                {data.certifications.map((cert, index) => {
-                  // Create a shorter name for the chip - be more careful with word boundaries
-                  let shortName = cert.name
-                    // Remove common certification words only when they're complete words
-                    .replace(
-                      /\b(Certified|Certificate|Professional|Developer|Engineer|Specialist|Administrator|Associate|Training|Program|Course)\b/gi,
-                      ''
-                    )
-                    // Remove common prepositions and articles
-                    .replace(/\b(in|of|for|the|a|an|and)\b/gi, '')
-                    // Clean up multiple spaces
-                    .replace(/\s+/g, ' ')
-                    .trim();
-
-                  // If the result is too short or empty, use a better fallback
-                  if (!shortName || shortName.length < 3) {
-                    // Try to get the first meaningful words or acronym
-                    const words = cert.name
-                      .split(' ')
-                      .filter(word => word.length > 2);
-                    shortName = words.slice(0, 3).join(' ');
-                  }
-
-                  // If still too long, truncate intelligently
-                  if (shortName.length > 25) {
-                    shortName = shortName.substring(0, 22) + '...';
-                  }
-
-                  return (
-                    <div key={index} className="certification-chip">
-                      <span className="cert-name">{shortName}</span>
-                      <div className="cert-tooltip">
-                        <div className="tooltip-content">
-                          <strong>{cert.name}</strong>
-                          <div className="cert-issuer">{cert.issuer}</div>
-                          <div className="cert-date">{cert.date}</div>
-                          {cert.credentialId && (
-                            <div className="cert-credential">
-                              ID: {cert.credentialId}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+              {/* Cards, not chips. The chips carried a regex-shortened name
+                  and hid everything else — issuer, date, credential — inside a
+                  hover tooltip that clipped the last entry in the row. Every
+                  certification now states itself, in the same card grammar the
+                  experience and education entries use. */}
+              <div className="certifications-grid">
+                {data.certifications.map((cert, index) => (
+                  <article key={index} className="cv-card certification-card">
+                    <div className="cert-header">
+                      <span className="cv-entry-icon">
+                        <CertificateIcon />
+                      </span>
+                      <h3 className="cert-name">{cert.name}</h3>
                     </div>
-                  );
-                })}
+                    <p className="cert-issuer">{cert.issuer}</p>
+                    <div className="cert-meta">
+                      <span className="cert-date">{cert.date}</span>
+                      {cert.credentialId && (
+                        <span className="cert-credential">
+                          id: {cert.credentialId}
+                        </span>
+                      )}
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
           )}

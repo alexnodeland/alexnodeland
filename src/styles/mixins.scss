@@ -29,6 +29,12 @@
 // which made the button look like a different control on the way to being
 // clicked — and the coloured halo is gone; elevation comes from the shadow
 // scale like everything else.
+// The gloss that used to sweep across both button faces on hover — a white
+// gradient sliding from one edge to the other — is gone from here and from
+// every card on the site. It was decoration doing an impression of feedback:
+// the button already brightens, and a highlight that travels reads as
+// something happening to the page rather than as a control answering the
+// pointer.
 @mixin button-primary {
   @include button-base;
   background: var(--primary-color);
@@ -36,32 +42,11 @@
   border-color: var(--primary-color);
   box-shadow: var(--shadow-sm);
   position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
-    transition: left 0.5s;
-  }
 
   &:hover {
     filter: brightness(1.15);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-
-    &::before {
-      left: 100%;
-    }
   }
 
   &:active {
@@ -79,23 +64,6 @@
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: var(--shadow-sm);
   position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.08),
-      transparent
-    );
-    transition: left 0.5s;
-  }
 
   &:hover {
     background: var(--bg-hover);
@@ -103,10 +71,6 @@
     color: var(--text-primary);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-
-    &::before {
-      left: 100%;
-    }
   }
 
   &:active {
@@ -144,17 +108,13 @@
   border: 1px solid var(--border-floating);
 }
 
-// The emphasis a card takes on when it is the one being read — either because
-// a pointer is over it or because the scroll position has arrived at it. Both
-// routes get the same treatment so the site has one idea of "this one".
-//
-// Hover is gated on a real pointer: on touch it latches after a tap and leaves
-// a card lit for the rest of the session, on cards that mostly go nowhere.
+// The emphasis a card takes on when it is the one being read. It used to have
+// two routes in — the pointer, and the scroll position arriving at it — and
+// the second one is gone from the three list pages: a list that lights itself
+// up as you scroll past is reacting to something the reader did not ask for.
+// Pointer only, and gated on a real one: on touch `:hover` latches after a tap
+// and leaves a card lit for the rest of the session.
 @mixin reading-emphasis {
-  &.is-active {
-    @content;
-  }
-
   @media (hover: hover) and (pointer: fine) {
     &:hover {
       @content;
@@ -162,14 +122,30 @@
   }
 }
 
-// Movement reserved for pointer hover. Tying a lift to the scroll position
-// makes a list wobble as you read down it.
-@mixin hover-lift($distance: -2px) {
-  @media (hover: hover) and (pointer: fine) {
-    &:hover {
-      transform: translateY($distance);
-    }
-  }
+// The one thing a card does when the pointer is on it, and the one thing it
+// does when it is the open one: it gets brighter. No lift, no scale, no shadow
+// ramp — the three list pages are lists, and a list that wobbles as the
+// pointer crosses it is harder to read than one that holds still.
+//
+// The transition is on the card itself rather than inside the hover block, so
+// it runs in both directions: the highlight grows in under the pointer and
+// eases back out when the pointer leaves, instead of snapping off. A
+// travelling light briefly lived here instead — an animated gradient masked to
+// the hairline — and it read as a glitch: a sweep is an event, and a card
+// being pointed at is a state.
+@mixin card-highlight {
+  transition:
+    border-color var(--transition-normal),
+    background-color var(--transition-normal);
+}
+
+// The lit end of that transition, applied under whatever means "this one" —
+// `:hover` for the pointer, `[open]` for a disclosure — so both routes look
+// the same. The wash is barely there on purpose: the hairline is the signal,
+// and the surface behind it is a live simulation, not a slab.
+@mixin card-highlight-on {
+  border-color: rgba(255, 255, 255, 0.45);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 // A card under the pointer brightens its own hairline and lifts. It does not

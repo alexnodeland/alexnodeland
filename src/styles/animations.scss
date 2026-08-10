@@ -57,15 +57,6 @@
   }
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -105,13 +96,8 @@
   animation: rotate 2s linear infinite;
 }
 
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
+// `shimmer` — a white gradient travelling across a surface forever — used to
+// be declared here as a keyframe and a utility class. Nothing on the site
+// asked for it, and the one place the trick did ship (the button faces, the
+// card hairlines) has been taken out: a highlight that moves on its own reads
+// as a glitch rather than as feedback.

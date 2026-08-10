@@ -14,6 +14,8 @@ jest.mock('../../../components', () => ({
   // The real dropdown — the controls under test are the shared component, so
   // mocking it here would test nothing.
   Dropdown: jest.requireActual('../../../components/ui/Dropdown').default,
+  // The glyph that opens every post's title row.
+  PostIcon: jest.requireActual('../../../components/ui/EntryIcons').PostIcon,
 }));
 
 // Mock SCSS

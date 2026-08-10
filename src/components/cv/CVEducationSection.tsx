@@ -1,33 +1,28 @@
 import React from 'react';
-import { useScrollSpy } from '../../lib/hooks';
 import { EducationItem } from '../../types';
+import { GraduationIcon } from '../ui/EntryIcons';
 
 interface CVEducationSectionProps {
   education: EducationItem[];
   className?: string;
 }
 
+// No scroll-driven highlight here either — see the note in
+// CVExperienceSection. Pointer and open state are the whole interaction.
 const CVEducationSection: React.FC<CVEducationSectionProps> = ({
   education,
   className,
 }) => {
-  const { containerRef, isActive } = useScrollSpy<HTMLElement>(
-    'details.cv-collapse'
-  );
-
   return (
-    <section
-      className={`education-section${className ? ` ${className}` : ''}`}
-      ref={containerRef}
-    >
+    <section className={`education-section${className ? ` ${className}` : ''}`}>
       <h2 className="cv-section-title">Education</h2>
       {education.map((edu, index) => (
-        <details
-          key={index}
-          className={`cv-card cv-collapse${isActive(index) ? ' is-active' : ''}`}
-        >
+        <details key={index} className="cv-card cv-collapse">
           <summary className="cv-collapse-summary">
             <div className="education-header">
+              <span className="cv-entry-icon">
+                <GraduationIcon />
+              </span>
               <h3>{edu.degree}</h3>
               <div className="summary-right">
                 <span className="education-duration">{edu.duration}</span>
