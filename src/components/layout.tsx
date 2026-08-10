@@ -140,7 +140,15 @@ const LayoutInner: React.FC<LayoutProps> = ({
               )}
               <div className="nav-menu">
                 {siteConfig.navigation.main.map(item => (
-                  <Link key={item.name} to={item.href} className="nav-link">
+                  // partiallyActive keeps the segment lit on subpages
+                  // (a blog post still lights "blog").
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="nav-link"
+                    activeClassName="active"
+                    partiallyActive
+                  >
                     {item.name}
                   </Link>
                 ))}

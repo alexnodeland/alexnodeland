@@ -222,9 +222,9 @@
   display: none;
 }
 
-// The brand is one of the pills now (the pill lives on the .nav-link inside
-// it), so this only carries the type. It used to be 1.75rem, which as a pill
-// would have been half again the height of the three next to it.
+// The brand is its own capsule, matched to the link housing on the right —
+// same material, same height — so the header reads as two instruments from
+// one kit rather than four loose buttons.
 .nav-brand {
   // All three pill families — nav, background toolbar, chat — share one text
   // size, taken from the chat pill.
@@ -235,36 +235,47 @@
     monospace;
   text-transform: lowercase;
   letter-spacing: -0.02em;
+
+  .nav-link {
+    @include capsule-housing;
+    padding: 0.65rem 1.15rem; // Matches the housing's 0.25rem + segment 0.4rem
+    color: var(--text-primary);
+    transition:
+      border-color var(--transition-fast),
+      background var(--transition-fast);
+
+    &:hover {
+      background: var(--window-scrim);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+  }
 }
 
+// One machined capsule housing the page links — a single control with
+// segments, not a row of loose boxes (capsule-housing lives in mixins.scss).
 .nav-menu {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.125rem;
   align-items: center;
   flex-wrap: nowrap;
+  padding: 0.25rem;
+  @include capsule-housing;
 }
 
-// The nav sits on the bare field now rather than over the window's scrim, so
-// each link takes the window's own language — same scrim, same blur, same
-// hairline. They read as controls floating on the simulation, which is what
-// the background pill and the chat pill already do in the two bottom corners.
-//
-// The white underline bar that used to slide in on hover is gone: inside a
-// pill it read as a second, smaller frame fighting the first. Hover brightens
-// the hairline and lifts, exactly like the two floating pills do.
+// A segment inside the housing: quiet text that washes on hover, and the
+// current page carries a filled segment — the capsule doubles as a "you are
+// here" indicator, which the old row of identical pills never said.
 .nav-link {
   text-decoration: none;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   @include over-background;
   font-size: 0.875rem; // Matches the chat and background pills
   white-space: nowrap;
-  padding: 0.5rem 1rem;
-  background: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-  border: 1px solid var(--window-border);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-normal);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
@@ -272,12 +283,13 @@
   letter-spacing: -0.01em;
 
   &:hover {
-    transform: translateY(-1px);
-    border-color: rgba(255, 255, 255, 0.45);
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.07);
   }
 
-  &:active {
-    transform: translateY(0);
+  &.active {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.11);
   }
 }
 
@@ -441,17 +453,16 @@
   }
 
   .nav-brand .nav-link {
-    padding: 0.4rem 0.8rem; // Same padding as other nav-links
+    padding: 0.55rem 0.95rem;
   }
 
   .nav-menu {
-    gap: 0.75rem;
     flex-wrap: nowrap;
     justify-content: flex-end;
   }
 
   .nav-link {
-    padding: 0.4rem 0.8rem;
+    padding: 0.35rem 0.7rem;
   }
 
   .site-hero {
@@ -490,15 +501,15 @@
   }
 
   .nav-brand .nav-link {
-    padding: 0.3rem 0.5rem; // Same padding as other nav-links on small mobile
+    padding: 0.5rem 0.8rem;
   }
 
   .nav-menu {
-    gap: 0.25rem;
+    padding: 0.2rem;
   }
 
   .nav-link {
-    padding: 0.3rem 0.5rem;
+    padding: 0.3rem 0.55rem;
   }
 
   .site-hero {
@@ -530,8 +541,11 @@
 // the hero title. Brand plus three links is ~215px of intrinsic width at this
 // padding against ~270px of column, so it still holds one row.
 @media (max-width: 380px) {
-  .nav-link,
+  .nav-link {
+    padding: 0.3rem 0.45rem;
+  }
+
   .nav-brand .nav-link {
-    padding: 0.3rem 0.35rem;
+    padding: 0.45rem 0.7rem;
   }
 }

@@ -189,3 +189,18 @@
 // were pure decoration under the semantic-colour rule, and the titles they lit
 // now carry `over-background` instead — the halo is the legibility device, and
 // it does not need a colour to do that job.
+
+// A machined capsule: the window's material (scrim, blur, hairline) rolled
+// into a fully-round housing, with a 1px inner top highlight so it reads as a
+// solid object catching light rather than a painted rectangle. Used by the
+// header's brand pill and the nav-link housing.
+@mixin capsule-housing {
+  background: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+  border: 1px solid var(--window-border);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 8px 24px rgba(0, 0, 0, 0.3);
+}
