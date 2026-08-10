@@ -41,24 +41,17 @@
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     position: relative; // anchor tooltips and nav buttons to toolbar
-    // The window's language, not a page surface: same scrim, same blur, same
-    // hairline as the content panel and the sidebars. It used to be opaque,
-    // which read as a different material sitting on the same field.
-    background: var(--window-scrim);
-    backdrop-filter: blur(var(--window-blur));
-    -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-    border: 1px solid var(--window-border);
-    border-radius: var(--radius-lg);
+    // The same machined housing as the nav capsule and the chat pill — one
+    // language for every floating control on the field.
+    @include capsule-housing;
     color: var(--text-primary);
     font-size: 0.875rem;
-    box-shadow: var(--shadow-lg);
     transition: all var(--transition-normal);
     min-width: 280px; // Match keyboard hints width for alignment
     cursor: pointer; // Indicate clickable
 
     &:hover {
       border-color: rgba(255, 255, 255, 0.45);
-      box-shadow: var(--shadow-xl);
       transform: translateY(-1px); // Subtle lift effect
     }
 
