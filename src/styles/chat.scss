@@ -29,24 +29,18 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
-    // Matches the background toolbar in the opposite corner — both float over
-    // the animated background in the window's own language: same scrim, same
-    // blur, same hairline as the panel above them.
-    background: var(--window-scrim);
-    backdrop-filter: blur(var(--window-blur));
-    -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-    border: 1px solid var(--window-border);
-    border-radius: var(--radius-lg);
+    // Matches the background toolbar in the opposite corner and the nav
+    // capsule above — one machined housing language for every floating
+    // control on the field.
+    @include capsule-housing;
     color: var(--text-primary);
     font-size: 0.875rem;
-    box-shadow: var(--shadow-lg);
     cursor: pointer;
     transition: all var(--transition-normal);
     min-width: 280px;
 
     &:hover {
       border-color: rgba(255, 255, 255, 0.45);
-      box-shadow: var(--shadow-md);
       transform: translateY(-1px);
     }
 
