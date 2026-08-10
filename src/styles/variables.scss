@@ -55,16 +55,24 @@
   // holds on the yellow PDE field behind it, light enough that the simulation
   // stays legible through it. Tune here, nowhere else.
   --window-inset: 1.5rem;
-  --window-scrim: rgba(7, 8, 10, 0.55);
-  --window-blur: 10px;
+  // The bottom inset is deeper than the sides: the floating pills (background
+  // label bottom-left, chat bottom-right) live on the field below the window,
+  // not on top of it. The pill stack (pill + keyboard hint) reaches ~7.2rem
+  // up from the viewport bottom — the window rides just above it.
+  --window-inset-bottom: 8rem;
+  --window-scrim: rgba(7, 8, 10, 0.38);
+  --window-blur: 5px;
   --window-border: var(--border-floating);
 
   @media (max-width: 768px) {
     --window-inset: 0.75rem;
+    // Pills move to 1rem and the chat icon shrinks to a 3rem disc.
+    --window-inset-bottom: 4.75rem;
   }
 
   @media (max-width: 480px) {
     --window-inset: 0.5rem;
+    --window-inset-bottom: 4.5rem;
   }
 
   // Backgrounds - Consistent black theme
@@ -122,12 +130,12 @@
   // breakpoint. The clamp floors are the old mobile sizes and the ceilings sit
   // slightly above the old desktop ones — headings earn their prominence from
   // size and space, since they no longer get it from weight or a rule.
-  --text-h1: clamp(2.25rem, 1.6rem + 2.6vw, 3.75rem);
-  --text-h2: clamp(1.6rem, 1.25rem + 1.4vw, 2.4rem);
-  --text-h3: clamp(1.3rem, 1.1rem + 0.8vw, 1.75rem);
-  --text-h4: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
-  --text-body: 1rem;
-  --text-small: 0.875rem;
+  --text-h1: clamp(1.9rem, 1.4rem + 1.7vw, 2.75rem);
+  --text-h2: clamp(1.4rem, 1.15rem + 1vw, 1.9rem);
+  --text-h3: clamp(1.2rem, 1.05rem + 0.5vw, 1.45rem);
+  --text-h4: clamp(1.05rem, 1rem + 0.25vw, 1.2rem);
+  --text-body: 0.9375rem;
+  --text-small: 0.8125rem;
 
   // Transitions
   --transition-fast: 150ms ease-in-out;

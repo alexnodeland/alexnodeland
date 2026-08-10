@@ -75,7 +75,7 @@
 // with the simulation running visibly around it. The page never scrolls;
 // content scrolls inside this frame.
 .layout {
-  min-height: calc(100vh - (2 * var(--window-inset)));
+  min-height: calc(100vh - var(--window-inset) - var(--window-inset-bottom));
   display: flex;
   flex-direction: column;
   background: var(--window-scrim);
@@ -86,7 +86,7 @@
   top: var(--window-inset); // Header overlays the panel top transparently
   left: var(--window-inset);
   right: var(--window-inset);
-  bottom: var(--window-inset);
+  bottom: var(--window-inset-bottom); // Rides just above the floating pills
   // Grounds the panel on the field; the field is animated and often bright,
   // so this reads as depth rather than as a visible shadow shape.
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
