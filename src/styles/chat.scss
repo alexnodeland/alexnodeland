@@ -122,32 +122,14 @@
     }
   }
 
+  // The phone treatment of .chat-sidebar lives below the base rule rather than
+  // here — see the note there. Only the parts that don't fight the base rule
+  // for the same properties stay in this block.
   .chat-sidebar {
     .chat-sidebar-footer {
       .chat-keyboard-hints {
         display: none; // Hide persistent keyboard hints on mobile
       }
-    }
-
-    // Fullscreen on mobile
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh; // Dynamic viewport height for mobile browsers
-    border-radius: 0;
-    border: none;
-    z-index: 1003;
-
-    // Mobile slide-up animation
-    &.opening {
-      animation: slideInFromBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    &.closing {
-      animation: slideOutToBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     // Safe area insets for notched phones
@@ -169,40 +151,23 @@
   }
 }
 
-// Extra small mobile responsive adjustments
-@media (max-width: 480px) {
-  .chat-sidebar {
-    // Already fullscreen from 768px query, just ensure consistency
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    border-radius: 0;
-  }
-}
-
-// Chat Sidebar Styles (matches main content area positioning)
+// Chat sidebar — a floating peer of the content window, mirroring the settings
+// panel on the opposite side. It takes the window's own insets, scrim, blur,
+// hairline and shadow so the three panels read as one family of surfaces; the
+// tokens live in variables.scss and are shared with .layout.
 .chat-sidebar {
   position: fixed;
-  top: calc(1rem + 3px); // Match main content - start below rainbow border
-  right: 1rem; // Match main content right margin
-  bottom: 1rem; // Match main content bottom margin
+  top: var(--window-inset);
+  right: var(--window-inset);
+  // Rides above the floating pills, exactly as the window does
+  bottom: var(--window-inset-bottom);
   width: 28rem;
-  background: rgba(0, 0, 0, 0.7); // Match settings panel transparency
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-left: 2px solid var(--border-color); // Primary border to separate from main content
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-lg); // Full border radius like main content
-  box-shadow:
-    var(--shadow-xl),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+  border: 1px solid var(--window-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
   z-index: 1002; // Above background controls
   display: flex;
   flex-direction: column;
@@ -539,6 +504,49 @@
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         color: var(--text-primary);
       }
+    }
+  }
+}
+
+// Phones get the whole screen. A 28rem panel is wider than the viewport itself
+// on most phones, so the desktop peer-window geometry can't survive here.
+//
+// This block sits *after* the base rule on purpose. It used to live in the
+// 768px section near the top of the file, where it lost every property it
+// shared with the base rule — media queries add no specificity, so the later
+// declaration simply won and the panel stayed a 28rem card hanging off the
+// right edge of a phone.
+//
+// The visual treatment departs from the window's scrim here, and deliberately:
+// at full-bleed there is no frame left to read as a floating panel, and the
+// window's 0.38 scrim over a live simulation makes long chat prose unreadable.
+// So the surface goes nearly opaque and keeps a heavier blur — the same family,
+// turned up until the text holds.
+@media (max-width: 768px) {
+  .chat-sidebar {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh; // Dynamic viewport height for mobile browsers
+    background: rgba(7, 8, 10, 0.92);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    z-index: 1003;
+
+    // A sheet that owns the screen comes up from the bottom edge; the
+    // sidebar's horizontal slide reads wrong at this size.
+    &.opening {
+      animation: slideInFromBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    &.closing {
+      animation: slideOutToBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
   }
 }
