@@ -7,9 +7,9 @@ import { ExpertiseIcon, IconStyle, iconFrameProps } from './iconBase';
 // symmetric ease so the two states trade places without either end snapping.
 const css = `
 .icn-str-branch {
-  animation: icn-str-weigh 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation: icn-str-weigh 4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
-.icn-str-branch-b { animation-delay: -3s; }
+.icn-str-branch-b { animation-delay: -2s; }
 @keyframes icn-str-weigh {
   0% { opacity: 1; }
   50% { opacity: 0.28; }
