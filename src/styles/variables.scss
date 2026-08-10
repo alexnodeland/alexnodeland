@@ -52,6 +52,23 @@
   --bg-floating: #0e1014;
   --border-floating: rgba(255, 255, 255, 0.16);
 
+  // The content window — the fixed panel every page renders inside. The scrim
+  // has one hard constraint from either side: dark enough that white text
+  // holds on the yellow PDE field behind it, light enough that the simulation
+  // stays legible through it. Tune here, nowhere else.
+  --window-inset: 1.5rem;
+  --window-scrim: rgba(7, 8, 10, 0.55);
+  --window-blur: 10px;
+  --window-border: var(--border-floating);
+
+  @media (max-width: 768px) {
+    --window-inset: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    --window-inset: 0.5rem;
+  }
+
   // Backgrounds - Consistent black theme
   --bg-primary: #0a0a0a; // Deep black (main background)
   --bg-secondary: rgba(

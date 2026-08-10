@@ -57,17 +57,6 @@
   }
 }
 
-@keyframes borderGlow {
-  from {
-    box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-  }
-  to {
-    box-shadow:
-      0 0 20px rgba(255, 0, 128, 0.8),
-      0 0 30px rgba(0, 255, 136, 0.3);
-  }
-}
-
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
