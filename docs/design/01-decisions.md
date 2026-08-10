@@ -207,6 +207,22 @@ thing as it built. Decisions made from looking, recorded so the doc stays honest
   removed.
 - **The halo audit kept all ~20 sites.** Everything carrying the halo sits over the
   scrim with the animation behind it; nothing qualified for removal.
+- **The header and the page heroes came back out of the window.** A second pass
+  moved them onto the bare field: a fixed `.stage` column holds the nav, the
+  page hero (`.site-hero`, a Layout prop) and the window, and the window wraps
+  only the scrolling content. That killed the machinery the overlap needed —
+  `--header-height` and its six consumers, the `.scrolled` header scrim, the
+  `isScrolled` listener, and `.fixed-header-container` with its own copy of the
+  panel-state matrix, which now lives once on the stage. The nav links took the
+  window's language with them (scrim + blur + hairline), since they are
+  controls on the simulation now rather than text on a panel. On every page but
+  the homepage the hero collapses in step with the scroll — Layout publishes
+  `--hero-collapse` (0 → 1) from the window's `scrollTop` and CSS interpolates
+  — so the tagline gives its room back to the content.
+- **One content width, `--content-max-width: 1100px`** — the projects page's,
+  which was the widest. The nav, the heroes, `.main`, the footer and every page
+  container cap there, and `--window-max-width` moved 1240 → 1140 so the frame
+  keeps the same 20px of air around the column.
 - **Beyond the review's scope, same session:** the projects page was rebuilt around
   the hero subtitle's arc (ai · math · audio dsp · distributed systems · misc, ai
   first), the old sections demoted to tags, the catalog refreshed against GitHub,

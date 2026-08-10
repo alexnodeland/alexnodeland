@@ -55,11 +55,11 @@
   // holds on the yellow PDE field behind it, light enough that the simulation
   // stays legible through it. Tune here, nowhere else.
   --window-inset: 1.5rem;
-  // The window hugs the content column instead of the viewport: .main and .nav
-  // cap at 1200px, so the frame rides just outside them and the field claims
-  // the rest of a wide display. The side inset below is the floor once the
-  // viewport shrinks to meet it.
-  --window-max-width: 1240px;
+  // The window hugs the content column instead of the viewport: every content
+  // container caps at --content-max-width, so the frame rides 20px outside
+  // them and the field claims the rest of a wide display. The side inset below
+  // is the floor once the viewport shrinks to meet it.
+  --window-max-width: 1140px;
   // The resolved side offset — every rule that positions the window's left or
   // right edge (including panel open/close transition states) must use this,
   // or the frame animates out to the raw inset and snaps back.
@@ -75,6 +75,14 @@
   --window-scrim: rgba(7, 8, 10, 0.38);
   --window-blur: 5px;
   --window-border: var(--border-floating);
+
+  // One content width for the whole site — the projects page's, which was the
+  // widest and the one the owner reads as correct. The nav, the page heroes on
+  // the field, the scrolling main column and the footer all cap here, so the
+  // left edge of a title above the window lines up with the left edge of the
+  // prose inside it. The window frame is 40px wider (see --window-max-width),
+  // which is what makes it read as a frame around this column.
+  --content-max-width: 1100px;
 
   @media (max-width: 768px) {
     --window-inset: 0.75rem;
@@ -148,6 +156,12 @@
   --text-h4: clamp(1.05rem, 1rem + 0.25vw, 1.2rem);
   --text-body: 0.9375rem;
   --text-small: 0.8125rem;
+  // The lead line under a page title. One step below h4 rather than equal to
+  // it: the hero subtitles are now unconstrained by any max-width and are
+  // meant to hold a single line at --content-max-width, and the longest of
+  // them (the projects page, 90 characters) does not fit at h4's 1.2rem
+  // ceiling — 90 × 0.6em × 19.2px is 1037px against a 1036px column.
+  --text-lead: clamp(1.05rem, 1rem + 0.25vw, 1.125rem);
 
   // Transitions
   --transition-fast: 150ms ease-in-out;

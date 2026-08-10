@@ -3,17 +3,29 @@
 @import 'mixins';
 @import 'animations';
 
+// The blocks on this page are outlines rather than filled cards: they sit on
+// the window's scrim with the simulation running through it, and a solid
+// --bg-card panel over that reads as a lid on the animation. The hairline is
+// the white-alpha --border-floating and not --border-color, which is
+// near-black and disappears entirely against the scrim.
+@mixin homepage-outline {
+  background: transparent;
+  border: 1px solid var(--border-floating);
+}
+
 .home {
-  max-width: 800px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
 }
 
 // The one splash moment on the site: the cover, centred on purpose. Every
-// other page header is left-aligned with its content.
+// other page header is left-aligned with its content. It renders on the field
+// above the window (see .site-hero in layout.scss) and, unlike the other page
+// heroes, it does not collapse as the content scrolls.
 .hero {
   text-align: center;
-  margin-bottom: var(--space-7);
-  padding: var(--space-6) 0;
+  margin-bottom: 0;
+  padding: 0;
   position: relative;
 
   h1 {
@@ -28,12 +40,13 @@
 
 // Animations are now in animations.scss
 
+// No max-width: the subtitle gets the full content column, so it holds one
+// line like the taglines on the other three pages.
 .hero-subtitle {
-  font-size: var(--text-h4);
+  font-size: var(--text-lead);
   color: var(--text-secondary);
   @include over-background;
   line-height: 1.6;
-  max-width: 600px;
   margin: 0 auto;
   font-style: italic;
 }
@@ -55,9 +68,8 @@
 .about {
   margin-bottom: var(--space-7);
   padding: var(--space-5);
-  background: var(--bg-card);
+  @include homepage-outline;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
   position: relative;
 
   p {
@@ -85,11 +97,10 @@
 // semantic-colour rule is spent entirely on the buttons — that is the
 // conversion path, and it is the only thing here that needs to be found.
 .consulting {
-  background: var(--bg-card);
+  @include homepage-outline;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-7);
-  border: 1px solid var(--border-color);
   position: relative;
 
   h2 {
@@ -139,11 +150,10 @@
 }
 
 .expertise-item {
-  background: var(--bg-card);
+  @include homepage-outline;
   padding: var(--space-5) var(--space-4);
   border-radius: var(--radius-lg);
   text-align: center;
-  border: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
   transition: all var(--transition-normal);
@@ -163,9 +173,9 @@
     transition: transform var(--transition-normal);
   }
 
+  // Outlines, so the emphasis is in the hairline rather than in a fill.
   @include reading-emphasis {
-    background: var(--bg-hover);
-    border-color: var(--border-active);
+    border-color: rgba(255, 255, 255, 0.4);
     box-shadow: var(--shadow-md);
 
     &::before {
@@ -217,18 +227,16 @@
 }
 
 .blog-preview {
-  background: var(--bg-card);
+  @include homepage-outline;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-7);
-  border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
   position: relative;
 
   @include reading-emphasis {
-    background: var(--bg-hover);
     box-shadow: var(--shadow-md);
-    border-color: var(--border-active);
+    border-color: rgba(255, 255, 255, 0.4);
   }
 
   @include hover-lift;
@@ -258,15 +266,6 @@
 
 @media (max-width: 768px) {
   .home {
-    padding: 0 var(--space-3);
-  }
-
-  .hero {
-    padding: var(--space-5) 0;
-    margin-bottom: var(--space-6);
-  }
-
-  .hero-subtitle {
     padding: 0 var(--space-3);
   }
 

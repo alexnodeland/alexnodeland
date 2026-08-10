@@ -17,20 +17,22 @@ const CVPage: React.FC = () => {
   const [view, setView] = useState<CVView>('full');
   const data = view === 'resume' ? resumeData : cvData;
 
+  const hero = (
+    <header className="cv-page-header">
+      <h1>cv</h1>
+      <p>
+        {view === 'full'
+          ? 'everything, in order, back to 2010.'
+          : 'the short version — recent roles only, trimmed to one page.'}{' '}
+        export it as pdf, docx, or markdown below.
+      </p>
+    </header>
+  );
+
   return (
-    <Layout>
+    <Layout hero={hero} collapsibleHero>
       <SEO title="cv" description="Complete resume and CV for Alex Nodeland" />
       <div className="cv">
-        <header className="cv-page-header">
-          <h1>cv</h1>
-          <p>
-            {view === 'full'
-              ? 'everything, in order, back to 2010.'
-              : 'the short version — recent roles only, trimmed to one page.'}{' '}
-            export it as pdf, docx, or markdown below.
-          </p>
-        </header>
-
         <div
           className="cv-view-toggle"
           role="group"

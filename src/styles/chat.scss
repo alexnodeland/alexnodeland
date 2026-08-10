@@ -30,9 +30,12 @@
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     // Matches the background toolbar in the opposite corner — both float over
-    // the animated background rather than sitting on a page surface.
-    background: var(--bg-floating);
-    border: 1px solid var(--border-floating);
+    // the animated background in the window's own language: same scrim, same
+    // blur, same hairline as the panel above them.
+    background: var(--window-scrim);
+    backdrop-filter: blur(var(--window-blur));
+    -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+    border: 1px solid var(--window-border);
     border-radius: var(--radius-lg);
     color: var(--text-primary);
     font-size: 0.875rem;

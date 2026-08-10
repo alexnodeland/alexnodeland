@@ -41,11 +41,13 @@
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     position: relative; // anchor tooltips and nav buttons to toolbar
-    // Floating surface, not a page surface: this sits over whichever
-    // background is running, so it takes the opaque floating tone rather than
-    // the near-clear control tint, which let the background read through it.
-    background: var(--bg-floating);
-    border: 1px solid var(--border-floating);
+    // The window's language, not a page surface: same scrim, same blur, same
+    // hairline as the content panel and the sidebars. It used to be opaque,
+    // which read as a different material sitting on the same field.
+    background: var(--window-scrim);
+    backdrop-filter: blur(var(--window-blur));
+    -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+    border: 1px solid var(--window-border);
     border-radius: var(--radius-lg);
     color: var(--text-primary);
     font-size: 0.875rem;

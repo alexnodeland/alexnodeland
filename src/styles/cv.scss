@@ -2,7 +2,7 @@
 @import 'mixins';
 
 .cv {
-  max-width: 900px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
   line-height: 1.7;
 }
@@ -17,10 +17,11 @@ section[id] {
   position: relative;
 }
 
-// CV Page Header (similar to blog page)
+// The page hero, on the field above the window — see .site-hero in
+// layout.scss, which owns its column and its padding.
 .cv-page-header {
-  margin-bottom: var(--space-6);
-  padding: calc(var(--header-height) + 0.5rem) 0 var(--space-5); // Dynamic padding based on header height
+  margin-bottom: 0;
+  padding: 0;
   position: relative;
 
   h1 {
@@ -36,16 +37,18 @@ section[id] {
   p {
     color: var(--text-secondary);
     @include over-background;
-    font-size: var(--text-h4);
+    font-size: var(--text-lead);
     line-height: 1.6;
     font-style: italic;
   }
 }
 
-// Compact sticky section navigation
+// Compact sticky section navigation. Nothing overlays the top of the window
+// any more, so it sticks to the window's own top edge rather than clearing a
+// fixed header.
 .cv-section-nav-container {
   position: sticky;
-  top: calc(var(--header-height) + 0.5rem);
+  top: 0;
   z-index: 5;
   margin-bottom: var(--space-3);
 }
@@ -204,14 +207,13 @@ section[id] {
   gap: var(--space-5);
 }
 
-// Ensure anchor jumps account for sticky header and nav
+// Ensure anchor jumps clear the sticky section nav (the page header is on the
+// field above the window now and never covers a target).
 #cv-experience,
 #cv-education,
 #cv-skills,
 #cv-certifications {
-  scroll-margin-top: calc(
-    var(--header-height) + 80px
-  ); // Header + sticky nav + padding
+  scroll-margin-top: 80px; // Sticky nav + padding
 }
 
 // Left-aligned like every other header on the site, and without the pink rule
@@ -1096,9 +1098,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   #cv-education,
   #cv-skills,
   #cv-certifications {
-    scroll-margin-top: calc(
-      var(--header-height) + 60px
-    ); // Smaller offset on mobile
+    scroll-margin-top: 60px; // Smaller offset on mobile
   }
 
   // Switch to mobile labels in section nav
@@ -1124,9 +1124,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 
   .cv-page-header {
-    padding: calc(var(--header-height) + 0.5rem) 0 1.5rem; // Dynamic padding with responsive header height
-    margin-bottom: var(--space-5);
-
     h1 {
       font-size: 2rem;
     }
@@ -1242,9 +1239,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   #cv-education,
   #cv-skills,
   #cv-certifications {
-    scroll-margin-top: calc(
-      var(--header-height) + 50px
-    ); // Even smaller offset on small mobile
+    scroll-margin-top: 50px; // Even smaller offset on small mobile
   }
 }
 
