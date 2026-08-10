@@ -30,40 +30,9 @@
   // Slide in from left with fade when appearing
   animation: slideInFromLeftWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
-  // Reposition when settings panel is open (stay in relative bottom-left of reduced viewport)
-  &.settings-panel-open {
-    left: calc(28rem + 2rem);
-  }
-
-  // Reposition when chat panel is open (maintain position but account for right panel)
-  &.chat-panel-open {
-    // Stay in same position since chat panel is on the right
-  }
-
-  // Both panels open - position relative to settings panel (left side)
-  &.settings-panel-open.chat-panel-open {
-    left: calc(28rem + 2rem);
-  }
-
-  // During closing animations
-  &.settings-panel-closing {
-    left: 2rem;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  &.chat-panel-closing {
-    // No position change needed for chat panel closing
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  // Mixed states - one opening, one closing
-  &.settings-panel-closing.chat-panel-open {
-    left: 2rem;
-  }
-
-  &.settings-panel-open.chat-panel-closing {
-    left: calc(28rem + 2rem);
-  }
+  // No panel-state repositioning: the sidebars are floating panels that stop
+  // at --window-inset-bottom, so the pill row at 2rem lives entirely below
+  // them and never needs to dodge.
 
   // Combined toolbar - now clickable to open settings
   .background-toolbar {
