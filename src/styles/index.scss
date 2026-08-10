@@ -8,23 +8,28 @@
   margin: 0 auto;
 }
 
+// The one splash moment on the site: the cover, centred on purpose. Every
+// other page header is left-aligned with its content.
 .hero {
   text-align: center;
-  margin-bottom: 4rem;
-  padding: 3rem 0;
+  margin-bottom: var(--space-7);
+  padding: var(--space-6) 0;
   position: relative;
 
   h1 {
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-5);
     position: relative;
-    @include retro-glow;
+    // Sits on the window scrim with the simulation running behind it, so it
+    // takes the halo. It used to take an animated green glow instead, which
+    // was decoration doing a legibility job badly.
+    @include over-background;
   }
 }
 
 // Animations are now in animations.scss
 
 .hero-subtitle {
-  font-size: 1.25rem;
+  font-size: var(--text-h4);
   color: var(--text-secondary);
   @include over-background;
   line-height: 1.6;
@@ -36,32 +41,15 @@
 // Animations are now in animations.scss
 
 .about {
-  margin-bottom: 4rem;
-  padding: 2rem;
+  margin-bottom: var(--space-7);
+  padding: var(--space-5);
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   position: relative;
 
-  // Add gradient left accent
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: linear-gradient(
-      180deg,
-      var(--accent-pink) 0%,
-      var(--primary-color) 50%,
-      var(--accent-cyan) 100%
-    );
-    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  }
-
   p {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--space-4);
     line-height: 1.7;
     // Justified text needs enough characters per line to distribute the slack;
     // below that the word gaps blow out into rivers. Wide viewports keep the
@@ -80,49 +68,34 @@
   }
 }
 
+// A peer section, not a shout: same surface, same type scale, same left
+// alignment as `.about` above it. The accent it is allowed under the
+// semantic-colour rule is spent entirely on the buttons — that is the
+// conversion path, and it is the only thing here that needs to be found.
 .consulting {
   background: var(--bg-card);
-  padding: 3rem 2rem;
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
-  margin-bottom: 4rem;
-  text-align: center;
-  box-shadow: 0 0 30px rgba(255, 0, 128, 0.1);
+  margin-bottom: var(--space-7);
   border: 1px solid var(--border-color);
   position: relative;
 
-  // Add animated gradient border
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      var(--accent-pink) 0%,
-      var(--accent-cyan) 33%,
-      var(--accent-blue) 66%,
-      var(--accent-pink) 100%
-    );
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
-
   h2 {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--space-4);
   }
 
   p {
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-5);
     line-height: 1.6;
-    font-style: italic;
     color: var(--text-secondary);
   }
 }
 
+// The CTA row keeps its centring: it is the accent moment of the section, and
+// a centred pair of buttons reads as a destination rather than as more prose.
 .cta-buttons {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-3);
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -138,11 +111,11 @@
 }
 
 .expertise {
-  margin-bottom: 4rem;
+  margin-bottom: var(--space-7);
 
   // Sits on the animated background, not in a card.
   h2 {
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-5);
     @include over-background;
   }
 }
@@ -150,12 +123,12 @@
 .expertise-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  gap: var(--space-4);
 }
 
 .expertise-item {
   background: var(--bg-card);
-  padding: 2rem 1.5rem;
+  padding: var(--space-5) var(--space-4);
   border-radius: var(--radius-lg);
   text-align: center;
   border: 1px solid var(--border-color);
@@ -163,7 +136,9 @@
   overflow: hidden;
   transition: all var(--transition-normal);
 
-  // Add gradient top accent that changes per item
+  // A hairline that wipes in when the card is the one being read. It used to
+  // be a different accent colour per card — six hues carrying no information
+  // beyond "this is the fourth one" — so it is now one neutral rule.
   &::before {
     content: '';
     position: absolute;
@@ -171,35 +146,15 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: var(--accent-cyan);
+    background: rgba(255, 255, 255, 0.35);
     transform: scaleX(0);
     transition: transform var(--transition-normal);
-  }
-
-  // Different accent colors for each expertise
-  &:nth-child(1)::before {
-    background: var(--accent-cyan);
-  }
-  &:nth-child(2)::before {
-    background: var(--accent-blue);
-  }
-  &:nth-child(3)::before {
-    background: var(--primary-color);
-  }
-  &:nth-child(4)::before {
-    background: var(--accent-pink);
-  }
-  &:nth-child(5)::before {
-    background: var(--accent-purple);
-  }
-  &:nth-child(6)::before {
-    background: var(--accent-yellow);
   }
 
   @include reading-emphasis {
     background: var(--bg-hover);
     border-color: var(--border-active);
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+    box-shadow: var(--shadow-md);
 
     &::before {
       transform: scaleX(1);
@@ -215,7 +170,7 @@
 
   .expertise-icon {
     font-size: 2.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: var(--space-3);
     display: block;
     opacity: 0.8;
     transition: all var(--transition-normal);
@@ -234,8 +189,8 @@
   }
 
   .expertise-title {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
+    font-size: var(--text-h4);
+    margin-bottom: var(--space-2);
     color: var(--text-primary);
     font-family:
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -245,7 +200,7 @@
   }
 
   .expertise-description {
-    font-size: 0.9rem;
+    font-size: var(--text-small);
     color: var(--text-secondary);
     line-height: 1.5;
     font-style: italic;
@@ -254,36 +209,23 @@
 
 .blog-preview {
   background: var(--bg-card);
-  padding: 2.5rem 2rem;
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
-  margin-bottom: 4rem;
-  text-align: center;
+  margin-bottom: var(--space-7);
   border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
   position: relative;
 
-  // Add purple accent top
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--accent-purple);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
-
   @include reading-emphasis {
     background: var(--bg-hover);
-    box-shadow: 0 0 20px rgba(255, 0, 255, 0.1);
+    box-shadow: var(--shadow-md);
     border-color: var(--border-active);
   }
 
   @include hover-lift;
 
   h2 {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--space-4);
   }
 
   p {
@@ -291,15 +233,15 @@
     margin-bottom: 0;
     font-style: italic;
 
+    // A link, so it takes the site's link colour rather than a decorative
+    // pink that hops to blue on hover.
     a {
-      color: var(--ink-pink);
+      color: var(--ink-primary);
       text-decoration: none;
       transition: all var(--transition-fast);
 
       &:hover {
-        color: var(--ink-blue);
         text-decoration: underline;
-        text-shadow: 0 0 10px rgba(0, 128, 255, 0.5);
       }
     }
   }
@@ -307,38 +249,32 @@
 
 @media (max-width: 768px) {
   .home {
-    padding: 0 1rem;
+    padding: 0 var(--space-3);
   }
 
   .hero {
-    padding: 2rem 0;
-    margin-bottom: 3rem;
-
-    h1 {
-      font-size: 2rem; // Standardize with CV header
-      text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
-    }
+    padding: var(--space-5) 0;
+    margin-bottom: var(--space-6);
   }
 
   .hero-subtitle {
-    font-size: 1rem; // Standardize with CV header
-    padding: 0 1rem;
+    padding: 0 var(--space-3);
   }
 
   .about {
-    padding: 1.5rem;
-    margin-bottom: 3rem;
+    padding: var(--space-4);
+    margin-bottom: var(--space-6);
   }
 
   .consulting {
-    padding: 2rem 1rem;
-    margin-bottom: 3rem;
+    padding: var(--space-4);
+    margin-bottom: var(--space-6);
   }
 
   .cta-buttons {
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-2);
   }
 
   .cta-button {
@@ -349,35 +285,27 @@
   }
 
   .expertise {
-    margin-bottom: 3rem;
+    margin-bottom: var(--space-6);
   }
 
   .expertise-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: var(--space-3);
   }
 
   .expertise-item {
-    padding: 1.5rem 1rem;
+    padding: var(--space-4) var(--space-3);
   }
 
   .blog-preview {
-    padding: 2rem 1rem;
-    margin-bottom: 3rem;
+    padding: var(--space-4) var(--space-3);
+    margin-bottom: var(--space-6);
   }
 }
 
 @media (max-width: 480px) {
-  .hero h1 {
-    font-size: 2rem; // Keep consistent sizing
-  }
-
-  .hero-subtitle {
-    font-size: 1rem; // Keep consistent sizing
-  }
-
   .expertise-item {
-    padding: 1rem;
+    padding: var(--space-3);
   }
 
   .cta-button {

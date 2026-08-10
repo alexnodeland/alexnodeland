@@ -4,51 +4,47 @@
 .projects-page {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 1rem 3rem;
+  padding: 0 var(--space-3) var(--space-6);
 }
 
 // Projects Page Header (matching blog/cv pattern)
 .projects-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding: calc(var(--header-height) + 0.5rem) 0 2rem;
+  margin-bottom: var(--space-6);
+  padding: calc(var(--header-height) + 0.5rem) 0 var(--space-5);
   position: relative;
 
   h1 {
-    margin-bottom: 1rem;
+    margin-bottom: var(--space-3);
     font-family:
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
       monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-    animation: glow 2s ease-in-out infinite alternate;
+    @include over-background;
   }
 
   p {
     color: var(--text-secondary);
     @include over-background;
-    font-size: 1.1rem;
+    font-size: var(--text-h4);
     line-height: 1.6;
     font-style: italic;
     max-width: 600px;
-    margin: 0 auto;
   }
 }
 
 // Section Titles
 .projects-section {
-  margin-bottom: 3rem;
+  margin-bottom: var(--space-6);
 }
 
 // On the animated background rather than on a card, like the CV's section
 // titles — white with a halo, pinned rather than following --text-primary,
-// which tracks the page surface and not the stage behind it.
+// which tracks the page surface and not the stage behind it. The cyan rule
+// underneath is gone with the rest of the decoration.
 .section-title {
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--accent-cyan);
+  font-size: var(--text-h3);
+  margin-bottom: var(--space-4);
   display: inline-block;
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -63,7 +59,7 @@
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  gap: var(--space-4);
 
   &.featured-grid {
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -78,37 +74,16 @@
   text-decoration: none;
   display: block;
   position: relative;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.05);
+  box-shadow: var(--shadow-sm);
   transition: all var(--transition-normal);
   overflow: hidden;
 
-  // Gradient top border
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      var(--accent-cyan) 0%,
-      var(--primary-color) 50%,
-      var(--accent-cyan) 100%
-    );
-    opacity: 0.5;
-    transition: opacity var(--transition-normal);
-  }
-
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(0, 255, 136, 0.15);
+    box-shadow: var(--shadow-lg);
     border-color: var(--border-active);
 
-    &::before {
-      opacity: 1;
-    }
-
+    // The card is a link, so the thing that says so takes the link colour.
     .project-link-indicator {
       color: var(--ink-primary);
 
@@ -117,23 +92,10 @@
       }
     }
   }
-
-  &.featured {
-    &::before {
-      background: linear-gradient(
-        90deg,
-        var(--accent-pink) 0%,
-        var(--accent-purple) 33%,
-        var(--accent-cyan) 66%,
-        var(--primary-color) 100%
-      );
-      height: 3px;
-    }
-  }
 }
 
 .project-card-content {
-  padding: 1.5rem;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -143,8 +105,8 @@
 .project-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .project-icon {
@@ -170,13 +132,16 @@
   white-space: nowrap;
 }
 
+// "featured" is an editorial label, not a status — same neutral chip as the
+// tags below it, one size smaller.
 .featured-badge {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.25rem 0.5rem;
-  background: linear-gradient(135deg, var(--accent-pink), var(--fill-purple));
-  color: var(--on-fill);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-active);
+  color: var(--text-secondary);
   border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
@@ -185,7 +150,7 @@
   font-size: 0.95rem;
   color: var(--text-secondary);
   line-height: 1.6;
-  margin: 0 0 1rem;
+  margin: 0 0 var(--space-3);
   flex: 1;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -196,15 +161,15 @@
 .project-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .project-tag {
   font-size: 0.75rem;
   padding: 0.25rem 0.6rem;
-  background: var(--bg-accent);
-  border: 1px solid var(--border-color);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-active);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-family:
@@ -214,7 +179,7 @@
   transition: all var(--transition-fast);
 
   .project-card:hover & {
-    border-color: var(--border-active);
+    border-color: var(--text-muted);
   }
 }
 
@@ -223,7 +188,7 @@
   justify-content: space-between;
   align-items: center;
   margin-top: auto;
-  padding-top: 1rem;
+  padding-top: var(--space-3);
   border-top: 1px solid var(--border-color);
 }
 
@@ -274,49 +239,22 @@
   }
 }
 
-// GitHub CTA Section
+// GitHub CTA Section — a peer section like any other: left-aligned body, one
+// action. It is navigation, not the conversion path, so it gets no accent
+// beyond the green every action on the site shares.
 .github-cta {
-  text-align: center;
-  padding: 3rem 2rem;
+  padding: var(--space-6) var(--space-5);
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
-  margin-top: 2rem;
+  margin-top: var(--space-5);
   position: relative;
   overflow: hidden;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(
-      90deg,
-      var(--accent-pink) 0%,
-      var(--accent-cyan) 25%,
-      var(--primary-color) 50%,
-      var(--accent-blue) 75%,
-      var(--accent-pink) 100%
-    );
-    animation: gradient-shift 3s ease-in-out infinite;
-  }
-
-  @keyframes gradient-shift {
-    0%,
-    100% {
-      opacity: 0.7;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
-
   p {
     color: var(--text-secondary);
-    font-size: 1.1rem;
-    margin: 0 0 1.5rem;
+    font-size: var(--text-h4);
+    margin: 0 0 var(--space-4);
     font-style: italic;
   }
 }
@@ -358,9 +296,7 @@
   &:hover {
     background: var(--primary-dark);
     transform: translateY(-2px);
-    box-shadow:
-      0 0 20px rgba(0, 255, 136, 0.4),
-      var(--shadow-md);
+    box-shadow: var(--shadow-md);
 
     &::before {
       left: 100%;
@@ -372,35 +308,15 @@
   }
 }
 
-// Glow animation (shared with other pages)
-@keyframes glow {
-  from {
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-  }
-  to {
-    text-shadow:
-      0 0 30px rgba(0, 255, 136, 0.6),
-      0 0 40px rgba(0, 255, 136, 0.3);
-  }
-}
-
 // Responsive Design
 @media (max-width: 768px) {
   .projects-page {
-    padding: 0 1rem 2rem;
+    padding: 0 var(--space-3) var(--space-5);
   }
 
   .projects-header {
-    padding: calc(var(--header-height) + 0.5rem) 0 1.5rem;
-    margin-bottom: 2rem;
-
-    h1 {
-      font-size: 2rem;
-    }
-
-    p {
-      font-size: 1rem;
-    }
+    padding: calc(var(--header-height) + 0.5rem) 0 var(--space-4);
+    margin-bottom: var(--space-5);
   }
 
   .projects-grid {
@@ -412,7 +328,7 @@
   }
 
   .project-card-content {
-    padding: 1.25rem;
+    padding: var(--space-4);
     min-height: auto;
   }
 
@@ -421,7 +337,7 @@
   }
 
   .github-cta {
-    padding: 2rem 1.5rem;
+    padding: var(--space-5) var(--space-4);
   }
 
   .github-link {
