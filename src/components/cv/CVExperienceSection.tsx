@@ -23,12 +23,14 @@ const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
         <details key={index} className="cv-card cv-collapse">
           <summary className="cv-collapse-summary">
             <div className="experience-header">
-              <span className="cv-entry-icon">
-                <BriefcaseIcon />
-              </span>
-              <h3>
-                {exp.title}, {exp.company}
-              </h3>
+              <div className="cv-entry-title">
+                <span className="cv-entry-icon">
+                  <BriefcaseIcon />
+                </span>
+                <h3>
+                  {exp.title}, {exp.company}
+                </h3>
+              </div>
               <div className="summary-right">
                 <span className="experience-duration">{exp.duration}</span>
                 <span className="cv-collapse-chevron" aria-hidden>
