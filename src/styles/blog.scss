@@ -21,13 +21,7 @@
       monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
-    position: relative;
     @include retro-glow;
-    @include academic-underline;
-
-    &::after {
-      box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-    }
   }
 
   p {
@@ -127,7 +121,6 @@
         background: var(--bg-primary);
         color: var(--text-primary);
         font-size: 0.9rem;
-        font-weight: 500;
         font-family:
           'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
           monospace;
@@ -161,7 +154,6 @@
 
       .sort-label {
         font-size: 0.9rem;
-        font-weight: 500;
         color: var(--text-primary);
         white-space: nowrap;
         font-family:
@@ -311,10 +303,6 @@
   margin-bottom: 1rem;
   font-size: 0.9rem;
   color: var(--text-secondary);
-
-  time {
-    font-weight: 500;
-  }
 }
 
 .post-category {
@@ -323,7 +311,6 @@
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
-  font-weight: 500;
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
@@ -366,7 +353,6 @@
 .read-more {
   color: var(--ink-primary);
   text-decoration: none;
-  font-weight: 500;
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
@@ -552,7 +538,6 @@
   a {
     color: var(--ink-blue);
     text-decoration: none;
-    font-weight: 500;
     transition: all var(--transition-fast);
 
     &:hover {
@@ -629,7 +614,6 @@
   color: white;
   @include over-background;
   text-decoration: none;
-  font-weight: 500;
   transition: all var(--transition-fast);
 
   &:hover {
