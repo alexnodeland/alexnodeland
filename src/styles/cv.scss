@@ -45,92 +45,6 @@ section[id] {
   }
 }
 
-// Compact sticky section navigation. Nothing overlays the top of the window
-// any more, so it sticks to the window's own top edge rather than clearing a
-// fixed header.
-.cv-section-nav-container {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  margin-bottom: var(--space-3);
-}
-
-// The one block on this page that cannot be a pure outline: it is sticky, and
-// the document scrolls underneath it. A transparent bar would let headings run
-// straight through the section labels. So it takes the window's own language
-// instead — the same scrim and blur the window and the nav pills use — which
-// occludes without reading as a dark slab.
-.cv-section-nav {
-  background: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-  border: 1px solid var(--border-floating);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-
-  ul {
-    margin: 0;
-    padding: 0.5rem;
-    list-style: none;
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  li {
-    margin: 0;
-  }
-
-  a {
-    display: inline-block;
-    padding: 0.4rem 0.75rem;
-    border-radius: var(--radius-md);
-    border: 1px solid transparent;
-    text-decoration: none;
-    color: var(--text-secondary);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    font-size: 0.9rem;
-    transition: all var(--transition-fast);
-    cursor: pointer;
-    position: relative;
-    z-index: 1;
-    user-select: none;
-
-    &:hover {
-      color: var(--text-primary);
-      border-color: rgba(255, 255, 255, 0.28);
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    &:active {
-      transform: translateY(1px);
-    }
-  }
-
-  // Chrome, like the site nav above it — so the section you are in is marked
-  // with a brighter hairline and brighter type, not with the link colour. The
-  // wash is what makes the current item findable in a row of eight; a hairline
-  // alone does not carry that far.
-  li.active a {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.45);
-  }
-
-  // Show desktop labels by default, mobile labels hidden
-  .nav-label-desktop {
-    display: inline;
-  }
-
-  .nav-label-mobile {
-    display: none;
-  }
-}
-
 // CV Overview and Contact Combined
 .cv-overview-contact {
   @include outline-block;
@@ -1125,28 +1039,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     scroll-margin-top: 60px; // Smaller offset on mobile
   }
 
-  // Switch to mobile labels in section nav
-  .cv-section-nav {
-    .nav-label-desktop {
-      display: none;
-    }
-
-    .nav-label-mobile {
-      display: inline;
-    }
-
-    // Make nav more compact on mobile
-    ul {
-      padding: 0.4rem;
-      gap: 0.4rem;
-    }
-
-    a {
-      padding: 0.35rem 0.6rem;
-      font-size: 0.85rem;
-    }
-  }
-
   .cv-page-header {
     h1 {
       font-size: 2rem;
@@ -1245,18 +1137,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
 // Extra small devices (phones in portrait)
 @media (max-width: 480px) {
-  .cv-section-nav {
-    ul {
-      padding: 0.3rem;
-      gap: 0.3rem;
-    }
-
-    a {
-      padding: 0.3rem 0.5rem;
-      font-size: 0.8rem;
-    }
-  }
-
   // Adjust scroll margins for small mobile
   #cv-experience,
   #cv-education,

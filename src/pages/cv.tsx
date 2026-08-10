@@ -1,6 +1,6 @@
+import { Link } from 'gatsby';
 import React, { useState } from 'react';
 import {
-  CVSectionNav,
   EducationSection,
   ExperienceSection,
   ExportButtons,
@@ -19,13 +19,13 @@ const CVPage: React.FC = () => {
 
   const hero = (
     <header className="cv-page-header">
-      <h1>cv</h1>
-      <p>
-        {view === 'full'
-          ? 'everything, in order, back to 2010.'
-          : 'the short version — recent roles only, trimmed to one page.'}{' '}
-        export it as pdf, docx, or markdown below.
-      </p>
+      <h1>
+        <Link to="/" className="hero-crumb" data-brand-anchor>
+          alex
+        </Link>
+        <span className="hero-crumb-sep"> → </span>cv
+      </h1>
+      <p>everything, in order, back to 2010.</p>
     </header>
   );
 
@@ -61,24 +61,6 @@ const CVPage: React.FC = () => {
           resumeElementId="resume-content"
           variant={view}
           className="cv-export"
-        />
-
-        <CVSectionNav
-          className="cv-section-nav-container"
-          sections={[
-            { id: 'cv-experience', label: 'Experience', mobileLabel: 'Exp' },
-            { id: 'cv-education', label: 'Education', mobileLabel: 'Edu' },
-            { id: 'cv-skills', label: 'Skills', mobileLabel: 'Skills' },
-            ...(data.certifications && data.certifications.length > 0
-              ? [
-                  {
-                    id: 'cv-certifications',
-                    label: 'Certifications',
-                    mobileLabel: 'Certs',
-                  },
-                ]
-              : []),
-          ]}
         />
 
         <div className="cv-overview-contact">

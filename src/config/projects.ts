@@ -28,8 +28,7 @@ export interface ProjectsConfig {
 
 export const projectsConfig: ProjectsConfig = {
   title: 'projects',
-  subtitle:
-    "a collection of open source projects, experiments, and tools i've built or contributed to.",
+  subtitle: 'open source projects, tools, and experiments.',
   // Section order is by current identity — ai first — not by the hero
   // subtitle's chronology; the subtitle links land on anchors, so order here
   // is free to differ.

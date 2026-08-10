@@ -47,20 +47,80 @@ const LayoutInner: React.FC<LayoutProps> = ({
     isClosingChatPanel,
     isContentHidden,
   } = useSettingsPanel();
-  // Use window.location to determine current page (client-side)
-  const [isHomePage, setIsHomePage] = React.useState(false);
   const stageRef = React.useRef<HTMLDivElement>(null);
   const windowRef = React.useRef<HTMLDivElement>(null);
   const heroRef = React.useRef<HTMLElement>(null);
 
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const pathname = window.location.pathname;
-      setIsHomePage(
-        pathname === '/' ||
-          pathname === '/alexnodeland/' ||
-          pathname === '/alexnodeland'
+  // Brand continuity. gatsby-browser stashes the outgoing page's brand-anchor
+  // box at the moment the route changes; if we mount shortly after with our
+  // own anchor, FLIP it from that box to where it now lives — the same "alex"
+  // sliding and scaling between the cover title and the breadcrumb, instead of
+  // two unrelated pages swapping.
+  React.useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    interface BrandStash {
+      rect: DOMRect;
+      at: number;
+    }
+    const stash = (window as unknown as Record<string, unknown>)
+      .__brandAnchorRect as BrandStash | undefined;
+    if (!stash || Date.now() - stash.at > 800) return;
+    (window as unknown as Record<string, unknown>).__brandAnchorRect =
+      undefined;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const el = document.querySelector<HTMLElement>('[data-brand-anchor]');
+    if (!el || typeof el.animate !== 'function') return;
+    const to = el.getBoundingClientRect();
+    if (to.height === 0) return;
+    const scale = stash.rect.height / to.height;
+    const dx = stash.rect.left - to.left;
+    const dy = stash.rect.top - to.top;
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2 && Math.abs(scale - 1) < 0.05)
+      return;
+    el.style.transformOrigin = 'left top';
+    el.animate(
+      [
+        { transform: `translate(${dx}px, ${dy}px) scale(${scale})` },
+        { transform: 'none' },
+      ],
+      { duration: 380, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }
+    );
+  }, []);
+
+  // The rest of the arrival. The brand carries the continuity; everything
+  // else on the incoming page eases in behind it instead of popping — the
+  // window rises a few pixels as it fades, the tagline follows. Only on
+  // client-side navigations: a cold load renders plainly.
+  React.useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const navAt = (window as unknown as Record<string, unknown>).__navAt as
+      | number
+      | undefined;
+    if (!navAt || Date.now() - navAt > 800) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const ease = { duration: 280, easing: 'ease-out' } as const;
+    const panel = windowRef.current;
+    if (panel && typeof panel.animate === 'function') {
+      panel.animate(
+        [
+          { opacity: 0, transform: 'translateY(8px)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        ease
       );
+    }
+    const tagline = heroRef.current?.querySelector('p');
+    if (
+      tagline &&
+      typeof tagline.animate === 'function' &&
+      !tagline.closest('[data-brand-anchor]')
+    ) {
+      tagline.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 240,
+        easing: 'ease-out',
+        delay: 60,
+        fill: 'backwards',
+      });
     }
   }, []);
 
@@ -168,29 +228,9 @@ const LayoutInner: React.FC<LayoutProps> = ({
       {!isContentHidden && (
         <div className={stageClasses} ref={stageRef}>
           <header className="header-fixed">
+            {/* The way home is the breadcrumb in each page's hero title, so
+                the nav is just the one capsule of page links. */}
             <nav className="nav">
-              {!isHomePage && (
-                <div className="nav-brand">
-                  {/* Narrow viewports swap in the short form so the nav stays
-                      on one row; both spellings are in the DOM so the width
-                      actually collapses rather than just going transparent.
-                      The label lives on the link because whichever span is
-                      hidden at the current width is out of the accessibility
-                      tree with it — leaving the link unnamed on mobile. */}
-                  <Link
-                    to="/"
-                    className="nav-link"
-                    aria-label={siteConfig.siteName}
-                  >
-                    <span className="nav-brand-full" aria-hidden="true">
-                      {siteConfig.siteName}
-                    </span>
-                    <span className="nav-brand-short" aria-hidden="true">
-                      {siteConfig.siteName.split(' ')[0]}
-                    </span>
-                  </Link>
-                </div>
-              )}
               <div className="nav-menu">
                 {siteConfig.navigation.main.map(item => (
                   // partiallyActive keeps the segment lit on subpages

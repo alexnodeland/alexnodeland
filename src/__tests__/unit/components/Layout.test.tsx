@@ -79,45 +79,13 @@ describe('Layout Component', () => {
     expect(screen.getByText('Test Content')).toBeInTheDocument();
   });
 
-  it('should render site name in header when not on home page', () => {
-    // Mock window.location to simulate being on a non-home page
-    Object.defineProperty(window, 'location', {
-      value: {
-        pathname: '/about',
-      },
-      writable: true,
-    });
-
-    render(<TestWrapper>{mockChildren}</TestWrapper>);
-
-    // The brand ships both spellings — the full name and a short form the
-    // mobile stylesheet swaps in — so the link is what carries the href.
-    const siteName = screen.getByText('Test Site');
-    expect(siteName).toBeInTheDocument();
-    expect(siteName).toHaveClass('nav-brand-full');
-    expect(screen.getByText('Test')).toHaveClass('nav-brand-short');
-
-    const siteNameLink = siteName.closest('a');
-    expect(siteNameLink).toHaveAttribute('href', '/');
-    expect(siteNameLink).toHaveClass('nav-link');
-
-    // Whichever spelling is hidden at the current width leaves the a11y tree
-    // with it, so the accessible name has to come from the link itself.
-    expect(screen.getByRole('link', { name: 'Test Site' })).toBe(siteNameLink);
-  });
-
-  it('should not render site name on home page', () => {
-    // Mock window.location to simulate being on home page
-    Object.defineProperty(window, 'location', {
-      value: {
-        pathname: '/',
-      },
-      writable: true,
-    });
-
+  it('should not render a brand link in the header', () => {
+    // The way home is the breadcrumb in each page's hero title; the nav is
+    // just the capsule of page links.
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     expect(screen.queryByText('Test Site')).not.toBeInTheDocument();
+    expect(document.querySelector('.nav-brand')).not.toBeInTheDocument();
   });
 
   it('should render navigation links', () => {
