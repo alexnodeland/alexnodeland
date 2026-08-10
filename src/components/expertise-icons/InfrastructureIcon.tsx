@@ -2,10 +2,12 @@ import React from 'react';
 import { ExpertiseIcon, IconStyle, iconFrameProps } from './iconBase';
 
 // Six status pips on one 3.6s cycle, each offset by 600ms, so the rack reads as
-// three modules reporting in turn rather than one blinking light.
+// three modules reporting in turn rather than one blinking light. The dip sits
+// in the middle of the cycle rather than at its edge — starting and ending the
+// keyframe at full opacity is what keeps the restart from reading as a snap.
 const css = `
 .icn-inf-pip {
-  animation: icn-inf-blink 3.6s ease-in-out infinite;
+  animation: icn-inf-blink 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 .icn-inf-pip-2 { animation-delay: 0.6s; }
 .icn-inf-pip-3 { animation-delay: 1.2s; }
@@ -13,8 +15,10 @@ const css = `
 .icn-inf-pip-5 { animation-delay: 2.4s; }
 .icn-inf-pip-6 { animation-delay: 3s; }
 @keyframes icn-inf-blink {
-  0%, 8% { opacity: 0.2; }
-  18%, 100% { opacity: 1; }
+  0% { opacity: 1; }
+  12% { opacity: 0.2; }
+  26% { opacity: 1; }
+  100% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .icn-inf-pip { animation: none; }

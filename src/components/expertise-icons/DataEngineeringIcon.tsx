@@ -1,13 +1,13 @@
 import React from 'react';
 import { ExpertiseIcon, IconStyle, iconFrameProps } from './iconBase';
 
-// The pipe is drawn twice: a dimmed solid run for the plumbing, and a dashed
-// overlay on the same geometry whose dashes march one full pattern per cycle,
-// which reads as flow without the line itself ever looking broken.
+// A dash-march is the one place a linear timing function is the right answer:
+// the dashes have to travel at a constant rate, and the pattern repeats exactly
+// once per cycle so the loop point is invisible.
 const css = `
 .icn-dat-flow {
   stroke-dasharray: 5 9;
-  animation: icn-dat-run 2.8s linear infinite;
+  animation: icn-dat-run 3s linear infinite;
 }
 @keyframes icn-dat-run {
   from { stroke-dashoffset: 14; }
@@ -18,31 +18,32 @@ const css = `
 }
 `;
 
-const pipe = 'M11.5 21.5 V24 H21 M27 24 H36.5 V26.5';
+// One jog, source to sink: out of the upper store's side, across, down into the
+// lower one's top.
+const pipe = 'M20.5 15 H35 V23';
+
+// Classic stacked-disc store: an ellipse for the top, straight sides, and a
+// half-ellipse closing the bottom.
+const store = (cx: number, top: number, rx: number, ry: number, h: number) =>
+  `M${cx - rx} ${top} V${top + h} A${rx} ${ry} 0 0 0 ${cx + rx} ${
+    top + h
+  } V${top}`;
 
 const DataEngineeringIcon: ExpertiseIcon = ({ className }) => (
   <svg {...iconFrameProps} className={className}>
     <IconStyle css={css} />
 
-    {/* source tank: collar, then the level it is drawn down to */}
-    <rect x="4.5" y="5.5" width="14" height="16" />
-    <path d="M4.5 9.5 H18.5" />
-    <path d="M4.5 16.5 H18.5" />
+    {/* source store */}
+    <ellipse cx="13" cy="9.5" rx="7.5" ry="3.5" />
+    <path d={store(13, 9.5, 7.5, 3.5, 11)} />
 
     {/* the run between them, dimmed so the flow reads on top of it */}
     <path d={pipe} opacity="0.35" />
     <path className="icn-dat-flow" d={pipe} />
 
-    {/* inline valve: two triangles meeting at the stem */}
-    <path d="M21 21 L21 27 L24 24 Z" />
-    <path d="M27 21 L27 27 L24 24 Z" />
-    <path d="M24 24 V19.5" />
-    <path d="M21.5 19.5 H26.5" />
-
-    {/* destination tank, filling */}
-    <rect x="29.5" y="26.5" width="14" height="16" />
-    <path d="M29.5 30.5 H43.5" />
-    <path d="M29.5 37.5 H43.5" />
+    {/* destination store */}
+    <ellipse cx="35" cy="26.5" rx="7.5" ry="3.5" />
+    <path d={store(35, 26.5, 7.5, 3.5, 11)} />
   </svg>
 );
 
