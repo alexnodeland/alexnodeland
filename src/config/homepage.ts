@@ -3,6 +3,10 @@ export interface HomepageConfig {
   hero: {
     title: string;
     subtitle: string;
+    // The subtitle doubles as navigation: each segment links to its section
+    // anchor on the projects page. Labels joined with ' → ' must reproduce
+    // the subtitle string.
+    subtitleLinks: { label: string; href: string }[];
   };
   about: {
     paragraphs: string[];
@@ -37,6 +41,12 @@ export const homepageConfig: HomepageConfig = {
   hero: {
     title: 'alex nodeland',
     subtitle: 'math → audio dsp → distributed systems → ai',
+    subtitleLinks: [
+      { label: 'math', href: '/projects#math' },
+      { label: 'audio dsp', href: '/projects#audio-dsp' },
+      { label: 'distributed systems', href: '/projects#distributed-systems' },
+      { label: 'ai', href: '/projects#ai' },
+    ],
   },
   about: {
     paragraphs: [

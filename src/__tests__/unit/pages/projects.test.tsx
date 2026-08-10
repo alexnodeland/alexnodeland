@@ -26,23 +26,18 @@ describe('Projects Page', () => {
     );
   });
 
-  it('renders the featured section', () => {
-    render(<ProjectsPage />);
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'featured' })
-    ).toBeInTheDocument();
-  });
-
-  it('renders a section per category with projects', () => {
-    render(<ProjectsPage />);
+  it('renders a section per category with projects, carrying its anchor id', () => {
+    const { container } = render(<ProjectsPage />);
     projectsConfig.categories.forEach(category => {
       const hasProjects = projectsConfig.projects.some(
-        p => !p.featured && p.category === category.id
+        p => p.category === category.id
       );
       if (hasProjects) {
         expect(
           screen.getByRole('heading', { level: 2, name: category.title })
         ).toBeInTheDocument();
+        // The hero subtitle on the homepage deep-links to these ids.
+        expect(container.querySelector(`#${category.id}`)).toBeInTheDocument();
       }
     });
   });

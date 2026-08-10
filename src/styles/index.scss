@@ -38,6 +38,18 @@
   font-style: italic;
 }
 
+// The subtitle segments are real links — each one lands on its section of the
+// projects page — so they take the link green like every other action.
+.hero-subtitle-link {
+  color: var(--ink-primary);
+  transition: color var(--transition-fast);
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+}
+
 // Animations are now in animations.scss
 
 .about {
