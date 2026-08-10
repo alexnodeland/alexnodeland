@@ -6,19 +6,19 @@ The original review is a proposal written from the outside. This file records wh
 we actually decided, point by point, and why. Where we diverge from the review, the
 divergence is stated rather than silently applied.
 
-**Status:** in progress — walking the review section by section.
+**Status:** triage complete — every section decided. Next: tasks → prototype spike.
 
-| §   | topic                    | decision  | notes |
-| --- | ------------------------ | --------- | ----- |
-| —   | governing rule           | _pending_ |       |
-| 1   | one column, left aligned | _pending_ |       |
-| 2   | hierarchy — size + space | _pending_ |       |
-| 3   | type — no bold           | _pending_ |       |
-| 4   | decorative rules         | _pending_ |       |
-| 5   | scrim                    | _pending_ |       |
-| 6   | light mode               | _pending_ |       |
-| 7   | schematic icons          | _pending_ |       |
-| —   | secondary observations   | _pending_ |       |
+| §   | topic                    | decision          | notes                                                 |
+| --- | ------------------------ | ----------------- | ----------------------------------------------------- |
+| —   | governing rule           | **rejected**      | colour only where it carries semantic meaning         |
+| 1   | one column, left aligned | **reinterpreted** | fixed window, inner scroll; full-bleed on mobile      |
+| 2   | hierarchy — size + space | **accepted+**     | systematic spacing scale + fluid `clamp()` type scale |
+| 3   | type — no bold           | **modified**      | two weights: regular + one heavier for emphasis only  |
+| 4   | decorative rules         | **accepted**      | kill the pink bar and the `h2` border                 |
+| 5   | scrim                    | **modified**      | scrim + halo hybrid                                   |
+| 6   | light mode               | **accepted±**     | kill now; leave door open to `prefers-color-scheme`   |
+| 7   | schematic icons          | **accepted+**     | draw the set; SVG illustrations with SVG animations   |
+| —   | secondary observations   | **triaged**       | tokens/rename/shadows in scope; content→md later      |
 
 ---
 
@@ -56,36 +56,123 @@ body` override in `global.scss`, `ThemeToggle.tsx`, `useTheme.ts`, and theme
 > The background is the only element allowed to have colour. Everything else is white.
 > Exception: links stay green.
 
-_pending_
+**Rejected — the absolutism, not the direction.**
+
+Colour gets _reduced_, not relocated wholesale. The rule adopted in its place, refined
+over the discussion, is functional rather than aesthetic:
+
+> **Colour only where it carries semantic meaning.** A few meaning-carrying colours
+> are fine (links, success/fail states, the consulting CTA); decorative colour goes.
+
+This changes the downstream maths of the review: hierarchy keeps colour as a lever
+(see §2), and the decorative-rule and type decisions no longer follow automatically
+from a governing constraint — each one gets judged on its own merits.
 
 ## §1 — layout
 
-_pending_
+**Reinterpreted.** Not "kill the cards." The intent is that content should be
+**contained in a static window on the screen — a viewport**. Clarified to the most
+literal reading: a **fixed frame with inner scroll**. The page itself never scrolls;
+the window is fixed on screen and content scrolls _inside_ it, with the simulation
+fully visible around the frame at all times. A device-screen metaphor — the most
+TE reading of the layout, and more radical than what the review proposed.
+
+**Mobile:** full-bleed, keep the metaphor — on small screens the window expands to
+near-full screen with a thin margin of simulation visible as a border, and inner
+scroll behaviour is kept.
+
+Known costs to design for: accessibility of inner-scroll regions (keyboard focus,
+reduced-motion), and in-page anchors/deep links now scrolling a container rather
+than the document.
 
 ## §2 — hierarchy
 
-_pending_
+**Accepted, strengthened: systematic + fluid.** A defined spacing scale (vertical
+rhythm) _and_ a fluid `clamp()`-based type scale, replacing the fixed
+3 / 2.25 / 1.875rem steps and the single 768px breakpoint. This settles the review's
+open questions 1 and 5 in one move. Because §0 was rejected, colour remains available
+as a hierarchy lever — but the spacing/type system is adopted on its own merits, not
+because it is the only lever left.
 
 ## §3 — type
 
-_pending_
+**Modified: two weights, not one.** The review's "no bold anywhere" is rejected as
+too strict for monospace prose, where single-weight inline emphasis becomes invisible.
+Rule adopted instead: **regular + one heavier weight for genuine emphasis** (strong in
+prose, possibly active nav state). Headings still may not use bold — they earn
+prominence through size and space. JetBrains Mono and lowercase `h1–h6` stay, per the
+review and without dispute.
 
 ## §4 — decorative rules
 
-_pending_
+**Accepted: kill both.** The centered pink `academic-underline` bar (2 call sites:
+`blog.scss:26`, `index.scss:114` — not "every page" as the review claims) and the
+global `h2` border-bottom both go. The judgement stands independently of the rejected
+monochrome mandate: they add noise that size and space communicate better.
 
 ## §5 — scrim
 
-_pending_
+**Modified: scrim + halo hybrid.** Scrim as the main legibility device behind the
+content window; the existing `over-background` halo mixin stays for content that sits
+outside it (nav, footer, floating elements). Lower migration risk than a wholesale
+replacement of the mixin's 18 call sites; accepted cost is maintaining two mechanisms.
+
+Interacts strongly with the §1 reinterpretation: a static content window and a scrim
+panel are plausibly the _same element_.
 
 ## §6 — light mode
 
-_pending_
+**Accepted, with a door left open.** Remove the toggle, the `[data-theme='light']`
+palette, `ThemeToggle.tsx`, `useTheme.ts`, the theme branches in 8 stylesheets, and
+the 4 covering test files now. But do not architecturally foreclose a later
+`prefers-color-scheme` treatment — one that would adapt the _simulations_ (e.g.
+dimming) rather than inverting surfaces.
 
 ## §7 — illustration
 
-_pending_
+**Accepted, extended.** Schematic / technical-diagram direction confirmed for the six
+"what i work on" icons; **draw them as a set** (not sourced) as **SVG illustrations
+with SVG animations** — the animation requirement is an addition beyond the review.
+Consistent stroke weight across the set. With §0 rejected the icons need not be pure
+white, but under the semantic-colour rule they carry no meaning-colour, so they stay
+neutral/monochrome in practice.
+
+## review open question 4 — consulting section
+
+**Normalize, accent the CTA.** The section body becomes a peer section — same type
+scale, same spacing. Its call-to-action keeps an accent treatment, justified under
+the semantic-colour rule (conversion path = meaning), so the path stays visible
+without the section shouting.
 
 ## secondary observations
 
-_pending_
+**Pulled into scope:**
+
+- **Collapse the three token systems** (`--accent-*`, `--ink-*`, legacy `--retro-*`)
+  into one set, structured around the semantic-colour rule. Light-mode removal is the
+  natural moment.
+- **Rename `--accent-color`** (the silently-pink, load-bearing alias) as part of that
+  collapse.
+- **Retune or drop the shadow tokens** — black at 0.1 alpha over `#0a0a0a` does
+  nothing; re-cut them for the single dark mode.
+
+**Resolved by this document:** the "two design intentions in one file" conflict —
+this pass establishes the third direction the review predicted.
+
+**Chat:** the review's implicit question ("does its prominence match its role?") is
+answered **yes — chat is first-class**. It gets a proper place inside the window
+layout and is restyled to the new system along with everything else, not demoted and
+not carved out.
+
+**Left for later:** moving homepage/projects/CV content from TypeScript config to
+markdown. Real work, orthogonal to the visual system.
+
+---
+
+## sequencing
+
+**Prototype the window first.** Spike the fixed-window + inner-scroll + scrim shell
+on one page; validate against all six backgrounds and on mobile; only then roll out
+to all pages and layer in tokens, type scale, and icons. The most radical decision
+(§1) gets de-risked before anything else commits to it. Token/light-mode work — safe
+and independent — can proceed in parallel or immediately after the spike validates.
