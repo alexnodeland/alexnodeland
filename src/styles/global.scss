@@ -190,12 +190,6 @@ img {
   outline-offset: 2px;
 }
 
-/* The expertise icons ship as black line art; inverted they read as white
-   strokes on the near-black surfaces. */
-.expertise-icon img {
-  filter: invert(1) !important;
-}
-
 @media (max-width: 768px) {
   .container {
     padding: 0 0.5rem;

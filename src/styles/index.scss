@@ -168,23 +168,20 @@
 
   @include hover-lift;
 
+  // The icons are inline svg drawn as a set: one stroke weight, colour taken
+  // from the surrounding text colour rather than baked in.
   .expertise-icon {
-    font-size: 2.5rem;
     margin-bottom: var(--space-3);
     display: block;
+    color: var(--text-primary);
     opacity: 0.8;
     transition: all var(--transition-normal);
 
-    img {
+    svg {
       width: 64px;
       height: 64px;
-      object-fit: contain;
       display: inline-block;
-      filter: none;
-      transition:
-        transform var(--transition-normal),
-        opacity var(--transition-normal),
-        filter var(--transition-normal);
+      vertical-align: middle;
     }
   }
 

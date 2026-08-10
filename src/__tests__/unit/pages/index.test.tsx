@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { homepageConfig } from '../../../config';
 import IndexPage from '../../../pages/index';
 
 // Mock the Layout and SEO components
@@ -39,19 +40,37 @@ jest.mock('../../../components', () => ({
   ),
 }));
 
-// Mock image imports used by the page
-jest.mock('../../../images/development.png', () => 'development-icon');
-jest.mock('../../../images/gear.png', () => 'gear-icon');
-jest.mock('../../../images/observability.png', () => 'observability-icon');
-jest.mock('../../../images/report.png', () => 'report-icon');
-jest.mock('../../../images/strategy.png', () => 'strategy-icon');
-jest.mock('../../../images/systems.png', () => 'systems-icon');
-
 describe('Index Page', () => {
   it('renders hero and SEO', () => {
     render(<IndexPage />);
     expect(screen.getByTestId('layout')).toBeInTheDocument();
     expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'home');
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+  });
+
+  it('draws one expertise icon per card, hidden from assistive tech', () => {
+    const { container } = render(<IndexPage />);
+
+    const cards = container.querySelectorAll('.expertise-item');
+    const icons = container.querySelectorAll('.expertise-icon svg');
+    expect(cards).toHaveLength(homepageConfig.expertise.items.length);
+    expect(icons).toHaveLength(homepageConfig.expertise.items.length);
+
+    // The visible title does the labelling, so the drawing stays decorative
+    // and no card announces its name twice.
+    icons.forEach(icon => {
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
+      expect(icon).toHaveAttribute('viewBox', '0 0 48 48');
+    });
+
+    // Every icon animation has to be switchable off by the user's motion
+    // preference, which is what the scoped <style> block carries.
+    const styles = container.querySelectorAll('.expertise-icon svg style');
+    expect(styles).toHaveLength(homepageConfig.expertise.items.length);
+    styles.forEach(style => {
+      expect(style.textContent).toContain(
+        '@media (prefers-reduced-motion: reduce)'
+      );
+    });
   });
 });
