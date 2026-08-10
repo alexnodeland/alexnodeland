@@ -196,16 +196,6 @@ export const projectsConfig: ProjectsConfig = {
       stars: 9,
       category: 'ai',
     },
-    {
-      name: 'ai-engineering-workspace',
-      description:
-        'consistent, reproducible development environments for ai engineering work.',
-      language: 'Docker',
-      tags: ['tool', 'devcontainers', 'reproducibility'],
-      url: 'https://github.com/alexnodeland/ai-engineering-workspace',
-      stars: 2,
-      category: 'ai',
-    },
 
     // --- misc ---
     {
