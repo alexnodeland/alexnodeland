@@ -96,18 +96,20 @@ const ProjectsPage: React.FC = () => {
     }))
     .filter(section => section.projects.length > 0);
 
+  const hero = (
+    <header className="projects-header">
+      <h1>{projectsConfig.title}</h1>
+      <p>{projectsConfig.subtitle}</p>
+    </header>
+  );
+
   return (
-    <Layout>
+    <Layout hero={hero} collapsibleHero>
       <SEO
         title="projects"
         description="open source projects, experiments, and tools by alex nodeland"
       />
       <div className="projects-page">
-        <header className="projects-header">
-          <h1>{projectsConfig.title}</h1>
-          <p>{projectsConfig.subtitle}</p>
-        </header>
-
         {categorySections.map(section => (
           <section
             key={section.id}

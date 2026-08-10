@@ -49,11 +49,17 @@ jest.mock('../../../components/chat/KeyboardShortcuts', () => {
 });
 
 // Test wrapper component to provide necessary contexts
-const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const TestWrapper: React.FC<{
+  children: React.ReactNode;
+  hero?: React.ReactNode;
+  collapsibleHero?: boolean;
+}> = ({ children, hero, collapsibleHero }) => {
   return (
     <SettingsPanelProvider>
       <ChatProvider>
-        <Layout>{children}</Layout>
+        <Layout hero={hero} collapsibleHero={collapsibleHero}>
+          {children}
+        </Layout>
       </ChatProvider>
     </SettingsPanelProvider>
   );
@@ -239,6 +245,101 @@ describe('Layout Component', () => {
     expect(screen.getByRole('banner')).toHaveClass('header-fixed');
     expect(screen.getByRole('main')).toHaveClass('main');
     expect(screen.getByRole('contentinfo')).toHaveClass('footer');
+  });
+
+  it('should nest the header, the hero and the window in one stage', () => {
+    render(
+      <TestWrapper hero={<p data-testid="test-hero">Hero</p>}>
+        {mockChildren}
+      </TestWrapper>
+    );
+
+    const stage = document.querySelector('.stage') as HTMLElement;
+    expect(stage).not.toBeNull();
+
+    // The header and the hero sit on the field, outside the scrolling window;
+    // only the page's own content is inside it.
+    const header = screen.getByRole('banner');
+    const hero = screen.getByTestId('test-hero');
+    const windowPanel = document.querySelector('.layout') as HTMLElement;
+
+    expect(stage).toContainElement(header);
+    expect(stage).toContainElement(hero);
+    expect(stage).toContainElement(windowPanel);
+    expect(windowPanel).not.toContainElement(header);
+    expect(windowPanel).not.toContainElement(hero);
+    expect(windowPanel).toContainElement(screen.getByTestId('test-children'));
+
+    // The hero's own region, so a page hero cannot claim a second banner.
+    expect(hero.closest('.site-hero')).not.toBeNull();
+    expect(screen.getAllByRole('banner')).toHaveLength(1);
+  });
+
+  it('should render no hero region when a page has no hero', () => {
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
+
+    expect(document.querySelector('.site-hero')).toBeNull();
+    expect(document.querySelector('.stage')).not.toBeNull();
+    expect(screen.getByTestId('test-children')).toBeInTheDocument();
+  });
+
+  it('should only mark the hero collapsible when the page asks for it', () => {
+    const { unmount } = render(
+      <TestWrapper hero={<p>Hero</p>}>{mockChildren}</TestWrapper>
+    );
+    expect(document.querySelector('.site-hero')).not.toHaveClass(
+      'is-collapsible'
+    );
+    unmount();
+
+    render(
+      <TestWrapper hero={<p>Hero</p>} collapsibleHero>
+        {mockChildren}
+      </TestWrapper>
+    );
+    expect(document.querySelector('.site-hero')).toHaveClass('is-collapsible');
+  });
+
+  it('should publish the window scroll position as hero collapse progress', () => {
+    render(
+      <TestWrapper hero={<p>Hero</p>} collapsibleHero>
+        {mockChildren}
+      </TestWrapper>
+    );
+
+    const stage = document.querySelector('.stage') as HTMLElement;
+    const windowPanel = document.querySelector('.layout') as HTMLElement;
+
+    // jsdom runs rAF callbacks on a timer, so drive the frame by hand.
+    const flushFrame = () => {
+      const callbacks: ((time: number) => void)[] = [];
+      const raf = jest
+        .spyOn(window, 'requestAnimationFrame')
+        .mockImplementation(cb => {
+          callbacks.push(cb);
+          return 1;
+        });
+      windowPanel.dispatchEvent(new Event('scroll'));
+      raf.mockRestore();
+      callbacks.forEach(cb => cb(0));
+    };
+
+    expect(stage.style.getPropertyValue('--hero-collapse')).toBe('0');
+
+    Object.defineProperty(windowPanel, 'scrollTop', {
+      value: 80,
+      configurable: true,
+    });
+    flushFrame();
+    expect(stage.style.getPropertyValue('--hero-collapse')).toBe('0.5');
+
+    // Past the range it saturates rather than running away.
+    Object.defineProperty(windowPanel, 'scrollTop', {
+      value: 4000,
+      configurable: true,
+    });
+    flushFrame();
+    expect(stage.style.getPropertyValue('--hero-collapse')).toBe('1');
   });
 
   it('should handle empty children', () => {

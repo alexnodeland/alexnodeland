@@ -12,29 +12,34 @@ const IndexPage: React.FC = () => {
   const { containerRef: expertiseRef, isActive: isExpertiseActive } =
     useScrollSpy<HTMLDivElement>('.expertise-item');
 
+  // The cover, on the bare field above the window. It is the site's one
+  // splash moment, so unlike the other page heroes it does not collapse as
+  // the content scrolls under it.
+  const hero = (
+    <section className="hero">
+      <h1>{homepageConfig.hero.title}</h1>
+      {/* The subtitle is also the map of the projects page: each segment
+          links to its section anchor there. */}
+      <p className="hero-subtitle">
+        {homepageConfig.hero.subtitleLinks.map((link, index) => (
+          <React.Fragment key={link.href}>
+            {index > 0 && ' → '}
+            <Link to={link.href} className="hero-subtitle-link">
+              {link.label}
+            </Link>
+          </React.Fragment>
+        ))}
+      </p>
+    </section>
+  );
+
   return (
-    <Layout>
+    <Layout hero={hero}>
       <SEO
         title="home"
         description="AI engineer and mathematician. Agent systems, distributed infrastructure, and audio DSP."
       />
       <div className="home">
-        <section className="hero">
-          <h1>{homepageConfig.hero.title}</h1>
-          {/* The subtitle is also the map of the projects page: each segment
-              links to its section anchor there. */}
-          <p className="hero-subtitle">
-            {homepageConfig.hero.subtitleLinks.map((link, index) => (
-              <React.Fragment key={link.href}>
-                {index > 0 && ' → '}
-                <Link to={link.href} className="hero-subtitle-link">
-                  {link.label}
-                </Link>
-              </React.Fragment>
-            ))}
-          </p>
-        </section>
-
         <section className="about">
           <div className="about-content">
             {homepageConfig.about.paragraphs.map((paragraph, index) => (

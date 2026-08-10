@@ -2,15 +2,16 @@
 @import 'mixins';
 
 .projects-page {
-  max-width: 1100px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 0 var(--space-3) var(--space-6);
+  padding: 0 0 var(--space-6);
 }
 
-// Projects Page Header (matching blog/cv pattern)
+// The page hero, rendered on the field above the window (see .site-hero in
+// layout.scss, which owns its column and its padding).
 .projects-header {
-  margin-bottom: var(--space-6);
-  padding: calc(var(--header-height) + 0.5rem) 0 var(--space-5);
+  margin-bottom: 0;
+  padding: 0;
   position: relative;
 
   h1 {
@@ -23,22 +24,24 @@
     @include over-background;
   }
 
+  // No max-width: the tagline gets the full content column so it holds one
+  // line, like the other three heroes do.
   p {
     color: var(--text-secondary);
     @include over-background;
-    font-size: var(--text-h4);
+    font-size: var(--text-lead);
     line-height: 1.6;
     font-style: italic;
-    max-width: 600px;
   }
 }
 
 // Section Titles
 .projects-section {
   margin-bottom: var(--space-6);
-  // Anchor targets land inside the window's inner scroll; keep the section
-  // title clear of the fixed header when a hero-subtitle link brings us here.
-  scroll-margin-top: calc(var(--header-height) + var(--space-3));
+  // Anchor targets land inside the window's inner scroll, and nothing overlays
+  // the top of the window any more — this is just breathing room above the
+  // title a hero-subtitle link has brought us to.
+  scroll-margin-top: var(--space-3);
 }
 
 // On the animated background rather than on a card, like the CV's section
@@ -267,12 +270,7 @@
 // Responsive Design
 @media (max-width: 768px) {
   .projects-page {
-    padding: 0 var(--space-3) var(--space-5);
-  }
-
-  .projects-header {
-    padding: calc(var(--header-height) + 0.5rem) 0 var(--space-4);
-    margin-bottom: var(--space-5);
+    padding: 0 0 var(--space-5);
   }
 
   .projects-grid {

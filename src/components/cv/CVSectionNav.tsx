@@ -14,20 +14,11 @@ const CVSectionNav: React.FC<CVSectionNavProps> = ({ sections, className }) => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const headerHeight = getComputedStyle(document.documentElement)
-      .getPropertyValue('--header-height')
-      .trim();
-
-    const rootMarginTop = (() => {
-      // Fallback if CSS var is not parsable
-      try {
-        // Parse px value if present; otherwise default
-        const parsed = parseFloat(headerHeight.replace('px', '')) || 0;
-        return -(parsed + 24); // add spacing buffer
-      } catch {
-        return -96;
-      }
-    })();
+    // This used to subtract a --header-height that no longer exists: the nav
+    // is a flex child of the stage now and never overlaps the content. What
+    // is left to clear is this component's own sticky bar plus a little
+    // breathing room — the same offset the sections' scroll-margin-top uses.
+    const rootMarginTop = -80;
 
     const opts = {
       root: null,

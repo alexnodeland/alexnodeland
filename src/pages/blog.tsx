@@ -65,18 +65,20 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
     setSortOrder('desc');
   };
 
+  const hero = (
+    <header className="blog-header">
+      <h1>blog</h1>
+      <p>
+        what i&apos;ve built and what i&apos;ve been quoted saying, going back
+        to 2015.
+      </p>
+    </header>
+  );
+
   return (
-    <Layout>
+    <Layout hero={hero} collapsibleHero>
       <SEO title="blog" />
       <div className="blog-page">
-        <header className="blog-header">
-          <h1>blog</h1>
-          <p>
-            what i&apos;ve built and what i&apos;ve been quoted saying, going
-            back to 2015.
-          </p>
-        </header>
-
         {/* Search and Filter Controls */}
         <div className="blog-controls">
           <div className="search-container">

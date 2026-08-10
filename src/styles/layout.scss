@@ -1,117 +1,33 @@
 @import 'variables';
 @import 'mixins';
 
-// CSS Custom Properties for dynamic header height calculation
-:root {
-  --header-height: calc(
-    1.5rem + 1.5rem + 3rem
-  ); // nav padding + nav content height estimate
-
-  @media (max-width: 768px) {
-    --header-height: calc(
-      1rem + 1rem + 2.5rem
-    ); // Adjusted for mobile nav padding
-  }
-
-  @media (max-width: 480px) {
-    --header-height: calc(
-      0.75rem + 0.75rem + 2rem
-    ); // Adjusted for small mobile
-  }
-}
-
-// Fixed header container that holds both rainbow border and header
+// The stage — one fixed column holding the three things that make up a page:
+// the nav, the page hero, and the content window. It carries the window's
+// horizontal geometry for all of them, so a sidebar opening moves the whole
+// block as a unit instead of three elements each doing their own arithmetic
+// (which is what used to make the nav lurch against the frame).
 //
-// The container carries the header's entire horizontal geometry, and it carries
-// exactly the geometry .layout does. It used to span the viewport and shift by a
-// bare 28rem while .header-fixed set its own side margins off --window-side —
-// two different answers to "where is the window's edge", which agreed only while
-// both panels were shut. The moment one opened, the container moved by one
-// amount and the margins by another and the nav lurched sideways. Every offset
-// below is now the same expression .layout uses, so the header tracks the window
-// frame through every open, close and mixed state.
-.fixed-header-container {
+// It stops short of the bottom inset for the same reason the window used to:
+// the floating pills live on the field below it.
+.stage {
   position: fixed;
   top: 0;
+  bottom: var(--window-inset-bottom);
   left: var(--window-side);
   right: var(--window-side);
   z-index: 1000;
-  pointer-events: none; // Allow clicks to pass through empty areas
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-
-  // Shifted state when settings panel is open - resize and reposition
-  &.settings-panel-open {
-    left: calc(28rem + 2 * var(--window-inset));
-    // Keep right unchanged unless chat panel is also open
-  }
-
-  // Shifted state when chat panel is open - resize and reposition from right
-  &.chat-panel-open {
-    right: calc(28rem + 2 * var(--window-inset));
-    // Keep left unchanged unless settings panel is also open
-  }
-
-  // Both panels open - squeezed between both
-  &.settings-panel-open.chat-panel-open {
-    left: calc(28rem + 2 * var(--window-inset));
-    right: calc(28rem + 2 * var(--window-inset));
-  }
-
-  // During closing animations, animate back smoothly
-  &.settings-panel-closing {
-    left: var(--window-side);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  &.chat-panel-closing {
-    right: var(--window-side);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  // Handle mixed states - one opening, one closing
-  &.settings-panel-closing.chat-panel-open {
-    left: var(--window-side);
-    right: calc(28rem + 2 * var(--window-inset));
-  }
-
-  &.settings-panel-open.chat-panel-closing {
-    left: calc(28rem + 2 * var(--window-inset));
-    right: var(--window-side);
-  }
-}
-
-// The content window — a fixed panel inset from the viewport on every side,
-// with the simulation running visibly around it. The page never scrolls;
-// content scrolls inside this frame.
-.layout {
-  min-height: calc(100vh - var(--window-inset) - var(--window-inset-bottom));
   display: flex;
   flex-direction: column;
-  background: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-  border-radius: var(--radius-lg);
-  position: fixed;
-  top: var(--window-inset); // Header overlays the panel top transparently
-  // Hug the content column: on wide viewports the frame stops at
-  // --window-max-width and the field takes the rest; the inset is the floor.
-  left: var(--window-side);
-  right: var(--window-side);
-  bottom: var(--window-inset-bottom); // Rides just above the floating pills
-  // Grounds the panel on the field; the field is animated and often bright,
-  // so this reads as depth rather than as a visible shadow shape.
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
-  overflow: auto; // Allow scrolling within the panel
-  border: 1px solid var(--window-border);
+  // Scroll-linked hero collapse, 0 → 1. Written by Layout, read by .site-hero.
+  --hero-collapse: 0;
+  // The stage spans the field between the pills and the top of the screen, and
+  // the field is interactive — the simulations respond to the pointer. Only
+  // the three real children take clicks; the gaps between them pass through.
+  pointer-events: none;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
-  // The window shows no scrollbar of its own: a bar riding the frame reads as
-  // chrome bolted onto the panel and breaks the device-screen metaphor. On
-  // systems set to always-show scrollbars it rendered as a full-height white
-  // strip. Scrolling is untouched; inner scrollables keep their thin bars.
-  scrollbar-width: none; // Firefox
-  &::-webkit-scrollbar {
-    display: none;
+  > * {
+    pointer-events: auto;
   }
 
   // Shifted state when settings panel is open - resize and reposition
@@ -157,78 +73,124 @@
   }
 }
 
-// Once anything is scrolled under it, the header stops being a tint over the
-// background and becomes a bar over the page's own cards. Its nav is white, so
-// without this the links land white-on-white the moment a card passes beneath
-// them.
-.fixed-header-container.scrolled .header-fixed {
-  background: rgba(10, 12, 16, 0.72);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+// The page hero — the title and tagline — sits on the bare field between the
+// nav and the window, which is why every hero already carries the halo. Its
+// column is the content column, so a title lines up with the prose under it.
+.site-hero {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5);
+}
+
+// Scroll-linked collapse. Layout publishes --hero-collapse (0 → 1) on the
+// stage from the window's scrollTop; everything here reads off that one
+// number, so the hero compresses in step with the scroll rather than snapping
+// between two states. The window is `flex: 1`, so every pixel the hero gives
+// up goes straight to the content.
+.site-hero.is-collapsible {
+  padding-top: calc(var(--space-4) * (1 - var(--hero-collapse)));
+  padding-bottom: calc(var(--space-4) * (1 - var(--hero-collapse)));
+  transition: padding 120ms linear;
+
+  // The title stays — it is the page's name — but gives back the gap under it.
+  h1 {
+    margin-bottom: calc(var(--space-3) * (1 - var(--hero-collapse)));
+    transition: margin-bottom 120ms linear;
+  }
+
+  // The tagline is the part that goes: it fades and closes its own height, so
+  // the window's top edge rises with it.
+  p {
+    opacity: calc(1 - var(--hero-collapse));
+    max-height: calc(6rem * (1 - var(--hero-collapse)));
+    overflow: hidden;
+    transform: translateY(calc(-0.5rem * var(--hero-collapse)));
+    transition:
+      opacity 120ms linear,
+      max-height 120ms linear,
+      transform 120ms linear;
+  }
+
+  // The scroll link itself is position, not motion, so it stays. What goes is
+  // the easing between samples — with reduced motion the hero tracks the
+  // scroll exactly and never continues moving on its own.
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    h1,
+    p {
+      transition: none;
+    }
+  }
+}
+
+// The content window — the scrolling panel the page lives in. It no longer
+// positions itself: the stage owns the geometry, and this fills whatever the
+// header and hero leave. The page never scrolls; content scrolls in here.
+.layout {
+  flex: 1;
+  min-height: 0; // Let the flex child actually shrink so `overflow` can work
+  display: flex;
+  flex-direction: column;
+  background: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+  border-radius: var(--radius-lg);
+  // Grounds the panel on the field; the field is animated and often bright,
+  // so this reads as depth rather than as a visible shadow shape.
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  overflow: auto; // Allow scrolling within the panel
+  border: 1px solid var(--window-border);
+
+  // The window shows no scrollbar of its own: a bar riding the frame reads as
+  // chrome bolted onto the panel and breaks the device-screen metaphor. On
+  // systems set to always-show scrollbars it rendered as a full-height white
+  // strip. Scrolling is untouched; inner scrollables keep their thin bars.
+  scrollbar-width: none; // Firefox
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 // Responsive design for panel sliding behavior
 @media (max-width: 768px) {
-  // On mobile, dim content when any panel is open (panels take full width)
-  // The header keeps the window's own side offset here rather than snapping to
+  // On mobile, dim content when any panel is open (panels take full width).
+  // The stage keeps the window's own side offset here rather than snapping to
   // the viewport edge: --window-side floors to the inset at these widths, so
-  // this is where the header already sits, and the dim is the only change.
-  .fixed-header-container.settings-panel-open,
-  .fixed-header-container.settings-panel-closing,
-  .fixed-header-container.chat-panel-open,
-  .fixed-header-container.chat-panel-closing {
+  // this is where it already sits, and the dim is the only change.
+  .stage.settings-panel-open,
+  .stage.settings-panel-closing,
+  .stage.chat-panel-open,
+  .stage.chat-panel-closing,
+  .stage.settings-panel-open.chat-panel-open {
     left: var(--window-side);
     right: var(--window-side);
     width: auto;
     transform: translateX(0);
     opacity: 0.3; // Dim instead of resize
-  }
-
-  .layout.settings-panel-open,
-  .layout.settings-panel-closing,
-  .layout.chat-panel-open,
-  .layout.chat-panel-closing {
-    left: var(--window-side);
-    right: var(--window-side);
-    width: auto;
-    transform: translateX(0);
-    opacity: 0.3; // Dim instead of resize
-  }
-
-  // On mobile, both panels open still just dims content
-  .layout.settings-panel-open.chat-panel-open {
-    left: var(--window-side);
-    right: var(--window-side);
-    opacity: 0.3;
   }
 }
 
 // Animations are now in animations.scss
 
 .header-fixed {
-  // Transparent over the window's own scrim — the panel provides the dark
-  // field; the header only brings its own (see .scrolled) once content is
-  // moving underneath it.
+  // No surface of its own. The nav links are pills now (see .nav-link), so the
+  // bar behind them carries nothing — it is spacing, and it sits on the field
+  // like the hero below it.
   background: transparent;
   border: none;
-  // Sit on the window's top edge. The side offsets are the container's job now
-  // — it already carries the window's exact geometry in every panel state, and
-  // a second copy of that arithmetic here is what made the nav jump.
+  // A flex child in the stage, not a fixed bar: it only needs its offset from
+  // the top of the screen. It used to overlay the window's top edge, which is
+  // what the `.scrolled` scrim and --header-height both existed to paper over.
   margin: var(--window-inset) 0 0;
   box-shadow: none;
-  transition: all var(--transition-normal);
+  flex-shrink: 0;
   border-radius: var(--radius-lg);
-  pointer-events: auto; // Re-enable pointer events for the header
 }
 
-// Header always has blur to match content
-// .fixed-header-container.scrolled .header-fixed {
-//   backdrop-filter: blur(3px);
-// }
-
 .nav {
-  max-width: 1200px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
   padding: 1.5rem 2rem;
   display: flex;
@@ -248,48 +210,34 @@
   display: none;
 }
 
+// The brand is one of the pills now (the pill lives on the .nav-link inside
+// it), so this only carries the type. It used to be 1.75rem, which as a pill
+// would have been half again the height of the three next to it.
 .nav-brand {
-  font-size: 1.75rem;
+  font-size: 1.25rem;
   color: var(--text-primary);
-  @include over-background;
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
   text-transform: lowercase;
   letter-spacing: -0.02em;
-  transition: all var(--transition-normal);
-  position: relative;
-
-  // Hover underline. Neutral white, and the text stays white with it: pink is
-  // decoration, and green in this site means "link you can follow" — the nav
-  // is chrome, so it gets neither.
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: var(--text-primary);
-    transition: width var(--transition-normal);
-  }
-
-  &:hover {
-    transform: translateY(-1px);
-
-    &::after {
-      width: 100%;
-    }
-  }
 }
 
 .nav-menu {
   display: flex;
-  gap: 2.5rem;
+  gap: 0.75rem;
   align-items: center;
   flex-wrap: nowrap;
 }
 
+// The nav sits on the bare field now rather than over the window's scrim, so
+// each link takes the window's own language — same scrim, same blur, same
+// hairline. They read as controls floating on the simulation, which is what
+// the background pill and the chat pill already do in the two bottom corners.
+//
+// The white underline bar that used to slide in on hover is gone: inside a
+// pill it read as a second, smaller frame fighting the first. Hover brightens
+// the hairline and lifts, exactly like the two floating pills do.
 .nav-link {
   text-decoration: none;
   color: var(--text-primary);
@@ -297,43 +245,35 @@
   font-size: 1rem;
   white-space: nowrap;
   padding: 0.5rem 1rem;
-  border-radius: var(--radius-sm);
+  background: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+  border: 1px solid var(--window-border);
+  border-radius: var(--radius-lg);
   transition: all var(--transition-normal);
-  position: relative;
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
   text-transform: lowercase;
   letter-spacing: -0.01em;
 
-  // Same neutral hover underline as the brand — one treatment for the whole
-  // nav, no colour and no tinted plate behind the word.
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 0;
-    height: 2px;
-    background: var(--text-primary);
-    transition: all var(--transition-normal);
-    transform: translateX(-50%);
-  }
-
   &:hover {
     transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.45);
+  }
 
-    &::after {
-      width: 100%;
-    }
+  &:active {
+    transform: translateY(0);
   }
 }
 
 .main {
   flex: 1;
-  max-width: 1200px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 4.5rem 2rem 3rem 2rem; // Extra top space for titles under fixed header
+  // The page title lives above the window now, so the old header-clearance
+  // padding is gone and this is plain vertical rhythm.
+  padding: var(--space-5) var(--space-5) var(--space-6);
   width: 100%;
   position: relative;
 }
@@ -358,7 +298,7 @@
 }
 
 .footer-content {
-  max-width: 1200px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
   padding: 1.5rem 2rem;
   text-align: center;
@@ -501,8 +441,17 @@
     padding: 0.4rem 0.8rem;
   }
 
+  .site-hero {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .site-hero.is-collapsible {
+    padding-top: calc(var(--space-3) * (1 - var(--hero-collapse)));
+    padding-bottom: calc(var(--space-3) * (1 - var(--hero-collapse)));
+  }
+
   .main {
-    padding: 3rem 1.5rem 2rem 1.5rem; // Increase top padding on tablet
+    padding: var(--space-4) var(--space-4) var(--space-5);
   }
 
   .footer-content {
@@ -546,8 +495,17 @@
     padding: 0.3rem 0.5rem;
   }
 
+  .site-hero {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .site-hero.is-collapsible {
+    padding-top: calc(var(--space-2) * (1 - var(--hero-collapse)));
+    padding-bottom: calc(var(--space-2) * (1 - var(--hero-collapse)));
+  }
+
   .main {
-    padding: 2.25rem 1rem 1.5rem 1rem; // Increase top padding on small mobile
+    padding: var(--space-3) var(--space-3) var(--space-4);
   }
 
   .footer-content {

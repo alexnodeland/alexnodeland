@@ -5,8 +5,20 @@ import { projectsConfig } from '../../../config/projects';
 
 // Mock components barrel to avoid animated backgrounds
 jest.mock('../../../components', () => ({
-  Layout: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="layout">{children}</div>
+  // The page hero renders above the window now, as a Layout prop rather than
+  // as part of the page's children — so the mock has to put it back in the
+  // tree or every assertion about a page title fails on a structural change.
+  Layout: ({
+    children,
+    hero,
+  }: {
+    children: React.ReactNode;
+    hero?: React.ReactNode;
+  }) => (
+    <div data-testid="layout">
+      <div data-testid="layout-hero">{hero}</div>
+      {children}
+    </div>
   ),
   SEO: ({ title }: { title?: string }) => (
     <div data-testid="seo" data-title={title} />
