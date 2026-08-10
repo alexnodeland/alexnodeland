@@ -176,3 +176,41 @@ on one page; validate against all six backgrounds and on mobile; only then roll 
 to all pages and layer in tokens, type scale, and icons. The most radical decision
 (§1) gets de-risked before anything else commits to it. Token/light-mode work — safe
 and independent — can proceed in parallel or immediately after the spike validates.
+
+---
+
+## implementation addendum — what the live review changed
+
+The plan above was implemented on this branch, with the owner reviewing the real
+thing as it built. Decisions made from looking, recorded so the doc stays honest:
+
+- **The window already existed structurally.** `.layout` was a fixed inset panel
+  with inner scroll before this work began; the pass made it deliberate — tuned
+  scrim, hairline frame, tokens (`--window-*`), rainbow bar and pink hairline gone.
+- **Scrim, tuned down from the first guess.** 0.55 alpha over 10px blur buried the
+  simulations; shipped at **0.38 over 5px**, which still clears white text on the
+  yellow fields.
+- **Type scale, tuned down.** The first fluid scale overshot; h1 now tops out at
+  2.75rem (not 3.75) and body sits at 15px — monospace wears the smaller cut better.
+- **Window geometry evolved through review:** the frame hugs the content column
+  (`--window-max-width: 1240px`, side inset as the floor) instead of the viewport;
+  the bottom inset is deep (8rem) so the frame rides just above the floating pills,
+  which live on the field, not on the panel; the window's own scrollbar is hidden;
+  all panel-open/close states animate through one `--window-side` token so nothing
+  bounces.
+- **The sidebars became floating peer panels** — same insets, scrim, blur, and
+  frame as the window; the header tracks the window's geometry exactly in every
+  panel state, so the nav no longer lurches. Mobile keeps the bottom-sheet
+  (settings) and fullscreen (chat) treatments.
+- **No-bold went further than planned:** headings and chrome all sit at 400, with
+  600 reserved for inline emphasis and active states — 61 font-weight declarations
+  removed.
+- **The halo audit kept all ~20 sites.** Everything carrying the halo sits over the
+  scrim with the animation behind it; nothing qualified for removal.
+- **Beyond the review's scope, same session:** the projects page was rebuilt around
+  the hero subtitle's arc (ai · math · audio dsp · distributed systems · misc, ai
+  first), the old sections demoted to tags, the catalog refreshed against GitHub,
+  and the hero subtitle turned into anchor links into those sections — with
+  fragment navigation resolved by hand because the page scrolls inside the window.
+  The six expertise icons shipped as hand-drawn animated inline-SVG schematics
+  (one grammar, reduced-motion aware).
