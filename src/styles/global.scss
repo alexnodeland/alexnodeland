@@ -21,6 +21,7 @@ html {
 body {
   margin: 0;
   padding: 0;
+  font-size: var(--text-body); // Monospace runs wide; 15px reads as 16px serif
   line-height: 1.6;
   color: var(--text-primary);
   background: var(--bg-primary);
