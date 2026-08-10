@@ -1,10 +1,11 @@
 @import 'variables';
 @import 'mixins';
 
+// A plain flow child of .main: no column and no side padding of its own, so
+// the first card's left edge is the same x as the hero title above it.
 .projects-page {
-  max-width: var(--content-max-width);
-  margin: 0 auto;
-  padding: 0 0 var(--space-6);
+  padding-bottom: var(--space-6);
+  position: relative;
 }
 
 // The page hero, rendered on the field above the window (see .site-hero in
@@ -70,9 +71,8 @@
 
 // Project Card
 .project-card {
-  background: var(--bg-card);
+  @include outline-block;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
   text-decoration: none;
   display: block;
   position: relative;
@@ -83,7 +83,7 @@
   &:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
-    border-color: var(--border-active);
+    border-color: rgba(255, 255, 255, 0.4);
 
     // The card is a link, so the thing that says so takes the link colour.
     .project-link-indicator {
@@ -156,8 +156,7 @@
 .project-tag {
   font-size: 0.75rem;
   padding: 0.25rem 0.6rem;
-  background: var(--bg-hover);
-  border: 1px solid var(--border-active);
+  @include outline-block;
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-family:
@@ -167,7 +166,7 @@
   transition: all var(--transition-fast);
 
   .project-card:hover & {
-    border-color: var(--text-muted);
+    border-color: rgba(255, 255, 255, 0.32);
   }
 }
 
@@ -177,7 +176,9 @@
   align-items: center;
   margin-top: auto;
   padding-top: var(--space-3);
-  border-top: 1px solid var(--border-color);
+  // Interior divider inside an outlined card — white-alpha, since the
+  // near-black --border-color it used is invisible over the scrim.
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .project-language {
@@ -270,7 +271,7 @@
 // Responsive Design
 @media (max-width: 768px) {
   .projects-page {
-    padding: 0 0 var(--space-5);
+    padding-bottom: var(--space-5);
   }
 
   .projects-grid {

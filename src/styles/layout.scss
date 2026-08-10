@@ -81,7 +81,9 @@
   width: 100%;
   max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: var(--space-4) var(--space-5);
+  // Horizontal padding is --gutter, the same token .nav and .main take, so the
+  // title lines up with the brand pill above it and the cards below it.
+  padding: var(--space-4) var(--gutter);
 }
 
 // Scroll-linked collapse. Layout publishes --hero-collapse (0 → 1) on the
@@ -192,7 +194,10 @@
 .nav {
   max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 1.5rem 2rem;
+  // The nav's left padding is the brand pill's left edge, so it is the gutter
+  // and nothing else — it used to be a hand-set 2rem that happened to equal
+  // --space-5 on desktop and then drifted from .main at every breakpoint below.
+  padding: 1.5rem var(--gutter);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -274,8 +279,10 @@
   max-width: var(--content-max-width);
   margin: 0 auto;
   // The page title lives above the window now, so the old header-clearance
-  // padding is gone and this is plain vertical rhythm.
-  padding: var(--space-5) var(--space-5) var(--space-6);
+  // padding is gone and this is plain vertical rhythm. The sides are --gutter:
+  // this is the only horizontal padding between the window frame and the
+  // content, and the page containers inside it add none of their own.
+  padding: var(--space-5) var(--gutter) var(--space-6);
   width: 100%;
   position: relative;
 }
@@ -406,7 +413,7 @@
   // token layer already narrows at this width.
 
   .nav {
-    padding: 1rem 1.5rem;
+    padding: 1rem var(--gutter);
     // Keep horizontal layout on mobile
     flex-direction: row;
     justify-content: space-between; // Space between nav-brand and nav-menu
@@ -441,7 +448,7 @@
   }
 
   .site-hero {
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-3) var(--gutter);
   }
 
   .site-hero.is-collapsible {
@@ -450,11 +457,11 @@
   }
 
   .main {
-    padding: var(--space-4) var(--space-4) var(--space-5);
+    padding: var(--space-4) var(--gutter) var(--space-5);
   }
 
   .footer-content {
-    padding: 2rem 1.5rem;
+    padding: 2rem var(--gutter);
   }
 
   .footer-links {
@@ -469,7 +476,7 @@
 
 @media (max-width: 480px) {
   .nav {
-    padding: 0.75rem;
+    padding: 0.75rem var(--gutter);
     // Keep space-between layout on small mobile
     justify-content: space-between;
     gap: 0.25rem;
@@ -488,7 +495,7 @@
   }
 
   .site-hero {
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--gutter);
   }
 
   .site-hero.is-collapsible {
@@ -497,11 +504,11 @@
   }
 
   .main {
-    padding: var(--space-3) var(--space-3) var(--space-4);
+    padding: var(--space-3) var(--gutter) var(--space-4);
   }
 
   .footer-content {
-    padding: 1.5rem 1rem;
+    padding: 1.5rem var(--gutter);
   }
 
   .footer-link {
@@ -510,13 +517,12 @@
   }
 }
 
-// Narrowest phones (iPhone SE and friends). Brand + three links is ~300px of
-// intrinsic width here, so shave padding rather than let it wrap.
+// Narrowest phones (iPhone SE and friends). The shave is on the pills, not on
+// the nav's own gutter: the gutter is the site's one alignment line and cannot
+// move at a single breakpoint without the brand pill sliding out from under
+// the hero title. Brand plus three links is ~215px of intrinsic width at this
+// padding against ~270px of column, so it still holds one row.
 @media (max-width: 380px) {
-  .nav {
-    padding: 0.75rem 0.5rem;
-  }
-
   .nav-link,
   .nav-brand .nav-link {
     padding: 0.3rem 0.35rem;

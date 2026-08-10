@@ -127,6 +127,22 @@
     0 0 12px rgba(0, 0, 0, 0.6);
 }
 
+// Every content block inside the window — card, panel, chip, control — is an
+// outline rather than a fill. The window is a translucent scrim with a
+// simulation running through it, and a solid --bg-card panel laid over that
+// reads as a lid on the animation: the page stops being a window and becomes a
+// stack of dark slabs.
+//
+// The hairline is --border-floating (white-alpha) and not --border-color, which
+// is near-black and disappears entirely against the scrim. Anything drawn in
+// --border-color that still has to be seen over the scrim — an interior
+// divider, a rail, a chevron ring — has to move to white-alpha for the same
+// reason.
+@mixin outline-block {
+  background: transparent;
+  border: 1px solid var(--border-floating);
+}
+
 // The emphasis a card takes on when it is the one being read — either because
 // a pointer is over it or because the scroll position has arrived at it. Both
 // routes get the same treatment so the site has one idea of "this one".

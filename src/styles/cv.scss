@@ -1,10 +1,12 @@
 @import 'variables';
 @import 'mixins';
 
+// A plain flow child of .main: the content column and the gutter belong to
+// .main and --gutter, so the overview card's left edge is the same x as the
+// hero title and the brand pill above it.
 .cv {
-  max-width: var(--content-max-width);
-  margin: 0 auto;
   line-height: 1.7;
+  position: relative;
 }
 
 // Enable smooth scrolling for anchor links
@@ -53,9 +55,16 @@ section[id] {
   margin-bottom: var(--space-3);
 }
 
+// The one block on this page that cannot be a pure outline: it is sticky, and
+// the document scrolls underneath it. A transparent bar would let headings run
+// straight through the section labels. So it takes the window's own language
+// instead — the same scrim and blur the window and the nav pills use — which
+// occludes without reading as a dark slab.
 .cv-section-nav {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+  border: 1px solid var(--border-floating);
   border-radius: var(--radius-lg);
   overflow: hidden;
 
@@ -93,8 +102,8 @@ section[id] {
 
     &:hover {
       color: var(--text-primary);
-      border-color: var(--border-color);
-      background: var(--bg-hover);
+      border-color: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.06);
     }
 
     &:active {
@@ -103,11 +112,13 @@ section[id] {
   }
 
   // Chrome, like the site nav above it — so the section you are in is marked
-  // with a brighter hairline and brighter type, not with the link colour.
+  // with a brighter hairline and brighter type, not with the link colour. The
+  // wash is what makes the current item findable in a row of eight; a hairline
+  // alone does not carry that far.
   li.active a {
     color: var(--text-primary);
-    background: var(--bg-accent);
-    border-color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.45);
   }
 
   // Show desktop labels by default, mobile labels hidden
@@ -122,10 +133,9 @@ section[id] {
 
 // CV Overview and Contact Combined
 .cv-overview-contact {
-  background: var(--bg-card);
+  @include outline-block;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
   margin-bottom: var(--space-5);
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -262,16 +272,15 @@ section[id] {
 // surface, neutral hairline, and a hover that brightens the hairline and lifts
 // — no coloured top bar and no coloured glow.
 .cv-card {
-  background: var(--bg-card);
+  @include outline-block;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
   position: relative;
   transition: all var(--transition-normal);
 
   @include reading-emphasis {
     box-shadow: var(--shadow-md);
-    border-color: var(--border-active);
+    border-color: rgba(255, 255, 255, 0.4);
   }
 
   @include hover-lift;
@@ -325,7 +334,10 @@ section[id] {
   width: 3px;
   height: auto;
   border-radius: 0;
-  background: var(--border-color);
+  // White-alpha at every step: the near-black --border-color / --border-active
+  // pair this rail used was tuned against a solid card and vanishes over the
+  // window's scrim.
+  background: rgba(255, 255, 255, 0.18);
   opacity: 1;
   transition:
     background var(--transition-normal),
@@ -333,11 +345,11 @@ section[id] {
 }
 
 .cv-collapse.is-active::before {
-  background: var(--border-active);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .cv-collapse[open] {
-  border-color: var(--border-active);
+  border-color: rgba(255, 255, 255, 0.4);
 
   &::before {
     width: 4px;
@@ -359,9 +371,12 @@ section[id] {
     outline-offset: -4px;
   }
 
+  // The whole summary lighting up is the affordance, so it keeps a fill — but
+  // a 4% white wash rather than the near-black --bg-hover, which over the
+  // scrim darkened the card instead of lifting it.
   @media (hover: hover) and (pointer: fine) {
     &:hover {
-      background: var(--bg-hover);
+      background: rgba(255, 255, 255, 0.04);
     }
   }
 
@@ -378,9 +393,9 @@ section[id] {
     flex-shrink: 0;
     width: 1.75rem;
     height: 1.75rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-floating);
     border-radius: 50%;
-    background: var(--bg-primary);
+    background: transparent;
     color: var(--text-secondary);
     font-size: 0.7rem;
     line-height: 1;
@@ -390,7 +405,7 @@ section[id] {
 
 .cv-collapse.is-active .cv-collapse-chevron,
 .cv-collapse-summary:hover .cv-collapse-chevron {
-  border-color: var(--border-active);
+  border-color: rgba(255, 255, 255, 0.32);
   color: var(--text-primary);
 }
 
@@ -437,17 +452,17 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 .cv-collapse-details {
   margin: 0 1.5rem;
   padding: 1.5rem 0 1.75rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+// A date range chip, and chips are outlines now.
 .experience-duration {
   color: var(--text-secondary);
   white-space: nowrap;
-  background: var(--bg-primary);
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
-  border: 1px solid var(--border-color);
+  @include outline-block;
 }
 
 .experience-bullets {
@@ -506,9 +521,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   display: inline-flex;
   align-items: center;
   padding: 0.6rem 1.2rem;
-  background: var(--bg-hover);
+  @include outline-block;
   color: var(--text-secondary);
-  border: 1px solid var(--border-active);
   border-radius: var(--radius-md);
   font-size: 0.925rem;
   cursor: pointer;
@@ -543,14 +557,19 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     z-index: 1000;
     pointer-events: none;
 
+    // The other block that stays filled, and for the same reason as the
+    // section nav: it is a popover, drawn on top of whatever chip row and card
+    // it happens to cover. It takes the site's floating-chrome surface —
+    // --bg-floating, which is opaque on purpose (see variables.scss) — rather
+    // than the card fill it used to borrow.
     .tooltip-content {
-      background: var(--bg-card);
-      border: 2px solid var(--border-color);
+      background: var(--bg-floating);
+      border: 2px solid var(--border-floating);
       border-radius: var(--radius-md);
       padding: 1rem;
       min-width: 250px;
       max-width: 350px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      box-shadow: var(--shadow-lg);
       position: relative;
 
       // Arrow pointing down
@@ -561,7 +580,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         left: 50%;
         transform: translateX(-50%);
         border: 8px solid transparent;
-        border-top-color: var(--border-color);
+        border-top-color: var(--border-floating);
       }
 
       &::before {
@@ -571,7 +590,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         left: 50%;
         transform: translateX(-50%) translateY(-2px);
         border: 7px solid transparent;
-        border-top-color: var(--bg-card);
+        border-top-color: var(--bg-floating);
       }
 
       strong {
@@ -599,7 +618,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         font-family: 'JetBrains Mono', monospace;
         margin-top: var(--space-2);
         padding-top: 0.5rem;
-        border-top: 1px solid var(--border-color);
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
       }
     }
   }
@@ -643,9 +662,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 .resume-header {
   margin-bottom: var(--space-5);
   padding: var(--space-5);
-  background: var(--bg-card);
+  @include outline-block;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
   position: relative;
 
   h1 {
@@ -722,7 +740,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 .experience-skills {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 0.9rem;
   color: var(--text-secondary);
 }
@@ -748,11 +766,10 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 .education-duration {
   color: var(--text-secondary);
   white-space: nowrap;
-  background: var(--bg-primary);
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
-  border: 1px solid var(--border-color);
+  @include outline-block;
 }
 
 .education-institution {
@@ -830,9 +847,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   padding: 0.6rem 1.2rem;
   border-radius: var(--radius-md);
   font-size: 0.925rem;
-  background: var(--bg-hover);
+  @include outline-block;
   color: var(--text-secondary);
-  border: 1px solid var(--border-active);
   transition: all var(--transition-normal);
   cursor: default;
 
@@ -847,10 +863,9 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 // the pulsing four-stop rainbow across its top and the green halo around it
 // were announcing a download row as the loudest thing on the page.
 .cv-export {
-  background: var(--bg-card);
+  @include outline-block;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
   margin-bottom: var(--space-5);
   position: relative;
 
@@ -860,12 +875,15 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     .search-container {
       margin-bottom: var(--space-3);
 
+      // Same 4% wash as the blog's search field: a text field has to look like
+      // one, and a bare outline inside the outlined export panel reads as a
+      // nested panel rather than as an input.
       .search-input {
         width: 100%;
         padding: 0.75rem 1rem;
-        border: 2px solid var(--border-color);
+        border: 2px solid var(--border-floating);
         border-radius: var(--radius-sm);
-        background: var(--bg-primary);
+        background: rgba(255, 255, 255, 0.04);
         color: var(--text-primary);
         font-size: 1rem;
         font-family:
@@ -880,7 +898,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         &:focus {
           outline: none;
           border-color: rgba(255, 255, 255, 0.45);
-          background: var(--bg-accent);
+          background: rgba(255, 255, 255, 0.07);
         }
 
         &::placeholder {
@@ -890,9 +908,11 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       }
     }
 
+    // In flow rather than floating — it pushes the buttons down instead of
+    // overlaying them — so it is an outline like everything else.
     .search-results {
-      background: var(--bg-primary);
-      border: 2px solid var(--border-color);
+      background: transparent;
+      border: 2px solid var(--border-floating);
       border-radius: var(--radius-md);
       max-height: 300px;
       overflow-y: auto;
@@ -900,7 +920,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
       .search-result-item {
         padding: 1rem;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         cursor: pointer;
         transition: all var(--transition-fast);
 
@@ -909,8 +929,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         }
 
         &:hover {
-          background: var(--bg-accent);
-          border-left: 3px solid var(--border-active);
+          background: rgba(255, 255, 255, 0.06);
+          border-left: 3px solid rgba(255, 255, 255, 0.3);
         }
 
         .result-type {
@@ -965,7 +985,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   // and a hierarchy that does not exist.
   .export-button {
     padding: 0.75rem 1.5rem;
-    background: var(--bg-primary);
+    background: transparent;
     color: var(--text-primary);
     border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: var(--radius-md);
@@ -1016,7 +1036,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     }
 
     &:hover:not(:disabled) {
-      background: var(--bg-hover);
+      background: rgba(255, 255, 255, 0.06);
       border-color: rgba(255, 255, 255, 0.45);
       transform: translateY(-2px);
       box-shadow: var(--shadow-md);
@@ -1033,6 +1053,10 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     margin: 0;
   }
 
+  // Already a white wash rather than a dark fill (--bg-accent is 3% white), so
+  // it survives the scrim as it is. No hairline: it is a nested aside inside
+  // an outlined panel, and a second outline around it would read as a card
+  // inside a card.
   .latex-instructions {
     background: var(--bg-accent);
     padding: var(--space-4);
@@ -1073,7 +1097,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     // so a filename read as something you could click. The inset background is
     // what marks it as code.
     code {
-      background: var(--bg-primary);
+      background: rgba(255, 255, 255, 0.08);
       padding: 0.2rem 0.4rem;
       border-radius: var(--radius-sm);
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
@@ -1144,9 +1168,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     }
   }
 
-  #resume-content {
-    padding: 1rem;
-  }
+  // No padding of its own: it used to inset the resume cards by a further 1rem
+  // on mobile, which put them at a different x from the overview card above.
 
   .resume-header {
     h1 {
@@ -1258,7 +1281,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   // reveals, it does not convert, and it certainly does not become cyan on the
   // way to being clicked.
   .preview-button {
-    background: var(--bg-primary);
+    background: transparent;
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 0.5rem 1rem;
@@ -1267,7 +1290,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     transition: all var(--transition-normal);
 
     &:hover {
-      background: var(--bg-hover);
+      background: rgba(255, 255, 255, 0.06);
       border-color: rgba(255, 255, 255, 0.45);
       transform: translateY(-1px);
     }
@@ -1275,15 +1298,16 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   .latex-source-container {
     margin-top: var(--space-3);
-    background: var(--bg-accent);
+    background: transparent;
+    border: 1px solid var(--border-floating);
     border-radius: var(--radius-md);
     overflow: hidden;
   }
 
   .latex-source-header {
-    background: var(--bg-secondary);
+    background: transparent;
     padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
     h4 {
       margin: 0 0 0.5rem 0;
@@ -1298,8 +1322,11 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     }
   }
 
+  // The source listing keeps the same 4% wash the blog's code blocks take. It
+  // used to be a hand-set #1e1e1e editor surface, which over the window read
+  // as the one genuinely opaque slab left on the page.
   .latex-source {
-    background: #1e1e1e;
+    background: rgba(255, 255, 255, 0.04);
     color: #d4d4d4;
     padding: 1rem;
     margin: 0;
@@ -1330,9 +1357,9 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   .cv-view-button {
     padding: 0.5rem 1.25rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-floating);
     border-radius: var(--radius-md);
-    background: var(--bg-card);
+    background: transparent;
     color: var(--text-secondary);
     font-family:
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -1345,13 +1372,16 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
     &:hover {
       color: var(--text-primary);
-      border-color: var(--border-active);
+      border-color: rgba(255, 255, 255, 0.4);
     }
 
+    // Which view is showing is a real state, and a pair of outlines cannot
+    // say which one is on by hairline alone — so the current one takes the
+    // same 8% wash the section nav's current item does.
     &.active {
       color: var(--text-primary);
-      background: var(--bg-accent);
-      border-color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.45);
     }
   }
 }
