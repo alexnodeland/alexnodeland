@@ -3,19 +3,13 @@
 @import 'mixins';
 @import 'animations';
 
-// The blocks on this page are outlines rather than filled cards: they sit on
-// the window's scrim with the simulation running through it, and a solid
-// --bg-card panel over that reads as a lid on the animation. The hairline is
-// the white-alpha --border-floating and not --border-color, which is
-// near-black and disappears entirely against the scrim.
-@mixin homepage-outline {
-  background: transparent;
-  border: 1px solid var(--border-floating);
-}
+// The outline treatment the blocks on this page use lives in mixins.scss as
+// `outline-block` — it started here and is now the rule for every page.
 
+// A plain flow child of .main: the content column and its gutter are owned by
+// .main and --gutter, so nothing here re-states either.
 .home {
-  max-width: var(--content-max-width);
-  margin: 0 auto;
+  position: relative;
 }
 
 // The one splash moment on the site: the cover, centred on purpose. Every
@@ -114,7 +108,7 @@
 .about {
   margin-bottom: var(--space-7);
   padding: var(--space-5);
-  @include homepage-outline;
+  @include outline-block;
   border-radius: var(--radius-lg);
   position: relative;
 
@@ -143,7 +137,7 @@
 // semantic-colour rule is spent entirely on the buttons — that is the
 // conversion path, and it is the only thing here that needs to be found.
 .consulting {
-  @include homepage-outline;
+  @include outline-block;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-7);
@@ -196,7 +190,7 @@
 }
 
 .expertise-item {
-  @include homepage-outline;
+  @include outline-block;
   padding: var(--space-5) var(--space-4);
   border-radius: var(--radius-lg);
   text-align: center;
@@ -273,7 +267,7 @@
 }
 
 .blog-preview {
-  @include homepage-outline;
+  @include outline-block;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-7);
@@ -311,10 +305,6 @@
 }
 
 @media (max-width: 768px) {
-  .home {
-    padding: 0 var(--space-3);
-  }
-
   .about {
     padding: var(--space-4);
     margin-bottom: var(--space-6);

@@ -3,9 +3,11 @@
 @import 'mixins';
 @import 'animations';
 
+// A plain flow child of .main. The content column and its gutter belong to
+// .main and --gutter — a page container that re-states either one puts the
+// window's content at a different x from the hero and the nav above it.
 .blog-page {
-  max-width: var(--content-max-width);
-  margin: 0 auto;
+  position: relative;
 }
 
 // Left-aligned with the posts below it. A page title is not a splash screen;
@@ -38,20 +40,25 @@
 .blog-controls {
   margin-bottom: var(--space-6);
   padding: var(--space-5);
-  background: var(--bg-card);
+  @include outline-block;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
   position: relative;
 
   .search-container {
     margin-bottom: var(--space-4);
 
+    // The one place on this page that takes a wash rather than a bare outline:
+    // a text field has to look like something you can type into, and a
+    // transparent box with a hairline inside another transparent box with a
+    // hairline reads as a nested panel. The wash is 4% white — enough to name
+    // it as a field, far short of a slab. The 2px border stays so the green
+    // focus ring keeps its weight.
     .search-input {
       width: 100%;
       padding: 0.75rem 1rem;
-      border: 2px solid var(--border-color);
+      border: 2px solid var(--border-floating);
       border-radius: var(--radius-sm);
-      background: var(--bg-primary);
+      background: rgba(255, 255, 255, 0.04);
       color: var(--text-primary);
       font-size: 1rem;
       font-family:
@@ -65,7 +72,7 @@
       &:focus {
         outline: none;
         border-color: var(--primary-color);
-        background: var(--bg-hover);
+        background: rgba(255, 255, 255, 0.07);
       }
 
       &::placeholder {
@@ -89,9 +96,9 @@
 
       .filter-btn {
         padding: 0.5rem 1rem;
-        border: 2px solid var(--border-color);
+        border: 2px solid var(--border-floating);
         border-radius: var(--radius-sm);
-        background: var(--bg-primary);
+        background: transparent;
         color: var(--text-primary);
         font-size: 0.9rem;
         font-family:
@@ -102,16 +109,17 @@
         transition: all var(--transition-fast);
 
         &:hover {
-          border-color: var(--border-active);
-          background: var(--bg-hover);
+          border-color: rgba(255, 255, 255, 0.4);
         }
 
-        // Selected reads as a brighter hairline and brighter type — the one
-        // neutral "this is the chosen one" treatment used across the site.
+        // Selected reads as a brighter hairline and a light wash — the one
+        // neutral "this is the chosen one" treatment used across the site. The
+        // wash is what a bare outline cannot do here: the chips sit in a row
+        // and the selected one has to be findable at a glance.
         &.active {
-          background: var(--bg-hover);
+          background: rgba(255, 255, 255, 0.08);
           color: var(--text-primary);
-          border-color: var(--text-secondary);
+          border-color: rgba(255, 255, 255, 0.45);
         }
       }
     }
@@ -131,11 +139,13 @@
         text-transform: lowercase;
       }
 
+      // Same wash as the search input, and for the same reason: a select has
+      // to read as a control rather than as a caption.
       .sort-select {
         padding: 0.5rem 0.75rem;
-        border: 2px solid var(--border-color);
+        border: 2px solid var(--border-floating);
         border-radius: var(--radius-sm);
-        background: var(--bg-primary);
+        background: rgba(255, 255, 255, 0.04);
         color: var(--text-primary);
         font-size: 0.9rem;
         font-family:
@@ -148,13 +158,17 @@
         &:focus {
           outline: none;
           border-color: var(--primary-color);
-          background: var(--bg-hover);
+          background: rgba(255, 255, 255, 0.07);
         }
 
         &:hover {
-          border-color: var(--border-active);
+          border-color: rgba(255, 255, 255, 0.4);
         }
 
+        // The one fill left in this panel, and it is not ours to remove: the
+        // option list is painted by the platform in its own popup layer, with
+        // no scrim behind it. Transparent here means unreadable text on the
+        // desktop.
         option {
           background: var(--bg-primary);
           color: var(--text-primary);
@@ -163,9 +177,12 @@
       }
     }
 
+    // Already an outline; it takes the row's hairline rather than the brighter
+    // one it used to draw for itself, which now that its neighbours are
+    // outlines too would have made "clear" the loudest control in the panel.
     .clear-filters-btn {
       padding: 0.5rem 1rem;
-      border: 2px solid var(--text-secondary);
+      border: 2px solid var(--border-floating);
       border-radius: var(--radius-sm);
       background: transparent;
       color: var(--text-secondary);
@@ -178,18 +195,18 @@
       transition: all var(--transition-fast);
 
       &.active {
-        border-color: var(--text-secondary);
+        border-color: rgba(255, 255, 255, 0.45);
         color: var(--text-primary);
       }
 
       &.disabled {
         opacity: 0.4;
         cursor: not-allowed;
-        border-color: var(--text-muted);
+        border-color: var(--border-floating);
         color: var(--text-muted);
 
         &:hover {
-          border-color: var(--text-muted);
+          border-color: var(--border-floating);
           color: var(--text-muted);
           box-shadow: none;
         }
@@ -218,16 +235,17 @@
 }
 
 .post-preview {
-  background: var(--bg-card);
+  @include outline-block;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
   position: relative;
   transition: all var(--transition-normal);
 
   // The rail marks which post you are on. It is a state, so it stays — but a
   // state reads perfectly well as a hairline getting brighter and wider; the
   // blue-to-cyan gradient was saying nothing the width was not already saying.
+  // White-alpha rather than --border-active: that token is #2a2a2a, tuned
+  // against a solid card, and it is invisible over the window's scrim.
   &::before {
     content: '';
     position: absolute;
@@ -235,14 +253,13 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: var(--border-active);
+    background: rgba(255, 255, 255, 0.18);
     border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   }
 
   @include reading-emphasis {
-    background: var(--bg-hover);
     box-shadow: var(--shadow-md);
-    border-color: var(--border-active);
+    border-color: rgba(255, 255, 255, 0.4);
 
     &::before {
       width: 4px;
@@ -268,11 +285,11 @@
   color: var(--text-secondary);
 }
 
-// The site's one chip: a quiet surface with a hairline. Categories, tags and
-// skills all use it — none of them are a status, so none of them get a hue.
+// The site's one chip: an outline with a hairline. Categories, tags and skills
+// all use it — none of them are a status, so none of them get a hue, and none
+// of them get a fill either now that they sit on the window's scrim.
 .post-category {
-  background: var(--bg-hover);
-  border: 1px solid var(--border-active);
+  @include outline-block;
   color: var(--text-secondary);
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -333,25 +350,22 @@
 // A post's own title block is content, not a page hero — it stays inside the
 // window and scrolls with the article.
 .blog-post-page {
-  max-width: var(--content-max-width);
-  margin: 0 auto;
+  position: relative;
 }
 
 .post-header {
   margin-bottom: var(--space-6);
   padding: var(--space-5);
-  background: var(--bg-card);
+  @include outline-block;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
   position: relative;
 }
 
 .post-content {
   margin-bottom: var(--space-6);
   padding: var(--space-5);
-  background: var(--bg-card);
+  @include outline-block;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
   line-height: 1.7;
   position: relative;
 
@@ -402,35 +416,42 @@
     margin-bottom: var(--space-2);
   }
 
+  // A pull quote inside an outlined card: the rail is the whole device now,
+  // and it is white-alpha so it survives the scrim.
   blockquote {
-    border-left: 3px solid var(--border-active);
-    padding-left: var(--space-4);
+    border-left: 3px solid rgba(255, 255, 255, 0.25);
     margin: var(--space-5) 0;
     font-style: italic;
     color: var(--text-secondary);
-    background: var(--bg-card);
+    background: transparent;
     padding: 1.5rem;
     border-radius: var(--radius-sm);
     position: relative;
   }
 
+  // Inline code takes a wash rather than a bare outline: a hairline around a
+  // three-character span in the middle of a sentence reads as a border, not as
+  // an inset, and the whole point of the treatment is that this is set-in text.
   code {
-    background: var(--bg-hover);
+    background: rgba(255, 255, 255, 0.06);
     padding: 0.2rem 0.4rem;
     border-radius: var(--radius-sm);
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 0.9rem;
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
+  // Code blocks keep the same 4% wash the form fields use. A listing is a
+  // second reading surface inside the prose, and over a live simulation an
+  // entirely transparent one loses its column edges.
   pre {
-    background: var(--bg-card);
+    background: rgba(255, 255, 255, 0.04);
     padding: var(--space-4);
     border-radius: var(--radius-md);
     overflow-x: auto;
     margin: var(--space-5) 0;
-    border: 1px solid var(--border-active);
+    border: 1px solid var(--border-floating);
     position: relative;
 
     code {
@@ -460,10 +481,12 @@
     margin: var(--space-5) 0;
   }
 
+  // Interior rules inside an outlined card: white-alpha, or they are drawn in
+  // a near-black that the scrim swallows whole.
   hr {
     border: none;
     height: 1px;
-    background: var(--border-color);
+    background: rgba(255, 255, 255, 0.08);
     margin: var(--space-6) 0;
   }
 
@@ -484,7 +507,7 @@
     td {
       padding: 0.6rem 1rem;
       text-align: left;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       vertical-align: top;
     }
 
@@ -511,7 +534,7 @@
 
 .post-footer {
   padding-top: var(--space-5);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 // Below the post card, so it sits on the background: white with a halo rather
@@ -530,14 +553,9 @@
 
 @media (max-width: 768px) {
   // The type scale is fluid now, so the old hand-set mobile sizes are gone —
-  // they only fought the clamp they were meant to replace.
-  .blog-page {
-    padding: 0 var(--space-3);
-  }
-  .blog-post-page {
-    padding-left: var(--space-3);
-    padding-right: var(--space-3);
-  }
+  // they only fought the clamp they were meant to replace. The mobile gutter
+  // is gone with them: it belongs to .main, which narrows it here for the
+  // whole site at once.
 
   .blog-controls {
     // "sort by date:" plus the select is wider than a small phone; let the
