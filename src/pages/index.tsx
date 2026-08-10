@@ -12,38 +12,13 @@ const IndexPage: React.FC = () => {
   const { containerRef: expertiseRef, isActive: isExpertiseActive } =
     useScrollSpy<HTMLDivElement>('.expertise-item');
 
-  // The collapse choreography needs real widths: at full collapse the title
-  // parks on the left edge and the subtitle on the right, each travelling
-  // half of its leftover space, and the subtitle rises to the title's
-  // centerline. CSS can't measure, so the shifts are published as pixel
-  // custom properties and the stylesheet scales them by --hero-collapse.
-  const heroRef = React.useRef<HTMLElement>(null);
-  React.useLayoutEffect(() => {
-    const el = heroRef.current;
-    if (!el) return;
-    const measure = () => {
-      const h1 = el.querySelector('h1');
-      const sub = el.querySelector<HTMLElement>('.hero-subtitle');
-      if (!h1 || !sub) return;
-      const w = el.clientWidth;
-      el.style.setProperty('--title-shift', `${(w - h1.offsetWidth) / 2}px`);
-      el.style.setProperty('--sub-shift', `${(w - sub.offsetWidth) / 2}px`);
-      el.style.setProperty(
-        '--row-lift',
-        `${(h1.offsetHeight + sub.offsetHeight) / 2}px`
-      );
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   // The cover, on the bare field above the window. It collapses on scroll
-  // like every other page hero: the subtitle gives its space back to the
-  // window and returns when the reader scrolls back to the top.
+  // like every other page hero: the title slides to the left edge and the
+  // subtitle rises onto its row, and both come back at the top of the page.
+  // Layout measures the distances (see its hero effect) — the choreography is
+  // the same on every page now, so nothing about it lives here.
   const hero = (
-    <section className="hero" ref={heroRef}>
+    <section className="hero">
       <h1>{homepageConfig.hero.title}</h1>
       {/* The subtitle is also the map of the projects page: each segment
           links to its section anchor there. */}

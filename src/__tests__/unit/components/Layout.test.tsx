@@ -342,6 +342,138 @@ describe('Layout Component', () => {
     expect(stage.style.getPropertyValue('--hero-collapse')).toBe('1');
   });
 
+  describe('hero split geometry', () => {
+    // jsdom lays nothing out — every box is 0×0 — so the numbers the effect
+    // reads have to be planted on the elements by hand, and the ResizeObserver
+    // stub has to hand back its callback so the re-measure can be driven.
+    const stub = (el: HTMLElement, box: Record<string, number>) => {
+      Object.entries(box).forEach(([key, value]) => {
+        Object.defineProperty(el, key, { value, configurable: true });
+      });
+    };
+
+    let observers: (() => void)[] = [];
+    let observe: jest.Mock;
+    let disconnect: jest.Mock;
+    let original: typeof ResizeObserver;
+
+    beforeEach(() => {
+      observers = [];
+      observe = jest.fn();
+      disconnect = jest.fn();
+      original = global.ResizeObserver;
+      global.ResizeObserver = class {
+        observe = observe;
+        unobserve = jest.fn();
+        disconnect = disconnect;
+        constructor(callback: () => void) {
+          observers.push(callback);
+        }
+      } as unknown as typeof ResizeObserver;
+    });
+
+    afterEach(() => {
+      global.ResizeObserver = original;
+    });
+
+    const pageHero = (
+      <header data-testid="page-hero">
+        <h1>projects</h1>
+        <p>a collection of open source projects.</p>
+      </header>
+    );
+
+    it('should publish the travel distances the split choreography needs', () => {
+      const { unmount } = render(
+        <TestWrapper hero={pageHero} collapsibleHero>
+          {mockChildren}
+        </TestWrapper>
+      );
+
+      const heroRegion = document.querySelector('.site-hero') as HTMLElement;
+      const container = screen.getByTestId('page-hero');
+      stub(container, { clientWidth: 1000 });
+      stub(container.querySelector('h1') as HTMLElement, {
+        offsetWidth: 200,
+        offsetHeight: 60,
+      });
+      stub(container.querySelector('p') as HTMLElement, {
+        offsetWidth: 900,
+        offsetHeight: 30,
+      });
+
+      // The region is what is watched; the column the boxes travel across is
+      // the page's own hero element inside it.
+      expect(observe).toHaveBeenCalledWith(heroRegion);
+      observers.forEach(callback => callback());
+
+      // Each box travels half of its own leftover space, so at full collapse
+      // the title sits on the left edge and the tagline on the right.
+      expect(heroRegion.style.getPropertyValue('--title-shift')).toBe('400px');
+      expect(heroRegion.style.getPropertyValue('--sub-shift')).toBe('50px');
+      // Half of the stacked height is what puts the tagline on the title's row.
+      expect(heroRegion.style.getPropertyValue('--row-lift')).toBe('45px');
+      // 900 does not fit beside 200 × 0.55 with a 24px gap in 1000, so the
+      // tagline gives back exactly the overrun.
+      expect(
+        Number(heroRegion.style.getPropertyValue('--sub-scale'))
+      ).toBeCloseTo((1000 - 200 * 0.55 - 24) / 900, 6);
+
+      unmount();
+      expect(disconnect).toHaveBeenCalled();
+    });
+
+    it('should leave a tagline that already fits at full size', () => {
+      render(
+        <TestWrapper hero={pageHero} collapsibleHero>
+          {mockChildren}
+        </TestWrapper>
+      );
+
+      const heroRegion = document.querySelector('.site-hero') as HTMLElement;
+      const container = screen.getByTestId('page-hero');
+      stub(container, { clientWidth: 1000 });
+      stub(container.querySelector('h1') as HTMLElement, {
+        offsetWidth: 200,
+        offsetHeight: 60,
+      });
+      stub(container.querySelector('p') as HTMLElement, {
+        offsetWidth: 300,
+        offsetHeight: 30,
+      });
+      observers.forEach(callback => callback());
+
+      // Room to spare never becomes a scale-up: the tagline is drawn at its
+      // own size, as it is on the homepage.
+      expect(heroRegion.style.getPropertyValue('--sub-scale')).toBe('1');
+    });
+
+    it('should measure nothing for a hero that is not a title and a tagline', () => {
+      render(
+        <TestWrapper hero={<p data-testid="bare-hero">Hero</p>} collapsibleHero>
+          {mockChildren}
+        </TestWrapper>
+      );
+
+      const heroRegion = document.querySelector('.site-hero') as HTMLElement;
+      observers.forEach(callback => callback());
+
+      expect(heroRegion.style.getPropertyValue('--title-shift')).toBe('');
+      expect(heroRegion.style.getPropertyValue('--sub-scale')).toBe('');
+    });
+
+    it('should not measure a hero the page has not made collapsible', () => {
+      render(<TestWrapper hero={pageHero}>{mockChildren}</TestWrapper>);
+
+      expect(observe).not.toHaveBeenCalled();
+      expect(
+        (
+          document.querySelector('.site-hero') as HTMLElement
+        ).style.getPropertyValue('--title-shift')
+      ).toBe('');
+    });
+  });
+
   it('should handle empty children', () => {
     render(<TestWrapper>{null}</TestWrapper>);
 

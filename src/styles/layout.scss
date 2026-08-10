@@ -103,23 +103,77 @@
   );
   transition: padding 120ms linear;
 
+  // Every hero is a title and a tagline stacked and centred. The column of
+  // content-width boxes is what lets the split below move each one outward by
+  // transform alone, without either of them reflowing.
+  > * {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
   // The title stays — it is the page's name — but gives back the gap under it.
   h1 {
     margin-bottom: calc(var(--space-3) * (1 - var(--hero-collapse)));
     transition: margin-bottom 120ms linear;
   }
 
-  // The tagline is the part that goes: it fades and closes its own height, so
-  // the window's top edge rises with it.
+  // The tagline is the last thing in the hero; the room under it is the hero's
+  // own padding, not a paragraph margin. Left in, the global `p` bottom margin
+  // is space the collapse can never reclaim.
   p {
-    opacity: calc(1 - var(--hero-collapse));
-    max-height: calc(6rem * (1 - var(--hero-collapse)));
-    overflow: hidden;
-    transform: translateY(calc(-0.5rem * var(--hero-collapse)));
-    transition:
-      opacity 120ms linear,
-      max-height 120ms linear,
-      transform 120ms linear;
+    margin-bottom: 0;
+  }
+
+  // The split. At rest the two are stacked and centred; on scroll the title
+  // slides to the left edge and shrinks while the tagline slides to the right
+  // edge and rises onto the title's row, so at full collapse they sit as one
+  // line floating above the window. The pixel distances are measured by Layout
+  // — they depend on rendered text widths — and everything here does is scale
+  // them by the same --hero-collapse the stage publishes.
+  @media (min-width: 769px) {
+    h1 {
+      transform: translateX(
+          calc(-1 * var(--hero-collapse) * var(--title-shift, 0px))
+        )
+        scale(calc(1 - 0.45 * var(--hero-collapse)));
+      transform-origin: left center;
+      transition:
+        transform 120ms linear,
+        margin-bottom 120ms linear;
+    }
+
+    p {
+      // The tagline travels rather than fading, so it keeps its ink the whole
+      // way. --sub-scale is 1 wherever it already fits beside the shrunken
+      // title, and below 1 on the one page where it does not; the right-edge
+      // origin keeps it parked against the column's right side either way.
+      opacity: 1;
+      margin-top: calc(-1 * var(--hero-collapse) * var(--row-lift, 0px));
+      transform: translateX(calc(var(--hero-collapse) * var(--sub-shift, 0px)))
+        scale(calc(1 - (1 - var(--sub-scale, 1)) * var(--hero-collapse)));
+      transform-origin: right center;
+      transition:
+        transform 120ms linear,
+        margin-top 120ms linear;
+    }
+  }
+
+  // Phones have no room for the two side by side, so below the split's
+  // breakpoint the tagline does what it always did: it fades and closes its
+  // own height, and the window's top edge rises with it.
+  @media (max-width: 768px) {
+    p {
+      opacity: calc(1 - var(--hero-collapse));
+      max-height: calc(6rem * (1 - var(--hero-collapse)));
+      overflow: hidden;
+      transform: translateY(calc(-0.5rem * var(--hero-collapse)));
+      transition:
+        opacity 120ms linear,
+        max-height 120ms linear,
+        transform 120ms linear;
+    }
   }
 
   // The scroll link itself is position, not motion, so it stays. What goes is
