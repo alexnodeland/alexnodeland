@@ -105,6 +105,31 @@
   }
 }
 
+// The hero that is leaving. It is a second .site-hero — same padding, same
+// collapse choreography, pinned to the value it was wearing — parked at the
+// box the live one occupied and taken out from under its replacement, so the
+// two are on screen together and a navigation never shows an empty hero.
+//
+// Its geometry is written inline by Layout from the measured box, so the
+// centring the live region does by `margin: 0 auto` inside a max-width has to
+// come off, and it sits behind everything in the stage: the arriving hero
+// reads over it, and the window's frame rising into the space it is vacating
+// covers it rather than the other way round.
+.hero-ghost {
+  position: absolute;
+  z-index: -1;
+  margin: 0;
+  max-width: none;
+  pointer-events: none;
+
+  // The brand is not part of the dissolve. The live copy is travelling from
+  // exactly this box to its new home, and two of the same word — one flying,
+  // one fading in place — reads as a glitch rather than as continuity.
+  [data-brand-anchor] {
+    visibility: hidden;
+  }
+}
+
 // The way home lives in the title: "alex → blog". The crumb is a real link,
 // so it takes the link green; the arrow is punctuation and stays quiet.
 .hero-crumb {
@@ -116,6 +141,13 @@
     text-decoration: underline;
     text-underline-offset: 0.2em;
   }
+}
+
+// Everything after the crumb, as one box. On a navigation this is what fades
+// and rises while the crumb itself travels at full ink, so it has to be
+// transformable — an inline span is not.
+.hero-crumb-rest {
+  display: inline-block;
 }
 
 .hero-crumb-sep {
