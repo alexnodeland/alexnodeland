@@ -84,8 +84,10 @@
   border-radius: var(--radius-lg);
   position: fixed;
   top: var(--window-inset); // Header overlays the panel top transparently
-  left: var(--window-inset);
-  right: var(--window-inset);
+  // Hug the content column: on wide viewports the frame stops at
+  // --window-max-width and the field takes the rest; the inset is the floor.
+  left: max(var(--window-inset), calc((100vw - var(--window-max-width)) / 2));
+  right: max(var(--window-inset), calc((100vw - var(--window-max-width)) / 2));
   bottom: var(--window-inset-bottom); // Rides just above the floating pills
   // Grounds the panel on the field; the field is animated and often bright,
   // so this reads as depth rather than as a visible shadow shape.
@@ -196,7 +198,9 @@
   // moving underneath it.
   background: transparent;
   border: none;
-  margin: var(--window-inset) var(--window-inset) 0; // Sit on the window's top edge
+  // Sit on the window's top edge, tracking the same content-hugging geometry
+  margin: var(--window-inset)
+    max(var(--window-inset), calc((100vw - var(--window-max-width)) / 2)) 0;
   box-shadow: none;
   transition: all var(--transition-normal);
   border-radius: var(--radius-lg);
