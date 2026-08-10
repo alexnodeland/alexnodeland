@@ -94,6 +94,15 @@
   border: 1px solid var(--window-border);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
+  // The window shows no scrollbar of its own: a bar riding the frame reads as
+  // chrome bolted onto the panel and breaks the device-screen metaphor. On
+  // systems set to always-show scrollbars it rendered as a full-height white
+  // strip. Scrolling is untouched; inner scrollables keep their thin bars.
+  scrollbar-width: none; // Firefox
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
   // Shifted state when settings panel is open - resize and reposition
   &.settings-panel-open {
     left: calc(28rem + var(--window-inset));
