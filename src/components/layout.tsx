@@ -31,17 +31,44 @@ const HERO_COLLAPSE_RANGE = 160;
 const TITLE_SCALE = 0.55;
 const COLLAPSED_GAP = 24;
 
-// The navigation transition, in milliseconds. The old hero peels first, the
-// new one is written in its place, and the hero region's height eases between
-// the two so the window below it grows or shrinks instead of snapping. The
-// page's own content eases in inside the window — the frame itself never
-// moves, because it is the same element it was before the navigation.
-const HERO_OUT_MS = 120;
-const HERO_IN_MS = 160;
-const HERO_RESIZE_MS = 200;
-const CONTENT_IN_MS = 200;
+// The navigation transition, in milliseconds.
+//
+// The two heroes pass like a reel: the outgoing one is kept on screen as a
+// ghost and drifts up and out while the incoming one is already rising in
+// underneath it, so there is never a frame with no hero. The region's height
+// eases between what the two occupy, which is what makes the window below —
+// `flex: 1` — grow or shrink rather than snap. The page's own content eases in
+// inside a frame that does not move, because it is the same element it was.
+//
+// The numbers sit in the same band as the rest of the chrome (the rail
+// capsules transition at 300ms): long enough to read as a move rather than a
+// blink, short enough not to be in the way of the next click.
+const HERO_OUT_MS = 160;
+const HERO_IN_MS = 240;
+// The tagline is the second beat. It starts after the title and runs a little
+// longer, so the hero assembles rather than arriving as one slab.
+const TAGLINE_DELAY_MS = 60;
+const TAGLINE_IN_MS = 260;
+const HERO_RESIZE_MS = 260;
+const CONTENT_IN_MS = 240;
+// The brand is the longest thread in the move, and the one the eye follows.
+const BRAND_FLIP_MS = 380;
+
+// How far anything travels on the way in or out. One distance for the whole
+// transition, and one direction: everything moves up through the frame.
+const RISE_PX = 10;
 
 const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
+// EASE_OUT reflected. What leaves accelerates away exactly as hard as what
+// arrives decelerates in, so the two halves of a swap are one gesture instead
+// of two easing families meeting in the middle.
+const EASE_IN = 'cubic-bezier(0.7, 0, 0.84, 0)';
+
+// The incoming pieces all share these keyframes; only their timing differs.
+const RISE_IN = [
+  { opacity: 0, transform: `translateY(${RISE_PX}px)` },
+  { opacity: 1, transform: 'none' },
+];
 
 const prefersReducedMotion = () => {
   if (typeof window === 'undefined') return false;
@@ -51,6 +78,19 @@ const prefersReducedMotion = () => {
 
 const canAnimate = (el: Element | null | undefined): el is HTMLElement =>
   Boolean(el) && typeof (el as HTMLElement).animate === 'function';
+
+// The collapse the stage is publishing right now. Read before a navigation
+// zeroes it, and pinned onto the ghost, so a hero that was scrolled down when
+// the reader clicked leaves looking exactly as it did.
+const readCollapse = (stage: HTMLElement): string => {
+  if (typeof window === 'undefined') return '0';
+  if (typeof window.getComputedStyle !== 'function') return '0';
+  const value = window
+    .getComputedStyle(stage)
+    .getPropertyValue('--hero-collapse')
+    .trim();
+  return value || '0';
+};
 
 // The footer marks, drawn as one monoline set rather than collected: the
 // vendor logos were a mix of outline and solid and read as five unrelated
@@ -117,10 +157,23 @@ const FALLBACK_ICON = (
 const socialIcon = (platform: string): React.ReactNode =>
   SOCIAL_ICONS[platform] ?? FALLBACK_ICON;
 
-// What the hero peel measures before it runs, so the swap can put it back.
+// What the departing hero is measured for, so the arriving one can be animated
+// off those numbers rather than off nothing.
 interface HeroSnapshot {
   height: number;
   brand: DOMRect | null;
+  ghostId: number;
+}
+
+// The outgoing hero, kept on screen for the length of its exit. It is rendered
+// from the same registry as the live one — a second resolution of the path
+// that is leaving — rather than cloned out of the DOM, so it is React's to
+// mount and unmount like anything else.
+interface HeroGhost {
+  id: number;
+  path: string;
+  collapsible: boolean;
+  style: React.CSSProperties;
 }
 
 const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
@@ -138,9 +191,9 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
   const pathname = location?.pathname ?? '/';
 
-  // The hero the shell is currently wearing. It lags the router by the length
-  // of the peel — the outgoing hero has to still be on screen to fade out —
-  // and catches up the moment that finishes.
+  // The hero the shell is currently wearing. It follows the router in the same
+  // frame — the outgoing one is held separately, as a ghost, rather than by
+  // making the live hero wait for its own exit to finish.
   const [shownPath, setShownPath] = React.useState(pathname);
   const {
     key: heroKey,
@@ -151,23 +204,26 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
   const previousPathRef = React.useRef<string | null>(null);
   const snapshotRef = React.useRef<HeroSnapshot | null>(null);
-  const peelRef = React.useRef<Animation | null>(null);
   const releaseHeightRef = React.useRef<(() => void) | null>(null);
-  // While a hero is peeling, the scroll-linked properties stop being written:
-  // the departure has to look exactly like what was on screen, and putting the
-  // window back to the top would otherwise snap a collapsed hero open under
-  // the fade. The two `sync` refs are how the transition hands the link back —
-  // they re-zero each effect's change cache and republish from the real
-  // scrollTop, so nothing is left stale.
-  const scrollLinkFrozenRef = React.useRef(false);
+  const ghostRef = React.useRef<HTMLElement>(null);
+  const ghostIdRef = React.useRef(0);
+  const ghostTimerRef = React.useRef(0);
+  // The scroll-linked properties cache the last value they wrote, so after a
+  // navigation puts the window back to the top they have to be told to forget
+  // it and republish — otherwise the next scroll that lands on the same number
+  // is skipped as "no change".
   const syncCollapseRef = React.useRef<(() => void) | null>(null);
   const syncVeilRef = React.useRef<(() => void) | null>(null);
 
+  // The outgoing hero, held on screen while it leaves.
+  const [ghost, setGhost] = React.useState<HeroGhost | null>(null);
+
   // ── The navigation, half one ────────────────────────────────────────────
   // The page inside the window has already swapped by the time this runs (it
-  // is the same commit), so what is left is the shell's half: put the window
-  // back to the top, ease the new content in, and peel the outgoing hero —
-  // from wherever the hero actually was, collapsed or not.
+  // is the same commit). What is left is the shell's half: read the hero that
+  // is leaving, hand it to a ghost, put the window back to the top, and swap
+  // the live hero in the same flush — so the two exist together and nothing
+  // ever shows an empty hero.
   React.useLayoutEffect(() => {
     const previous = previousPathRef.current;
     previousPathRef.current = pathname;
@@ -175,20 +231,14 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     if (previous === null || previous === pathname) return;
 
     const region = heroRef.current;
+    const stage = stageRef.current;
     const panel = windowRef.current;
     const reduce = prefersReducedMotion();
     const heroChanged = heroKeyFor(pathname) !== heroKey;
 
-    // A hero that has not finished its last peel would otherwise fade from
-    // wherever it stopped.
-    peelRef.current?.cancel();
-    peelRef.current = null;
-    // A navigation that interrupts another one inherits nothing from it.
-    scrollLinkFrozenRef.current = false;
-
     // Read the outgoing hero exactly as it stands — collapsed if the reader
-    // had scrolled — before anything below disturbs the layout. These two
-    // numbers are the transition's starting state.
+    // had scrolled — before anything below disturbs the layout. Its box, its
+    // brand's box and the collapse it is wearing are the whole starting state.
     const height = region ? region.getBoundingClientRect().height : 0;
     const brand =
       region
@@ -196,103 +246,77 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         ?.getBoundingClientRect() ?? null;
 
     const animating = !reduce && heroChanged && canAnimate(region);
-    // There is only something to peel if the outgoing page had a hero at all;
-    // arriving from a blog post, the incoming one simply grows in.
-    const peeling = animating && region.childElementCount > 0;
+    // There is only something to see out if the outgoing page had a hero at
+    // all; arriving from a blog post, the incoming one simply rises in.
+    const seeingOut = animating && region.childElementCount > 0;
 
-    // Hold --hero-collapse where it is for the length of the peel. The scroll
-    // reset on the next line would otherwise zero it instantly and the
-    // outgoing hero would spring back open as it faded.
-    if (peeling) scrollLinkFrozenRef.current = true;
+    const ghostId = ++ghostIdRef.current;
+    if (seeingOut && stage) {
+      const box = region.getBoundingClientRect();
+      const stageBox = stage.getBoundingClientRect();
+      setGhost({
+        id: ghostId,
+        path: shownPath,
+        collapsible: shouldCollapse,
+        style: {
+          top: box.top - stageBox.top,
+          left: box.left - stageBox.left,
+          width: box.width,
+          height: box.height,
+          // Pinned, so the ghost keeps the geometry the reader was actually
+          // looking at while the live region below it goes back to rest.
+          '--hero-collapse': readCollapse(stage),
+        } as React.CSSProperties,
+      });
+    } else {
+      setGhost(null);
+    }
 
     // The window is one element across the whole site now, so it keeps its
-    // scroll position between pages unless we put it back.
+    // scroll position between pages unless we put it back, and a new hero must
+    // never arrive already collapsed.
     if (panel) {
       panel.scrollTop = 0;
       // The veil belongs to a scroll that no longer exists. It has its own
       // short opacity transition, so writing 0 fades it rather than cutting.
       panel.style.setProperty('--veil-strength', '0');
     }
+    stage?.style.setProperty('--hero-collapse', '0');
+    syncCollapseRef.current?.();
+    syncVeilRef.current?.();
 
-    if (!animating) {
-      // Nothing to protect: put the hero back to its resting state with the
-      // page and let the scroll link resume immediately.
-      stageRef.current?.style.setProperty('--hero-collapse', '0');
-      syncCollapseRef.current?.();
-      syncVeilRef.current?.();
-      setShownPath(pathname);
-      if (!reduce && canAnimate(mainRef.current)) animateContentIn();
-      return;
-    }
+    if (animating) snapshotRef.current = { height, brand, ghostId };
 
-    snapshotRef.current = { height, brand };
+    // The swap is immediate: React flushes this before the browser paints, so
+    // the ghost and the new hero land in the same frame.
+    setShownPath(pathname);
 
     // The arrival ease is scoped to the content, not to the window: the frame
     // is the same panel it was a moment ago and blinking it would say
     // otherwise.
-    if (canAnimate(mainRef.current)) animateContentIn();
-
-    if (!peeling) {
-      setShownPath(pathname);
-      return;
+    if (!reduce && canAnimate(mainRef.current)) {
+      mainRef.current.animate(RISE_IN, {
+        duration: CONTENT_IN_MS,
+        easing: EASE_OUT,
+      });
     }
-
-    const peel = region.animate(
-      [
-        { opacity: 1, transform: 'none' },
-        { opacity: 0, transform: 'translateY(-4px)' },
-      ],
-      { duration: HERO_OUT_MS, easing: 'ease-in', fill: 'forwards' }
-    );
-    peelRef.current = peel;
-
-    let abandoned = false;
-    const swap = () => {
-      if (!abandoned) setShownPath(pathname);
-    };
-    if (peel.finished) {
-      peel.finished.then(swap, () => {});
-    } else {
-      peel.onfinish = swap;
-    }
-    return () => {
-      abandoned = true;
-    };
-
-    function animateContentIn() {
-      mainRef.current?.animate(
-        [
-          { opacity: 0, transform: 'translateY(8px)' },
-          { opacity: 1, transform: 'none' },
-        ],
-        { duration: CONTENT_IN_MS, easing: 'ease-out' }
-      );
-    }
-    // heroKey is derived from shownPath, which this effect drives; re-running
-    // on it would restart the transition halfway through its own swap.
+    // heroKey, shownPath and shouldCollapse all describe the page being left;
+    // this effect is what replaces them, so re-running on them would restart
+    // the transition halfway through its own swap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   // ── The navigation, half two ────────────────────────────────────────────
-  // The new hero is in the DOM. Write it in, and ease the region's height from
-  // what the old one occupied to what this one does — the window is `flex: 1`,
-  // so that one transition is what makes it resize rather than jump.
+  // Both heroes are in the DOM. Run the move: the region's height eases from
+  // what the old one occupied to what this one does (the window is `flex: 1`,
+  // so that one transition is what resizes it), the new hero assembles title
+  // first and tagline second, the brand travels between the two at full ink,
+  // and the ghost drifts up and out from under it.
   React.useLayoutEffect(() => {
     const snapshot = snapshotRef.current;
     snapshotRef.current = null;
     const region = heroRef.current;
     if (!snapshot || !region) return;
-
-    // Release the hold before anything forces layout: the new hero has to
-    // resolve its style at --hero-collapse 0 the first time, or the collapse
-    // transitions in the stylesheet would run it open in front of the reader.
-    scrollLinkFrozenRef.current = false;
-    stageRef.current?.style.setProperty('--hero-collapse', '0');
-    syncCollapseRef.current?.();
-    syncVeilRef.current?.();
-
-    peelRef.current?.cancel();
-    peelRef.current = null;
 
     // Measure the new hero at its natural height with any leftover lock
     // lifted, then put the old height back and transition off it.
@@ -326,23 +350,37 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       releaseHeightRef.current = release;
     }
 
-    if (canAnimate(region) && region.childElementCount > 0) {
-      region.animate(
-        [
-          { opacity: 0, transform: 'translateY(6px)' },
-          { opacity: 1, transform: 'none' },
-        ],
-        { duration: HERO_IN_MS, easing: 'ease-out' }
-      );
+    // The incoming hero, in two beats rather than as one block. What fades is
+    // everything except the brand: on a crumb title that is the wrapped tail
+    // ("→ blog"), on the cover there is nothing but the brand, so the title
+    // does not fade at all and only travels.
+    const anchor = region.querySelector<HTMLElement>('[data-brand-anchor]');
+    const h1 = region.querySelector<HTMLElement>('h1');
+    const title =
+      region.querySelector<HTMLElement>('.hero-crumb-rest') ??
+      (anchor && h1?.contains(anchor) ? null : h1);
+    if (canAnimate(title)) {
+      title.animate(RISE_IN, { duration: HERO_IN_MS, easing: EASE_OUT });
+    }
+    const tagline = region.querySelector<HTMLElement>('p');
+    if (canAnimate(tagline)) {
+      tagline.animate(RISE_IN, {
+        duration: TAGLINE_IN_MS,
+        easing: EASE_OUT,
+        delay: TAGLINE_DELAY_MS,
+        // Held at the first keyframe through the delay, so the tagline waits
+        // its turn instead of showing and then fading in.
+        fill: 'backwards',
+      });
     }
 
     // Brand continuity. "alex" is in both heroes — as the cover title on the
-    // homepage, as the crumb everywhere else — so it does not fade with the
-    // rest: it travels from the box it occupied on the outgoing page to the
-    // one it occupies here. Measured in this component rather than stashed by
-    // gatsby-browser, since the shell now outlives the navigation and can hold
-    // the reading itself.
-    const anchor = region.querySelector<HTMLElement>('[data-brand-anchor]');
+    // homepage, as the crumb everywhere else — so it neither fades out with
+    // the ghost (the stylesheet hides the ghost's copy) nor fades in with the
+    // rest: it is the one thing on screen that simply travels, at full ink,
+    // from the box it held to the box it now holds. Measured in this component
+    // rather than stashed by gatsby-browser, since the shell outlives the
+    // navigation and can hold the reading itself.
     if (snapshot.brand && canAnimate(anchor)) {
       const from = snapshot.brand;
       const box = anchor.getBoundingClientRect();
@@ -359,14 +397,42 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
               { transform: `translate(${dx}px, ${dy}px) scale(${scale})` },
               { transform: 'none' },
             ],
-            { duration: 380, easing: EASE_OUT }
+            { duration: BRAND_FLIP_MS, easing: EASE_OUT }
           );
         }
       }
     }
 
+    // The ghost leaves in the same direction everything else is travelling.
+    const { ghostId } = snapshot;
+    const drop = () =>
+      setGhost(current => (current && current.id === ghostId ? null : current));
+    const ghostEl = ghostRef.current;
+    // Set here rather than in the JSX: React 18 drops unknown boolean props,
+    // and `inert` — which is what actually takes the ghost's links out of the
+    // tab order — is one.
+    ghostEl?.setAttribute('inert', '');
+    if (canAnimate(ghostEl)) {
+      const exit = ghostEl.animate(
+        [
+          { opacity: 1, transform: 'none' },
+          { opacity: 0, transform: `translateY(-${RISE_PX}px)` },
+        ],
+        { duration: HERO_OUT_MS, easing: EASE_IN, fill: 'forwards' }
+      );
+      if (exit.finished) exit.finished.then(drop, () => {});
+      else exit.onfinish = drop;
+      // A tab backgrounded mid-exit never resolves `finished`, and a ghost is
+      // not something to leave lying on the field.
+      window.clearTimeout(ghostTimerRef.current);
+      ghostTimerRef.current = window.setTimeout(drop, HERO_OUT_MS + 400);
+    } else {
+      drop();
+    }
+
     return () => {
       releaseHeightRef.current?.();
+      window.clearTimeout(ghostTimerRef.current);
     };
   }, [shownPath]);
 
@@ -385,9 +451,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
     const apply = () => {
       frame = 0;
-      // Mid-transition the hero is whatever the departing page left on
-      // screen; the link resumes when the new one is in.
-      if (scrollLinkFrozenRef.current) return;
       const progress = Math.min(
         Math.max(panel.scrollTop / HERO_COLLAPSE_RANGE, 0),
         1
@@ -432,7 +495,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     let last = -1;
     const apply = () => {
       frame = 0;
-      if (scrollLinkFrozenRef.current) return;
       const o =
         Math.round(Math.min(Math.max(panel.scrollTop / 90, 0), 1) * 20) / 20;
       if (o === last) return;
@@ -585,6 +647,25 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
             >
               {hero}
             </section>
+            {/* The hero that is leaving, parked at the box it occupied and
+                animated out from under the one arriving. It is a real
+                .site-hero so the collapse choreography still applies to it —
+                pinned, via the inline --hero-collapse — and it is hidden from
+                assistive tech and the pointer, because it is a picture of a
+                page that is already gone. */}
+            {ghost && (
+              <section
+                key={ghost.id}
+                className={`site-hero hero-ghost${
+                  ghost.collapsible ? ' is-collapsible' : ''
+                }`}
+                ref={ghostRef}
+                style={ghost.style}
+                aria-hidden="true"
+              >
+                {resolveHero(ghost.path).hero}
+              </section>
+            )}
             <div className="layout" ref={windowRef}>
               {/* A tapered blur pinned to the window's visible top edge:
                   content dissolves as it scrolls out instead of colliding with

@@ -422,6 +422,89 @@ describe('Layout Component', () => {
       expect(windowPanel.style.getPropertyValue('--veil-strength')).toBe('0');
     });
 
+    describe('the crossfade', () => {
+      // jsdom has no Element.animate, so the animated path only runs with one
+      // stubbed in. `finished` is left pending on purpose: the ghost is meant
+      // to be on screen for the length of its exit, and that is the thing
+      // being asserted.
+      let animate: jest.Mock;
+
+      beforeEach(() => {
+        animate = jest.fn(() => ({
+          finished: new Promise<void>(() => {}),
+          cancel: jest.fn(),
+        }));
+        (Element.prototype as unknown as { animate: unknown }).animate =
+          animate;
+      });
+
+      afterEach(() => {
+        delete (Element.prototype as unknown as { animate?: unknown }).animate;
+      });
+
+      it('should keep the outgoing hero on screen while the new one arrives', () => {
+        const { rerender } = render(<Shell pathname="/blog" label="blog" />);
+
+        act(() => {
+          rerender(<Shell pathname="/cv" label="cv" />);
+        });
+
+        // Both heroes exist in the same frame — the swap is immediate and the
+        // one that is leaving is held as a ghost, so there is never a moment
+        // with no hero at all.
+        const ghost = document.querySelector('.hero-ghost') as HTMLElement;
+        expect(ghost).not.toBeNull();
+        expect(ghost.querySelector('.blog-header')).not.toBeNull();
+        expect(
+          document.querySelector('.site-hero:not(.hero-ghost)')
+        ).toContainElement(document.querySelector('.cv-page-header'));
+
+        // It is a picture of a page that is gone, so nothing can reach it.
+        expect(ghost).toHaveAttribute('aria-hidden', 'true');
+        expect(ghost).toHaveAttribute('inert');
+
+        // And it wears the collapse the reader was actually looking at rather
+        // than the resting one the live region has gone back to.
+        expect(ghost.style.getPropertyValue('--hero-collapse')).toBe('0');
+      });
+
+      it('should drop the ghost once its exit finishes', async () => {
+        let finish: () => void = () => {};
+        animate.mockImplementation(() => ({
+          finished: new Promise<void>(resolve => {
+            finish = resolve;
+          }),
+          cancel: jest.fn(),
+        }));
+
+        const { rerender } = render(<Shell pathname="/blog" label="blog" />);
+        act(() => {
+          rerender(<Shell pathname="/cv" label="cv" />);
+        });
+        expect(document.querySelector('.hero-ghost')).not.toBeNull();
+
+        await act(async () => {
+          finish();
+        });
+
+        expect(document.querySelector('.hero-ghost')).toBeNull();
+      });
+
+      it('should not ghost a page that had no hero', () => {
+        const { rerender } = render(
+          <Shell pathname="/blog/a-post" label="post" />
+        );
+
+        act(() => {
+          rerender(<Shell pathname="/cv" label="cv" />);
+        });
+
+        // Nothing was on screen to see out; the new hero simply rises in.
+        expect(document.querySelector('.hero-ghost')).toBeNull();
+        expect(document.querySelector('.cv-page-header')).not.toBeNull();
+      });
+    });
+
     it('should leave a hash-only change alone', () => {
       // The projects page resolves its own anchors; the shell must not fight
       // it by resetting the scroll under it.

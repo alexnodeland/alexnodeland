@@ -32,13 +32,20 @@ export interface ResolvedHero {
 
 // The way home lives in the title: "alex → blog". The crumb is a real link and
 // carries the brand anchor, so it is the thing the FLIP lands on.
+//
+// Everything after the crumb is wrapped rather than left as loose nodes: on a
+// navigation the word "alex" travels between the two heroes at full ink while
+// the rest of the title fades in around it, and the rest has to be one
+// animatable box for that to be possible.
 const crumbTitle = (label: string) => (
   <h1>
     <Link to="/" className="hero-crumb" data-brand-anchor>
       alex
     </Link>
-    <span className="hero-crumb-sep"> → </span>
-    {label}
+    <span className="hero-crumb-rest">
+      <span className="hero-crumb-sep"> → </span>
+      {label}
+    </span>
   </h1>
 );
 
