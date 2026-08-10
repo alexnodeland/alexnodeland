@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
-import CVDropdown from '../../../components/cv/CVDropdown';
+import Dropdown from '../../../components/ui/Dropdown';
 
 const OPTIONS = [
   { value: 'full', label: 'full cv' },
@@ -10,12 +10,12 @@ const OPTIONS = [
 ];
 
 const renderDropdown = (
-  props: Partial<React.ComponentProps<typeof CVDropdown>> = {}
+  props: Partial<React.ComponentProps<typeof Dropdown>> = {}
 ) => {
   const onSelect = jest.fn();
   const utils = render(
     <div>
-      <CVDropdown
+      <Dropdown
         ariaLabel="Choose CV length"
         triggerLabel="full cv"
         options={OPTIONS}
@@ -31,7 +31,7 @@ const renderDropdown = (
 
 const trigger = () => screen.getByRole('button', { name: 'Choose CV length' });
 
-describe('CVDropdown', () => {
+describe('Dropdown', () => {
   it('is a button rather than a native select, and says what it opens', () => {
     renderDropdown();
 

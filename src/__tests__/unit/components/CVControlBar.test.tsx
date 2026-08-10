@@ -135,17 +135,17 @@ describe('CVControlBar', () => {
       const user = userEvent.setup();
       renderBar();
 
-      expect(screen.queryByText('download pdf')).not.toBeInTheDocument();
+      expect(screen.queryByText('pdf')).not.toBeInTheDocument();
 
       await openDownloadMenu(user);
 
       expect(
         screen.getAllByRole('option').map(option => option.textContent)
-      ).toEqual(['download pdf', 'download docx', 'download markdown']);
+      ).toEqual(['pdf', 'docx', 'markdown']);
     });
 
     // The PDFs are typeset by LaTeX at build time (scripts/build-cv.js), so
-    // "download pdf" fetches the artifact for the current length rather than
+    // "pdf" fetches the artifact for the current length rather than
     // generating anything in the browser.
     it('fetches the full-CV artifact by default', async () => {
       const user = userEvent.setup();
@@ -169,7 +169,7 @@ describe('CVControlBar', () => {
 
       renderBar();
       await openDownloadMenu(user);
-      await user.click(screen.getByRole('option', { name: 'download pdf' }));
+      await user.click(screen.getByRole('option', { name: 'pdf' }));
 
       expect(clicked).toEqual([
         { href: '/cv/alex-nodeland-cv.pdf', download: 'alex-nodeland-cv.pdf' },
@@ -196,7 +196,7 @@ describe('CVControlBar', () => {
 
       renderBar({ view: 'resume' });
       await openDownloadMenu(user);
-      await user.click(screen.getByRole('option', { name: 'download pdf' }));
+      await user.click(screen.getByRole('option', { name: 'pdf' }));
 
       expect(hrefs).toEqual(['/cv/alex-nodeland-resume.pdf']);
     });
@@ -206,7 +206,7 @@ describe('CVControlBar', () => {
       renderBar({ view: 'resume' });
 
       await openDownloadMenu(user);
-      await user.click(screen.getByRole('option', { name: 'download docx' }));
+      await user.click(screen.getByRole('option', { name: 'docx' }));
 
       expect(mockExportUtils.exportCVAsDOCX).toHaveBeenCalledWith(
         mockCVData,
@@ -220,9 +220,7 @@ describe('CVControlBar', () => {
       renderBar();
 
       await openDownloadMenu(user);
-      await user.click(
-        screen.getByRole('option', { name: 'download markdown' })
-      );
+      await user.click(screen.getByRole('option', { name: 'markdown' }));
 
       expect(mockExportUtils.exportCVAsMarkdown).toHaveBeenCalledWith(
         mockCVData
@@ -241,7 +239,7 @@ describe('CVControlBar', () => {
 
       renderBar();
       await openDownloadMenu(user);
-      await user.click(screen.getByRole('option', { name: 'download docx' }));
+      await user.click(screen.getByRole('option', { name: 'docx' }));
 
       expect(
         screen.getByRole('button', { name: 'Download the CV' })
@@ -266,7 +264,7 @@ describe('CVControlBar', () => {
 
       renderBar();
       await openDownloadMenu(user);
-      await user.click(screen.getByRole('option', { name: 'download docx' }));
+      await user.click(screen.getByRole('option', { name: 'docx' }));
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith(
@@ -291,9 +289,7 @@ describe('CVControlBar', () => {
 
       renderBar();
       await openDownloadMenu(user);
-      await user.click(
-        screen.getByRole('option', { name: 'download markdown' })
-      );
+      await user.click(screen.getByRole('option', { name: 'markdown' }));
 
       expect(consoleSpy).toHaveBeenCalledWith(
         'Markdown export failed:',
@@ -313,7 +309,7 @@ describe('CVControlBar', () => {
 
       renderBar({ resumeData: resumeDataWithSpaces });
       await openDownloadMenu(user);
-      await user.click(screen.getByRole('option', { name: 'download docx' }));
+      await user.click(screen.getByRole('option', { name: 'docx' }));
 
       expect(mockExportUtils.exportCVAsDOCX).toHaveBeenCalledWith(
         resumeDataWithSpaces,
