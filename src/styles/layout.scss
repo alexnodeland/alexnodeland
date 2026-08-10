@@ -4,18 +4,18 @@
 // CSS Custom Properties for dynamic header height calculation
 :root {
   --header-height: calc(
-    3px + 1.5rem + 1.5rem + 3rem
-  ); // rainbow (3px) + nav padding + nav content height estimate
+    1.5rem + 1.5rem + 3rem
+  ); // nav padding + nav content height estimate
 
   @media (max-width: 768px) {
     --header-height: calc(
-      3px + 1rem + 1rem + 2.5rem
+      1rem + 1rem + 2.5rem
     ); // Adjusted for mobile nav padding
   }
 
   @media (max-width: 480px) {
     --header-height: calc(
-      3px + 0.75rem + 0.75rem + 2rem
+      0.75rem + 0.75rem + 2rem
     ); // Adjusted for small mobile
   }
 }
@@ -71,100 +71,67 @@
   }
 }
 
-// Fixed rainbow border at the top
-.rainbow-border-fixed {
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--accent-color) 0%,
-    var(--retro-blue) 25%,
-    var(--retro-green) 50%,
-    var(--retro-purple) 75%,
-    var(--accent-color) 100%
-  );
-  box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-  animation: borderGlow 3s ease-in-out infinite alternate;
-  margin: 1rem 1rem 0 1rem;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  pointer-events: auto; // Re-enable pointer events for the border
-}
-
+// The content window — a fixed panel inset from the viewport on every side,
+// with the simulation running visibly around it. The page never scrolls;
+// content scrolls inside this frame.
 .layout {
-  min-height: calc(
-    100vh - 2rem - 3px
-  ); // Viewport minus buffers and rainbow height
+  min-height: calc(100vh - (2 * var(--window-inset)));
   display: flex;
   flex-direction: column;
-  background: rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px); // Safari 17 and earlier
+  background: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
   border-radius: var(--radius-lg);
   position: fixed;
-  top: calc(1rem + 3px); // Start below rainbow; header overlays transparently
-  left: 1rem;
-  right: 1rem;
-  bottom: 1rem;
-  box-shadow: var(--shadow-lg);
+  top: var(--window-inset); // Header overlays the panel top transparently
+  left: var(--window-inset);
+  right: var(--window-inset);
+  bottom: var(--window-inset);
+  // Grounds the panel on the field; the field is animated and often bright,
+  // so this reads as depth rather than as a visible shadow shape.
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
   overflow: auto; // Allow scrolling within the panel
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--window-border);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   // Shifted state when settings panel is open - resize and reposition
   &.settings-panel-open {
-    left: calc(28rem + 1rem);
+    left: calc(28rem + var(--window-inset));
     // Keep right unchanged unless chat panel is also open
   }
 
   // Shifted state when chat panel is open - resize and reposition from right
   &.chat-panel-open {
-    right: calc(28rem + 1rem);
+    right: calc(28rem + var(--window-inset));
     // Keep left unchanged unless settings panel is also open
   }
 
   // Both panels open - squeezed between both
   &.settings-panel-open.chat-panel-open {
-    left: calc(28rem + 1rem);
-    right: calc(28rem + 1rem);
+    left: calc(28rem + var(--window-inset));
+    right: calc(28rem + var(--window-inset));
   }
 
   // During closing animations, animate back smoothly
   &.settings-panel-closing {
-    left: 1rem;
+    left: var(--window-inset);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   &.chat-panel-closing {
-    right: 1rem;
+    right: var(--window-inset);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   // Handle mixed states - one opening, one closing
   &.settings-panel-closing.chat-panel-open {
-    left: 1rem;
-    right: calc(28rem + 1rem);
+    left: var(--window-inset);
+    right: calc(28rem + var(--window-inset));
   }
 
   &.settings-panel-open.chat-panel-closing {
-    left: calc(28rem + 1rem);
-    right: 1rem;
-  }
-
-  // Add a subtle top border that complements the fixed header
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      var(--accent-color) 25%,
-      var(--accent-color) 75%,
-      transparent 100%
-    );
-    opacity: 0.5;
+    left: calc(28rem + var(--window-inset));
+    right: var(--window-inset);
   }
 }
 
@@ -244,8 +211,8 @@
   .layout.settings-panel-closing,
   .layout.chat-panel-open,
   .layout.chat-panel-closing {
-    left: 0.5rem;
-    right: 0.5rem;
+    left: var(--window-inset);
+    right: var(--window-inset);
     width: auto;
     transform: translateX(0);
     opacity: 0.3; // Dim instead of resize
@@ -253,8 +220,8 @@
 
   // On mobile, both panels open still just dims content
   .layout.settings-panel-open.chat-panel-open {
-    left: 0.5rem;
-    right: 0.5rem;
+    left: var(--window-inset);
+    right: var(--window-inset);
     opacity: 0.3;
   }
 }
@@ -262,14 +229,15 @@
 // Animations are now in animations.scss
 
 .header-fixed {
-  background: rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(3px); // Match layout blur exactly
-  -webkit-backdrop-filter: blur(3px); // Safari 17 and earlier
-  border: none; // Remove all borders for full transparency
-  margin: 0 1rem; // Remove top margin to connect with rainbow
-  box-shadow: none; // Remove box shadow for transparency
+  // Transparent over the window's own scrim — the panel provides the dark
+  // field; the header only brings its own (see .scrolled) once content is
+  // moving underneath it.
+  background: transparent;
+  border: none;
+  margin: var(--window-inset) var(--window-inset) 0; // Sit on the window's top edge
+  box-shadow: none;
   transition: all var(--transition-normal);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg); // Only round bottom corners
+  border-radius: var(--radius-lg);
   pointer-events: auto; // Re-enable pointer events for the header
 }
 
@@ -605,21 +573,8 @@
 }
 
 @media (max-width: 768px) {
-  .rainbow-border-fixed {
-    margin: 0.5rem 0.5rem 0 0.5rem;
-  }
-
-  .header-fixed {
-    margin: 0 0.5rem;
-  }
-
-  .layout {
-    top: calc(0.5rem + 3px); // Panel starts below rainbow; header overlays
-    left: 0.5rem;
-    right: 0.5rem;
-    bottom: 0.5rem;
-    border-radius: var(--radius-lg);
-  }
+  // Window inset and header margin both track --window-inset, which the
+  // token layer already narrows at this width.
 
   .nav {
     padding: 1rem 1.5rem;
@@ -679,21 +634,6 @@
 }
 
 @media (max-width: 480px) {
-  .rainbow-border-fixed {
-    margin: 0.25rem 0.25rem 0 0.25rem;
-  }
-
-  .header-fixed {
-    margin: 0 0.25rem;
-  }
-
-  .layout {
-    top: calc(0.25rem + 3px); // Panel starts below rainbow; header overlays
-    left: 0.25rem;
-    right: 0.25rem;
-    bottom: 0.25rem;
-  }
-
   .nav {
     padding: 0.75rem;
     // Keep space-between layout on small mobile

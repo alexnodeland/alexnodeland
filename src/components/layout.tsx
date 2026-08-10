@@ -81,7 +81,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
     <>
       {!isContentHidden && (
         <div className={headerContainerClasses}>
-          <div className="rainbow-border-fixed"></div>
           <header className="header-fixed">
             <nav className="nav">
               {!isHomePage && (

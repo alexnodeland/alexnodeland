@@ -179,22 +179,24 @@ img {
   padding: 0 1rem;
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling. The main scrollbar rides the window frame itself, so it
+   is chrome, not content — neutral, and quiet enough not to read as a design
+   element against the hairline border. */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary-color);
+  background: rgba(255, 255, 255, 0.22);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-dark);
+  background: rgba(255, 255, 255, 0.38);
 }
 
 /* Selection styling */
