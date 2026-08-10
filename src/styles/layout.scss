@@ -135,62 +135,15 @@
   }
 }
 
-// Light theme layout - keep dark panel for background visibility
-[data-theme='light'] .layout {
-  background: rgba(0, 0, 0, 0.1); // Keep dark like dark mode
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px); // Safari 17 and earlier
-  box-shadow: var(--shadow-lg);
-  border: 2px solid rgba(255, 255, 255, 0.1); // Subtle light border
-}
-
-[data-theme='light'] .footer {
-  background: transparent;
-  border-top: none; // No border for clean look
-}
-
-[data-theme='light'] .theme-toggle {
-  background: transparent; // Fully transparent
-  border: none; // No border
-  color: white; // White icon on dark background
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1); // Subtle hover effect
-    box-shadow: 0 0 15px rgba(33, 150, 243, 0.3);
-    transform: scale(1.05);
-  }
-}
-
-[data-theme='light'] .header-fixed {
-  background: rgba(0, 0, 0, 0.1); // Match layout exactly
-  backdrop-filter: blur(3px); // Match layout blur exactly
-  -webkit-backdrop-filter: blur(3px); // Safari 17 and earlier
-  border: none; // Remove all borders for full transparency
-  box-shadow: none; // Remove box shadow for transparency
-}
-
 // Once anything is scrolled under it, the header stops being a tint over the
-// background and becomes a bar over the page's own cards. Its nav is white in
-// both themes, so without this the links land white-on-white the moment a card
-// passes beneath them. Same scrim in both themes, for the same reason the
-// background stage is.
+// background and becomes a bar over the page's own cards. Its nav is white, so
+// without this the links land white-on-white the moment a card passes beneath
+// them.
 .fixed-header-container.scrolled .header-fixed {
   background: rgba(10, 12, 16, 0.72);
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
-}
-
-[data-theme='light'] .footer-link {
-  background: transparent; // Fully transparent
-  border: none; // No border
-  color: white; // White icons on dark background
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1); // Subtle hover effect
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-  }
 }
 
 // Responsive design for panel sliding behavior
@@ -288,7 +241,7 @@
     left: 0;
     width: 0;
     height: 2px;
-    background: var(--accent-color);
+    background: var(--accent-pink);
     transition: width var(--transition-normal);
   }
 
@@ -302,80 +255,11 @@
   }
 }
 
-[data-theme='light'] .nav-brand {
-  color: white; // White text on dark background
-
-  &:hover {
-    color: var(--ink-pink);
-  }
-}
-
 .nav-menu {
   display: flex;
   gap: 2.5rem;
   align-items: center;
   flex-wrap: nowrap;
-}
-
-.theme-toggle {
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 0.5rem;
-  cursor: pointer;
-  font-size: 1.5rem;
-  font-weight: 300;
-  transition: all var(--transition-normal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  color: var(--text-primary);
-  @include over-background;
-  position: relative;
-  overflow: hidden;
-
-  // Remove default button focus outline
-  &:focus {
-    outline: none;
-  }
-
-  // Icon styling
-  &::before {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: 300;
-    transition: all var(--transition-normal);
-  }
-
-  // Moon icon (light mode)
-  &[data-theme='light']::before {
-    content: '◐';
-  }
-
-  // Sun icon (dark mode)
-  &[data-theme='dark']::before {
-    content: '◑';
-  }
-
-  &:hover {
-    transform: scale(1.05);
-
-    &::before {
-      transform: rotate(15deg);
-    }
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
 }
 
 .nav-link {
@@ -403,7 +287,7 @@
     left: 50%;
     width: 0;
     height: 2px;
-    background: var(--accent-color);
+    background: var(--accent-pink);
     transition: all var(--transition-normal);
     transform: translateX(-50%);
   }
@@ -416,15 +300,6 @@
     &::after {
       width: 100%;
     }
-  }
-}
-
-[data-theme='light'] .nav-link {
-  color: white; // White text on dark background
-
-  &:hover {
-    color: var(--ink-pink);
-    background: rgba(233, 30, 99, 0.15);
   }
 }
 
@@ -538,22 +413,12 @@
   }
 }
 
-// Dark mode icon inversion
-// The icons are black line art inverted to white in both themes, since they
-// sit on the animated background rather than on a page surface. The drop
-// shadow is the icon equivalent of the text halo — without it they vanish into
-// the brighter backgrounds.
-[data-theme='dark'] .footer-link .icon {
+// The icons are black line art inverted to white, since they sit on the
+// animated background rather than on a page surface. The drop shadow is the
+// icon equivalent of the text halo — without it they vanish into the brighter
+// backgrounds.
+.footer-link .icon {
   filter: invert(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
-}
-
-[data-theme='light'] .footer-link .icon {
-  filter: invert(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
-  opacity: 0.9;
-
-  &:hover {
-    opacity: 1;
-  }
 }
 
 .footer-copyright {
@@ -566,10 +431,6 @@
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
   text-transform: lowercase;
-}
-
-[data-theme='light'] .footer-copyright {
-  color: rgba(255, 255, 255, 0.85); // Light text on dark background
 }
 
 @media (max-width: 768px) {
@@ -661,19 +522,6 @@
     padding: 0.3rem 0.5rem;
   }
 
-  // The toggle is the widest fixed-size item in the row; shrink it so the
-  // whole nav still fits a 320px viewport without wrapping.
-  .theme-toggle {
-    width: 2.25rem;
-    height: 2.25rem;
-    padding: 0.25rem;
-    font-size: 1.25rem;
-
-    &::before {
-      font-size: 1.25rem;
-    }
-  }
-
   .main {
     padding: 2.25rem 1rem 1.5rem 1rem; // Increase top padding on small mobile
   }
@@ -688,8 +536,8 @@
   }
 }
 
-// Narrowest phones (iPhone SE and friends). Brand + three links + toggle is
-// ~300px of intrinsic width here, so shave padding rather than let it wrap.
+// Narrowest phones (iPhone SE and friends). Brand + three links is ~300px of
+// intrinsic width here, so shave padding rather than let it wrap.
 @media (max-width: 380px) {
   .nav {
     padding: 0.75rem 0.5rem;
@@ -699,10 +547,5 @@
   .nav-brand .nav-link {
     font-size: 0.8rem;
     padding: 0.3rem 0.35rem;
-  }
-
-  .theme-toggle {
-    width: 2rem;
-    height: 2rem;
   }
 }

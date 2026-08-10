@@ -28,11 +28,11 @@ describe('SCSS Compilation', () => {
       const testContent = `
         :root {
           --primary-color: #00ff88;
-          --accent-color: #ff0080;
+          --accent-pink: #ff0080;
         }
         
         @mixin button-primary {
-          background: var(--accent-color);
+          background: var(--accent-pink);
           color: white;
         }
         

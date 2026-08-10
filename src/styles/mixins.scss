@@ -22,9 +22,9 @@
 
 @mixin button-primary {
   @include button-base;
-  background: var(--accent-color);
+  background: var(--accent-pink);
   color: var(--on-fill);
-  border-color: var(--accent-color);
+  border-color: var(--accent-pink);
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
@@ -46,8 +46,8 @@
   }
 
   &:hover {
-    background: var(--retro-blue);
-    border-color: var(--retro-blue);
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
     transform: translateY(-2px);
     box-shadow:
       0 0 20px rgba(0, 136, 255, 0.4),
@@ -67,7 +67,7 @@
   @include button-base;
   background: var(--bg-primary);
   color: var(--text-primary);
-  border-color: var(--accent-color);
+  border-color: var(--accent-pink);
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
@@ -90,7 +90,7 @@
 
   &:hover {
     background: var(--bg-secondary);
-    border-color: var(--retro-green);
+    border-color: var(--primary-color);
     color: var(--ink-primary);
     transform: translateY(-2px);
     box-shadow:
@@ -132,7 +132,7 @@
     transform: translateX(-50%);
     width: 60px;
     height: 3px;
-    background: var(--accent-color);
+    background: var(--accent-pink);
     border-radius: 2px;
   }
 }
@@ -171,7 +171,7 @@
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-    border-color: var(--accent-color);
+    border-color: var(--accent-pink);
   }
 }
 
@@ -181,7 +181,7 @@
 }
 
 @mixin retro-border {
-  border: 2px solid var(--accent-color);
+  border: 2px solid var(--accent-pink);
   position: relative;
 
   &::before {
@@ -193,11 +193,11 @@
     height: 4px;
     background: linear-gradient(
       90deg,
-      var(--accent-color) 0%,
-      var(--retro-blue) 25%,
-      var(--retro-green) 50%,
-      var(--retro-purple) 75%,
-      var(--accent-color) 100%
+      var(--accent-pink) 0%,
+      var(--accent-blue) 25%,
+      var(--primary-color) 50%,
+      var(--accent-purple) 75%,
+      var(--accent-pink) 100%
     );
     border-radius: var(--radius-md) var(--radius-md) 0 0;
   }

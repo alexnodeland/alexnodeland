@@ -1,7 +1,6 @@
 // Component barrel exports for cleaner imports
 export { default as Layout } from './layout';
 export { default as SEO } from './seo';
-export { default as ThemeToggle } from './ThemeToggle';
 
 // Animated backgrounds system
 export * from './animated-backgrounds';

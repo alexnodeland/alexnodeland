@@ -62,32 +62,6 @@ body {
   }
 }
 
-[data-theme='light'] body {
-  background: var(--bg-primary);
-  background-image:
-    radial-gradient(
-      circle at 20% 80%,
-      rgba(0, 168, 84, 0.03) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 80% 20%,
-      rgba(0, 172, 193, 0.03) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 40% 40%,
-      rgba(233, 30, 99, 0.02) 0%,
-      transparent 50%
-    );
-
-  &::before {
-    background-image:
-      linear-gradient(rgba(0, 168, 84, 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 168, 84, 0.02) 1px, transparent 1px);
-  }
-}
-
 a {
   color: var(--ink-primary);
   text-decoration: none;
@@ -131,7 +105,7 @@ h1 {
     transform: translateX(-50%);
     width: 60px;
     height: 3px;
-    background: var(--accent-color);
+    background: var(--accent-pink);
     border-radius: 2px;
   }
 }
@@ -139,7 +113,7 @@ h1 {
 h2 {
   font-size: 2.25rem;
   color: var(--text-primary);
-  border-bottom: 2px solid var(--accent-color);
+  border-bottom: 2px solid var(--accent-pink);
   padding-bottom: 0.5rem;
   display: inline-block;
 }
@@ -205,11 +179,6 @@ img {
   color: var(--on-fill);
 }
 
-[data-theme='light'] ::selection {
-  background: var(--accent-blue);
-  color: var(--on-fill);
-}
-
 /* Focus styles. :focus-visible rather than :focus, so the ring answers the
    keyboard and does not fire on every mouse click — on the CV's collapsible
    cards a clicked <summary> kept its ring, which the card's overflow clipped
@@ -219,15 +188,10 @@ img {
   outline-offset: 2px;
 }
 
-/* Dark mode image inversion for expertise icons */
-[data-theme='dark'] .expertise-icon img {
+/* The expertise icons ship as black line art; inverted they read as white
+   strokes on the near-black surfaces. */
+.expertise-icon img {
   filter: invert(1) !important;
-}
-
-/* Light mode - ensure icons are visible */
-[data-theme='light'] .expertise-icon img {
-  filter: none;
-  opacity: 0.9;
 }
 
 @media (max-width: 768px) {

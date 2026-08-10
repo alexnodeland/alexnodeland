@@ -190,12 +190,7 @@
   right: 1rem; // Match main content right margin
   bottom: 1rem; // Match main content bottom margin
   width: 28rem;
-  background: rgba(
-    0,
-    0,
-    0,
-    0.7
-  ); // Match settings panel transparency for both light and dark modes
+  background: rgba(0, 0, 0, 0.7); // Match settings panel transparency
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-left: 2px solid var(--border-color); // Primary border to separate from main content
@@ -546,12 +541,7 @@
   right: 2rem;
   width: 400px;
   height: 600px;
-  background: rgba(
-    0,
-    0,
-    0,
-    0.7
-  ); // Match settings panel transparency for both light and dark modes
+  background: rgba(0, 0, 0, 0.7); // Match settings panel transparency
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-color);
@@ -850,7 +840,7 @@
     flex-shrink: 0;
 
     &.user {
-      background: var(--accent-color);
+      background: var(--accent-pink);
       color: var(--text-primary);
     }
 
@@ -1444,12 +1434,7 @@
 }
 
 .clear-confirm-dialog {
-  background: rgba(
-    0,
-    0,
-    0,
-    0.7
-  ); // Match settings panel transparency for both light and dark modes
+  background: rgba(0, 0, 0, 0.7); // Match settings panel transparency
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 12px;
@@ -2151,12 +2136,7 @@
         left: 0;
         right: 0;
         margin-bottom: 0.5rem;
-        background: rgba(
-          0,
-          0,
-          0,
-          0.7
-        ); // Match settings panel transparency for both light and dark modes
+        background: rgba(0, 0, 0, 0.7); // Match settings panel transparency
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
         box-shadow: var(--shadow-lg);
@@ -2251,25 +2231,6 @@
       }
     }
   }
-}
-
-// Light theme chat panel - change tint from black to white (matches settings panel exactly)
-[data-theme='light'] .chat-sidebar {
-  background: rgba(
-    255,
-    255,
-    255,
-    0.8
-  ); // White tint in light mode - matches settings panel
-}
-
-[data-theme='light'] .chat-modal {
-  background: rgba(
-    255,
-    255,
-    255,
-    0.8
-  ); // White tint in light mode - matches settings panel
 }
 
 // Markdown rendering styles for chat messages

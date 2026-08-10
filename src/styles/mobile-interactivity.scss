@@ -31,9 +31,8 @@ $mobile-breakpoint: 768px;
   gap: 0.5rem;
   min-height: 3rem; // Matches the chat launcher's circle
   padding: 0 1rem;
-  // Was hardcoded dark glass with white text, which in light mode landed as an
-  // unreadable smudge over the white cards. Same floating surface as the chat
-  // launcher, so it follows the theme the way the rest of the chrome does.
+  // Same floating surface as the chat launcher rather than its own hardcoded
+  // glass, so the two pieces of mobile chrome stay in step.
   background: var(--bg-floating);
   border: 1px solid var(--border-floating);
   border-radius: var(--radius-lg);
@@ -66,9 +65,8 @@ $mobile-breakpoint: 768px;
 .mobile-explore {
   display: none;
 
-  // Explore mode is a dark scrim over the full-bleed background in both
-  // themes, so its accent stays the bright cut rather than following
-  // --ink-primary down to the light theme's darker green.
+  // Explore mode is a dark scrim over the full-bleed background, so its accent
+  // stays the bright fill cut rather than following --ink-primary.
   --explore-accent: #00ff88;
 
   @media (max-width: $mobile-breakpoint) {

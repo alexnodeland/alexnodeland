@@ -3,7 +3,6 @@ import React from 'react';
 import { getAllSocialLinks, siteConfig } from '../config';
 import '../styles/layout.scss';
 import { useSettingsPanel } from './SettingsPanelContext';
-import ThemeToggle from './ThemeToggle';
 import { ChatIcon, ChatModal, KeyboardShortcuts } from './chat';
 
 interface LayoutProps {
@@ -111,7 +110,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children }) => {
                     {item.name}
                   </Link>
                 ))}
-                <ThemeToggle />
               </div>
             </nav>
           </header>
