@@ -78,53 +78,58 @@
   gap: var(--space-5);
 }
 
+// The reference card for the whole site: an outline, generous padding, and a
+// clear uncluttered band for its meta. The projects and cv entries are built
+// to the same grammar (icon + title row, body, meta band) so the three list
+// pages read as one system.
+//
+// The heavy left rail it used to carry is gone. It was the one edge on the
+// site drawn at a different weight from the other three, and it was marking a
+// scroll position nobody asked it to track; the hairline easing brighter under
+// the pointer is the whole of "this one" now.
 .post-preview {
   @include outline-block;
+  @include card-highlight;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  position: relative;
-  transition: all var(--transition-normal);
-
-  // The rail marks which post you are on. It is a state, so it stays — but a
-  // state reads perfectly well as a hairline getting brighter and wider; the
-  // blue-to-cyan gradient was saying nothing the width was not already saying.
-  // White-alpha rather than --border-active: that token is #2a2a2a, tuned
-  // against a solid card, and it is invisible over the window's scrim.
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: rgba(255, 255, 255, 0.18);
-    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  }
 
   @include reading-emphasis {
-    box-shadow: var(--shadow-md);
-    border-color: rgba(255, 255, 255, 0.4);
-
-    &::before {
-      width: 4px;
-      background: rgba(255, 255, 255, 0.45);
-    }
-  }
-
-  @include hover-lift;
-
-  &::before {
-    transition:
-      width var(--transition-normal),
-      background var(--transition-normal);
+    @include card-highlight-on;
   }
 }
 
+// The title row: the entry's glyph beside its name, the same row the project
+// cards open with. Scoped to the preview — an article's own title block is a
+// `.post-header` too, and it is a card rather than a row.
+.post-preview .post-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.post-icon {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// The meta band — date and tag — sits under the body rather than above the
+// title, which is where the projects and cv cards keep theirs.
 .post-meta {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: var(--text-small);
   color: var(--text-secondary);
 }
@@ -146,9 +151,12 @@
 
 .post-title {
   // A card title, not a page heading: without a size of its own the h2
-  // inherited the page scale (and its 4rem top margin).
+  // inherited the page scale (and its 4rem top margin). The row it sits in
+  // owns the space under it now.
   font-size: var(--text-h4);
-  margin: 0 0 var(--space-3);
+  margin: 0;
+  flex: 1;
+  min-width: 0;
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
@@ -176,9 +184,11 @@
 .post-excerpt {
   color: var(--text-secondary);
   line-height: 1.6;
-  margin-bottom: var(--space-4);
+  margin-bottom: 0;
 }
 
+// The way in, parked at the far end of the meta band — the same place the
+// project card keeps its "view on github".
 .read-more {
   color: var(--ink-primary);
   text-decoration: none;
@@ -187,6 +197,10 @@
     monospace;
   text-transform: lowercase;
   transition: all var(--transition-fast);
+
+  .post-meta & {
+    margin-left: auto;
+  }
 
   &:hover {
     text-decoration: underline;
@@ -200,7 +214,7 @@
   position: relative;
 }
 
-.post-header {
+.blog-post-page .post-header {
   margin-bottom: var(--space-6);
   padding: var(--space-5);
   @include outline-block;

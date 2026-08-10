@@ -182,29 +182,57 @@ section[id] {
   position: relative;
 }
 
-// Shared card style for experience, education, and certifications. Neutral
-// surface, neutral hairline, and a hover that brightens the hairline and lifts
-// — no coloured top bar and no coloured glow.
+// Shared card style for experience, education, and certifications — the blog
+// preview's grammar applied to a cv entry: an outline, the same padding, an
+// icon-and-title row, and one meta band. Nothing lifts and nothing scales; the
+// hairline eases brighter under the pointer and eases back when it leaves
+// (see `card-highlight` in mixins.scss).
 .cv-card {
   @include outline-block;
+  @include card-highlight;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  position: relative;
-  transition: all var(--transition-normal);
 
   @include reading-emphasis {
-    box-shadow: var(--shadow-md);
-    border-color: rgba(255, 255, 255, 0.4);
+    @include card-highlight-on;
   }
+}
 
-  @include hover-lift;
+// The entries in a section are cards in a list, and cards in a list have air
+// between them. They used to be stacked flush, which read as one long ruled
+// table rather than as a set of things.
+.experience-section,
+.education-section,
+.certifications-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  // The heading is not one of the cards, so it keeps its own space and does
+  // not take the list's gap on top of it.
+  .cv-section-title {
+    margin-bottom: 0;
+  }
+}
+
+// The glyph that opens an entry's title row — the counterpart to the repo mark
+// on a project card. Quiet, and the same box on all three pages.
+.cv-entry-icon {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .experience-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--space-3);
+  align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
 
@@ -223,8 +251,9 @@ section[id] {
 }
 
 .cv-collapse {
+  // The summary carries the card's padding — it is the whole collapsed card —
+  // so the card itself has none of its own.
   padding: 0;
-  overflow: hidden;
   // When single-open repositions a card, it lands clear of the floating
   // control chips and the veil rather than sliding underneath them.
   scroll-margin-top: 76px;
@@ -238,64 +267,35 @@ section[id] {
   }
 }
 
-// Collapsible cards carry a left rail, the same marker the blog previews use.
-// It reads as a state, not an ornament: flat while the card is just sitting
-// there, brighter for whichever entry the scroll has arrived at, brightest and
-// wider once the entry is open.
-.cv-card.cv-collapse::before {
-  content: '';
-  top: 0;
-  right: auto;
-  bottom: 0;
-  left: 0;
-  width: 3px;
-  height: auto;
-  border-radius: 0;
-  // White-alpha at every step: the near-black --border-color / --border-active
-  // pair this rail used was tuned against a solid card and vanishes over the
-  // window's scrim.
-  background: rgba(255, 255, 255, 0.18);
-  opacity: 1;
-  transition:
-    background var(--transition-normal),
-    width var(--transition-normal);
-}
-
-.cv-collapse.is-active::before {
-  background: rgba(255, 255, 255, 0.3);
-}
-
+// The left rail these cards used to carry — a 3px accent edge that got wider
+// and brighter as the scroll arrived at an entry — is gone, along with the
+// blog's copy of it. It was the one edge on the site drawn at a weight the
+// other three did not share. Open is a state, and it says so the same way a
+// pointer does: the hairline brightens, all the way round, and stays that way
+// until the card is closed.
 .cv-collapse[open] {
-  border-color: rgba(255, 255, 255, 0.4);
-
-  &::before {
-    width: 4px;
-    background: rgba(255, 255, 255, 0.45);
-  }
+  @include card-highlight-on;
 }
 
 // The whole summary is the toggle — it fills the collapsed card edge to edge —
 // so it has to look like it, rather than leaving the chevron as the only cue.
 .cv-collapse-summary {
-  padding: 1.25rem 1.5rem;
+  padding: var(--space-5);
   cursor: pointer;
   display: block;
+  // The card no longer clips its children (the travelling light rides its
+  // outer edge), so the wash carries the card's own corner.
+  border-radius: var(--radius-lg);
   transition: background var(--transition-fast);
 
-  // Clipped by the card's overflow, so the ring goes inside rather than being
-  // sliced into a stray line along the bottom edge.
   &:focus-visible {
     outline-offset: -4px;
   }
 
-  // The whole summary lighting up is the affordance, so it keeps a fill — but
-  // a 4% white wash rather than the near-black --bg-hover, which over the
-  // scrim darkened the card instead of lifting it.
-  @media (hover: hover) and (pointer: fine) {
-    &:hover {
-      background: rgba(255, 255, 255, 0.04);
-    }
-  }
+  // The summary's own hover wash is gone: the card underneath it already eases
+  // to a brighter hairline and a faint wash under the pointer (see
+  // `card-highlight`), and two washes stacked on the same pixels made the
+  // collapsed card jump a step brighter than an open one.
 
   .summary-right {
     display: inline-flex;
@@ -320,7 +320,6 @@ section[id] {
   }
 }
 
-.cv-collapse.is-active .cv-collapse-chevron,
 .cv-collapse-summary:hover .cv-collapse-chevron {
   border-color: rgba(255, 255, 255, 0.32);
   color: var(--text-primary);
@@ -331,23 +330,30 @@ section[id] {
   color: var(--text-primary);
 }
 
-// Collapsed institution line style
+// Collapsed institution line — the body of an education card, under its title
+// row and above its meta band.
 .education-institution-collapsed {
   color: var(--text-secondary);
-  margin-top: 0.25rem;
-  font-size: 0.95rem;
+  margin-top: var(--space-3);
+  margin-bottom: 0;
+  font-size: var(--text-body);
 }
 
 details[open] .cv-collapse-summary .cv-collapse-chevron {
   transform: rotate(180deg);
 }
 
+// The entry's meta band — the cv's answer to the blog card's date/tag row and
+// the project card's language line. It sits under the title with the same
+// hairline above it as they carry.
 .cv-summary-skills {
-  margin-top: var(--space-2);
-  font-size: 0.9rem;
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: var(--text-small);
   color: var(--text-secondary);
   display: block;
-  line-height: 1.4;
+  line-height: 1.5;
 
   .cv-summary-label {
     font-family:
@@ -367,8 +373,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 // so it reads as a divider rather than a seam, and with the same buffer above
 // and below the rule as the summary keeps under its own last line.
 .cv-collapse-details {
-  margin: 0 1.5rem;
-  padding: 1.5rem 0 1.75rem;
+  margin: 0 var(--space-5);
+  padding: var(--space-4) 0 var(--space-5);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -422,122 +428,76 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// Certifications as chips with tooltips. One neutral chip shape, shared with
-// the skill tags below and the tech tags on the projects page: a certification
-// is a label, and a magenta-to-pink fill was telling the reader nothing about
-// it that the word did not already say.
-.certifications-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-bottom: var(--space-5);
+// Certifications as small cards, in the same grammar as every other entry on
+// the site. They used to be chips whose full name only existed inside a
+// hover tooltip — so the name was truncated by a regex, the last chip in the
+// row was clipped by the popover's own stacking, and nothing was readable
+// without a pointer. A certification is an entry in a list; it gets a card.
+.certifications-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
 }
 
-.certification-chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  padding: 0.6rem 1.2rem;
-  @include outline-block;
-  color: var(--text-secondary);
-  border-radius: var(--radius-md);
-  font-size: 0.925rem;
-  cursor: pointer;
-  transition: all var(--transition-normal);
+.certification-card {
+  // A column, so every card's meta band lands on the same line however many
+  // lines its name takes — the grid stretches them all to the tallest.
+  display: flex;
+  flex-direction: column;
+
+  .cert-header {
+    display: flex;
+    // The name is the one title on the site that regularly wraps, so the glyph
+    // sits on its first line rather than halfway down the block.
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+
+    .cv-entry-icon {
+      margin-top: 0.2rem;
+    }
+  }
 
   .cert-name {
-    position: relative;
-    z-index: 1;
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.45);
+    margin: 0;
+    flex: 1;
+    min-width: 0;
     color: var(--text-primary);
-
-    .cert-tooltip {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(-10px);
-    }
+    font-size: var(--text-h4);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
   }
 
-  .cert-tooltip {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(0);
-    margin-bottom: var(--space-2);
-    opacity: 0;
-    visibility: hidden;
-    transition: all var(--transition-normal);
-    z-index: 1000;
-    pointer-events: none;
+  .cert-issuer {
+    color: var(--text-secondary);
+    font-size: var(--text-body);
+    margin: 0;
+  }
 
-    // The other block that stays filled, and for the same reason as the
-    // section nav: it is a popover, drawn on top of whatever chip row and card
-    // it happens to cover. It takes the site's floating-chrome surface —
-    // --bg-floating, which is opaque on purpose (see variables.scss) — rather
-    // than the card fill it used to borrow.
-    .tooltip-content {
-      background: var(--bg-floating);
-      border: 2px solid var(--border-floating);
-      border-radius: var(--radius-md);
-      padding: 1rem;
-      min-width: 250px;
-      max-width: 350px;
-      box-shadow: var(--shadow-lg);
-      position: relative;
+  // The meta band, the same one the other three cards carry, parked at the
+  // foot of the card the way the project card's footer is.
+  .cert-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    margin-top: auto;
+    padding-top: var(--space-4);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: var(--text-small);
+    color: var(--text-secondary);
+  }
 
-      // Arrow pointing down
-      &::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 8px solid transparent;
-        border-top-color: var(--border-floating);
-      }
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%) translateY(-2px);
-        border: 7px solid transparent;
-        border-top-color: var(--bg-floating);
-      }
-
-      strong {
-        display: block;
-        color: var(--text-primary);
-        margin-bottom: var(--space-2);
-        font-size: 1rem;
-      }
-
-      .cert-issuer {
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-        margin-bottom: 0.25rem;
-      }
-
-      .cert-date {
-        color: var(--text-muted);
-        font-size: 0.875rem;
-        margin-bottom: 0.25rem;
-      }
-
-      .cert-credential {
-        color: var(--text-muted);
-        font-size: 0.8rem;
-        font-family: 'JetBrains Mono', monospace;
-        margin-top: var(--space-2);
-        padding-top: 0.5rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.12);
-      }
-    }
+  .cert-credential {
+    color: var(--text-muted);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -662,21 +622,26 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   color: var(--text-secondary);
 }
 
-// Education specific styles (using cv-card base)
+// Education specific styles (using cv-card base). Same title row as an
+// experience entry — icon, name, the duration chip at the far end.
 .education-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--space-2);
+  align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-2);
 
   h3 {
     margin: 0;
     flex: 1;
     min-width: 200px;
     color: var(--text-primary);
-    font-size: 1.2rem;
+    font-size: var(--text-h4);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -769,8 +734,9 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   transition: all var(--transition-normal);
   cursor: default;
 
+  // A label the pointer cannot do anything with does not jump when the
+  // pointer crosses it. It brightens, which is all it ever had to say.
   &:hover {
-    transform: translateY(-2px);
     border-color: rgba(255, 255, 255, 0.45);
     color: var(--text-primary);
   }
@@ -918,27 +884,9 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     grid-template-columns: 1fr;
   }
 
-  // Certification chips responsive
-  .certifications-container {
-    gap: 0.5rem;
-  }
-
-  .certification-chip {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-
-    .cert-tooltip {
-      left: 0;
-      right: 0;
-      transform: translateX(0) translateY(0);
-
-      .tooltip-content {
-        min-width: 200px;
-        max-width: calc(100vw - 2rem);
-        left: 0;
-        transform: none;
-      }
-    }
+  // One column of certification cards on a phone, like every other list here.
+  .certifications-grid {
+    grid-template-columns: 1fr;
   }
 }
 

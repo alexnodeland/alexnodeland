@@ -38,6 +38,9 @@ jest.mock('../../../components', () => ({
   ExperienceSection: () => <section id="cv-experience-body" />,
   EducationSection: () => <section id="cv-education-body" />,
   SkillsSection: () => <section id="cv-skills-body" />,
+  // The glyph on a certification card; the page draws those itself.
+  CertificateIcon: jest.requireActual('../../../components/ui/EntryIcons')
+    .CertificateIcon,
 }));
 
 // Mock SCSS import

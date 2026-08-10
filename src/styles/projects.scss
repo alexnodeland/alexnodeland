@@ -63,17 +63,24 @@
 // Section Titles
 .projects-section {
   margin-bottom: var(--space-6);
-  // Anchor targets land inside the window's inner scroll, and nothing overlays
-  // the top of the window any more — this is just breathing room above the
-  // title a hero-subtitle link has brought us to.
-  scroll-margin-top: var(--space-3);
+  // Anchor targets land inside the window's inner scroll, and the row of
+  // filter chips is stuck to the top of that scroll — about 45px of it — so a
+  // section arriving from a hero link used to park its heading underneath the
+  // chips. This is the row plus a breath, the same clearance the cv gives its
+  // accordion cards.
+  scroll-margin-top: 76px;
 }
 
 // On the animated background rather than on a card, like the CV's section
 // titles — white with a halo, pinned rather than following --text-primary,
 // which tracks the page surface and not the stage behind it. The cyan rule
 // underneath is gone with the rest of the decoration.
-.section-title {
+//
+// Scoped to the page. `section-title` is a common enough name that the
+// settings sidebar had one too, and this rule's 24px bottom margin was landing
+// on it — which is what pushed the "custom settings" and "standard settings"
+// labels up against the top of their rows.
+.projects-page .section-title {
   font-size: var(--text-h3);
   margin-bottom: var(--space-4);
   display: inline-block;
@@ -86,46 +93,41 @@
   @include over-background;
 }
 
-// Projects Grid
+// Projects Grid. The gap matches the blog's list gap — the three list pages
+// step to the same rhythm.
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
-// Project Card
+// Project Card — the blog preview's grammar in a grid cell: icon and title,
+// body, then one meta band at the foot. It does not move under the pointer;
+// its hairline eases brighter and eases back (see `card-highlight` in
+// mixins.scss).
 .project-card {
   @include outline-block;
+  @include card-highlight;
   border-radius: var(--radius-lg);
   text-decoration: none;
   display: block;
-  position: relative;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-normal);
-  overflow: hidden;
 
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: rgba(255, 255, 255, 0.4);
+  @include reading-emphasis {
+    @include card-highlight-on;
 
     // The card is a link, so the thing that says so takes the link colour.
     .project-link-indicator {
       color: var(--ink-primary);
-
-      svg {
-        transform: translate(2px, -2px);
-      }
     }
   }
 }
 
 .project-card-content {
-  padding: var(--space-4);
+  // The blog preview's padding, so a card reads the same on either page.
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 220px;
 }
 
 .project-header {
@@ -140,10 +142,20 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
+
+  // One glyph size across the three list pages (the blog and cv marks are
+  // drawn on a 24 viewBox, this one on 16 — the box is what has to agree).
+  svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
+// The card title, at the blog preview's size and set in the same row grammar.
+// It used to truncate to one line with an ellipsis; a repo name is the one
+// thing on the card that has to be readable, so it wraps instead.
 .project-name {
-  font-size: 1.1rem;
+  font-size: var(--text-h4);
   color: var(--text-primary);
   margin: 0;
   font-family:
@@ -153,28 +165,27 @@
   letter-spacing: -0.01em;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
+// Nothing on these cards is clipped. This was a three-line -webkit-box clamp,
+// which cut the last sentence off most of the descriptions on the page; the
+// grid rows size to their tallest card, so letting the text run costs nothing
+// but a little height.
 .project-description {
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   color: var(--text-secondary);
   line-height: 1.6;
-  margin: 0 0 var(--space-3);
+  margin: 0 0 var(--space-4);
   flex: 1;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
+// The tags get their own uncluttered band, directly above the meta foot.
 .project-tags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .project-tag {
@@ -194,11 +205,15 @@
   }
 }
 
+// The meta band, the same shape the blog card carries: quiet facts on the
+// left, the way in parked at the far end, one hairline above it.
 .project-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: auto;
+  gap: var(--space-2) var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
   padding-top: var(--space-3);
   // Interior divider inside an outlined card — white-alpha, since the
   // near-black --border-color it used is invisible over the scrim.
@@ -246,10 +261,6 @@
     monospace;
   text-transform: lowercase;
   transition: color var(--transition-fast);
-
-  svg {
-    transition: transform var(--transition-fast);
-  }
 }
 
 // GitHub CTA — one line of navigation, not a hero moment: a question and a
@@ -307,15 +318,11 @@
 
   .projects-grid {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
   }
 
   .project-card-content {
     padding: var(--space-4);
-    min-height: auto;
-  }
-
-  .project-description {
-    -webkit-line-clamp: 4;
   }
 }
 

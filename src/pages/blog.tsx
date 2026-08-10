@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { graphql, Link } from 'gatsby';
-import { Dropdown, SEO } from '../components';
+import { Dropdown, PostIcon, SEO } from '../components';
 import { DropdownOption } from '../components/ui/Dropdown';
-import { useScrollSpy } from '../lib/hooks';
 import { BlogPageProps } from '../types';
 import '../styles/blog.scss';
 
@@ -65,10 +64,10 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
     });
   }, [allPosts, searchTerm, selectedCategory, sortOrder]);
 
-  // Marks whichever post is at the reading position, so the list tracks the
-  // scroll the same way the expertise grid and the CV entries do.
-  const { containerRef: postsRef, isActive: isPostActive } =
-    useScrollSpy<HTMLDivElement>('.post-preview');
+  // The list used to light whichever post was at the reading line. It is gone:
+  // on a page whose only job is a list of links, a highlight that moves with
+  // the scroll is the page reacting to something the reader never asked for.
+  // The pointer is the only thing that marks a card now.
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -160,14 +159,28 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
               </p>
             </div>
           ) : (
-            <div className="posts-list" ref={postsRef}>
-              {filteredPosts.map((post, index) => (
-                <article
-                  key={post.id}
-                  className={`post-preview${
-                    isPostActive(index) ? ' is-active' : ''
-                  }`}
-                >
+            <div className="posts-list">
+              {filteredPosts.map(post => (
+                <article key={post.id} className="post-preview">
+                  {/* Icon and title, then the body, then one meta band at the
+                      foot — the grammar the project and cv cards are built to
+                      as well, so the three list pages read as one system. */}
+                  <div className="post-header">
+                    <span className="post-icon">
+                      <PostIcon />
+                    </span>
+                    <h2 className="post-title">
+                      <Link to={`/blog${post.fields.slug}`}>
+                        {post.frontmatter.title}
+                      </Link>
+                    </h2>
+                  </div>
+                  {post.frontmatter.description && (
+                    <p className="post-description">
+                      {post.frontmatter.description}
+                    </p>
+                  )}
+                  <p className="post-excerpt">{post.excerpt}</p>
                   <div className="post-meta">
                     <time dateTime={post.frontmatter.date}>
                       {new Date(post.frontmatter.date).toLocaleDateString(
@@ -184,21 +197,10 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
                         {post.frontmatter.category}
                       </span>
                     )}
-                  </div>
-                  <h2 className="post-title">
-                    <Link to={`/blog${post.fields.slug}`}>
-                      {post.frontmatter.title}
+                    <Link to={`/blog${post.fields.slug}`} className="read-more">
+                      read more →
                     </Link>
-                  </h2>
-                  {post.frontmatter.description && (
-                    <p className="post-description">
-                      {post.frontmatter.description}
-                    </p>
-                  )}
-                  <p className="post-excerpt">{post.excerpt}</p>
-                  <Link to={`/blog${post.fields.slug}`} className="read-more">
-                    read more →
-                  </Link>
+                  </div>
                 </article>
               ))}
             </div>

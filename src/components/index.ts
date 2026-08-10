@@ -17,6 +17,12 @@ export { default as useCVExport } from './cv/useCVExport';
 // Shared UI primitives
 export { default as Dropdown } from './ui/Dropdown';
 export type { DropdownOption } from './ui/Dropdown';
+export {
+  BriefcaseIcon,
+  CertificateIcon,
+  GraduationIcon,
+  PostIcon,
+} from './ui/EntryIcons';
 
 // Chat components
 export * from './chat';
