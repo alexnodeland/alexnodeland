@@ -12,9 +12,12 @@ describe('Shortcuts', () => {
   it('shows the hint and nothing else at rest', () => {
     render(<Shortcuts />);
 
-    const hint = screen.getByRole('button', { name: /shortcuts/i });
+    const hint = screen.getByRole('button', { name: 'keyboard shortcuts' });
     expect(hint).toHaveClass('shortcuts-hint');
     expect(hint).toHaveAttribute('aria-expanded', 'false');
+    // The word is decoration for a key cap that already says it; the name is
+    // the label, so the control reads the same whether it is out or not.
+    expect(hint).toHaveTextContent('?');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 

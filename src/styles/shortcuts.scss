@@ -9,7 +9,9 @@
 // the screen so it is still discoverable.
 
 // The hint. Bottom-centre of the field, on the same row as the two pills —
-// its box spans the rail height so its text sits centred on their line.
+// its box spans the rail height so its text sits centred on their line. At
+// rest it is the key cap on its own; the word unrolls beside it on hover and
+// on keyboard focus, and rolls back the same way.
 .shortcuts-hint {
   position: fixed;
   bottom: 2rem;
@@ -19,7 +21,6 @@
   z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 0.375rem;
   padding: 0.25rem 0.5rem;
   background: none;
   border: none;
@@ -38,6 +39,33 @@
 
   &:hover {
     color: var(--text-primary);
+    opacity: 1;
+  }
+
+  // The word. Held at zero width so the button is a key cap and nothing else,
+  // and let out on hover or keyboard focus — one two-way ease, the same in
+  // both directions, like the rest of the chrome. The margin is on the label
+  // rather than a gap on the button so the closed state has no dangling space
+  // after the cap.
+  .shortcuts-hint-label {
+    display: block;
+    max-width: 0;
+    margin-left: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition:
+      max-width var(--transition-normal),
+      margin-left var(--transition-normal),
+      opacity var(--transition-normal);
+  }
+
+  &:hover .shortcuts-hint-label,
+  &:focus-visible .shortcuts-hint-label {
+    // Comfortably past the word's own width; it is the cap the box grows off,
+    // and the text never wraps, so the extra costs nothing.
+    max-width: 6rem;
+    margin-left: 0.375rem;
     opacity: 1;
   }
 
@@ -168,6 +196,13 @@
   // the width of each key group.
   min-width: 3.25rem;
   flex-shrink: 0;
+}
+
+// The word still arrives, it just arrives already there.
+@media (prefers-reduced-motion: reduce) {
+  .shortcuts-hint .shortcuts-hint-label {
+    transition: none;
+  }
 }
 
 @media (max-width: 768px) {
