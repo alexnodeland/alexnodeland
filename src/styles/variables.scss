@@ -19,9 +19,10 @@
   // --- Accents as text -----------------------------------------------------
   // The palette above is tuned for fills, glows and hairlines. Set as words on
   // a card it has to clear 4.5:1 on its own, which the bright cuts already do
-  // against the near-black surfaces here — so in this theme the inks are the
-  // accents unchanged. The light theme redefines them; nothing that renders an
-  // accent as `color` should reach past these.
+  // against the near-black surfaces here — so the inks are currently the
+  // accents unchanged. They stay a separate layer so a future treatment can
+  // re-cut them; nothing that renders an accent as `color` should reach past
+  // these.
   --ink-primary: #00ff88;
   --ink-cyan: #00d4ff;
   --ink-pink: #ff0080;
@@ -30,19 +31,16 @@
   --ink-yellow: #ffaa00;
 
   // Text on a solid accent fill. Every accent in this palette is a bright
-  // mid-tone in both themes — white on top of one lands between 1.3:1 and
-  // 3.8:1 — so filled buttons and tags take near-black, which clears AA on all
-  // of them. Purple is the exception and is handled where it is used.
+  // mid-tone — white on top of one lands between 1.3:1 and 3.8:1 — so filled
+  // buttons and tags take near-black, which clears AA on all of them.
   --on-fill: #0a0a0a;
 
-  // Purple as a fill. Every other accent is bright enough in both themes to
-  // carry --on-fill; the light theme's purple is not, and it is usually paired
-  // with pink in a gradient, so it gets a brighter cut rather than the pair
-  // switching to white text and failing on the pink end instead.
+  // Purple as a fill. Kept as its own token so the gradient pairings that use
+  // it can be re-cut without touching --accent-purple, which also drives glows.
   --fill-purple: #ff00ff;
 
-  // The constant backing the animated backgrounds composite onto. Deliberately
-  // the same in both themes — see the note on .background-stage.
+  // The constant backing the animated backgrounds composite onto — see the note
+  // on .background-stage.
   --bg-stage: #07080a;
 
   // Chrome that floats over the animated backgrounds rather than sitting on a
@@ -85,21 +83,17 @@
   --border-color: #1a1a1a; // Subtle border
   --border-active: #2a2a2a; // Active/hover border
 
-  // Legacy compatibility
-  --accent-color: #ff0080; // Pink (default accent)
-  --secondary-color: #00d4ff; // Cyan (secondary)
-  --retro-blue: #0080ff; // Blue
-  --retro-green: #00ff88; // Green
-  --retro-purple: #ff00ff; // Purple
-
-  // Shadows (more subtle for academic feel)
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  // Shadows. These carry a single dark theme: black at the old ~0.1 alpha is
+  // invisible against #0a0a0a surfaces, so the alphas are cut for separation
+  // rather than for the softness a light page wants. Same geometry as before —
+  // only the opacity changed — so elevation still reads as a consistent scale.
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4);
   --shadow-md:
-    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.35);
   --shadow-lg:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.35);
   --shadow-xl:
-    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+    0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.35);
 
   // Border radius (more conservative)
   --radius-sm: 0.25rem;
@@ -113,65 +107,10 @@
   --transition-slow: 350ms ease-in-out;
 }
 
-[data-theme='light'] {
-  --primary-color: #00a854; // Vibrant green - not too dark
-  --primary-dark: #008844; // Darker variant for hover states
-
-  // Vibrant accent palette - keeping the energy but with good contrast
-  --accent-pink: #e91e63; // Material pink - vibrant but readable
-  --accent-cyan: #00acc1; // Bright cyan - pops on light bg
-  --accent-blue: #2196f3; // Bright blue - excellent contrast
-  --accent-purple: #9c27b0; // Rich purple - stands out
-  --accent-yellow: #ff9800; // Warm orange - energetic
-
-  // Text colors - much darker for crisp readability
-  --text-primary: #212121; // Almost black - crisp and clear
-  --text-secondary: #616161; // Dark gray - good contrast
-  --text-muted: #6e6e6e; // Medium gray - quiet, still clears AA on a card
-
-  // Accents as text: the same hues taken down until they read as words on a
-  // white card. The fill cuts above only manage 2.2:1 to 3.1:1 there.
-  --ink-primary: #00703a;
-  --ink-cyan: #006c7a;
-  --ink-pink: #c2185b;
-  --ink-blue: #1565c0;
-  --ink-purple: #7b1fa2;
-  --ink-yellow: #8a4b00;
-
-  --fill-purple: #ba68c8;
-
-  --bg-floating: #ffffff;
-  --border-floating: rgba(0, 0, 0, 0.12);
-
-  // Backgrounds - subtle but distinct layers
-  --bg-primary: #f8f9fa; // Very light gray - not pure white
-  --bg-secondary: rgba(
-    255,
-    255,
-    255,
-    0.7
-  ); // Semi-transparent white for controls
-  --bg-card: #ffffff; // Pure white for cards - creates depth
-  --bg-hover: #f0f2f5; // Noticeable hover state
-  --bg-accent: rgba(0, 0, 0, 0.05); // Very light dark overlay for accents
-
-  // Borders - more visible for definition
-  --border-color: #dee2e6; // Visible but not harsh
-  --border-active: #adb5bd; // Clear active state
-
-  // Legacy compatibility - keeping vibrant
-  --accent-color: #e91e63; // Pink (default accent)
-  --secondary-color: #00acc1; // Cyan (secondary)
-  --retro-blue: #2196f3; // Blue
-  --retro-green: #00a854; // Green
-  --retro-purple: #9c27b0; // Purple
-
-  // Enhanced shadows for depth
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.12), 0 1px 2px 0 rgb(0 0 0 / 0.08);
-  --shadow-md:
-    0 4px 6px -1px rgb(0 0 0 / 0.12), 0 2px 4px -1px rgb(0 0 0 / 0.08);
-  --shadow-lg:
-    0 10px 25px -3px rgb(0 0 0 / 0.12), 0 4px 10px -2px rgb(0 0 0 / 0.08);
-  --shadow-xl:
-    0 20px 30px -5px rgb(0 0 0 / 0.16), 0 10px 15px -3px rgb(0 0 0 / 0.1);
-}
+// A light theme used to live here as an attribute-scoped palette that inverted
+// every surface. It is gone, along with the toggle that set the attribute.
+// The door is deliberately left open, but for a different treatment:
+// a future `prefers-color-scheme: light` pass should adapt the *simulations*
+// that back every page — dimming them, softening their contrast — rather than
+// re-introducing inverted surface tokens. The surfaces are near-black because
+// the simulations are the ground, not because dark mode was the fashion.

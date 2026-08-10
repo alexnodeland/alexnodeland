@@ -1,13 +1,12 @@
 // Animated backgrounds styles using design system variables
 
 // The simulations render into a canvas that sits at 90% opacity, so whatever is
-// behind it shows through and becomes part of the picture. Letting that be the
-// theme's page colour is what made the set look inconsistent between themes:
-// against the light theme's near-white base the sparse backgrounds — the
-// cellular automaton, the graph — washed out into pale fields, while the dense
-// ones — the PDE solver, the spectrogram — barely moved. Pinning it to one
-// constant near-black in both themes is what makes the six read as one set, and
-// it is what the white chrome layered over them already assumes.
+// behind it shows through and becomes part of the picture. That ground is
+// pinned to one constant near-black rather than following a page-surface token:
+// the sparse backgrounds — the cellular automaton, the graph — wash out into
+// pale fields on anything lighter, while the dense ones — the PDE solver, the
+// spectrogram — barely move. One constant is what makes the six read as a set,
+// and it is what the white chrome layered over them already assumes.
 .background-stage {
   position: fixed;
   inset: 0;
@@ -749,8 +748,8 @@
       font-family: inherit;
       padding-top: 0.5rem;
 
-      // Key caps were a white wash on a white border, which only ever showed
-      // up on the dark panel; on the light theme's they vanished entirely.
+      // Key caps were a white wash on a white border; they take the panel's
+      // own surface and border tokens so the cap reads as a cap.
       kbd {
         background: var(--bg-accent);
         border: 1px solid var(--border-color);
@@ -811,17 +810,6 @@
   &:hover {
     color: var(--ink-primary);
     background: var(--bg-accent);
-  }
-}
-
-// Light theme settings sidebar
-[data-theme='light'] .settings-sidebar {
-  background: rgba(255, 255, 255, 0.8);
-
-  .sidebar-header .background-header .special-hotkeys {
-    background: rgba(0, 204, 106, 0.05);
-    border-color: rgba(0, 204, 106, 0.2);
-    border-left-color: var(--primary-color);
   }
 }
 
@@ -1188,21 +1176,6 @@
         font-weight: 600;
         opacity: 1;
       }
-    }
-  }
-
-  // Keep the sheet on the light side in light mode so its text stays legible;
-  // the transparency is what matters, not the tint.
-  [data-theme='light'] .settings-sidebar {
-    background: rgba(255, 255, 255, 0.62);
-    border-top-color: rgba(0, 0, 0, 0.12);
-
-    &::before {
-      background: rgba(0, 0, 0, 0.25);
-    }
-
-    .category-tab.active {
-      color: #ffffff;
     }
   }
 }

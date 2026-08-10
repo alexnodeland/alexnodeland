@@ -29,13 +29,6 @@ jest.mock('../../../config', () => ({
   ]),
 }));
 
-// Mock the ThemeToggle component
-jest.mock('../../../components/ThemeToggle', () => {
-  return function MockThemeToggle() {
-    return <button data-testid="theme-toggle">Theme Toggle</button>;
-  };
-});
-
 // Mock the chat components to avoid complex setup
 jest.mock('../../../components/chat/ChatIcon', () => {
   return function MockChatIcon() {
@@ -144,10 +137,21 @@ describe('Layout Component', () => {
     expect(cvLink).toHaveAttribute('href', '/cv');
   });
 
-  it('should render theme toggle in navigation', () => {
+  it('should render the nav with no theme toggle', () => {
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
-    expect(screen.getByTestId('theme-toggle')).toBeInTheDocument();
+    const navMenu = document.querySelector('.nav-menu') as HTMLElement;
+    expect(navMenu).not.toBeNull();
+    // The nav holds the navigation links and nothing else — the theme toggle
+    // was removed with light mode.
+    expect(navMenu.querySelectorAll('button')).toHaveLength(0);
+    expect(navMenu.querySelectorAll('a.nav-link')).toHaveLength(4);
+  });
+
+  it('should not set a theme attribute on the document', () => {
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
+
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
   });
 
   it('should render email link in footer', () => {

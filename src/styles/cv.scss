@@ -44,7 +44,7 @@ section[id] {
       transform: translateX(-50%);
       width: 60px;
       height: 3px;
-      background: var(--accent-color);
+      background: var(--accent-pink);
       border-radius: 2px;
       box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
     }
@@ -255,7 +255,7 @@ section[id] {
   text-align: center;
   margin-bottom: 3rem;
   padding-bottom: 2rem;
-  border-bottom: 3px solid var(--accent-color);
+  border-bottom: 3px solid var(--accent-pink);
   position: relative;
 
   h1 {
@@ -279,7 +279,7 @@ section[id] {
       transform: translateX(-50%);
       width: 80px;
       height: 3px;
-      background: var(--accent-color);
+      background: var(--accent-pink);
       border-radius: 2px;
       box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
     }
@@ -294,8 +294,8 @@ section[id] {
 }
 
 // Section titles sit on the animated background, not on a card — so they are
-// white with a halo in both themes. Following --text-primary put them at
-// #212121 in the light theme, which is invisible against the dark stage.
+// white with a halo, pinned rather than following --text-primary, which tracks
+// the page surface and not the stage behind it.
 .cv-section-title {
   color: white;
   @include over-background;
@@ -1034,7 +1034,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
         &:focus {
           outline: none;
-          border-color: var(--accent-color);
+          border-color: var(--accent-pink);
           box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
           background: var(--bg-accent);
         }
@@ -1066,7 +1066,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
         &:hover {
           background: var(--bg-accent);
-          border-left: 3px solid var(--accent-color);
+          border-left: 3px solid var(--accent-pink);
         }
 
         .result-type {
@@ -1189,13 +1189,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     }
 
     &.docx {
-      background: var(--secondary-color);
+      background: var(--accent-cyan);
       color: var(--on-fill);
-      border-color: var(--secondary-color);
+      border-color: var(--accent-cyan);
 
       &:hover:not(:disabled) {
-        background: var(--accent-color);
-        border-color: var(--accent-color);
+        background: var(--accent-pink);
+        border-color: var(--accent-pink);
         transform: translateY(-2px);
         box-shadow:
           0 0 20px rgba(0, 212, 255, 0.4),
@@ -1471,7 +1471,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   margin-top: 1rem;
 
   .preview-button {
-    background: var(--accent-color);
+    background: var(--accent-pink);
     color: white;
     border: none;
     padding: 0.5rem 1rem;
@@ -1528,243 +1528,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       padding: 0;
       color: inherit;
       font-size: inherit;
-    }
-  }
-}
-
-// Light mode specific enhancements
-[data-theme='light'] {
-  // CV header - text on dark background
-  .cv-page-header {
-    h1 {
-      color: white;
-      // Dark halo for contrast over bright backgrounds, plus the neon glow
-      text-shadow:
-        0 2px 6px rgba(0, 0, 0, 0.65),
-        0 0 20px rgba(0, 255, 136, 0.3);
-
-      &::after {
-        background: var(--accent-color);
-        box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-      }
-    }
-
-    p {
-      color: rgba(255, 255, 255, 0.95);
-      // Two layers rather than one: a tight near-opaque halo holds an edge
-      // against an adjacent bright cell, and a wider soft one fills the gaps.
-      // A single 4px blur was tuned for the low-frequency backgrounds and does
-      // not survive the cellular automaton, which alternates light and dark
-      // every cell.
-      text-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.9),
-        0 0 10px rgba(0, 0, 0, 0.6);
-    }
-  }
-
-  .cv-overview-contact {
-    background: var(--bg-card);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-
-    .contact-value {
-      &:hover {
-        color: var(--ink-blue);
-      }
-    }
-  }
-
-  .cv-section {
-    background: var(--bg-card);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-
-    &::before {
-      background: var(--accent-pink);
-    }
-
-    h2 {
-      border-bottom-color: var(--accent-pink);
-    }
-  }
-
-  .experience-item,
-  .education-item {
-    background: var(--bg-hover);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-
-    &:hover {
-      background: var(--bg-card);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-  }
-
-  .experience-duration,
-  .education-duration {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-  }
-
-  .resume-header {
-    background: var(--bg-card);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  }
-
-  .experience-section {
-    background: var(--bg-card);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-
-    .experience-item {
-      background: var(--bg-hover);
-
-      &:hover {
-        background: var(--bg-card);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      }
-    }
-
-    .experience-duration {
-      background: var(--bg-card);
-    }
-  }
-
-  .education-section {
-    background: var(--bg-card);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-
-    .education-item {
-      background: var(--bg-hover);
-
-      &:hover {
-        background: var(--bg-card);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      }
-    }
-
-    .education-duration {
-      background: var(--bg-card);
-    }
-  }
-
-  // No card here: the chips are the content, and certifications right below it
-  // has never had one either. Carding only this one, and only in this theme,
-  // was the odd one out.
-  .skills-section {
-    .skill-tag {
-      &.technical {
-        background: var(--accent-cyan);
-        color: var(--on-fill);
-        box-shadow: 0 2px 6px rgba(0, 172, 193, 0.3);
-      }
-
-      &.soft {
-        background: var(--primary-color);
-        color: var(--on-fill);
-        box-shadow: 0 2px 6px rgba(0, 168, 84, 0.3);
-      }
-
-      &.language {
-        background: var(--accent-pink);
-        color: var(--on-fill);
-        box-shadow: 0 2px 6px rgba(233, 30, 99, 0.3);
-      }
-
-      &:hover {
-        transform: translateY(-2px) scale(1.05);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-      }
-    }
-
-    .certification-chip {
-      background: linear-gradient(
-        135deg,
-        var(--fill-purple),
-        var(--accent-pink)
-      );
-      color: var(--on-fill);
-      box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);
-
-      &:hover {
-        box-shadow: 0 4px 16px rgba(147, 51, 234, 0.4);
-      }
-
-      .cert-tooltip {
-        .tooltip-content {
-          background: white;
-          border: 2px solid var(--border-color);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-
-          &::before {
-            border-top-color: white;
-          }
-        }
-      }
-    }
-  }
-
-  .cv-export {
-    background: var(--bg-card);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-
-    .search-input {
-      background: var(--bg-primary);
-
-      &:focus {
-        background: var(--bg-card);
-        border-color: var(--accent-blue);
-        box-shadow: 0 0 15px rgba(33, 150, 243, 0.2);
-      }
-    }
-
-    .search-results {
-      background: var(--bg-card);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-
-      .search-result-item {
-        &:hover {
-          background: var(--bg-hover);
-          border-left-color: var(--accent-blue);
-        }
-      }
-    }
-
-    .export-button {
-      &.pdf {
-        background: var(--primary-color);
-
-        &:hover:not(:disabled) {
-          background: var(--primary-dark);
-          box-shadow: 0 4px 12px rgba(0, 168, 84, 0.3);
-        }
-      }
-
-      &.docx {
-        background: var(--accent-cyan);
-
-        &:hover:not(:disabled) {
-          background: var(--accent-blue);
-          box-shadow: 0 4px 12px rgba(0, 172, 193, 0.3);
-        }
-      }
-
-      &.markdown {
-        background: var(--bg-card);
-        border: 2px solid var(--border-color);
-
-        &:hover:not(:disabled) {
-          background: var(--bg-hover);
-          border-color: var(--accent-blue);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-      }
-    }
-
-    .latex-instructions {
-      background: var(--bg-hover);
-
-      code {
-        background: var(--bg-card);
-        color: var(--ink-blue);
-        border: 1px solid var(--border-color);
-      }
     }
   }
 }

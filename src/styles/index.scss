@@ -142,7 +142,7 @@
 .expertise {
   margin-bottom: 4rem;
 
-  // Sits on the animated background, not in a card, in both themes.
+  // Sits on the animated background, not in a card.
   h2 {
     margin-bottom: 2rem;
     @include over-background;
@@ -236,8 +236,6 @@
     }
   }
 
-  // Dark mode image inversion for expertise icons (black line PNGs -> white lines)
-
   .expertise-title {
     font-size: 1.1rem;
     font-weight: 600;
@@ -301,7 +299,7 @@
       transform: translateX(-50%);
       width: 60px;
       height: 3px;
-      background: var(--accent-color);
+      background: var(--accent-pink);
       border-radius: 2px;
     }
   }
@@ -404,157 +402,5 @@
   .cta-button {
     padding: 0.75rem 1rem;
     font-size: 0.85rem;
-  }
-}
-
-// Light mode specific enhancements
-[data-theme='light'] {
-  // Hero section - text on dark background
-  .hero {
-    h1 {
-      color: white; // White text over the animated background
-      // Dark halo for contrast over bright backgrounds, plus the neon glow
-      text-shadow:
-        0 2px 6px rgba(0, 0, 0, 0.65),
-        0 0 20px rgba(0, 255, 136, 0.3);
-
-      &::after {
-        background: var(--accent-pink);
-        box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-      }
-    }
-
-    .hero-subtitle {
-      color: rgba(255, 255, 255, 0.95);
-      // Two layers rather than one: a tight near-opaque halo holds an edge
-      // against an adjacent bright cell, and a wider soft one fills the gaps.
-      // A single 4px blur was tuned for the low-frequency backgrounds and does
-      // not survive the cellular automaton, which alternates light and dark
-      // every cell.
-      text-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.9),
-        0 0 10px rgba(0, 0, 0, 0.6);
-    }
-  }
-
-  // Section titles that sit on the animated background rather than in a card.
-  // Scoped to `.home`: every page's stylesheet lands in one bundle, and
-  // unscoped this painted the CV's section titles white on their white cards.
-  .home h2:not(.consulting h2):not(.about h2):not(.blog-preview h2) {
-    color: white;
-    @include over-background;
-  }
-
-  .about {
-    background: var(--bg-card);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-
-    &::before {
-      background: linear-gradient(
-        180deg,
-        var(--accent-pink) 0%,
-        var(--accent-blue) 50%,
-        var(--accent-cyan) 100%
-      );
-    }
-
-    // Text inside white card uses dark colors
-    h2,
-    h3 {
-      color: var(--text-primary);
-    }
-
-    p {
-      color: var(--text-secondary);
-    }
-  }
-
-  .consulting {
-    background: var(--bg-card);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-
-    &::before {
-      background: linear-gradient(
-        90deg,
-        var(--accent-pink) 0%,
-        var(--accent-cyan) 25%,
-        var(--accent-blue) 50%,
-        var(--accent-purple) 75%,
-        var(--accent-pink) 100%
-      );
-    }
-
-    // Text inside white card uses dark colors
-    h2 {
-      color: var(--text-primary);
-      border-bottom-color: var(--accent-pink);
-    }
-
-    p {
-      color: var(--text-secondary);
-    }
-  }
-
-  // Expertise section title on dark background
-  .expertise h2 {
-    color: white;
-    border-bottom-color: var(--accent-pink);
-  }
-
-  .expertise-item {
-    background: var(--bg-card);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-    border: 1px solid var(--border-color);
-
-    @include reading-emphasis {
-      background: var(--bg-hover);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      border-color: var(--accent-blue);
-
-      .expertise-icon img {
-        opacity: 1;
-      }
-    }
-
-    .expertise-icon img {
-      opacity: 0.8;
-    }
-
-    // Text inside white cards
-    .expertise-title {
-      color: var(--text-primary);
-    }
-
-    .expertise-description {
-      color: var(--text-secondary);
-    }
-  }
-
-  .blog-preview {
-    background: var(--bg-card);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-
-    @include reading-emphasis {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-      border-color: var(--accent-purple);
-    }
-
-    // Text inside white card
-    h2 {
-      color: var(--text-primary);
-    }
-
-    p {
-      color: var(--text-secondary);
-
-      a {
-        color: var(--ink-blue);
-
-        &:hover {
-          color: var(--ink-pink);
-          text-shadow: 0 0 8px rgba(233, 30, 99, 0.3);
-        }
-      }
-    }
   }
 }
