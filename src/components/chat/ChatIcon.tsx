@@ -60,9 +60,6 @@ const ChatIcon: React.FC = () => {
           <span className="chat-label">chat</span>
         </div>
       </button>
-      <div className="keyboard-hint">
-        <kbd>C</kbd> chat
-      </div>
     </div>
   );
 };

@@ -1,0 +1,114 @@
+import { Link } from 'gatsby';
+import React from 'react';
+import { homepageConfig, projectsConfig } from '../config';
+
+/**
+ * The page heroes, in one place.
+ *
+ * The shell (nav, hero region, window, chat) mounts once for the whole site
+ * and only the page content inside the window swaps, so the hero can no
+ * longer be a prop a page hands up — the page that would hand it over is the
+ * thing being replaced. Instead the heroes live here, keyed by path, and
+ * Layout resolves its own from `location.pathname`.
+ *
+ * Class names are unchanged (`hero`, `blog-header`, `projects-header`,
+ * `cv-page-header`, `hero-crumb`, `data-brand-anchor`): the collapse
+ * choreography, the split measurement and the brand FLIP all key off them.
+ */
+export interface ResolvedHero {
+  /**
+   * Stable identity for whatever the path resolves to. Layout uses it to tell
+   * "the hero changed" from "only the page under it did", and as the dep that
+   * re-measures the split.
+   */
+  key: string;
+  hero: React.ReactNode | null;
+  /**
+   * Whether the hero compresses as the window scrolls. Every hero the site
+   * actually has does; a path with no hero has nothing to compress.
+   */
+  collapsible: boolean;
+}
+
+// The way home lives in the title: "alex → blog". The crumb is a real link and
+// carries the brand anchor, so it is the thing the FLIP lands on.
+const crumbTitle = (label: string) => (
+  <h1>
+    <Link to="/" className="hero-crumb" data-brand-anchor>
+      alex
+    </Link>
+    <span className="hero-crumb-sep"> → </span>
+    {label}
+  </h1>
+);
+
+// Each entry is built on demand rather than held as a module constant: the
+// elements are cheap, and a fresh tree per resolution keeps the outgoing and
+// incoming heroes from ever sharing a node during a swap.
+const HEROES: Record<string, () => React.ReactNode> = {
+  '/': () => (
+    <section className="hero">
+      <h1 data-brand-anchor>{homepageConfig.hero.title}</h1>
+      {/* The subtitle is also the map of the projects page: each segment
+          links to its section anchor there. */}
+      <p className="hero-subtitle">
+        {homepageConfig.hero.subtitleLinks.map((link, index) => (
+          <React.Fragment key={link.href}>
+            {index > 0 && ' → '}
+            <Link to={link.href} className="hero-subtitle-link">
+              {link.label}
+            </Link>
+          </React.Fragment>
+        ))}
+      </p>
+    </section>
+  ),
+  '/blog': () => (
+    <header className="blog-header">
+      {crumbTitle('blog')}
+      <p>notes and press, back to 2015.</p>
+    </header>
+  ),
+  '/projects': () => (
+    <header className="projects-header">
+      {crumbTitle(projectsConfig.title)}
+      <p>{projectsConfig.subtitle}</p>
+    </header>
+  ),
+  '/cv': () => (
+    <header className="cv-page-header">
+      {crumbTitle('cv')}
+      <p>everything, in order, back to 2010.</p>
+    </header>
+  ),
+};
+
+// What a path with no hero of its own resolves to — blog posts and the 404.
+const NO_HERO = 'none';
+
+/**
+ * Trailing-slash tolerant exact match. Gatsby serves `/blog` and `/blog/` as
+ * the same page and hands whichever one the link was written with to
+ * `location.pathname`, so the lookup has to see one spelling.
+ */
+const normalize = (pathname: string): string => {
+  const trimmed = (pathname || '/').replace(/\/+$/, '');
+  return trimmed === '' ? '/' : trimmed;
+};
+
+/**
+ * The hero's identity for a path, without building it. Layout compares this
+ * across a navigation to decide whether the hero has to peel at all.
+ */
+export const heroKeyFor = (pathname: string): string => {
+  const path = normalize(pathname);
+  return path in HEROES ? path : NO_HERO;
+};
+
+export const resolveHero = (pathname: string): ResolvedHero => {
+  const key = heroKeyFor(pathname);
+  if (key === NO_HERO) return { key, hero: null, collapsible: false };
+  return { key, hero: HEROES[key](), collapsible: true };
+};
+
+export default resolveHero;

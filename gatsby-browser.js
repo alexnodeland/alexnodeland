@@ -5,25 +5,16 @@ import { BackgroundProvider } from './src/components/BackgroundProvider';
 import { SettingsPanelProvider } from './src/components/SettingsPanelContext';
 import { BackgroundManager } from './src/components/animated-backgrounds';
 import { ChatProvider } from './src/components/chat';
+import Layout from './src/components/layout';
 
-// Shared-element continuity for the brand. Just before the route changes —
-// while the old page's DOM is still on screen — remember where "alex" was
-// (the homepage title, or the crumb in a subpage hero). The next page's
-// Layout reads this and FLIPs its own brand anchor from that box to its new
-// home, so navigating reads as the same word sliding and scaling rather than
-// two unrelated pages.
-export const onPreRouteUpdate = () => {
-  if (typeof window === 'undefined') return;
-  // Timestamp of the client-side navigation, so the incoming Layout can tell
-  // "arrived by link" (soften the entrance) from a cold load (render plainly).
-  window.__navAt = Date.now();
-  const el = document.querySelector('[data-brand-anchor]');
-  if (!el) return;
-  window.__brandAnchorRect = {
-    rect: el.getBoundingClientRect(),
-    at: Date.now(),
-  };
-};
+// The shell — nav capsule, hero region, window frame, chat — wraps the page
+// rather than the page rendering it, so it mounts once and survives every
+// client-side navigation. Only `element`, the page itself, swaps. That is what
+// stops the chat pill replaying its entry, the window frame blinking, and the
+// control rows re-appearing on every link.
+export const wrapPageElement = ({ element, props }) => (
+  <Layout location={props.location}>{element}</Layout>
+);
 
 export const wrapRootElement = ({ element }) => {
   return (

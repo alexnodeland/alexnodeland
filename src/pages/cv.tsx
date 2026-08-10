@@ -1,11 +1,9 @@
-import { Link } from 'gatsby';
 import React, { useState } from 'react';
 import {
   CVControlBar,
   CVSearch,
   EducationSection,
   ExperienceSection,
-  Layout,
   SEO,
   SkillsSection,
 } from '../components';
@@ -48,20 +46,8 @@ const CVPage: React.FC = () => {
     return () => root.removeEventListener('toggle', onToggle, true);
   }, [view]);
 
-  const hero = (
-    <header className="cv-page-header">
-      <h1>
-        <Link to="/" className="hero-crumb" data-brand-anchor>
-          alex
-        </Link>
-        <span className="hero-crumb-sep"> → </span>cv
-      </h1>
-      <p>everything, in order, back to 2010.</p>
-    </header>
-  );
-
   return (
-    <Layout hero={hero} collapsibleHero>
+    <>
       <SEO title="cv" description="Complete resume and CV for Alex Nodeland" />
       <div className="cv" ref={cvRef}>
         <CVControlBar resumeData={data} view={view} onViewChange={setView} />
@@ -183,7 +169,7 @@ const CVPage: React.FC = () => {
           )}
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

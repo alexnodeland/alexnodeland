@@ -6,21 +6,9 @@ import { projectsConfig } from '../../../config/projects';
 
 // Mock components barrel to avoid animated backgrounds
 jest.mock('../../../components', () => ({
-  // The page hero renders above the window now, as a Layout prop rather than
-  // as part of the page's children — so the mock has to put it back in the
-  // tree or every assertion about a page title fails on a structural change.
-  Layout: ({
-    children,
-    hero,
-  }: {
-    children: React.ReactNode;
-    hero?: React.ReactNode;
-  }) => (
-    <div data-testid="layout">
-      <div data-testid="layout-hero">{hero}</div>
-      {children}
-    </div>
-  ),
+  // No Layout here: the shell wraps the page (wrapPageElement) rather than the
+  // page rendering it, and the hero it wears is resolved from the path — both
+  // are covered by the Layout tests. A page renders only its own content now.
   SEO: ({ title }: { title?: string }) => (
     <div data-testid="seo" data-title={title} />
   ),
@@ -33,13 +21,15 @@ jest.mock('../../../components', () => ({
 jest.mock('../../../styles/projects.scss', () => ({}));
 
 describe('Projects Page', () => {
-  it('renders layout, SEO, and header', () => {
+  it('renders SEO and its sections, and no hero of its own', () => {
     render(<ProjectsPage />);
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
     expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'projects');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'projects'
-    );
+    // The "alex → projects" title and the tagline live in the hero registry
+    // the shell reads; the page owns the control row and the catalogue.
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Filter projects by category' })
+    ).toBeInTheDocument();
   });
 
   it('renders a section per category with projects, carrying its anchor id', () => {

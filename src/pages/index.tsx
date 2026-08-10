@@ -1,42 +1,22 @@
-import { Link } from 'gatsby';
 import React from 'react';
-import { Layout, SEO } from '../components';
+import { SEO } from '../components';
 import { getCTAButtonURL, homepageConfig } from '../config';
 import { expertiseIcons } from '../components/expertise-icons';
 import { useScrollSpy } from '../lib/hooks';
 import '../styles/index.scss';
 
+// The cover — the h1 and the subtitle links — is not here: the shell mounts
+// once for the whole site and resolves its own hero from the path, so every
+// hero lives in src/components/heroes.tsx. This page is what scrolls inside
+// the window.
 const IndexPage: React.FC = () => {
   // The grid used to sit lit up wherever a tap left it, on cards that go
   // nowhere when clicked. Reading position drives the highlight instead.
   const { containerRef: expertiseRef, isActive: isExpertiseActive } =
     useScrollSpy<HTMLDivElement>('.expertise-item');
 
-  // The cover, on the bare field above the window. It collapses on scroll
-  // like every other page hero: the title slides to the left edge and the
-  // subtitle rises onto its row, and both come back at the top of the page.
-  // Layout measures the distances (see its hero effect) — the choreography is
-  // the same on every page now, so nothing about it lives here.
-  const hero = (
-    <section className="hero">
-      <h1 data-brand-anchor>{homepageConfig.hero.title}</h1>
-      {/* The subtitle is also the map of the projects page: each segment
-          links to its section anchor there. */}
-      <p className="hero-subtitle">
-        {homepageConfig.hero.subtitleLinks.map((link, index) => (
-          <React.Fragment key={link.href}>
-            {index > 0 && ' → '}
-            <Link to={link.href} className="hero-subtitle-link">
-              {link.label}
-            </Link>
-          </React.Fragment>
-        ))}
-      </p>
-    </section>
-  );
-
   return (
-    <Layout hero={hero} collapsibleHero>
+    <>
       <SEO
         title={homepageConfig.hero.title}
         description="AI engineer and mathematician. Agent systems, distributed infrastructure, and audio DSP."
@@ -134,7 +114,7 @@ const IndexPage: React.FC = () => {
           </p>
         </section>
       </div>
-    </Layout>
+    </>
   );
 };
 

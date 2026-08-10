@@ -47,7 +47,7 @@
     color: var(--text-primary);
     font-size: 0.875rem;
     transition: all var(--transition-normal);
-    min-width: 280px; // Match keyboard hints width for alignment
+    min-width: var(--rail-width); // The rail's footprint, shared with the pills
     cursor: pointer; // Indicate clickable
 
     &:hover {
@@ -77,33 +77,6 @@
 
     &:hover .background-name {
       color: var(--text-primary);
-    }
-  }
-
-  .keyboard-hint {
-    font-size: 0.6875rem;
-    // Sits on the animated background with no surface under it, so it takes
-    // the halo rather than relying on the background staying dark.
-    color: var(--text-secondary);
-    @include over-background;
-    text-align: left;
-    opacity: 0.85;
-    font-family: inherit;
-    width: 280px; // Fixed width to prevent jumping
-
-    // No surface behind these either, so the key caps carry their own rather
-    // than borrowing the page's — --bg-accent is a 3%-to-5% wash that simply
-    // disappears against the background.
-    kbd {
-      background: var(--bg-floating);
-      border: 1px solid var(--border-floating);
-      border-radius: var(--radius-sm);
-      padding: 0.125rem 0.25rem;
-      margin: 0 0.125rem;
-      font-size: 0.625rem;
-      font-family: inherit;
-      color: var(--text-primary);
-      text-shadow: none;
     }
   }
 }
@@ -876,10 +849,6 @@
       .background-name {
         font-size: 0.75rem;
       }
-    }
-
-    .keyboard-hint {
-      display: none; // Hide keyboard hints on mobile
     }
   }
 

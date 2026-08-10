@@ -1,11 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import React from 'react';
 import { SettingsPanelProvider } from '../../../components/SettingsPanelContext';
 import { ChatProvider } from '../../../components/chat';
 import Layout from '../../../components/layout';
 import { getAllSocialLinks } from '../../../config';
 
-// Mock the config
+// Mock the config. The hero registry reads homepageConfig and projectsConfig,
+// so this mock has to carry them too — Layout resolves its own hero now.
 jest.mock('../../../config', () => ({
   siteConfig: {
     siteName: 'Test Site',
@@ -21,6 +22,19 @@ jest.mock('../../../config', () => ({
       email: 'test@example.com',
     },
     author: 'Test Author',
+  },
+  homepageConfig: {
+    hero: {
+      title: 'alex nodeland',
+      subtitleLinks: [
+        { label: 'math', href: '/projects#math' },
+        { label: 'ai', href: '/projects#ai' },
+      ],
+    },
+  },
+  projectsConfig: {
+    title: 'projects',
+    subtitle: 'open source projects, tools, and experiments.',
   },
   getAllSocialLinks: jest.fn(() => [
     { platform: 'github', url: 'https://github.com/test' },
@@ -48,18 +62,17 @@ jest.mock('../../../components/chat/KeyboardShortcuts', () => {
   };
 });
 
-// Test wrapper component to provide necessary contexts
+// Test wrapper component to provide necessary contexts. The shell wraps the
+// page now (wrapPageElement), so what it is handed is a location and the page
+// element — never a hero.
 const TestWrapper: React.FC<{
   children: React.ReactNode;
-  hero?: React.ReactNode;
-  collapsibleHero?: boolean;
-}> = ({ children, hero, collapsibleHero }) => {
+  pathname?: string;
+}> = ({ children, pathname = '/nowhere' }) => {
   return (
     <SettingsPanelProvider>
       <ChatProvider>
-        <Layout hero={hero} collapsibleHero={collapsibleHero}>
-          {children}
-        </Layout>
+        <Layout location={{ pathname }}>{children}</Layout>
       </ChatProvider>
     </SettingsPanelProvider>
   );
@@ -79,7 +92,7 @@ describe('Layout Component', () => {
     expect(screen.getByText('Test Content')).toBeInTheDocument();
   });
 
-  it('should not render a brand link in the header', () => {
+  it('should not render a brand link in the nav', () => {
     // The way home is the breadcrumb in each page's hero title; the nav is
     // just the capsule of page links.
     render(<TestWrapper>{mockChildren}</TestWrapper>);
@@ -100,15 +113,24 @@ describe('Layout Component', () => {
   it('should have correct href attributes for navigation links', () => {
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
-    const homeLink = screen.getByText('Home');
-    const aboutLink = screen.getByText('About');
-    const blogLink = screen.getByText('Blog');
-    const cvLink = screen.getByText('CV');
+    expect(screen.getByText('Home')).toHaveAttribute('href', '/');
+    expect(screen.getByText('About')).toHaveAttribute('href', '/about');
+    expect(screen.getByText('Blog')).toHaveAttribute('href', '/blog');
+    expect(screen.getByText('CV')).toHaveAttribute('href', '/cv');
+  });
 
-    expect(homeLink).toHaveAttribute('href', '/');
-    expect(aboutLink).toHaveAttribute('href', '/about');
-    expect(blogLink).toHaveAttribute('href', '/blog');
-    expect(cvLink).toHaveAttribute('href', '/cv');
+  it('should float the nav capsule outside the stage', () => {
+    // It is a control on the field alongside the chat pill now, not a row of
+    // chrome inside the page column — so it must not live in the stage.
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
+
+    const nav = screen.getByRole('navigation');
+    const stage = document.querySelector('.stage') as HTMLElement;
+
+    expect(nav).toHaveClass('nav');
+    expect(stage).not.toContainElement(nav);
+    expect(document.querySelector('.header-fixed')).toBeNull();
+    expect(nav.querySelector('.nav-menu')).not.toBeNull();
   });
 
   it('should render the nav with no theme toggle', () => {
@@ -142,47 +164,71 @@ describe('Layout Component', () => {
   it('should render social links in footer', () => {
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
-    const socialLinks = screen.getAllByRole('link');
-    const socialLinkElements = socialLinks.filter(
-      link =>
-        link.getAttribute('data-platform') &&
-        link.getAttribute('data-platform') !== 'email'
-    );
+    const socialLinkElements = screen
+      .getAllByRole('link')
+      .filter(
+        link =>
+          link.getAttribute('data-platform') &&
+          link.getAttribute('data-platform') !== 'email'
+      );
 
     expect(socialLinkElements).toHaveLength(3);
 
-    const githubLink = socialLinkElements.find(
-      link => link.getAttribute('data-platform') === 'github'
-    );
-    const linkedinLink = socialLinkElements.find(
-      link => link.getAttribute('data-platform') === 'linkedin'
-    );
-    const twitterLink = socialLinkElements.find(
-      link => link.getAttribute('data-platform') === 'twitter'
-    );
+    const byPlatform = (platform: string) =>
+      socialLinkElements.find(
+        link => link.getAttribute('data-platform') === platform
+      );
 
-    expect(githubLink).toHaveAttribute('href', 'https://github.com/test');
-    expect(linkedinLink).toHaveAttribute(
+    expect(byPlatform('github')).toHaveAttribute(
+      'href',
+      'https://github.com/test'
+    );
+    expect(byPlatform('linkedin')).toHaveAttribute(
       'href',
       'https://linkedin.com/in/test'
     );
-    expect(twitterLink).toHaveAttribute('href', 'https://twitter.com/test');
+    expect(byPlatform('twitter')).toHaveAttribute(
+      'href',
+      'https://twitter.com/test'
+    );
+  });
+
+  it('should draw every footer mark inline in one stroked set', () => {
+    // The vendor logos were data-URI backgrounds — a mix of outline and solid
+    // marks inverted to white. They are one inline monoline set now, taking
+    // currentColor, so the hover is the link's own colour change.
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
+
+    const icons = document.querySelectorAll('.footer-link .icon svg');
+    // email + the three social links
+    expect(icons).toHaveLength(4);
+    icons.forEach(icon => {
+      expect(icon).toHaveAttribute('viewBox', '0 0 24 24');
+      expect(icon).toHaveAttribute('stroke', 'currentColor');
+      expect(icon).toHaveAttribute('fill', 'none');
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    // The links are icon-only, so each carries its own name.
+    document.querySelectorAll('.footer-link').forEach(link => {
+      expect(link.getAttribute('aria-label')).toBeTruthy();
+    });
   });
 
   it('should have correct target and rel attributes for social links', () => {
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
-    const socialLinks = screen.getAllByRole('link');
-    const externalLinks = socialLinks.filter(
-      link =>
-        link.getAttribute('data-platform') &&
-        link.getAttribute('data-platform') !== 'email'
-    );
-
-    externalLinks.forEach(link => {
-      expect(link).toHaveAttribute('target', '_blank');
-      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-    });
+    screen
+      .getAllByRole('link')
+      .filter(
+        link =>
+          link.getAttribute('data-platform') &&
+          link.getAttribute('data-platform') !== 'email'
+      )
+      .forEach(link => {
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      });
   });
 
   it('should render copyright notice in footer', () => {
@@ -198,12 +244,9 @@ describe('Layout Component', () => {
   it('should have proper HTML structure', () => {
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
-    // Check main layout structure
-    expect(screen.getByRole('banner')).toBeInTheDocument(); // header
-    expect(screen.getByRole('main')).toBeInTheDocument(); // main
-    expect(screen.getByRole('contentinfo')).toBeInTheDocument(); // footer
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
 
-    // Check navigation structure
     const nav = screen.getByRole('navigation');
     expect(nav).toBeInTheDocument();
     expect(nav).toHaveClass('nav');
@@ -212,70 +255,192 @@ describe('Layout Component', () => {
   it('should have correct CSS classes', () => {
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
-    expect(screen.getByRole('banner')).toHaveClass('header-fixed');
     expect(screen.getByRole('main')).toHaveClass('main');
     expect(screen.getByRole('contentinfo')).toHaveClass('footer');
   });
 
-  it('should nest the header, the hero and the window in one stage', () => {
-    render(
-      <TestWrapper hero={<p data-testid="test-hero">Hero</p>}>
-        {mockChildren}
-      </TestWrapper>
+  describe('hero resolution', () => {
+    // The hero is no longer handed up by the page: the shell mounts once and
+    // reads the path.
+    it('should wear the cover on the homepage', () => {
+      render(<TestWrapper pathname="/">{mockChildren}</TestWrapper>);
+
+      const region = document.querySelector('.site-hero') as HTMLElement;
+      expect(region.querySelector('.hero')).not.toBeNull();
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'alex nodeland'
+      );
+      // The cover title is the brand anchor itself; the subtitle links out to
+      // the projects page's sections.
+      expect(region.querySelector('h1[data-brand-anchor]')).not.toBeNull();
+      expect(region.querySelectorAll('.hero-subtitle-link')).toHaveLength(2);
+    });
+
+    it.each([
+      ['/blog', '.blog-header', 'blog', 'notes and press, back to 2015.'],
+      [
+        '/projects',
+        '.projects-header',
+        'projects',
+        'open source projects, tools, and experiments.',
+      ],
+      ['/cv', '.cv-page-header', 'cv', 'everything, in order, back to 2010.'],
+    ])(
+      'should wear the %s crumb hero',
+      (pathname, selector, label, tagline) => {
+        render(<TestWrapper pathname={pathname}>{mockChildren}</TestWrapper>);
+
+        const region = document.querySelector('.site-hero') as HTMLElement;
+        expect(region.querySelector(selector)).not.toBeNull();
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+          `alex → ${label}`
+        );
+        expect(screen.getByText(tagline)).toBeInTheDocument();
+
+        // The crumb is the way home and the thing the brand FLIP lands on.
+        const crumb = region.querySelector(
+          'a.hero-crumb[data-brand-anchor]'
+        ) as HTMLAnchorElement;
+        expect(crumb).toHaveAttribute('href', '/');
+      }
     );
+
+    it('should tolerate a trailing slash', () => {
+      render(<TestWrapper pathname="/blog/">{mockChildren}</TestWrapper>);
+
+      expect(document.querySelector('.blog-header')).not.toBeNull();
+    });
+
+    it.each([['/blog/some-post'], ['/not-a-page']])(
+      'should wear no hero on %s',
+      pathname => {
+        render(<TestWrapper pathname={pathname}>{mockChildren}</TestWrapper>);
+
+        const region = document.querySelector('.site-hero') as HTMLElement;
+        // The region is still there — it is what the transition eases, and
+        // empty it is what holds the window clear of the floating capsule —
+        // but it carries nothing and is not collapsible.
+        expect(region).not.toBeNull();
+        expect(region).toBeEmptyDOMElement();
+        expect(region).not.toHaveClass('is-collapsible');
+      }
+    );
+
+    it('should mark every real hero collapsible', () => {
+      ['/', '/blog', '/projects', '/cv'].forEach(pathname => {
+        const { unmount } = render(
+          <TestWrapper pathname={pathname}>{mockChildren}</TestWrapper>
+        );
+        expect(document.querySelector('.site-hero')).toHaveClass(
+          'is-collapsible'
+        );
+        unmount();
+      });
+    });
+  });
+
+  it('should nest the hero and the window in one stage', () => {
+    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
 
     const stage = document.querySelector('.stage') as HTMLElement;
     expect(stage).not.toBeNull();
 
-    // The header and the hero sit on the field, outside the scrolling window;
-    // only the page's own content is inside it.
-    const header = screen.getByRole('banner');
-    const hero = screen.getByTestId('test-hero');
+    // The hero sits on the field, outside the scrolling window; only the
+    // page's own content is inside it.
+    const region = document.querySelector('.site-hero') as HTMLElement;
     const windowPanel = document.querySelector('.layout') as HTMLElement;
 
-    expect(stage).toContainElement(header);
-    expect(stage).toContainElement(hero);
+    expect(stage).toContainElement(region);
     expect(stage).toContainElement(windowPanel);
-    expect(windowPanel).not.toContainElement(header);
-    expect(windowPanel).not.toContainElement(hero);
+    expect(windowPanel).not.toContainElement(region);
     expect(windowPanel).toContainElement(screen.getByTestId('test-children'));
 
-    // The hero's own region, so a page hero cannot claim a second banner.
-    expect(hero.closest('.site-hero')).not.toBeNull();
-    expect(screen.getAllByRole('banner')).toHaveLength(1);
+    // The heroes are still <header> elements, so each one is wrapped in the
+    // region rather than sitting loose in the stage — the shell contributes
+    // no header of its own now that the nav has left it.
+    expect(stage.querySelectorAll(':scope > header')).toHaveLength(0);
+    screen.queryAllByRole('banner').forEach(banner => {
+      expect(region).toContainElement(banner);
+    });
   });
 
-  it('should render no hero region when a page has no hero', () => {
-    render(<TestWrapper>{mockChildren}</TestWrapper>);
-
-    expect(document.querySelector('.site-hero')).toBeNull();
-    expect(document.querySelector('.stage')).not.toBeNull();
-    expect(screen.getByTestId('test-children')).toBeInTheDocument();
-  });
-
-  it('should only mark the hero collapsible when the page asks for it', () => {
-    const { unmount } = render(
-      <TestWrapper hero={<p>Hero</p>}>{mockChildren}</TestWrapper>
+  describe('navigation transition', () => {
+    // jsdom implements neither Element.animate nor layout, so what is under
+    // test here is the bookkeeping: the hero swaps for the new path, the
+    // window goes back to the top, and none of it fires on first mount.
+    const Shell: React.FC<{ pathname: string; label: string }> = ({
+      pathname,
+      label,
+    }) => (
+      <SettingsPanelProvider>
+        <ChatProvider>
+          <Layout location={{ pathname }}>
+            <div data-testid="page">{label}</div>
+          </Layout>
+        </ChatProvider>
+      </SettingsPanelProvider>
     );
-    expect(document.querySelector('.site-hero')).not.toHaveClass(
-      'is-collapsible'
-    );
-    unmount();
 
-    render(
-      <TestWrapper hero={<p>Hero</p>} collapsibleHero>
-        {mockChildren}
-      </TestWrapper>
-    );
-    expect(document.querySelector('.site-hero')).toHaveClass('is-collapsible');
+    it('should swap the hero when the path changes', () => {
+      const { rerender } = render(<Shell pathname="/blog" label="blog" />);
+      expect(document.querySelector('.blog-header')).not.toBeNull();
+
+      act(() => {
+        rerender(<Shell pathname="/cv" label="cv" />);
+      });
+
+      expect(document.querySelector('.blog-header')).toBeNull();
+      expect(document.querySelector('.cv-page-header')).not.toBeNull();
+      expect(screen.getByTestId('page')).toHaveTextContent('cv');
+    });
+
+    it('should keep the shell itself across a navigation', () => {
+      const { rerender } = render(<Shell pathname="/blog" label="blog" />);
+      const windowPanel = document.querySelector('.layout');
+      const nav = document.querySelector('.nav');
+
+      act(() => {
+        rerender(<Shell pathname="/cv" label="cv" />);
+      });
+
+      // Same nodes, not replacements: this is what stops the frame blinking
+      // and the chat pill replaying its entry on every link.
+      expect(document.querySelector('.layout')).toBe(windowPanel);
+      expect(document.querySelector('.nav')).toBe(nav);
+    });
+
+    it('should put the window back to the top on a new path', () => {
+      const { rerender } = render(<Shell pathname="/blog" label="blog" />);
+      const windowPanel = document.querySelector('.layout') as HTMLElement;
+      windowPanel.scrollTop = 400;
+
+      act(() => {
+        rerender(<Shell pathname="/cv" label="cv" />);
+      });
+
+      expect(windowPanel.scrollTop).toBe(0);
+      expect(windowPanel.style.getPropertyValue('--veil-strength')).toBe('0');
+    });
+
+    it('should leave a hash-only change alone', () => {
+      // The projects page resolves its own anchors; the shell must not fight
+      // it by resetting the scroll under it.
+      const { rerender } = render(
+        <Shell pathname="/projects" label="projects" />
+      );
+      const windowPanel = document.querySelector('.layout') as HTMLElement;
+      windowPanel.scrollTop = 400;
+
+      act(() => {
+        rerender(<Shell pathname="/projects" label="projects" />);
+      });
+
+      expect(windowPanel.scrollTop).toBe(400);
+    });
   });
 
   it('should publish the window scroll position as hero collapse progress', () => {
-    render(
-      <TestWrapper hero={<p>Hero</p>} collapsibleHero>
-        {mockChildren}
-      </TestWrapper>
-    );
+    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
 
     const stage = document.querySelector('.stage') as HTMLElement;
     const windowPanel = document.querySelector('.layout') as HTMLElement;
@@ -346,34 +511,30 @@ describe('Layout Component', () => {
       global.ResizeObserver = original;
     });
 
-    const pageHero = (
-      <header data-testid="page-hero">
-        <h1>projects</h1>
-        <p>a collection of open source projects.</p>
-      </header>
-    );
-
-    it('should publish the travel distances the split choreography needs', () => {
-      const { unmount } = render(
-        <TestWrapper hero={pageHero} collapsibleHero>
-          {mockChildren}
-        </TestWrapper>
-      );
-
+    const plant = (widths: { title: number; sub: number }) => {
       const heroRegion = document.querySelector('.site-hero') as HTMLElement;
-      const container = screen.getByTestId('page-hero');
+      const container = heroRegion.firstElementChild as HTMLElement;
       stub(container, { clientWidth: 1000 });
       stub(container.querySelector('h1') as HTMLElement, {
-        offsetWidth: 200,
+        offsetWidth: widths.title,
         offsetHeight: 60,
       });
       stub(container.querySelector('p') as HTMLElement, {
-        offsetWidth: 900,
+        offsetWidth: widths.sub,
         offsetHeight: 30,
       });
+      return heroRegion;
+    };
+
+    it('should publish the travel distances the split choreography needs', () => {
+      const { unmount } = render(
+        <TestWrapper pathname="/projects">{mockChildren}</TestWrapper>
+      );
+
+      const heroRegion = plant({ title: 200, sub: 900 });
 
       // The region is what is watched; the column the boxes travel across is
-      // the page's own hero element inside it.
+      // the hero element inside it.
       expect(observe).toHaveBeenCalledWith(heroRegion);
       observers.forEach(callback => callback());
 
@@ -394,23 +555,9 @@ describe('Layout Component', () => {
     });
 
     it('should leave a tagline that already fits at full size', () => {
-      render(
-        <TestWrapper hero={pageHero} collapsibleHero>
-          {mockChildren}
-        </TestWrapper>
-      );
+      render(<TestWrapper pathname="/projects">{mockChildren}</TestWrapper>);
 
-      const heroRegion = document.querySelector('.site-hero') as HTMLElement;
-      const container = screen.getByTestId('page-hero');
-      stub(container, { clientWidth: 1000 });
-      stub(container.querySelector('h1') as HTMLElement, {
-        offsetWidth: 200,
-        offsetHeight: 60,
-      });
-      stub(container.querySelector('p') as HTMLElement, {
-        offsetWidth: 300,
-        offsetHeight: 30,
-      });
+      const heroRegion = plant({ title: 200, sub: 300 });
       observers.forEach(callback => callback());
 
       // Room to spare never becomes a scale-up: the tagline is drawn at its
@@ -418,29 +565,34 @@ describe('Layout Component', () => {
       expect(heroRegion.style.getPropertyValue('--sub-scale')).toBe('1');
     });
 
-    it('should measure nothing for a hero that is not a title and a tagline', () => {
-      render(
-        <TestWrapper hero={<p data-testid="bare-hero">Hero</p>} collapsibleHero>
-          {mockChildren}
-        </TestWrapper>
+    it('should re-measure when the hero itself changes', () => {
+      const Shell: React.FC<{ pathname: string }> = ({ pathname }) => (
+        <SettingsPanelProvider>
+          <ChatProvider>
+            <Layout location={{ pathname }}>{mockChildren}</Layout>
+          </ChatProvider>
+        </SettingsPanelProvider>
       );
 
-      const heroRegion = document.querySelector('.site-hero') as HTMLElement;
-      observers.forEach(callback => callback());
+      const { rerender } = render(<Shell pathname="/projects" />);
+      observe.mockClear();
 
-      expect(heroRegion.style.getPropertyValue('--title-shift')).toBe('');
-      expect(heroRegion.style.getPropertyValue('--sub-scale')).toBe('');
+      act(() => {
+        rerender(<Shell pathname="/cv" />);
+      });
+
+      // New hero, new text, new distances — the observer is re-armed on the
+      // hero's identity rather than only on the collapsible flag.
+      expect(observe).toHaveBeenCalled();
     });
 
-    it('should not measure a hero the page has not made collapsible', () => {
-      render(<TestWrapper hero={pageHero}>{mockChildren}</TestWrapper>);
+    it('should measure nothing for a path with no hero', () => {
+      render(<TestWrapper pathname="/blog/a-post">{mockChildren}</TestWrapper>);
 
+      const heroRegion = document.querySelector('.site-hero') as HTMLElement;
       expect(observe).not.toHaveBeenCalled();
-      expect(
-        (
-          document.querySelector('.site-hero') as HTMLElement
-        ).style.getPropertyValue('--title-shift')
-      ).toBe('');
+      expect(heroRegion.style.getPropertyValue('--title-shift')).toBe('');
+      expect(heroRegion.style.getPropertyValue('--sub-scale')).toBe('');
     });
   });
 

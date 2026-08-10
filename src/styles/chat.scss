@@ -39,7 +39,9 @@
     font-size: 0.875rem;
     cursor: pointer;
     transition: all var(--transition-normal);
-    min-width: 280px;
+    // The rail's footprint — the nav capsule at the top of the screen is built
+    // to the same box, so the two align down the right edge.
+    min-width: var(--rail-width);
 
     &:hover {
       border-color: rgba(255, 255, 255, 0.45);
@@ -74,28 +76,6 @@
       }
     }
   }
-
-  .keyboard-hint {
-    font-size: 0.6875rem;
-    color: var(--text-secondary);
-    @include over-background;
-    text-align: right;
-    opacity: 0.85;
-    font-family: inherit;
-    width: 280px;
-
-    kbd {
-      background: var(--bg-floating);
-      border: 1px solid var(--border-floating);
-      border-radius: var(--radius-sm);
-      padding: 0.125rem 0.25rem;
-      margin: 0 0.125rem;
-      font-size: 0.625rem;
-      font-family: inherit;
-      color: var(--text-primary);
-      text-shadow: none;
-    }
-  }
 }
 
 // Responsive design - match background manager behavior
@@ -120,10 +100,6 @@
           display: none; // Hide label text, show icon only
         }
       }
-    }
-
-    .keyboard-hint {
-      display: none; // Hide keyboard hints on mobile
     }
   }
 

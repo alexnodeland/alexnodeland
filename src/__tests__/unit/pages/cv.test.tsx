@@ -6,21 +6,9 @@ import CVPage from '../../../pages/cv';
 
 // Mock components barrel to avoid animated backgrounds
 jest.mock('../../../components', () => ({
-  // The page hero renders above the window now, as a Layout prop rather than
-  // as part of the page's children — so the mock has to put it back in the
-  // tree or every assertion about a page title fails on a structural change.
-  Layout: ({
-    children,
-    hero,
-  }: {
-    children: React.ReactNode;
-    hero?: React.ReactNode;
-  }) => (
-    <div data-testid="layout">
-      <div data-testid="layout-hero">{hero}</div>
-      {children}
-    </div>
-  ),
+  // No Layout here: the shell wraps the page (wrapPageElement) rather than the
+  // page rendering it, and the hero it wears is resolved from the path — both
+  // are covered by the Layout tests. A page renders only its own content now.
   SEO: ({ title }: { title?: string }) => (
     <div data-testid="seo" data-title={title} />
   ),
@@ -56,11 +44,12 @@ jest.mock('../../../components', () => ({
 jest.mock('../../../styles/cv.scss', () => ({}));
 
 describe('CV Page', () => {
-  it('renders CV header and sections', () => {
+  it('renders SEO and its sections, and no hero of its own', () => {
     render(<CVPage />);
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
     expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'cv');
-    expect(screen.getByText('cv')).toBeInTheDocument();
+    // The "alex → cv" title and its tagline live in the hero registry the
+    // shell reads, not here.
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
     // The sections the search scrolls to are the ones the page puts ids on.
     expect(document.getElementById('cv-experience')).toBeInTheDocument();
     expect(document.getElementById('cv-education')).toBeInTheDocument();

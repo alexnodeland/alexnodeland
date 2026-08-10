@@ -2,12 +2,9 @@ import { render, screen } from '@testing-library/react';
 import React from 'react';
 import BlogPost from '../../../templates/blog-post';
 
-// Mock Layout and SEO
-jest.mock('../../../components/layout', () => {
-  return function MockLayout({ children }: { children: React.ReactNode }) {
-    return <div data-testid="layout">{children}</div>;
-  };
-});
+// No Layout mock: the shell wraps the page (wrapPageElement) rather than the
+// template rendering it, and a post wears no hero — its title is inside the
+// window with the rest of the article.
 jest.mock('../../../components/seo', () => {
   return function MockSEO({
     title,
@@ -44,9 +41,8 @@ describe('BlogPost Template', () => {
     },
   };
 
-  it('renders layout, SEO and content', () => {
+  it('renders SEO and content', () => {
     const { container } = render(<BlogPost data={mockData as any} />);
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
     expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'My Post');
     expect(container.querySelector('.post-title')).toHaveTextContent('My Post');
     expect(container.querySelector('.post-description')).toHaveTextContent(
