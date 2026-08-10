@@ -82,8 +82,9 @@
   max-width: var(--content-max-width);
   margin: 0 auto;
   // Horizontal padding is --gutter, the same token .nav and .main take, so the
-  // title lines up with the brand pill above it and the cards below it.
-  padding: var(--space-4) var(--gutter);
+  // title lines up with the brand pill above it and the cards below it. The
+  // bottom is the breathing room between the tagline and the window's frame.
+  padding: var(--space-4) var(--gutter) var(--space-5);
 }
 
 // Scroll-linked collapse. Layout publishes --hero-collapse (0 → 1) on the
@@ -92,8 +93,14 @@
 // between two states. The window is `flex: 1`, so every pixel the hero gives
 // up goes straight to the content.
 .site-hero.is-collapsible {
-  padding-top: calc(var(--space-4) * (1 - var(--hero-collapse)));
-  padding-bottom: calc(var(--space-4) * (1 - var(--hero-collapse)));
+  // The collapse reclaims space but never lets the window's frame touch the
+  // hero text: both paddings bottom out at a floor instead of zero.
+  padding-top: calc(
+    var(--space-3) + var(--space-2) * (1 - var(--hero-collapse))
+  );
+  padding-bottom: calc(
+    var(--space-3) + var(--space-3) * (1 - var(--hero-collapse))
+  );
   transition: padding 120ms linear;
 
   // The title stays — it is the page's name — but gives back the gap under it.
