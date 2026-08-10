@@ -12,11 +12,38 @@ const IndexPage: React.FC = () => {
   const { containerRef: expertiseRef, isActive: isExpertiseActive } =
     useScrollSpy<HTMLDivElement>('.expertise-item');
 
-  // The cover, on the bare field above the window. It is the site's one
-  // splash moment, so unlike the other page heroes it does not collapse as
-  // the content scrolls under it.
+  // The collapse choreography needs real widths: at full collapse the title
+  // parks on the left edge and the subtitle on the right, each travelling
+  // half of its leftover space, and the subtitle rises to the title's
+  // centerline. CSS can't measure, so the shifts are published as pixel
+  // custom properties and the stylesheet scales them by --hero-collapse.
+  const heroRef = React.useRef<HTMLElement>(null);
+  React.useLayoutEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const measure = () => {
+      const h1 = el.querySelector('h1');
+      const sub = el.querySelector<HTMLElement>('.hero-subtitle');
+      if (!h1 || !sub) return;
+      const w = el.clientWidth;
+      el.style.setProperty('--title-shift', `${(w - h1.offsetWidth) / 2}px`);
+      el.style.setProperty('--sub-shift', `${(w - sub.offsetWidth) / 2}px`);
+      el.style.setProperty(
+        '--row-lift',
+        `${(h1.offsetHeight + sub.offsetHeight) / 2}px`
+      );
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // The cover, on the bare field above the window. It collapses on scroll
+  // like every other page hero: the subtitle gives its space back to the
+  // window and returns when the reader scrolls back to the top.
   const hero = (
-    <section className="hero">
+    <section className="hero" ref={heroRef}>
       <h1>{homepageConfig.hero.title}</h1>
       {/* The subtitle is also the map of the projects page: each segment
           links to its section anchor there. */}
@@ -34,7 +61,7 @@ const IndexPage: React.FC = () => {
   );
 
   return (
-    <Layout hero={hero}>
+    <Layout hero={hero} collapsibleHero>
       <SEO
         title="home"
         description="AI engineer and mathematician. Agent systems, distributed infrastructure, and audio DSP."
