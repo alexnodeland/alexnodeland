@@ -56,7 +56,10 @@ describe('Index Page', () => {
   it('renders hero and SEO', () => {
     render(<IndexPage />);
     expect(screen.getByTestId('layout')).toBeInTheDocument();
-    expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'home');
+    expect(screen.getByTestId('seo')).toHaveAttribute(
+      'data-title',
+      'alex nodeland'
+    );
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
   });
 

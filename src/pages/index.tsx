@@ -38,7 +38,7 @@ const IndexPage: React.FC = () => {
   return (
     <Layout hero={hero} collapsibleHero>
       <SEO
-        title="home"
+        title={homepageConfig.hero.title}
         description="AI engineer and mathematician. Agent systems, distributed infrastructure, and audio DSP."
       />
       <div className="home">
