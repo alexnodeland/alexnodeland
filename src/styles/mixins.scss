@@ -7,7 +7,6 @@
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius-sm);
   text-decoration: none;
-  font-weight: 500;
   font-size: 0.875rem;
   transition: all var(--transition-normal);
   border: 2px solid transparent;
@@ -119,22 +118,6 @@
   text-shadow:
     0 1px 2px rgba(0, 0, 0, 0.9),
     0 0 12px rgba(0, 0, 0, 0.6);
-}
-
-@mixin academic-underline {
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -0.5rem;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 3px;
-    background: var(--accent-pink);
-    border-radius: 2px;
-  }
 }
 
 // The emphasis a card takes on when it is the one being read — either because

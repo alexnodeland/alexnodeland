@@ -222,7 +222,6 @@
 
 .nav-brand {
   font-size: 1.75rem;
-  font-weight: 600;
   color: var(--text-primary);
   @include over-background;
   font-family:
@@ -233,7 +232,9 @@
   transition: all var(--transition-normal);
   position: relative;
 
-  // Add academic underline on hover
+  // Hover underline. Neutral white, and the text stays white with it: pink is
+  // decoration, and green in this site means "link you can follow" — the nav
+  // is chrome, so it gets neither.
   &::after {
     content: '';
     position: absolute;
@@ -241,12 +242,11 @@
     left: 0;
     width: 0;
     height: 2px;
-    background: var(--accent-pink);
+    background: var(--text-primary);
     transition: width var(--transition-normal);
   }
 
   &:hover {
-    color: var(--ink-pink);
     transform: translateY(-1px);
 
     &::after {
@@ -266,7 +266,6 @@
   text-decoration: none;
   color: var(--text-primary);
   @include over-background;
-  font-weight: 500;
   font-size: 1rem;
   white-space: nowrap;
   padding: 0.5rem 1rem;
@@ -279,7 +278,8 @@
   text-transform: lowercase;
   letter-spacing: -0.01em;
 
-  // Add academic-style underline
+  // Same neutral hover underline as the brand — one treatment for the whole
+  // nav, no colour and no tinted plate behind the word.
   &::after {
     content: '';
     position: absolute;
@@ -287,14 +287,12 @@
     left: 50%;
     width: 0;
     height: 2px;
-    background: var(--accent-pink);
+    background: var(--text-primary);
     transition: all var(--transition-normal);
     transform: translateX(-50%);
   }
 
   &:hover {
-    color: var(--ink-pink);
-    background: rgba(231, 76, 60, 0.1);
     transform: translateY(-1px);
 
     &::after {
@@ -448,7 +446,6 @@
   // Show shortened nav-brand on mobile to prevent two-row header expansion
   .nav-brand {
     font-size: 0.9rem; // Same size as nav-links for consistency
-    font-weight: 500; // Match nav-link font weight
     flex-shrink: 0;
   }
 
@@ -505,7 +502,6 @@
   // Keep shortened nav-brand on small mobile too
   .nav-brand {
     font-size: 0.85rem; // Same size as nav-links on small mobile
-    font-weight: 500; // Match nav-link font weight
   }
 
   .nav-brand .nav-link {

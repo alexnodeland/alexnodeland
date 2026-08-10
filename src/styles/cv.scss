@@ -31,23 +31,8 @@ section[id] {
       monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
-    position: relative;
     text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
-
-    // Add retro futuristic underline
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -0.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 60px;
-      height: 3px;
-      background: var(--accent-pink);
-      border-radius: 2px;
-      box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-    }
   }
 
   p {
@@ -212,7 +197,6 @@ section[id] {
 
       .contact-label {
         font-size: 0.9rem;
-        font-weight: 500;
         color: var(--text-muted);
         font-family:
           'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -266,23 +250,8 @@ section[id] {
       monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
-    position: relative;
     text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
-
-    // Add retro futuristic underline
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -0.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 3px;
-      background: var(--accent-pink);
-      border-radius: 2px;
-      box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-    }
   }
 }
 
@@ -513,7 +482,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
       monospace;
     text-transform: lowercase;
-    font-weight: 600;
     margin-right: 0.5rem;
     color: var(--text-muted);
   }
@@ -534,7 +502,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
 .experience-duration {
   color: var(--text-secondary);
-  font-weight: 600;
   white-space: nowrap;
   background: var(--bg-primary);
   padding: 0.25rem 0.75rem;
@@ -604,7 +571,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   color: var(--on-fill);
   border-radius: var(--radius-md);
   font-size: 0.925rem;
-  font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-normal);
   box-shadow: 0 2px 8px rgba(147, 51, 234, 0.2);
@@ -769,7 +735,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     font-size: 1.25rem;
     color: var(--text-secondary);
     margin-bottom: 1.5rem;
-    font-weight: 500;
   }
 
   .resume-contact {
@@ -860,7 +825,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
 .education-duration {
   color: var(--text-secondary);
-  font-weight: 600;
   white-space: nowrap;
   background: var(--bg-primary);
   padding: 0.25rem 0.75rem;
@@ -881,7 +845,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
 .education-gpa {
   color: var(--text-secondary);
-  font-weight: 500;
   margin-bottom: 1rem;
 }
 
@@ -940,7 +903,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   padding: 0.6rem 1.2rem;
   border-radius: var(--radius-md);
   font-size: 0.925rem;
-  font-weight: 500;
   transition: all var(--transition-normal);
   cursor: default;
 
@@ -1071,7 +1033,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
         .result-type {
           font-size: 0.8rem;
-          font-weight: 500;
           color: var(--ink-pink);
           font-family:
             'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -1082,7 +1043,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
         .result-title {
           font-size: 1rem;
-          font-weight: 600;
           color: var(--text-primary);
           margin-bottom: 0.25rem;
         }
@@ -1122,7 +1082,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     padding: 0.75rem 1.5rem;
     border: 2px solid transparent;
     border-radius: var(--radius-md);
-    font-weight: 500;
     // Stated rather than inherited: the pdf button is an <a> at a prebuilt
     // artifact while the other two are <button>s, so without this they sit at
     // 1rem and the UA's 13.33px respectively, side by side in the same row.
@@ -1477,7 +1436,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     padding: 0.5rem 1rem;
     border-radius: var(--radius-md);
     cursor: pointer;
-    font-weight: 500;
     transition: all var(--transition-normal);
 
     &:hover {

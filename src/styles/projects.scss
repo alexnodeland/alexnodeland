@@ -21,22 +21,8 @@
       monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
-    position: relative;
     text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
-
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -0.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 60px;
-      height: 3px;
-      background: var(--accent-pink);
-      border-radius: 2px;
-      box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-    }
   }
 
   p {
@@ -170,7 +156,6 @@
 
 .project-name {
   font-size: 1.1rem;
-  font-weight: 600;
   color: var(--text-primary);
   margin: 0;
   font-family:
@@ -187,7 +172,6 @@
 
 .featured-badge {
   font-size: 0.7rem;
-  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.25rem 0.5rem;
@@ -350,7 +334,6 @@
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
   text-transform: lowercase;
-  font-weight: 500;
   font-size: 0.95rem;
   transition: all var(--transition-normal);
   position: relative;
