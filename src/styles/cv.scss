@@ -773,12 +773,9 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// The CV's one row of chrome: pick a length, find something, take it away.
-// It sticks to the top of the window's own scroll, which makes it the one
-// block on this page that cannot be a pure outline — the document runs
-// underneath it, and a transparent bar would let headings read straight
-// through the controls. So it takes the window's own language instead, the
-// same scrim and blur the window and the nav pills use.
+// The CV's one row of chrome: pick a length, take it away. No bar groups the
+// two — they float as loose controls; each trigger carries its own scrim (see
+// below) so it still reads while content scrolls underneath.
 .cv-control-bar {
   position: sticky;
   top: 0;
@@ -786,16 +783,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 0.4rem;
+  padding: 0.4rem 0;
   margin-bottom: var(--space-5);
-  background: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-  border: 1px solid var(--border-floating);
-  border-radius: var(--radius-lg);
-  // Deliberately no `overflow: hidden` to clip the corners the way the old
-  // section nav did: three panels hang out of the bottom of this bar, and
-  // hiding the overflow would guillotine every one of them.
+  pointer-events: none; // The gap between the two passes scroll/clicks through
+
+  > * {
+    pointer-events: auto;
+  }
 }
 
 // A trigger and the panel it opens. The panel is positioned against this, so
@@ -810,14 +804,21 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// Same chrome as every other control on the row: transparent, hairline, mono
-// lowercase. It is not a native <select>, so it does not get to look like one.
+// A loose floating control — no bar behind it, so it has to hold its own over
+// whatever scrolls underneath, including white headings. Same trick as the
+// menus below: the scrim token laid twice (~0.62 composite) over a doubled
+// blur, which reads as a frosted chip rather than a collision. Not a native
+// <select>, so it does not get to look like one.
 .cv-dropdown-trigger {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.75rem;
-  background: transparent;
+  background-color: var(--window-scrim);
+  background-image: linear-gradient(var(--window-scrim), var(--window-scrim));
+  backdrop-filter: blur(calc(var(--window-blur) * 2.4));
+  // Safari 17 and earlier
+  -webkit-backdrop-filter: blur(calc(var(--window-blur) * 2.4));
   border: 1px solid var(--border-floating);
   border-radius: var(--radius-md);
   color: var(--text-secondary);

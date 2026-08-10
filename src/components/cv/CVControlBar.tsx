@@ -10,9 +10,10 @@ const VIEW_OPTIONS: CVDropdownOption[] = [
 ];
 
 const DOWNLOAD_OPTIONS: CVDropdownOption[] = [
-  { value: 'pdf', label: 'download pdf' },
-  { value: 'docx', label: 'download docx' },
-  { value: 'markdown', label: 'download markdown' },
+  // The trigger already says "download" — the options are just the formats.
+  { value: 'pdf', label: 'pdf' },
+  { value: 'docx', label: 'docx' },
+  { value: 'markdown', label: 'markdown' },
 ];
 
 interface CVControlBarProps {

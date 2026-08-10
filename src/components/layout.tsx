@@ -260,6 +260,10 @@ const LayoutInner: React.FC<LayoutProps> = ({
             </section>
           )}
           <div className="layout" ref={windowRef}>
+            {/* A tapered blur pinned to the window's visible top edge:
+                content dissolves as it scrolls out instead of colliding with
+                whatever floats up there (the cv's sticky controls). */}
+            <div className="window-veil" aria-hidden="true" />
             <main className="main">{children}</main>
             <footer className="footer">
               <div className="footer-content">
