@@ -222,25 +222,32 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 72px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px); // Safari 17 and earlier
+    height: 88px;
+    // Scroll-gated: invisible at rest so page tops read at full strength;
+    // fades in over the first ~90px of scroll (Layout publishes the value).
+    opacity: var(--veil-strength, 0);
+    transition: opacity 80ms linear;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px); // Safari 17 and earlier
+    // Near-opaque at the very edge — content genuinely disappears under the
+    // floating chips — tapering steeply to nothing.
     background: linear-gradient(
       to bottom,
-      rgba(7, 8, 10, 0.45),
-      rgba(7, 8, 10, 0)
+      rgba(7, 8, 10, 0.92) 0%,
+      rgba(7, 8, 10, 0.65) 35%,
+      rgba(7, 8, 10, 0) 100%
     );
     mask-image: linear-gradient(
       to bottom,
       black 0%,
-      black 22%,
-      transparent 88%
+      black 40%,
+      transparent 96%
     );
     -webkit-mask-image: linear-gradient(
       to bottom,
       black 0%,
-      black 22%,
-      transparent 88%
+      black 40%,
+      transparent 96%
     );
   }
 }

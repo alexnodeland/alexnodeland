@@ -18,6 +18,36 @@ const CVPage: React.FC = () => {
   const [view, setView] = useState<CVView>('full');
   const data = view === 'resume' ? resumeData : cvData;
 
+  // One card open at a time. Opening a card closes whichever other card is
+  // open, and — because a closing card above the new one pulls the page up —
+  // the opened card is then scrolled back into position under the floating
+  // controls. `toggle` does not bubble, so the listener captures.
+  const cvRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const root = cvRef.current;
+    if (!root) return;
+    const onToggle = (event: Event) => {
+      const opened = event.target as HTMLDetailsElement;
+      if (!opened?.classList?.contains('cv-collapse') || !opened.open) return;
+      root
+        .querySelectorAll<HTMLDetailsElement>('details.cv-collapse[open]')
+        .forEach(other => {
+          if (other !== opened) other.open = false;
+        });
+      window.requestAnimationFrame(() => {
+        const reduce = window.matchMedia(
+          '(prefers-reduced-motion: reduce)'
+        ).matches;
+        opened.scrollIntoView({
+          behavior: reduce ? 'auto' : 'smooth',
+          block: 'nearest',
+        });
+      });
+    };
+    root.addEventListener('toggle', onToggle, true);
+    return () => root.removeEventListener('toggle', onToggle, true);
+  }, [view]);
+
   const hero = (
     <header className="cv-page-header">
       <h1>
@@ -33,7 +63,7 @@ const CVPage: React.FC = () => {
   return (
     <Layout hero={hero} collapsibleHero>
       <SEO title="cv" description="Complete resume and CV for Alex Nodeland" />
-      <div className="cv">
+      <div className="cv" ref={cvRef}>
         <CVControlBar resumeData={data} view={view} onViewChange={setView} />
 
         <CVSearch resumeData={data} />
