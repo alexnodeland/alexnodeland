@@ -2,39 +2,44 @@
 @import 'mixins';
 
 // This page has no card of its own — it sits straight on the animated
-// background, so both lines carry the halo.
+// background, so both lines carry the halo. Left-aligned like every other
+// page header: there is nothing here to centre against.
 .not-found {
-  text-align: center;
-  padding: 4rem 2rem;
+  padding: var(--space-7) 0;
   max-width: 600px;
   margin: 0 auto;
 
   h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+    font-size: var(--text-h1);
+    margin-bottom: var(--space-3);
     color: var(--text-primary);
     @include over-background;
   }
 
   p {
-    font-size: 1.2rem;
+    font-size: var(--text-h4);
     color: var(--text-secondary);
     @include over-background;
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-5);
   }
 }
 
+// Navigation, not a conversion action — so it takes the neutral treatment
+// rather than the accent fill. It sits on the bare background with nothing
+// under it, so it borrows the floating chrome surface for legibility.
 .back-home {
   display: inline-block;
   padding: 0.875rem 2rem;
-  background: linear-gradient(135deg, var(--primary-color), var(--accent-cyan));
-  color: var(--on-fill);
+  background: var(--bg-floating);
+  border: 1px solid var(--border-floating);
+  color: var(--text-primary);
   text-decoration: none;
   border-radius: var(--radius-lg);
   transition: all var(--transition-normal);
   box-shadow: var(--shadow-md);
 
   &:hover {
+    border-color: rgba(255, 255, 255, 0.45);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
   }
@@ -42,14 +47,6 @@
 
 @media (max-width: 768px) {
   .not-found {
-    padding: 2rem 1rem;
-
-    h1 {
-      font-size: 2.5rem;
-    }
-
-    p {
-      font-size: 1.1rem;
-    }
+    padding: var(--space-6) 0;
   }
 }

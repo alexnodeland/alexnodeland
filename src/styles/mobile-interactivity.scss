@@ -46,14 +46,17 @@ $mobile-breakpoint: 768px;
   transition: all var(--transition-normal);
   -webkit-tap-highlight-color: transparent;
 
+  // The glyph sits directly beside the word it illustrates, so it takes the
+  // label's colour rather than the link green — it is not a link, and this is
+  // the only piece of chrome on the page that was tinted.
   svg {
     flex-shrink: 0;
-    color: var(--ink-primary);
+    color: currentColor;
   }
 
   &:active {
     transform: scale(0.97);
-    border-color: var(--primary-color);
+    border-color: rgba(255, 255, 255, 0.45);
   }
 }
 
@@ -64,9 +67,11 @@ $mobile-breakpoint: 768px;
 .mobile-explore {
   display: none;
 
-  // Explore mode is a dark scrim over the full-bleed background, so its accent
-  // stays the bright fill cut rather than following --ink-primary.
-  --explore-accent: #00ff88;
+  // Explore mode is a dark scrim over the full-bleed background — the loudest
+  // thing on the screen is meant to be the simulation itself, so the chrome in
+  // front of it is white and its emphasis is opacity, not hue. This used to be
+  // a bright green that competed with the field it was framing.
+  --explore-accent: #ffffff;
 
   @media (max-width: $mobile-breakpoint) {
     display: block;
@@ -175,7 +180,9 @@ $mobile-breakpoint: 768px;
   padding: 0.3rem;
   border-radius: var(--radius-lg);
 
-  // Rainbow hairline along the top, echoing the site header.
+  // A hairline along the top edge, fading out at both ends so the rail reads
+  // as a lit surface rather than a boxed one. It used to run pink → green →
+  // blue, echoing a rainbow rule in the site header that no longer exists.
   &::before {
     content: '';
     position: absolute;
@@ -186,12 +193,9 @@ $mobile-breakpoint: 768px;
     background: linear-gradient(
       90deg,
       transparent 0%,
-      var(--accent-pink) 20%,
-      var(--primary-color) 50%,
-      var(--accent-blue) 80%,
+      rgba(255, 255, 255, 0.45) 50%,
       transparent 100%
     );
-    opacity: 0.7;
   }
 }
 

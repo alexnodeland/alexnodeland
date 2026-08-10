@@ -42,7 +42,7 @@
     min-width: 280px;
 
     &:hover {
-      border-color: var(--primary-color);
+      border-color: rgba(255, 255, 255, 0.45);
       box-shadow: var(--shadow-md);
       transform: translateY(-1px);
     }
@@ -51,12 +51,14 @@
       transform: translateY(0);
     }
 
+    // Matches the background launcher in the opposite corner: the pill is the
+    // control, so its label is white and the glyph goes with it.
     .chat-icon-inner {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      color: var(--ink-primary);
+      color: var(--text-primary);
 
       svg {
         flex-shrink: 0;
@@ -228,8 +230,9 @@
     flex-shrink: 0;
     overflow: visible;
 
+    // A panel title, styled like every other heading on the site.
     .chat-title {
-      color: var(--ink-primary);
+      color: var(--text-primary);
       font-size: 1.1rem;
       margin: 0;
       text-transform: lowercase;
@@ -273,11 +276,14 @@
           box-shadow: 0 0 0 2px var(--primary-color);
         }
 
+        // A toggle that is on. That is a genuine state, so it keeps a colour —
+        // the same green the site uses for anything live — but its hover wash
+        // is neutral rather than the stray violet it used to be.
         &.enabled {
           color: var(--ink-primary);
 
           &:hover {
-            background: rgba(139, 92, 246, 0.1);
+            background: rgba(255, 255, 255, 0.06);
             color: var(--ink-primary);
             border-color: var(--border-active);
           }
@@ -364,12 +370,15 @@
       }
     }
 
+    // Closing a panel destroys nothing, so it does not get the danger colour —
+    // that belongs to the clear button next to it, and having both wear it
+    // made "put this away" look as consequential as "throw this away".
     .chat-close-button {
       color: var(--text-muted);
 
       &:hover {
-        color: #ff6b6b;
-        border-color: var(--accent-pink);
+        color: var(--text-primary);
+        border-color: var(--border-active);
       }
     }
   }
@@ -463,6 +472,9 @@
         align-items: center;
         justify-content: center;
 
+        // Send is the panel's one action, and actions on this site are green —
+        // the same green as a link, for the same reason. It is the only
+        // coloured control left in the chat chrome.
         &:hover:not(:disabled) {
           background: var(--bg-accent);
           border-color: var(--primary-color);
@@ -525,7 +537,7 @@
         font-size: 0.625rem;
         font-family: inherit;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        color: var(--ink-primary);
+        color: var(--text-primary);
       }
     }
   }
@@ -598,10 +610,12 @@
         min-width: 160px;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
+        // The site has one focus ring and it is green; this select had a
+        // magenta one of its own.
         &:focus {
           outline: none;
-          border-color: var(--accent-purple);
-          box-shadow: 0 0 0 2px var(--accent-purple);
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 2px var(--primary-color);
         }
 
         &:hover {
@@ -700,9 +714,12 @@
       }
     }
 
+    // Clearing the transcript is destructive and unrecoverable, so it keeps a
+    // colour — but the border joins the text in the danger red instead of
+    // pairing it with the decorative pink.
     .chat-clear-button:hover {
       color: #ff6b6b;
-      border-color: var(--accent-pink);
+      border-color: rgba(255, 107, 107, 0.5);
     }
   }
 
@@ -767,10 +784,12 @@
         }
       }
 
+      // Send is the one action in the panel, so it is allowed the green the
+      // site gives every action. It was magenta, which matched nothing.
       .chat-send-button {
         background: transparent;
         color: var(--text-primary);
-        border: 1px solid var(--accent-purple);
+        border: 1px solid var(--primary-color);
         border-radius: 8px;
         padding: 0.75rem 1rem;
         cursor: pointer;
@@ -779,7 +798,8 @@
 
         &:hover:not(:disabled) {
           background: var(--bg-accent);
-          border-color: var(--accent-purple);
+          border-color: var(--primary-color);
+          color: var(--ink-primary);
           transform: translateY(-1px);
           box-shadow: var(--shadow-lg);
         }
@@ -804,12 +824,16 @@
   gap: 0.75rem;
   align-items: flex-start;
 
+  // Who said it is already carried by which side the bubble sits on and by
+  // the avatar beside it, so the two speakers are two surfaces rather than a
+  // grey one and a filled green one. The green also read as the link colour,
+  // which made every word the reader had typed look clickable.
   &.user {
     flex-direction: row-reverse;
 
     .message-content {
-      background: var(--primary-color);
-      color: var(--bg-primary);
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-primary);
     }
   }
 
@@ -831,14 +855,18 @@
     font-size: 0.75rem;
     flex-shrink: 0;
 
+    // Two neutral discs, distinguished by weight rather than by hue — pink
+    // and cyan were an arbitrary code for a distinction the initial inside
+    // each disc already makes.
     &.user {
-      background: var(--accent-pink);
+      background: rgba(255, 255, 255, 0.2);
       color: var(--text-primary);
     }
 
     &.assistant {
-      background: var(--accent-cyan);
-      color: var(--bg-primary);
+      background: var(--bg-hover);
+      border: 1px solid var(--border-active);
+      color: var(--text-secondary);
     }
   }
 
@@ -884,8 +912,11 @@
       }
 
       .stat-cache {
+        // A hit is information too, not a success — so it reads brighter than
+        // a miss rather than arriving in a colour of its own.
         &.is-hit {
-          color: var(--accent-cyan);
+          color: var(--text-secondary);
+          opacity: 1;
         }
         // A miss is information, not an error — it is normal on the first turn
         // of a conversation. Muted rather than coloured.
@@ -924,7 +955,7 @@
         &.is-open {
           border-color: var(--border-color);
           background: var(--bg-primary);
-          color: var(--accent-cyan);
+          color: var(--text-primary);
         }
 
         svg {
@@ -977,9 +1008,11 @@
           color: var(--text-primary);
         }
 
+        // A category label in front of a link. It is deliberately quieter than
+        // the title it introduces, which cyan was not.
         .source-kind {
           flex-shrink: 0;
-          color: var(--accent-cyan);
+          color: var(--text-muted);
           font-size: 0.625rem;
           text-transform: lowercase;
         }
@@ -1000,11 +1033,11 @@
     }
   }
 
-  // The user's own bubble is filled with the accent colour, so the muted
-  // greys the chips rely on would disappear into it. Sources never render
-  // there, but the border would if a future message type did.
+  // The user's own bubble is a lighter surface than the assistant's, so the
+  // near-black hairline the sources block uses would vanish into it. Sources
+  // never render there, but the border would if a future message type did.
   &.user .message-content .message-sources {
-    border-top-color: rgba(0, 0, 0, 0.2);
+    border-top-color: rgba(255, 255, 255, 0.16);
   }
 }
 
@@ -1026,7 +1059,7 @@
     font-size: 0.8125rem;
 
     &:hover {
-      border-color: var(--primary-color);
+      border-color: var(--border-active);
     }
   }
 }
@@ -1170,9 +1203,12 @@
   line-height: 1.5rem;
 }
 
+// Model download progress. A loading state is one of the few things the rule
+// lets keep a colour, so the fill stays coloured — but in the green the site
+// already uses for "this is live", not in a magenta used nowhere else.
 .chat-progress-bar {
   height: 100%;
-  background: var(--accent-purple);
+  background: var(--primary-color);
   transition: width 0.3s ease-out;
   position: relative;
   z-index: 1;
@@ -1459,8 +1495,10 @@
       font-size: 0.9rem;
       line-height: 1.5;
 
+      // Emphasis inside a warning, not a link — it takes the heavier weight
+      // the type system allows rather than the link colour.
       strong {
-        color: var(--ink-primary);
+        color: var(--text-primary);
       }
     }
 
@@ -1526,7 +1564,7 @@
 
       &:focus {
         outline: none;
-        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+        box-shadow: 0 0 0 2px var(--primary-color);
       }
 
       &:hover {
@@ -1595,19 +1633,22 @@
   }
 }
 
-// Thinking Block Styles
+// Thinking Block Styles. The model's reasoning is an aside inside the answer,
+// and it was the only violet thing on the site — a whole second accent that
+// appeared nowhere else and meant nothing. It is now an inset panel: a quieter
+// surface than the bubble around it, which is what "aside" actually looks like.
 .thinking-block {
   margin: 0.75rem 0 0.5rem 0;
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: rgba(139, 92, 246, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(139, 92, 246, 0.1);
+  box-shadow: var(--shadow-sm);
   transition: all var(--transition-fast);
 
   &:hover {
-    border-color: rgba(139, 92, 246, 0.3);
-    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
+    border-color: var(--border-active);
+    box-shadow: var(--shadow-md);
   }
 
   .thinking-toggle {
@@ -1621,12 +1662,12 @@
       outline: none;
 
       .thinking-header {
-        background: rgba(139, 92, 246, 0.05);
+        background: rgba(255, 255, 255, 0.04);
       }
     }
 
     &:hover .thinking-header {
-      background: rgba(139, 92, 246, 0.05);
+      background: rgba(255, 255, 255, 0.04);
     }
   }
 
@@ -1698,7 +1739,7 @@
   }
 
   .thinking-content {
-    border-top: 1px solid rgba(139, 92, 246, 0.15);
+    border-top: 1px solid var(--border-color);
     padding: 1rem;
     background: transparent;
     position: relative;
@@ -1707,7 +1748,7 @@
     .thinking-text {
       font-size: 0.8rem;
       line-height: 1.6;
-      color: rgba(139, 92, 246, 0.8);
+      color: var(--text-secondary);
       font-family:
         ui-monospace, 'SF Mono', 'Monaco', 'Menlo', 'Roboto Mono',
         'Courier New', monospace;
@@ -1808,11 +1849,11 @@
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
 
     &:hover {
-      background: rgba(139, 92, 246, 0.15);
+      background: rgba(255, 255, 255, 0.08);
       color: var(--text-primary);
-      border-color: rgba(139, 92, 246, 0.3);
+      border-color: var(--border-active);
       transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2);
+      box-shadow: var(--shadow-md);
 
       .prompt-icon {
         transform: scale(1.1);
@@ -1821,13 +1862,13 @@
 
     &:active {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+      box-shadow: var(--shadow-sm);
     }
 
     &:focus {
       outline: none;
-      border-color: var(--accent-purple);
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px var(--primary-color);
     }
 
     .prompt-icon {
@@ -1915,7 +1956,7 @@
         margin: 0 auto 0.75rem;
         width: 40px;
         height: 40px;
-        color: rgba(139, 92, 246, 0.8);
+        color: var(--text-secondary);
       }
 
       h3 {
@@ -2012,8 +2053,10 @@
             border-color: var(--border-active);
           }
 
+          // Which model is selected is a state, marked the way every other
+          // selected thing on the site is: brightest hairline in the list.
           &.selected {
-            border-color: var(--accent-purple);
+            border-color: rgba(255, 255, 255, 0.45);
             background: var(--bg-accent);
           }
 
@@ -2052,7 +2095,7 @@
         gap: 0.5rem;
         background: transparent;
         color: var(--text-primary);
-        border: 1px solid var(--accent-purple);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 8px;
         padding: 0.75rem 1.25rem;
         font-size: 0.8125rem; // Match reset button font sizing
@@ -2063,7 +2106,7 @@
 
         &:hover {
           background: var(--bg-accent);
-          border-color: var(--accent-purple);
+          border-color: rgba(255, 255, 255, 0.45);
           transform: translateY(-1px);
           box-shadow: var(--shadow-lg);
         }
@@ -2277,11 +2320,12 @@
     }
   }
 
-  // Blockquotes
+  // Blockquotes. The rail is a structural marker, not a link, so it is the
+  // same neutral hairline the collapsible cards on the CV use.
   .markdown-blockquote {
     margin: 1rem 0;
     padding: 0.75rem 1rem;
-    border-left: 3px solid var(--primary-color);
+    border-left: 3px solid var(--border-active);
     background: var(--bg-accent);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 
@@ -2292,10 +2336,12 @@
     }
   }
 
-  // Code
+  // Code. The green here sat in the same paragraphs as `.markdown-link`, in
+  // exactly the same green, so an identifier and a link were indistinguishable
+  // until you moused over one. The inset surface is what marks it as code.
   .markdown-code-inline {
     background: var(--bg-accent);
-    color: var(--ink-primary);
+    color: var(--text-primary);
     padding: 0.125rem 0.375rem;
     border-radius: var(--radius-sm);
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
@@ -2452,7 +2498,7 @@
       }
 
       &:hover {
-        color: var(--ink-primary);
+        color: var(--text-primary);
         background: var(--bg-hover);
         transform: translateY(0);
       }
@@ -2461,6 +2507,8 @@
         transform: scale(0.95);
       }
 
+      // "Copied" is a genuine success state and the only feedback the action
+      // gives, so this one keeps the green while the hover above lets it go.
       &[title='Copied!'] {
         color: var(--ink-primary);
         opacity: 1;
@@ -2534,7 +2582,7 @@
       input[type='checkbox'] {
         width: 16px;
         height: 16px;
-        accent-color: var(--accent-purple);
+        accent-color: var(--primary-color);
         cursor: pointer;
       }
 
@@ -2585,7 +2633,7 @@
     .export-copy-button,
     .export-download-button {
       background: transparent;
-      border: 1px solid var(--accent-purple);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       color: var(--text-primary);
 
       &:hover:not(:disabled) {

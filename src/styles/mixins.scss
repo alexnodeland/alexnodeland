@@ -19,6 +19,15 @@
   letter-spacing: -0.01em;
 }
 
+// The one filled button in the system. Pink is kept here on purpose: this is
+// the consulting call to action, and under the semantic-colour rule a
+// conversion path is meaning, not decoration. It is the only place on the site
+// that still fills with an accent, which is what makes it read as the accent.
+//
+// Hover stays in the family — brighter pink rather than the old hop to blue,
+// which made the button look like a different control on the way to being
+// clicked — and the coloured halo is gone; elevation comes from the shadow
+// scale like everything else.
 @mixin button-primary {
   @include button-base;
   background: var(--accent-pink);
@@ -45,12 +54,9 @@
   }
 
   &:hover {
-    background: var(--accent-blue);
-    border-color: var(--accent-blue);
+    filter: brightness(1.15);
     transform: translateY(-2px);
-    box-shadow:
-      0 0 20px rgba(0, 136, 255, 0.4),
-      var(--shadow-md);
+    box-shadow: var(--shadow-md);
 
     &::before {
       left: 100%;
@@ -62,11 +68,14 @@
   }
 }
 
+// Everything that is not a conversion action. Neutral by construction: a
+// white hairline on the page surface, white type, and a hover that only
+// brightens both. No border colour, no glow — those were carrying no meaning.
 @mixin button-secondary {
   @include button-base;
   background: var(--bg-primary);
   color: var(--text-primary);
-  border-color: var(--accent-pink);
+  border-color: rgba(255, 255, 255, 0.2);
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
@@ -81,20 +90,18 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(0, 255, 136, 0.1),
+      rgba(255, 255, 255, 0.08),
       transparent
     );
     transition: left 0.5s;
   }
 
   &:hover {
-    background: var(--bg-secondary);
-    border-color: var(--primary-color);
-    color: var(--ink-primary);
+    background: var(--bg-hover);
+    border-color: rgba(255, 255, 255, 0.45);
+    color: var(--text-primary);
     transform: translateY(-2px);
-    box-shadow:
-      0 0 20px rgba(0, 255, 136, 0.3),
-      var(--shadow-md);
+    box-shadow: var(--shadow-md);
 
     &::before {
       left: 100%;
@@ -148,40 +155,21 @@
   }
 }
 
+// A card under the pointer brightens its own hairline and lifts. It does not
+// change hue: the card is not a link and not a state, so there is nothing for
+// a colour to say here.
 @mixin card-hover {
   transition: all var(--transition-normal);
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-    border-color: var(--accent-pink);
+    border-color: var(--border-active);
   }
 }
 
-@mixin retro-glow {
-  text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-  animation: glow 2s ease-in-out infinite alternate;
-}
-
-@mixin retro-border {
-  border: 2px solid var(--accent-pink);
-  position: relative;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(
-      90deg,
-      var(--accent-pink) 0%,
-      var(--accent-blue) 25%,
-      var(--primary-color) 50%,
-      var(--accent-purple) 75%,
-      var(--accent-pink) 100%
-    );
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-  }
-}
+// `retro-glow` (an animated green halo behind page titles) and `retro-border`
+// (a rainbow hairline across the top of a card) both used to live here. They
+// were pure decoration under the semantic-colour rule, and the titles they lit
+// now carry `over-background` instead — the halo is the legibility device, and
+// it does not need a colour to do that job.

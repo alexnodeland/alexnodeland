@@ -86,8 +86,8 @@
     cursor: pointer; // Indicate clickable
 
     &:hover {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+      border-color: rgba(255, 255, 255, 0.45);
+      box-shadow: var(--shadow-xl);
       transform: translateY(-1px); // Subtle lift effect
     }
 
@@ -101,8 +101,11 @@
       justify-content: center;
     }
 
+    // The name of whatever is currently running. It is a label, not a link —
+    // green here made the one word on the toolbar look clickable while the
+    // whole toolbar was in fact the button.
     .background-name {
-      color: var(--ink-primary);
+      color: var(--text-primary);
       font-size: 0.875rem;
       text-align: center;
     }
@@ -192,7 +195,7 @@
         margin-bottom: 0.75rem;
 
         .background-name {
-          color: var(--ink-primary);
+          color: var(--text-primary);
           font-size: 1rem; // Match chat panel font sizing
         }
 
@@ -267,18 +270,21 @@
         }
       }
 
-      // Special hotkeys styling when in header
+      // Special hotkeys styling when in header. The green wash, green hairline
+      // and green rail were three ways of saying "this bit is special" about a
+      // panel whose every row is a control; the rail alone says it, in the
+      // same neutral the rest of the panel uses.
       .special-hotkeys {
         margin-top: 1rem;
         padding: 0.75rem 1rem;
-        background: rgba(0, 255, 136, 0.05);
-        border: 1px solid rgba(0, 255, 136, 0.2);
+        background: var(--bg-accent);
+        border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        border-left: 3px solid var(--primary-color);
+        border-left: 3px solid var(--border-active);
 
         .special-hotkeys-title {
           font-size: 0.75rem;
-          color: var(--ink-primary);
+          color: var(--text-primary);
           margin-bottom: 0.5rem;
           font-family: inherit;
           letter-spacing: 0.5px;
@@ -292,22 +298,23 @@
           align-items: center;
           gap: 0.5rem;
 
+          // Same key cap as everywhere else on the site: a surface with a
+          // hairline, not a filled green chiclet.
           kbd {
-            background: var(--primary-color);
-            color: var(--bg-primary);
-            border: none;
+            background: var(--bg-floating);
+            color: var(--text-primary);
+            border: 1px solid var(--border-floating);
             border-radius: var(--radius-sm);
             padding: 0.25rem 0.5rem;
             font-size: 0.6875rem;
             font-family: inherit;
             min-width: 1.5rem;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 255, 136, 0.2);
           }
 
           .play-sound-button {
             background: transparent;
-            border: 1px solid rgba(0, 255, 136, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: var(--text-secondary);
             padding: 0.5rem 0.75rem;
             border-radius: var(--radius-md);
@@ -322,42 +329,39 @@
             user-select: none;
 
             kbd {
-              background: var(--primary-color);
-              color: var(--bg-primary);
-              border: none;
+              background: var(--bg-floating);
+              color: var(--text-primary);
+              border: 1px solid var(--border-floating);
               border-radius: var(--radius-sm);
               padding: 0.25rem 0.5rem;
               font-size: 0.6875rem;
               font-family: inherit;
               min-width: 1.5rem;
               text-align: center;
-              box-shadow: 0 2px 4px rgba(0, 255, 136, 0.2);
               pointer-events: none;
             }
 
             &:hover {
-              background: rgba(0, 255, 136, 0.1);
-              border-color: rgba(0, 255, 136, 0.5);
+              background: rgba(255, 255, 255, 0.06);
+              border-color: rgba(255, 255, 255, 0.45);
               color: var(--text-primary);
               transform: translateY(-1px);
             }
 
+            // Held down — the sound is playing. That is a real state, and it
+            // is worth marking, but the marker is the surface lighting up
+            // rather than the whole control turning green.
             &:active,
             &.active {
-              background: rgba(0, 255, 136, 0.2);
-              border-color: var(--primary-color);
-              color: var(--ink-primary);
+              background: rgba(255, 255, 255, 0.14);
+              border-color: rgba(255, 255, 255, 0.6);
+              color: var(--text-primary);
               transform: translateY(0);
 
               kbd {
-                background: rgba(0, 255, 136, 0.8);
+                background: rgba(255, 255, 255, 0.9);
                 color: var(--bg-primary);
               }
-            }
-
-            // Enhanced visual feedback when active via keyboard
-            &.active {
-              box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
             }
           }
         }
@@ -384,7 +388,7 @@
       border-radius: var(--radius-sm);
 
       &:hover {
-        background: var(--primary-color);
+        background: var(--border-active);
       }
     }
   }
@@ -414,10 +418,12 @@
         background: var(--bg-accent);
       }
 
+      // Open is a state of a disclosure, marked the same way the CV's section
+      // nav marks the section you are in: brighter type and a brighter rail.
       &.open {
         background: var(--bg-accent);
-        color: var(--ink-primary);
-        border-left: 2px solid var(--primary-color);
+        color: var(--text-primary);
+        border-left: 2px solid var(--border-active);
       }
 
       .category-left {
@@ -450,7 +456,7 @@
 
       &.open .category-toggle {
         transform: rotate(90deg); // down
-        color: var(--ink-primary);
+        color: var(--text-primary);
       }
     }
 
@@ -505,7 +511,7 @@
       &:hover,
       &:focus-visible {
         color: var(--text-primary);
-        border-color: var(--primary-color);
+        border-color: rgba(255, 255, 255, 0.45);
         outline: none;
       }
 
@@ -562,11 +568,14 @@
         cursor: pointer;
         appearance: none;
 
+        // The thumb is the one thing on this rail you can grab, and it says so
+        // by being the brightest thing on it. Green was doing that job with a
+        // hue the rest of the panel reads as "link".
         &::-webkit-slider-thumb {
           appearance: none;
           width: 1rem;
           height: 1rem;
-          background: var(--primary-color);
+          background: var(--text-primary);
           border-radius: 50%;
           cursor: pointer;
           transition: all var(--transition-fast);
@@ -574,14 +583,13 @@
 
           &:hover {
             transform: scale(1.2);
-            box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
           }
         }
 
         &::-moz-range-thumb {
           width: 1rem;
           height: 1rem;
-          background: var(--primary-color);
+          background: var(--text-primary);
           border-radius: 50%;
           border: 2px solid var(--bg-secondary);
           cursor: pointer;
@@ -606,11 +614,14 @@
 
         &:focus {
           outline: none;
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.2);
+          border-color: rgba(255, 255, 255, 0.45);
         }
       }
 
+      // The swatch inside this control is the one genuinely representational
+      // colour in the panel — it is the actual colour the simulation is about
+      // to use, so it stays exactly as the browser paints it. Only the frame
+      // around it goes neutral.
       .color-input {
         width: 2.5rem;
         height: 2rem;
@@ -621,7 +632,7 @@
         overflow: hidden;
 
         &:hover {
-          border-color: var(--primary-color);
+          border-color: rgba(255, 255, 255, 0.45);
         }
 
         &::-webkit-color-swatch-wrapper {
@@ -647,8 +658,7 @@
 
         &:focus {
           outline: none;
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.2);
+          border-color: rgba(255, 255, 255, 0.45);
         }
 
         option {
@@ -700,16 +710,19 @@
           margin-right: 0.5rem;
           font-size: 0.625rem;
           font-family: inherit;
-          color: var(--ink-primary);
+          color: var(--text-primary);
         }
       }
     }
 
+    // Reset is destructive-ish but not a status, and it certainly is not the
+    // conversion path — magenta made it the loudest control in a panel of
+    // sliders.
     .reset-button {
       width: 100%;
       padding: 0.75rem 1rem;
       background: transparent;
-      border: 1px solid var(--accent-purple);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: var(--radius-md);
       color: var(--text-primary);
       font-size: 0.8125rem; // Match chat font sizing
@@ -720,7 +733,7 @@
 
       &:hover {
         background: var(--bg-accent);
-        border-color: var(--accent-purple);
+        border-color: rgba(255, 255, 255, 0.45);
         transform: translateY(-1px);
       }
 
@@ -750,7 +763,7 @@
         font-size: 0.625rem;
         font-family: inherit;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        color: var(--ink-primary);
+        color: var(--text-primary);
       }
     }
   }
@@ -799,7 +812,7 @@
   line-height: 1;
 
   &:hover {
-    color: var(--ink-primary);
+    color: var(--text-primary);
     background: var(--bg-accent);
   }
 }
@@ -1053,7 +1066,7 @@
         &:focus {
           outline: none;
           color: var(--text-primary);
-          border-color: var(--primary-color);
+          border-color: rgba(255, 255, 255, 0.45);
         }
 
         &:focus .setting-tooltip {
@@ -1108,8 +1121,8 @@
       transition: all var(--transition-fast);
 
       &.open {
-        color: var(--ink-primary);
-        border-color: var(--primary-color);
+        color: var(--text-primary);
+        border-color: rgba(255, 255, 255, 0.45);
       }
     }
 
@@ -1159,11 +1172,14 @@
         border-style: dashed;
       }
 
+      // Which tab you are on is a state worth marking loudly, since the strip
+      // scrolls and only a few tabs are visible at once — but it marks it by
+      // being the brightest chip in the row, not the only green one.
       &.active {
-        background: var(--primary-color);
-        border-color: var(--primary-color);
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.6);
         border-style: solid;
-        color: #05130c;
+        color: var(--text-primary);
         font-weight: 600;
         opacity: 1;
       }

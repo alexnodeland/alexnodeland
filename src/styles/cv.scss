@@ -19,26 +19,24 @@ section[id] {
 
 // CV Page Header (similar to blog page)
 .cv-page-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding: calc(var(--header-height) + 0.5rem) 0 2rem; // Dynamic padding based on header height
+  margin-bottom: var(--space-6);
+  padding: calc(var(--header-height) + 0.5rem) 0 var(--space-5); // Dynamic padding based on header height
   position: relative;
 
   h1 {
-    margin-bottom: 1rem;
+    margin-bottom: var(--space-3);
     font-family:
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
       monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-    animation: glow 2s ease-in-out infinite alternate;
+    @include over-background;
   }
 
   p {
     color: var(--text-secondary);
     @include over-background;
-    font-size: 1.1rem;
+    font-size: var(--text-h4);
     line-height: 1.6;
     font-style: italic;
   }
@@ -49,14 +47,13 @@ section[id] {
   position: sticky;
   top: calc(var(--header-height) + 0.5rem);
   z-index: 5;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
 }
 
 .cv-section-nav {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  box-shadow: 0 0 12px rgba(0, 255, 136, 0.06);
   overflow: hidden;
 
   ul {
@@ -102,10 +99,12 @@ section[id] {
     }
   }
 
+  // Chrome, like the site nav above it — so the section you are in is marked
+  // with a brighter hairline and brighter type, not with the link colour.
   li.active a {
-    color: var(--ink-primary);
+    color: var(--text-primary);
     background: var(--bg-accent);
-    border-color: var(--primary-color);
+    border-color: var(--text-secondary);
   }
 
   // Show desktop labels by default, mobile labels hidden
@@ -121,40 +120,20 @@ section[id] {
 // CV Overview and Contact Combined
 .cv-overview-contact {
   background: var(--bg-card);
-  padding: 2rem;
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
-  margin-bottom: 2rem;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.05);
+  margin-bottom: var(--space-5);
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 2rem;
+  gap: var(--space-5);
   align-items: start;
   position: relative;
 
-  // Add subtle gradient border on hover
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      var(--accent-pink) 0%,
-      var(--accent-cyan) 33%,
-      var(--primary-color) 66%,
-      var(--accent-pink) 100%
-    );
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    opacity: 0.5;
-  }
-
   .overview-section {
     h3 {
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
+      font-size: var(--text-h4);
+      margin-bottom: var(--space-3);
       color: var(--text-primary);
       font-family:
         'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -174,8 +153,8 @@ section[id] {
 
   .contact-section {
     h3 {
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
+      font-size: var(--text-h4);
+      margin-bottom: var(--space-3);
       color: var(--text-primary);
       font-family:
         'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -219,10 +198,10 @@ section[id] {
 }
 
 #resume-content {
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--space-5);
 }
 
 // Ensure anchor jumps account for sticky header and nav
@@ -235,43 +214,39 @@ section[id] {
   ); // Header + sticky nav + padding
 }
 
+// Left-aligned like every other header on the site, and without the pink rule
+// underneath — the space below it does that job.
 .cv-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding-bottom: 2rem;
-  border-bottom: 3px solid var(--accent-pink);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-5);
   position: relative;
 
   h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: var(--space-3);
     font-family:
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
       monospace;
     text-transform: lowercase;
     letter-spacing: -0.02em;
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-    animation: glow 2s ease-in-out infinite alternate;
   }
 }
 
 .cv-contact {
   p {
-    margin: 0.5rem 0;
+    margin: var(--space-2) 0;
     color: var(--text-secondary);
   }
 }
 
 // Section titles sit on the animated background, not on a card — so they are
 // white with a halo, pinned rather than following --text-primary, which tracks
-// the page surface and not the stage behind it.
+// the page surface and not the stage behind it. The pink rule that used to run
+// under them is gone with the rest of the decoration.
 .cv-section-title {
   color: white;
   @include over-background;
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--accent-pink);
+  font-size: var(--text-h3);
+  margin-bottom: var(--space-4);
   display: inline-block;
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -281,72 +256,39 @@ section[id] {
   position: relative;
 }
 
-// Shared card style for experience, education, and certifications
+// Shared card style for experience, education, and certifications. Neutral
+// surface, neutral hairline, and a hover that brightens the hairline and lifts
+// — no coloured top bar and no coloured glow.
 .cv-card {
   background: var(--bg-card);
-  padding: 2rem;
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   position: relative;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.05);
   transition: all var(--transition-normal);
 
-  // Add subtle gradient border on hover
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      var(--accent-pink) 0%,
-      var(--accent-cyan) 33%,
-      var(--primary-color) 66%,
-      var(--accent-pink) 100%
-    );
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    opacity: 0.5;
-  }
-
   @include reading-emphasis {
-    box-shadow: 0 4px 20px rgba(0, 255, 136, 0.1);
+    box-shadow: var(--shadow-md);
     border-color: var(--border-active);
-
-    &::before {
-      opacity: 1;
-    }
   }
 
   @include hover-lift;
-}
-
-.experience-item {
-  &.cv-card {
-    // Use the shared cv-card styles with cyan accent
-    &::before {
-      background: var(--accent-cyan);
-    }
-  }
-
-  // Keep internal structure styles
 }
 
 .experience-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-2);
 
   h3 {
     margin: 0;
     flex: 1;
     min-width: 200px;
     color: var(--text-primary);
-    font-size: 1.2rem;
+    font-size: var(--text-h4);
     font-family:
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
       monospace;
@@ -368,10 +310,10 @@ section[id] {
   }
 }
 
-// Collapsible cards trade the top gradient hairline for a left rail, the same
-// marker `.about` and the blog previews use. It reads as a state, not an
-// ornament: flat while the card is just sitting there, brighter for whichever
-// entry the scroll has arrived at, and full accent once the entry is open.
+// Collapsible cards carry a left rail, the same marker the blog previews use.
+// It reads as a state, not an ornament: flat while the card is just sitting
+// there, brighter for whichever entry the scroll has arrived at, brightest and
+// wider once the entry is open.
 .cv-card.cv-collapse::before {
   content: '';
   top: 0;
@@ -397,11 +339,7 @@ section[id] {
 
   &::before {
     width: 4px;
-    background: linear-gradient(
-      180deg,
-      var(--accent-cyan) 0%,
-      var(--primary-color) 100%
-    );
+    background: rgba(255, 255, 255, 0.45);
   }
 }
 
@@ -455,8 +393,8 @@ section[id] {
 }
 
 .cv-collapse[open] .cv-collapse-chevron {
-  border-color: var(--accent-cyan);
-  color: var(--ink-cyan);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: var(--text-primary);
 }
 
 // Collapsed institution line style
@@ -471,7 +409,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 }
 
 .cv-summary-skills {
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
   font-size: 0.9rem;
   color: var(--text-secondary);
   display: block;
@@ -518,23 +456,19 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     margin-bottom: 0.75rem;
     position: relative;
 
+    // Bullets, not links. Green here was the link colour pointing at nothing.
     &::marker {
-      color: var(--ink-primary);
+      color: var(--text-muted);
     }
   }
 }
 
+// Education entries are `cv-card`s and take its rail unchanged — they used to
+// repaint it green, which marked them as different from the experience cards
+// without saying how.
 .education-item {
-  &.cv-card {
-    // Use the shared cv-card styles with green accent
-    &::before {
-      background: var(--primary-color);
-    }
-  }
-
-  // Keep internal structure styles
   h3 {
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-2);
   }
 
   p {
@@ -549,17 +483,20 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     margin: 0.75rem 0 0 1.5rem;
 
     li {
-      margin-bottom: 0.5rem;
+      margin-bottom: var(--space-2);
     }
   }
 }
 
-// Certifications as chips with tooltips
+// Certifications as chips with tooltips. One neutral chip shape, shared with
+// the skill tags below and the tech tags on the projects page: a certification
+// is a label, and a magenta-to-pink fill was telling the reader nothing about
+// it that the word did not already say.
 .certifications-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
 }
 
 .certification-chip {
@@ -567,13 +504,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   display: inline-flex;
   align-items: center;
   padding: 0.6rem 1.2rem;
-  background: linear-gradient(135deg, var(--fill-purple), var(--accent-pink));
-  color: var(--on-fill);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-active);
   border-radius: var(--radius-md);
   font-size: 0.925rem;
   cursor: pointer;
   transition: all var(--transition-normal);
-  box-shadow: 0 2px 8px rgba(147, 51, 234, 0.2);
 
   .cert-name {
     position: relative;
@@ -581,8 +518,9 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 
   &:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 4px 16px rgba(147, 51, 234, 0.3);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.45);
+    color: var(--text-primary);
 
     .cert-tooltip {
       opacity: 1;
@@ -596,7 +534,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%) translateY(0);
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-2);
     opacity: 0;
     visibility: hidden;
     transition: all var(--transition-normal);
@@ -637,7 +575,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       strong {
         display: block;
         color: var(--text-primary);
-        margin-bottom: 0.5rem;
+        margin-bottom: var(--space-2);
         font-size: 1rem;
       }
 
@@ -657,7 +595,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         color: var(--text-muted);
         font-size: 0.8rem;
         font-family: 'JetBrains Mono', monospace;
-        margin-top: 0.5rem;
+        margin-top: var(--space-2);
         padding-top: 0.5rem;
         border-top: 1px solid var(--border-color);
       }
@@ -675,7 +613,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     align-items: flex-start;
 
     h3 {
-      margin-bottom: 0.5rem;
+      margin-bottom: var(--space-2);
     }
   }
 
@@ -697,55 +635,38 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// Resume Header Component
+// Resume Header Component. Left-aligned with the rest of the document, and
+// without the five-stop rainbow hairline across its top — the card edge is
+// already the boundary that bar was drawing a second time.
 .resume-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  padding: 2rem;
+  margin-bottom: var(--space-5);
+  padding: var(--space-5);
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   position: relative;
 
-  // Add gradient top accent
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      var(--accent-pink) 0%,
-      var(--accent-cyan) 25%,
-      var(--primary-color) 50%,
-      var(--accent-blue) 75%,
-      var(--accent-pink) 100%
-    );
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
-
   h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+    font-size: var(--text-h2);
+    margin-bottom: var(--space-2);
   }
 
   .resume-title {
-    font-size: 1.25rem;
+    font-size: var(--text-h4);
     color: var(--text-secondary);
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--space-4);
   }
 
   .resume-contact {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
 
     .contact-item {
-      font-size: 0.9rem;
+      font-size: var(--text-small);
 
+      // A link, so it keeps the site's link colour.
       a {
         color: var(--ink-primary);
         text-decoration: none;
@@ -758,12 +679,10 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 
   .resume-summary {
-    text-align: left;
     max-width: 800px;
-    margin: 0 auto;
 
     p {
-      font-size: 1rem;
+      font-size: var(--text-body);
       line-height: 1.6;
       color: var(--text-secondary);
     }
@@ -774,11 +693,11 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 .experience-location {
   color: var(--text-secondary);
   font-style: italic;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
 }
 
 .experience-description {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
   color: var(--text-secondary);
   font-style: italic;
 }
@@ -791,15 +710,16 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     margin-bottom: 0.75rem;
     position: relative;
 
+    // Bullets, not links. Green here was the link colour pointing at nothing.
     &::marker {
-      color: var(--ink-primary);
+      color: var(--text-muted);
     }
   }
 }
 
 .experience-skills {
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--border-color);
   font-size: 0.9rem;
   color: var(--text-secondary);
@@ -810,7 +730,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
   flex-wrap: wrap;
   gap: 0.5rem;
 
@@ -835,27 +755,27 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
 .education-institution {
   color: var(--text-secondary);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 .education-location {
   color: var(--text-secondary);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 .education-gpa {
   color: var(--text-secondary);
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
 }
 
 .education-description {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
   color: var(--text-secondary);
   font-style: italic;
 }
 
 .education-coursework {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
   font-size: 0.9rem;
   color: var(--text-secondary);
 }
@@ -865,24 +785,25 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   padding-left: 1.5rem;
 
   li {
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-2);
     position: relative;
 
+    // Bullets, not links. Green here was the link colour pointing at nothing.
     &::marker {
-      color: var(--ink-primary);
+      color: var(--text-muted);
     }
   }
 }
 
 // Skills styles for direct display
 .skill-category-direct {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-4);
 
   // On the background alongside the chips rather than on a card, so it takes
   // the same treatment as the section titles above it.
   .skill-subtitle {
     font-size: 1.2rem;
-    margin-bottom: 1rem;
+    margin-bottom: var(--space-3);
     color: white;
     @include over-background;
     font-family:
@@ -896,89 +817,46 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 .skill-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-2);
 }
 
+// One chip, not three. The technical / soft / language variants each had their
+// own gradient, but the group they belong to is already stated by the subtitle
+// directly above them, so the colour was restating a heading in a code the
+// reader has no key for.
 .skill-tag {
   padding: 0.6rem 1.2rem;
   border-radius: var(--radius-md);
   font-size: 0.925rem;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-active);
   transition: all var(--transition-normal);
   cursor: default;
 
-  &.technical {
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-    color: var(--on-fill);
-    border: 1px solid transparent;
-  }
-
-  &.soft {
-    background: linear-gradient(
-      135deg,
-      var(--primary-color),
-      var(--accent-cyan)
-    );
-    color: var(--on-fill);
-    border: 1px solid transparent;
-  }
-
-  &.language {
-    background: linear-gradient(135deg, var(--accent-pink), var(--fill-purple));
-    color: var(--on-fill);
-    border: 1px solid transparent;
-  }
-
   &:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.45);
+    color: var(--text-primary);
   }
 }
 
-// Export Buttons
+// Export Buttons. A panel of controls, so it takes the plain card treatment —
+// the pulsing four-stop rainbow across its top and the green halo around it
+// were announcing a download row as the loudest thing on the page.
 .cv-export {
   background: var(--bg-card);
-  padding: 2rem;
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
-  text-align: center;
-  margin-bottom: 2rem;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+  margin-bottom: var(--space-5);
   position: relative;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(
-      90deg,
-      var(--accent-pink) 0%,
-      var(--accent-blue) 25%,
-      var(--primary-color) 50%,
-      var(--accent-purple) 75%,
-      var(--accent-pink) 100%
-    );
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    animation: gradient-shift 3s ease-in-out infinite;
-  }
-
-  @keyframes gradient-shift {
-    0%,
-    100% {
-      opacity: 0.7;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
-
   .search-section {
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-5);
 
     .search-container {
-      margin-bottom: 1rem;
+      margin-bottom: var(--space-3);
 
       .search-input {
         width: 100%;
@@ -994,10 +872,12 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         text-transform: lowercase;
         transition: all var(--transition-fast);
 
+        // Focus is a state, but it is a state of a text field rather than a
+        // result, so it says so with a brighter hairline instead of a pink
+        // one and a coloured bloom.
         &:focus {
           outline: none;
-          border-color: var(--accent-pink);
-          box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
+          border-color: rgba(255, 255, 255, 0.45);
           background: var(--bg-accent);
         }
 
@@ -1028,12 +908,12 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
         &:hover {
           background: var(--bg-accent);
-          border-left: 3px solid var(--accent-pink);
+          border-left: 3px solid var(--border-active);
         }
 
         .result-type {
           font-size: 0.8rem;
-          color: var(--ink-pink);
+          color: var(--text-muted);
           font-family:
             'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
             monospace;
@@ -1072,15 +952,20 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   .export-actions {
     display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 1rem;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
     flex-wrap: wrap;
   }
 
+  // Three ways to take the same document away. None of them is a conversion
+  // path, and they are not ranked against each other, so they are one neutral
+  // button repeated — the green / cyan / outlined set implied a preference
+  // and a hierarchy that does not exist.
   .export-button {
     padding: 0.75rem 1.5rem;
-    border: 2px solid transparent;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: var(--radius-md);
     // Stated rather than inherited: the pdf button is an <a> at a prebuilt
     // artifact while the other two are <button>s, so without this they sit at
@@ -1113,7 +998,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       background: linear-gradient(
         90deg,
         transparent,
-        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.08),
         transparent
       );
       transition: left 0.5s;
@@ -1128,95 +1013,42 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       }
     }
 
-    &.pdf {
-      background: var(--primary-color);
-      color: var(--on-fill);
-      border-color: var(--primary-color);
+    &:hover:not(:disabled) {
+      background: var(--bg-hover);
+      border-color: rgba(255, 255, 255, 0.45);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
 
-      &:hover:not(:disabled) {
-        background: var(--primary-dark);
-        border-color: var(--primary-dark);
-        transform: translateY(-2px);
-        box-shadow:
-          0 0 20px rgba(0, 255, 136, 0.4),
-          var(--shadow-md);
-
-        &::before {
-          left: 100%;
-        }
-      }
-    }
-
-    &.docx {
-      background: var(--accent-cyan);
-      color: var(--on-fill);
-      border-color: var(--accent-cyan);
-
-      &:hover:not(:disabled) {
-        background: var(--accent-pink);
-        border-color: var(--accent-pink);
-        transform: translateY(-2px);
-        box-shadow:
-          0 0 20px rgba(0, 212, 255, 0.4),
-          var(--shadow-md);
-
-        &::before {
-          left: 100%;
-        }
-      }
-    }
-
-    &.markdown {
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      border-color: var(--border-color);
-
-      &:hover:not(:disabled) {
-        background: var(--bg-accent);
-        border-color: var(--primary-color);
-        transform: translateY(-2px);
-        box-shadow:
-          0 0 20px rgba(0, 255, 136, 0.3),
-          var(--shadow-md);
-
-        &::before {
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(0, 255, 136, 0.1),
-            transparent
-          );
-          left: 100%;
-        }
+      &::before {
+        left: 100%;
       }
     }
   }
 
   .export-note {
-    font-size: 0.875rem;
+    font-size: var(--text-small);
     color: var(--text-muted);
     margin: 0;
   }
 
   .latex-instructions {
     background: var(--bg-accent);
-    padding: 1.5rem;
+    padding: var(--space-4);
     border-radius: var(--radius-md);
-    margin-top: 1rem;
-    text-align: left;
+    margin-top: var(--space-3);
 
     h4 {
-      margin: 0 0 1rem 0;
+      margin: 0 0 var(--space-3) 0;
       color: var(--text-primary);
-      font-size: 1.1rem;
+      font-size: var(--text-h4);
     }
 
     ol {
-      margin: 0 0 1rem 0;
+      margin: 0 0 var(--space-3) 0;
       padding-left: 1.5rem;
 
       li {
-        margin-bottom: 0.5rem;
+        margin-bottom: var(--space-2);
         color: var(--text-secondary);
 
         ul {
@@ -1235,13 +1067,16 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       font-size: 0.9rem;
     }
 
+    // Sits in the same paragraphs as the links below, and was the same green —
+    // so a filename read as something you could click. The inset background is
+    // what marks it as code.
     code {
       background: var(--bg-primary);
       padding: 0.2rem 0.4rem;
       border-radius: var(--radius-sm);
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       font-size: 0.85rem;
-      color: var(--ink-primary);
+      color: var(--text-primary);
     }
 
     a {
@@ -1290,7 +1125,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   .cv-page-header {
     padding: calc(var(--header-height) + 0.5rem) 0 1.5rem; // Dynamic padding with responsive header height
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-5);
 
     h1 {
       font-size: 2rem;
@@ -1303,7 +1138,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   .cv-overview-contact {
     padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--space-4);
     grid-template-columns: 1fr;
     gap: 1.5rem;
 
@@ -1332,7 +1167,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     align-items: flex-start;
 
     h3 {
-      margin-bottom: 0.5rem;
+      margin-bottom: var(--space-2);
     }
   }
 
@@ -1413,39 +1248,38 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// Add glow animation for export buttons
-@keyframes glow {
-  from {
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-  }
-  to {
-    text-shadow:
-      0 0 30px rgba(0, 255, 136, 0.6),
-      0 0 40px rgba(0, 255, 136, 0.3);
-  }
-}
+// A second `@keyframes glow` used to live here — a green text-shadow with no
+// dark halo under it, redefining the name `animations.scss` already owns.
+// Keyframes are global regardless of which file declares them, so whichever
+// stylesheet the bundler emitted last decided what every title on the site
+// did. The titles that used it are on the spacing/halo treatment now, and the
+// duplicate is gone with them.
 
 // LaTeX Preview Component
 .latex-preview {
-  margin-top: 1rem;
+  margin-top: var(--space-3);
 
+  // A disclosure toggle for the source of the document above it. Neutral: it
+  // reveals, it does not convert, and it certainly does not become cyan on the
+  // way to being clicked.
   .preview-button {
-    background: var(--accent-pink);
-    color: white;
-    border: none;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 0.5rem 1rem;
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-normal);
 
     &:hover {
-      background: #0891b2;
+      background: var(--bg-hover);
+      border-color: rgba(255, 255, 255, 0.45);
       transform: translateY(-1px);
     }
   }
 
   .latex-source-container {
-    margin-top: 1rem;
+    margin-top: var(--space-3);
     background: var(--bg-accent);
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -1490,12 +1324,14 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// Full CV / one-page resume switch, sits above the export buttons
+// Full CV / one-page resume switch, sits above the export buttons. Which view
+// is showing is a real state, and it is marked the way the section nav marks
+// the section you are in — brighter type, brighter hairline — rather than with
+// a green outline and a green bloom.
 .cv-view-toggle {
   display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 
   .cv-view-button {
     padding: 0.5rem 1.25rem;
@@ -1514,13 +1350,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
     &:hover {
       color: var(--text-primary);
-      border-color: var(--primary-color);
+      border-color: var(--border-active);
     }
 
     &.active {
       color: var(--text-primary);
-      border-color: var(--primary-color);
-      box-shadow: 0 0 12px rgba(0, 255, 136, 0.25);
+      background: var(--bg-accent);
+      border-color: var(--text-secondary);
     }
   }
 }
