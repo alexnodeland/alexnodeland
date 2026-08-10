@@ -205,6 +205,46 @@
   }
 }
 
+// A steep tapered blur riding the window's visible top edge. Content scrolling
+// out of the window dissolves through it instead of sliding under floating
+// controls at full strength. Sticky with zero height, so it costs no layout;
+// the ::before is the actual veil, masked from solid to nothing over ~70px.
+.window-veil {
+  position: sticky;
+  top: 0;
+  height: 0;
+  z-index: 5; // Under the cv control row (10), over the content
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); // Safari 17 and earlier
+    background: linear-gradient(
+      to bottom,
+      rgba(7, 8, 10, 0.45),
+      rgba(7, 8, 10, 0)
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      black 0%,
+      black 22%,
+      transparent 88%
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      black 0%,
+      black 22%,
+      transparent 88%
+    );
+  }
+}
+
 // The content window — the scrolling panel the page lives in. It no longer
 // positions itself: the stage owns the geometry, and this fills whatever the
 // header and hero leave. The page never scrolls; content scrolls in here.
