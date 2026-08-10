@@ -57,7 +57,6 @@ export interface CVData {
   projects?: ProjectItem[];
   skills: {
     technical: string[];
-    soft: string[];
   };
 
   // Optional sections
@@ -416,17 +415,6 @@ export const cvData: CVData = {
       'Linux',
       'Mathematics',
       'Signal Processing',
-    ],
-    soft: [
-      'Technical Leadership',
-      'Team Management',
-      'Strategic Planning',
-      'Business Development',
-      'Client Relations',
-      'Mentoring',
-      'Public Speaking',
-      'Problem Solving',
-      'Innovation',
     ],
   },
 };

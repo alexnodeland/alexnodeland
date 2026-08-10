@@ -88,7 +88,6 @@ describe('exportCV Utility Functions', () => {
     ],
     skills: {
       technical: ['JavaScript', 'TypeScript', 'React', 'Node.js', 'Python'],
-      soft: ['Leadership', 'Communication', 'Problem Solving'],
     },
     certifications: [
       {
@@ -152,10 +151,9 @@ describe('exportCV Utility Functions', () => {
       expect(markdown).toContain(
         'JavaScript, TypeScript, React, Node.js, Python'
       );
-      expect(markdown).toContain('### Soft Skills');
-      expect(markdown).toContain('Leadership, Communication, Problem Solving');
-      // The languages section was removed from the CV; the exporters no
-      // longer have one to write.
+      // The soft skills and languages sections were both removed from the CV;
+      // the exporters no longer have either to write.
+      expect(markdown).not.toContain('### Soft Skills');
       expect(markdown).not.toContain('### Languages');
     });
 
@@ -185,7 +183,6 @@ describe('exportCV Utility Functions', () => {
         education: [],
         skills: {
           technical: ['JavaScript'],
-          soft: ['Communication'],
         },
         certifications: [],
       };
