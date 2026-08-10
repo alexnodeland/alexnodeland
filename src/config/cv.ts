@@ -58,7 +58,6 @@ export interface CVData {
   skills: {
     technical: string[];
     soft: string[];
-    languages?: string[];
   };
 
   // Optional sections
@@ -429,7 +428,6 @@ export const cvData: CVData = {
       'Problem Solving',
       'Innovation',
     ],
-    languages: ['English (Native)'],
   },
 };
 

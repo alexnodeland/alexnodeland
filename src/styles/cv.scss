@@ -773,260 +773,318 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// Export Buttons. A panel of controls, so it takes the plain card treatment —
-// the pulsing four-stop rainbow across its top and the green halo around it
-// were announcing a download row as the loudest thing on the page.
-.cv-export {
+// The CV's one row of chrome: pick a length, find something, take it away.
+// It sticks to the top of the window's own scroll, which makes it the one
+// block on this page that cannot be a pure outline — the document runs
+// underneath it, and a transparent bar would let headings read straight
+// through the controls. So it takes the window's own language instead, the
+// same scrim and blur the window and the nav pills use.
+.cv-control-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.4rem;
+  margin-bottom: var(--space-5);
+  background: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+  border: 1px solid var(--border-floating);
+  border-radius: var(--radius-lg);
+  // Deliberately no `overflow: hidden` to clip the corners the way the old
+  // section nav did: three panels hang out of the bottom of this bar, and
+  // hiding the overflow would guillotine every one of them.
+}
+
+// A trigger and the panel it opens. The panel is positioned against this, so
+// the box has to establish the containing block.
+.cv-dropdown {
+  position: relative;
+  flex: 0 0 auto;
+
+  // Right-justified even when the search between them has wrapped away.
+  &.align-end {
+    margin-left: auto;
+  }
+}
+
+// Same chrome as every other control on the row: transparent, hairline, mono
+// lowercase. It is not a native <select>, so it does not get to look like one.
+.cv-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--border-floating);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:focus-visible {
+    outline: none;
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  // Open is a real state, and it is marked the way every other current thing
+  // on the site is marked — white wash, brighter hairline, brighter type.
+  &.is-open {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.45);
+  }
+
+  .cv-dropdown-caret {
+    font-size: 0.7rem;
+    line-height: 1;
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+  }
+
+  &.is-open .cv-dropdown-caret {
+    transform: rotate(180deg);
+  }
+}
+
+// The floating panels — both dropdown menus and the search results — share one
+// material. A single --window-scrim is tuned for a panel with the simulation
+// behind it; these sit over the document itself, so the token is laid down
+// twice (0.38 over 0.38 composites to ~0.62) at twice the blur. That is enough
+// to read over a paragraph scrolling underneath without becoming a dark slab.
+@mixin cv-floating-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  z-index: 20;
+  background-color: var(--window-scrim);
+  background-image: linear-gradient(var(--window-scrim), var(--window-scrim));
+  backdrop-filter: blur(calc(var(--window-blur) * 2));
+  -webkit-backdrop-filter: blur(calc(var(--window-blur) * 2));
+  border: 1px solid var(--border-floating);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  transform-origin: top center;
+  animation: cv-dropdown-in 120ms ease-out;
+}
+
+@keyframes cv-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cv-dropdown-menu {
+  @include cv-floating-panel;
+  left: 0;
+  min-width: 100%;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+
+  // Hung from the right edge when the trigger is, so a wide menu grows inward
+  // instead of off the window.
+  .cv-dropdown.align-end & {
+    left: auto;
+    right: 0;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.cv-dropdown-option {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-fast);
+
+  // One highlight for both routes in: the pointer and the arrow keys set the
+  // same active index, so hover and keyboard cannot disagree about which item
+  // Enter would take.
+  &.is-active {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  // Which view is showing is a value, not a hover — marked with the 8% wash
+  // and the brighter hairline the old toggle's active button used.
+  &.is-selected {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.45);
+
+    &.is-active {
+      background: rgba(255, 255, 255, 0.11);
+    }
+  }
+
+  &[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// The downloads are actions rather than values, so the item under the cursor
+// takes the link colour — the one place green is allowed to mean something.
+// The trigger stays neutral chrome: "download" is a noun until you pick one.
+.cv-dropdown.tone-action .cv-dropdown-option.is-active {
+  color: var(--ink-primary);
+}
+
+// The CV's find-in-document field, in a panel of its own below the control
+// row rather than wedged into it. It is somewhere to type rather than a piece
+// of chrome, its results are long, and in flow they push the document down
+// instead of covering it — so it takes the outline treatment every other block
+// inside the window takes.
+.cv-search-panel {
   @include outline-block;
-  padding: var(--space-5);
+  padding: var(--space-4);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-5);
   position: relative;
 
-  .search-section {
-    margin-bottom: var(--space-5);
+  // The same 4% wash the blog's search field takes: a text field has to look
+  // like one, and a bare outline inside the outlined panel reads as a nested
+  // panel rather than as an input.
+  .search-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-floating);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    font-size: 1rem;
+    text-transform: lowercase;
+    transition: all var(--transition-fast);
 
-    .search-container {
-      margin-bottom: var(--space-3);
+    // Focus is a state, but it is a state of a text field rather than a
+    // result, so it says so with a brighter hairline instead of a colour.
+    &:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.07);
+    }
 
-      // Same 4% wash as the blog's search field: a text field has to look like
-      // one, and a bare outline inside the outlined export panel reads as a
-      // nested panel rather than as an input.
-      .search-input {
-        width: 100%;
-        padding: 0.75rem 1rem;
-        border: 2px solid var(--border-floating);
-        border-radius: var(--radius-sm);
-        background: rgba(255, 255, 255, 0.04);
-        color: var(--text-primary);
-        font-size: 1rem;
+    &::placeholder {
+      color: var(--text-secondary);
+      text-transform: lowercase;
+    }
+  }
+
+  // In flow rather than floating — it pushes the page down instead of
+  // overlaying it — so it is an outline like everything else.
+  .search-results {
+    margin-top: var(--space-3);
+    background: transparent;
+    border: 1px solid var(--border-floating);
+    border-radius: var(--radius-md);
+    max-height: 300px;
+    overflow-y: auto;
+
+    .search-result-item {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover,
+      &:focus-visible {
+        outline: none;
+        background: rgba(255, 255, 255, 0.06);
+        border-left: 3px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .result-type {
+        font-size: 0.8rem;
+        color: var(--text-muted);
         font-family:
           'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
           monospace;
         text-transform: lowercase;
-        transition: all var(--transition-fast);
-
-        // Focus is a state, but it is a state of a text field rather than a
-        // result, so it says so with a brighter hairline instead of a pink
-        // one and a coloured bloom.
-        &:focus {
-          outline: none;
-          border-color: rgba(255, 255, 255, 0.45);
-          background: rgba(255, 255, 255, 0.07);
-        }
-
-        &::placeholder {
-          color: var(--text-secondary);
-          text-transform: lowercase;
-        }
-      }
-    }
-
-    // In flow rather than floating — it pushes the buttons down instead of
-    // overlaying them — so it is an outline like everything else.
-    .search-results {
-      background: transparent;
-      border: 2px solid var(--border-floating);
-      border-radius: var(--radius-md);
-      max-height: 300px;
-      overflow-y: auto;
-      box-shadow: var(--shadow-md);
-
-      .search-result-item {
-        padding: 1rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.06);
-          border-left: 3px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .result-type {
-          font-size: 0.8rem;
-          color: var(--text-muted);
-          font-family:
-            'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-            monospace;
-          text-transform: lowercase;
-          margin-bottom: 0.25rem;
-        }
-
-        .result-title {
-          font-size: 1rem;
-          color: var(--text-primary);
-          margin-bottom: 0.25rem;
-        }
-
-        .result-company,
-        .result-institution {
-          font-size: 0.9rem;
-          color: var(--text-secondary);
-          margin-bottom: 0.25rem;
-        }
-
-        .result-description {
-          font-size: 0.85rem;
-          color: var(--text-muted);
-          line-height: 1.4;
-        }
+        margin-bottom: 0.25rem;
       }
 
-      .no-results {
-        padding: 1rem;
-        text-align: center;
-        color: var(--text-muted);
-        font-style: italic;
+      .result-title {
+        font-size: 1rem;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
       }
-    }
-  }
 
-  .export-actions {
-    display: flex;
-    gap: var(--space-3);
-    margin-bottom: var(--space-3);
-    flex-wrap: wrap;
-  }
-
-  // Three ways to take the same document away. None of them is a conversion
-  // path, and they are not ranked against each other, so they are one neutral
-  // button repeated — the green / cyan / outlined set implied a preference
-  // and a hierarchy that does not exist.
-  .export-button {
-    padding: 0.75rem 1.5rem;
-    background: transparent;
-    color: var(--text-primary);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius-md);
-    // Stated rather than inherited: the pdf button is an <a> at a prebuilt
-    // artifact while the other two are <button>s, so without this they sit at
-    // 1rem and the UA's 13.33px respectively, side by side in the same row.
-    font-size: 0.9rem;
-    line-height: 1.2;
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.01em;
-    // The pdf button is an <a> at a prebuilt artifact rather than a <button>,
-    // so it has to shed the global link underline.
-    text-decoration: none;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    position: relative;
-    overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.08),
-        transparent
-      );
-      transition: left 0.5s;
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-
-      &::before {
-        display: none;
-      }
-    }
-
-    &:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.45);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-
-      &::before {
-        left: 100%;
-      }
-    }
-  }
-
-  .export-note {
-    font-size: var(--text-small);
-    color: var(--text-muted);
-    margin: 0;
-  }
-
-  // Already a white wash rather than a dark fill (--bg-accent is 3% white), so
-  // it survives the scrim as it is. No hairline: it is a nested aside inside
-  // an outlined panel, and a second outline around it would read as a card
-  // inside a card.
-  .latex-instructions {
-    background: var(--bg-accent);
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-    margin-top: var(--space-3);
-
-    h4 {
-      margin: 0 0 var(--space-3) 0;
-      color: var(--text-primary);
-      font-size: var(--text-h4);
-    }
-
-    ol {
-      margin: 0 0 var(--space-3) 0;
-      padding-left: 1.5rem;
-
-      li {
-        margin-bottom: var(--space-2);
+      .result-company,
+      .result-institution {
+        font-size: 0.9rem;
         color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+      }
 
-        ul {
-          margin: 0.5rem 0 0 1rem;
-
-          li {
-            margin-bottom: 0.25rem;
-          }
-        }
+      .result-description {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.4;
       }
     }
 
-    p {
-      margin: 0;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
+    .no-results {
+      padding: 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
     }
+  }
+}
 
-    // Sits in the same paragraphs as the links below, and was the same green —
-    // so a filename read as something you could click. The inset background is
-    // what marks it as code.
-    code {
-      background: rgba(255, 255, 255, 0.08);
-      padding: 0.2rem 0.4rem;
-      border-radius: var(--radius-sm);
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 0.85rem;
-      color: var(--text-primary);
-    }
+// A 120ms fade is small, but it is still motion arriving unasked in the corner
+// of the eye — so it is the menu appearing, without the travel.
+@media (prefers-reduced-motion: reduce) {
+  .cv-dropdown-menu {
+    animation: none;
+  }
 
-    a {
-      color: var(--ink-primary);
-      text-decoration: none;
-
-      &:hover {
-        text-decoration: underline;
-      }
-    }
+  .cv-dropdown-trigger .cv-dropdown-caret {
+    transition: none;
   }
 }
 
@@ -1090,25 +1148,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   .skills-grid {
     grid-template-columns: 1fr;
-  }
-
-  .export-actions {
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .export-button {
-    width: 100%;
-    max-width: 250px;
-  }
-
-  .latex-instructions {
-    padding: 1rem;
-
-    ol {
-      padding-left: 1rem;
-    }
   }
 
   // Certification chips responsive
@@ -1222,46 +1261,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       padding: 0;
       color: inherit;
       font-size: inherit;
-    }
-  }
-}
-
-// Full CV / one-page resume switch, sits above the export buttons. Which view
-// is showing is a real state, and it is marked the way the section nav marks
-// the section you are in — brighter type, brighter hairline — rather than with
-// a green outline and a green bloom.
-.cv-view-toggle {
-  display: flex;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-
-  .cv-view-button {
-    padding: 0.5rem 1.25rem;
-    border: 1px solid var(--border-floating);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--text-secondary);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    font-size: 0.9rem;
-    text-transform: lowercase;
-    letter-spacing: -0.01em;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-
-    &:hover {
-      color: var(--text-primary);
-      border-color: rgba(255, 255, 255, 0.4);
-    }
-
-    // Which view is showing is a real state, and a pair of outlines cannot
-    // say which one is on by hairline alone — so the current one takes the
-    // same 8% wash the section nav's current item does.
-    &.active {
-      color: var(--text-primary);
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.45);
     }
   }
 }

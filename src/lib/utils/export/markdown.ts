@@ -75,10 +75,6 @@ export const exportCVAsMarkdown = (cvData: CVData): string => {
   markdown += cvData.skills.technical.join(', ') + `\n\n`;
   markdown += `### Soft Skills\n`;
   markdown += cvData.skills.soft.join(', ') + `\n\n`;
-  if (cvData.skills.languages && cvData.skills.languages.length > 0) {
-    markdown += `### Languages\n`;
-    markdown += cvData.skills.languages.join(', ') + `\n\n`;
-  }
 
   return markdown;
 };
