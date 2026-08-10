@@ -175,6 +175,51 @@
   }
 }
 
+// Search is somewhere to type rather than a piece of chrome, so on every page
+// that has one it sits in a panel of its own below the control row instead of
+// being wedged into it. The panel is an outline like every other block inside
+// the window; the field is the one thing on these pages that takes a wash
+// rather than a bare hairline, because a text field has to look like
+// something you can type into and a transparent box inside a transparent box
+// reads as a nested panel. The wash is 4% white — enough to name it as a
+// field, far short of a slab.
+.ui-search-panel {
+  @include outline-block;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-5);
+  position: relative;
+
+  .search-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-floating);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+      monospace;
+    font-size: 1rem;
+    text-transform: lowercase;
+    transition: all var(--transition-fast);
+
+    // Focus is a state of a text field rather than a result, so it says so
+    // with a brighter hairline — matching the chips in the row above rather
+    // than lighting a coloured ring for a search box.
+    &:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    &::placeholder {
+      color: var(--text-secondary);
+      text-transform: lowercase;
+    }
+  }
+}
+
 // A 120ms fade is small, but it is still motion arriving unasked in the
 // corner of the eye — so it is the menu appearing, without the travel.
 @media (prefers-reduced-motion: reduce) {

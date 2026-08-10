@@ -52,50 +52,11 @@
   margin-left: auto;
 }
 
-// Search is somewhere to type rather than a control, so it stays in a panel
-// of its own below the row — the same arrangement the CV page settled on.
-// With the filter buttons and the sort select gone from it, the panel is a
-// field and nothing else, and it is padded like one.
+// Only the spacing is the blog's own — the panel and its field come from
+// .ui-search-panel in controls.scss. The list below it wants more air than
+// the shared default gives.
 .blog-search-panel {
-  @include outline-block;
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
   margin-bottom: var(--space-6);
-  position: relative;
-
-  // The one place on this page that takes a wash rather than a bare outline:
-  // a text field has to look like something you can type into, and a
-  // transparent box with a hairline inside another transparent box with a
-  // hairline reads as a nested panel. The wash is 4% white — enough to name
-  // it as a field, far short of a slab.
-  .search-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-floating);
-    border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text-primary);
-    font-size: 1rem;
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    transition: all var(--transition-fast);
-
-    // Focus is a state of a text field rather than a result, so it says so
-    // with a brighter hairline — matching the CV's field, and the chips in
-    // the row above, rather than lighting a green ring for a search box.
-    &:focus {
-      outline: none;
-      border-color: rgba(255, 255, 255, 0.45);
-      background: rgba(255, 255, 255, 0.07);
-    }
-
-    &::placeholder {
-      color: var(--text-secondary);
-      text-transform: lowercase;
-    }
-  }
 }
 
 // Animations are now in animations.scss

@@ -1,9 +1,47 @@
 import { Link } from 'gatsby';
 import React from 'react';
-import { Layout, SEO } from '../components';
+import { Dropdown, Layout, SEO } from '../components';
+import { DropdownOption } from '../components/ui/Dropdown';
 import { projectsConfig, getLanguageColor } from '../config';
-import type { GitHubProject } from '../config';
+import type { GitHubProject, ProjectCategory } from '../config';
 import '../styles/projects.scss';
+
+// The category filter's "no filter" option. The rest of the page keys off a
+// real ProjectCategory, so this is the stand-in the dropdown needs.
+const ALL_CATEGORIES = '__all__';
+
+type ProjectSort = 'curated' | 'stars' | 'name';
+
+// Curated is the config's own order — hand-ranked within each section — so it
+// is the default, and it is named rather than left implicit.
+const SORT_OPTIONS: DropdownOption[] = [
+  { value: 'curated', label: 'curated' },
+  { value: 'stars', label: 'most starred' },
+  { value: 'name', label: 'name a–z' },
+];
+
+const sortProjects = (
+  projects: GitHubProject[],
+  sort: ProjectSort
+): GitHubProject[] => {
+  if (sort === 'curated') return projects;
+  const sorted = [...projects];
+  if (sort === 'stars') {
+    // Unstarred repos are worth 0 rather than worth nothing, so they sort to
+    // the bottom instead of dropping out of the comparison.
+    sorted.sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0));
+  } else {
+    sorted.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return sorted;
+};
+
+const matchesSearch = (project: GitHubProject, term: string): boolean => {
+  if (!term) return true;
+  const haystack =
+    `${project.name} ${project.description} ${project.tags.join(' ')}`.toLowerCase();
+  return haystack.includes(term);
+};
 
 const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
   const languageColor = getLanguageColor(project.language);
@@ -71,6 +109,10 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
 };
 
 const ProjectsPage: React.FC = () => {
+  const [category, setCategory] = React.useState<ProjectCategory | null>(null);
+  const [sort, setSort] = React.useState<ProjectSort>('curated');
+  const [searchTerm, setSearchTerm] = React.useState('');
+
   // The page scrolls inside the fixed window (.layout), not the document, so
   // the browser's own fragment navigation has nothing to scroll. Resolve the
   // hash to its section and scroll the container ourselves.
@@ -90,12 +132,58 @@ const ProjectsPage: React.FC = () => {
     };
   }, []);
 
-  const categorySections = projectsConfig.categories
-    .map(category => ({
-      ...category,
-      projects: projectsConfig.projects.filter(p => p.category === category.id),
-    }))
-    .filter(section => section.projects.length > 0);
+  const search = searchTerm.trim().toLowerCase();
+
+  // Sections keep their ids and their order whatever the controls say — the
+  // hero subtitle deep-links at them, so filtering renders fewer sections
+  // rather than renumbering the ones that survive.
+  const categorySections = React.useMemo(
+    () =>
+      projectsConfig.categories
+        .filter(section => category === null || section.id === category)
+        .map(section => ({
+          ...section,
+          projects: sortProjects(
+            projectsConfig.projects.filter(
+              project =>
+                project.category === section.id &&
+                matchesSearch(project, search)
+            ),
+            sort
+          ),
+        }))
+        // A section with nothing left in it is a heading over a gap, so it goes.
+        .filter(section => section.projects.length > 0),
+    [category, search, sort]
+  );
+
+  const categoryOptions: DropdownOption[] = React.useMemo(
+    () => [
+      { value: ALL_CATEGORIES, label: 'all' },
+      ...projectsConfig.categories.map(section => ({
+        value: section.id,
+        label: section.title,
+      })),
+    ],
+    []
+  );
+
+  const categoryLabel =
+    categoryOptions.find(
+      option => option.value === (category ?? ALL_CATEGORIES)
+    )?.label ?? 'all';
+
+  const sortLabel =
+    SORT_OPTIONS.find(option => option.value === sort)?.label ?? 'curated';
+
+  const hasFilters =
+    category !== null || sort !== 'curated' || searchTerm !== '';
+
+  const clearFilters = () => {
+    setCategory(null);
+    setSort('curated');
+    setSearchTerm('');
+  };
 
   const hero = (
     <header className="projects-header">
@@ -117,20 +205,74 @@ const ProjectsPage: React.FC = () => {
         description="open source projects, experiments, and tools by alex nodeland"
       />
       <div className="projects-page">
-        {categorySections.map(section => (
-          <section
-            key={section.id}
-            id={section.id}
-            className="projects-section"
+        {/* The two pickers and the reset, loose chips sticky to the top of
+            the window's scroll — the same row the cv and the blog carry. */}
+        <div className="projects-control-bar">
+          <Dropdown
+            ariaLabel="Filter projects by category"
+            triggerLabel={categoryLabel}
+            options={categoryOptions}
+            value={category ?? ALL_CATEGORIES}
+            onSelect={value =>
+              setCategory(
+                value === ALL_CATEGORIES ? null : (value as ProjectCategory)
+              )
+            }
+            className="projects-category-dropdown"
+          />
+
+          <Dropdown
+            ariaLabel="Sort projects"
+            triggerLabel={sortLabel}
+            options={SORT_OPTIONS}
+            value={sort}
+            onSelect={value => setSort(value as ProjectSort)}
+            className="projects-sort-dropdown"
+          />
+
+          <button
+            type="button"
+            className="ui-chip-button projects-clear-chip"
+            onClick={clearFilters}
+            disabled={!hasFilters}
           >
-            <h2 className="section-title">{section.title}</h2>
-            <div className="projects-grid">
-              {section.projects.map(project => (
-                <ProjectCard key={project.name} project={project} />
-              ))}
-            </div>
-          </section>
-        ))}
+            clear filters
+          </button>
+        </div>
+
+        {/* Somewhere to type rather than a piece of chrome, so it keeps its
+            own panel below the row. */}
+        <div className="ui-search-panel projects-search-panel">
+          <input
+            type="text"
+            placeholder="search projects..."
+            aria-label="Search projects"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+
+        {categorySections.length === 0 ? (
+          <p className="projects-empty">
+            no projects match &quot;{searchTerm.trim()}&quot;.
+          </p>
+        ) : (
+          categorySections.map(section => (
+            <section
+              key={section.id}
+              id={section.id}
+              className="projects-section"
+            >
+              <h2 className="section-title">{section.title}</h2>
+              <div className="projects-grid">
+                {section.projects.map(project => (
+                  <ProjectCard key={project.name} project={project} />
+                ))}
+              </div>
+            </section>
+          ))
+        )}
 
         <div className="github-cta">
           <p>want to see more?</p>

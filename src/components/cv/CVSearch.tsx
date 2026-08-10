@@ -127,7 +127,7 @@ const CVSearch: React.FC<CVSearchProps> = ({ resumeData, className = '' }) => {
   };
 
   return (
-    <div className={`cv-search-panel ${className}`.trim()}>
+    <div className={`ui-search-panel cv-search-panel ${className}`.trim()}>
       <input
         type="text"
         placeholder="search experiences, education, skills..."
