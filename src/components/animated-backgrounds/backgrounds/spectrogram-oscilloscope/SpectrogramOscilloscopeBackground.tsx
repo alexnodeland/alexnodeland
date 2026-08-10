@@ -1026,21 +1026,24 @@ const SpectrogramOscilloscopeBackground: React.FC<
       {isPlaying && (
         <div
           style={{
+            // Bottom-center: the corners belong to the background pill (left)
+            // and the chat stack (right); dropping this at a corner buried
+            // their keyboard hints.
             position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            padding: '10px 20px',
-            background: 'rgba(0, 255, 127, 0.2)',
-            border: '2px solid rgba(0, 255, 127, 0.8)',
-            borderRadius: '25px',
-            color: 'rgba(0, 255, 127, 1)',
+            bottom: '2rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '0.5rem 0.9rem',
+            background: 'rgba(10, 12, 16, 0.85)',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
+            borderRadius: '0.5rem',
+            color: '#00ff88',
             fontFamily: 'monospace',
-            fontSize: '14px',
-            fontWeight: 'bold',
+            fontSize: '12px',
             zIndex: 1000,
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
             backdropFilter: 'blur(10px)',
             pointerEvents: 'none',
           }}
@@ -1048,11 +1051,10 @@ const SpectrogramOscilloscopeBackground: React.FC<
           <span
             style={{
               display: 'inline-block',
-              width: '12px',
-              height: '12px',
+              width: '8px',
+              height: '8px',
               borderRadius: '50%',
-              background: 'rgba(0, 255, 127, 1)',
-              boxShadow: '0 0 10px rgba(0, 255, 127, 0.8)',
+              background: '#00ff88',
             }}
           />
           <span>♪ audio playing</span>
