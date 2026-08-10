@@ -1,54 +1,86 @@
 import React from 'react';
 import { ExpertiseIcon, IconStyle, iconFrameProps } from './iconBase';
 
-// A single blip runs the routing path: three inputs converge on the junction,
-// through the block, out the pin. pathLength normalises the two subpaths to 100
-// units so the dash maths does not depend on the geometry.
+// Activation sweeps left to right: input nodes, their edges, the hidden layer,
+// its edges, the outputs — one 5s curve per group, each starting 450ms after
+// the one feeding it. Every group rests at the same opacity it starts and ends
+// the keyframe on, so the loop closes on itself with nothing to pop.
 const css = `
-.icn-ai-signal {
-  stroke-dasharray: 4 96;
-  animation: icn-ai-travel 4.5s linear infinite;
+.icn-ai-fire {
+  opacity: 0.6;
+  animation: icn-ai-pulse 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
-@keyframes icn-ai-travel {
-  from { stroke-dashoffset: 100; }
-  to { stroke-dashoffset: 0; }
+.icn-ai-edges-1 { animation-delay: 0.45s; }
+.icn-ai-nodes-2 { animation-delay: 0.9s; }
+.icn-ai-edges-2 { animation-delay: 1.35s; }
+.icn-ai-nodes-3 { animation-delay: 1.8s; }
+@keyframes icn-ai-pulse {
+  0% { opacity: 0.6; }
+  14% { opacity: 1; }
+  38% { opacity: 0.6; }
+  100% { opacity: 0.6; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .icn-ai-signal { display: none; }
+  .icn-ai-fire { animation: none; opacity: 1; }
 }
 `;
+
+const NODE_R = 2.75;
+const X_INPUT = 9.5;
+const X_HIDDEN = 24;
+const X_OUTPUT = 38.5;
+const INPUT_Y = [14, 24, 34];
+const HIDDEN_Y = [10.5, 19.5, 28.5, 37.5];
+const OUTPUT_Y = [19, 29];
+
+// Edges stop at the node rim rather than running under it, so the circles stay
+// readable at 64px and the diagram keeps its drawn-by-hand look.
+const round = (n: number): string => Number(n.toFixed(2)).toString();
+
+const edge = (x1: number, y1: number, x2: number, y2: number): string => {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  const ux = (dx / len) * NODE_R;
+  const uy = (dy / len) * NODE_R;
+  return `M${round(x1 + ux)} ${round(y1 + uy)} L${round(x2 - ux)} ${round(
+    y2 - uy
+  )}`;
+};
+
+const fan = (xa: number, ysa: number[], xb: number, ysb: number[]): string =>
+  ysa.map(ya => ysb.map(yb => edge(xa, ya, xb, yb)).join(' ')).join(' ');
 
 const AiSystemsIcon: ExpertiseIcon = ({ className }) => (
   <svg {...iconFrameProps} className={className}>
     <IconStyle css={css} />
 
-    {/* three input blocks */}
-    <rect x="4.5" y="8.5" width="9" height="7" />
-    <rect x="4.5" y="20.5" width="9" height="7" />
-    <rect x="4.5" y="32.5" width="9" height="7" />
-
-    {/* orthogonal routing into the junction, then one bus into the block */}
-    <path d="M13.5 12 H19.5 V24 H24.5" />
-    <path d="M13.5 24 H24.5" />
-    <path d="M13.5 36 H19.5 V24 H24.5" />
-    <circle cx="19.5" cy="24" r="1.6" fill="currentColor" stroke="none" />
-
-    {/* the block that does the work */}
-    <rect x="24.5" y="16.5" width="13" height="15" />
-    <path d="M27.5 21.5 H34.5" />
-    <path d="M27.5 26.5 H34.5" />
-
-    {/* output line and pin */}
-    <path d="M37.5 24 H43.5" />
-    <path d="M43.5 20.5 V27.5" />
-
     <path
-      className="icn-ai-signal"
-      d="M13.5 12 H19.5 V24 H24.5 M37.5 24 H43.5"
-      pathLength={100}
-      strokeWidth={2}
-      strokeLinecap="round"
+      className="icn-ai-fire icn-ai-edges-1"
+      d={fan(X_INPUT, INPUT_Y, X_HIDDEN, HIDDEN_Y)}
+      strokeWidth={0.75}
     />
+    <path
+      className="icn-ai-fire icn-ai-edges-2"
+      d={fan(X_HIDDEN, HIDDEN_Y, X_OUTPUT, OUTPUT_Y)}
+      strokeWidth={0.75}
+    />
+
+    <g className="icn-ai-fire icn-ai-nodes-1">
+      {INPUT_Y.map(y => (
+        <circle key={y} cx={X_INPUT} cy={y} r={NODE_R} />
+      ))}
+    </g>
+    <g className="icn-ai-fire icn-ai-nodes-2">
+      {HIDDEN_Y.map(y => (
+        <circle key={y} cx={X_HIDDEN} cy={y} r={NODE_R} />
+      ))}
+    </g>
+    <g className="icn-ai-fire icn-ai-nodes-3">
+      {OUTPUT_Y.map(y => (
+        <circle key={y} cx={X_OUTPUT} cy={y} r={NODE_R} />
+      ))}
+    </g>
   </svg>
 );
 
