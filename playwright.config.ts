@@ -14,11 +14,13 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:8000',
+    /* Base URL to use in actions like `await page.goto('/')`. Overridable so
+       a suite can run against an already-running server on another port —
+       locally 8000 is often taken by unrelated services. */
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8000',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -62,15 +64,18 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run develop',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-    // `npm run develop` builds the web worker with webpack before Gatsby's own
-    // first compile even starts, and the two together run past two minutes
-    // from cold — the suite used to fail on the server timeout rather than on
-    // anything it was meant to test.
-    timeout: 5 * 60 * 1000,
-  },
+  /* Run your local dev server before starting the tests — unless the suite
+     was pointed at a server that already exists. */
+  webServer: process.env.PLAYWRIGHT_BASE_URL
+    ? undefined
+    : {
+        command: 'npm run develop',
+        url: 'http://localhost:8000',
+        reuseExistingServer: !process.env.CI,
+        // `npm run develop` builds the web worker with webpack before Gatsby's
+        // own first compile even starts, and the two together run past two
+        // minutes from cold — the suite used to fail on the server timeout
+        // rather than on anything it was meant to test.
+        timeout: 5 * 60 * 1000,
+      },
 });

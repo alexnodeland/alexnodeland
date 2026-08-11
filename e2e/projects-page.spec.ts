@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { trackCriticalErrors } from './consoleErrors';
 
 test.describe('Projects Page', () => {
   test('should load projects page successfully', async ({ page }) => {
@@ -44,13 +45,10 @@ test.describe('Projects Page', () => {
   });
 
   test('should load without critical JavaScript errors', async ({ page }) => {
-    const errors: string[] = [];
-
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        errors.push(msg.text());
-      }
-    });
+    // The listener and its filter live in consoleErrors.ts, shared by every
+    // page spec — four private copies of the filter is how they all drifted
+    // stale together.
+    const errors = trackCriticalErrors(page);
 
     await page.goto('/projects');
 
@@ -58,14 +56,6 @@ test.describe('Projects Page', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
 
-    // Check that there are no critical JavaScript errors
-    const criticalErrors = errors.filter(
-      error =>
-        error && // Check if error exists
-        !error.includes('Warning') &&
-        !error.includes('console.warn') &&
-        !error.includes('NO_COLOR')
-    );
-    expect(criticalErrors).toHaveLength(0);
+    expect(errors).toHaveLength(0);
   });
 });
