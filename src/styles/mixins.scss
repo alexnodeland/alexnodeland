@@ -226,16 +226,21 @@
   }
 }
 
-// A loose floating control with nothing behind it, so it has to hold its own
-// over whatever scrolls underneath — including white headings. The window's
-// scrim token laid down twice (0.38 over 0.38 composites to ~0.62) over a
-// blur well past the window's own, which reads as a frosted chip catching the
-// simulation rather than as a collision with the text below it.
+// A loose floating control on the window's own surface. It carries no scrim of
+// its own: the window underneath it has already laid the site's one scrim down,
+// and a second coat on top of that (0.38 over 0.38, ~0.62, over the window's
+// own 0.38) made the control rows the one piece of chrome on the site darker
+// than everything around them — dark slabs parked on the window, against a nav
+// capsule and a chat pill wearing a single coat of the same token. So the chip
+// is the surface it sits on plus a hairline, and the blur does alone what the
+// second coat was there for: it is well past the window's own, so a heading
+// scrolling under a sticky chip smears into a wash instead of reading through
+// the label, and the chip stays exactly the colour of the window, the capsule
+// and the pill.
 @mixin frosted-chip {
-  background-color: var(--window-scrim);
-  background-image: linear-gradient(var(--window-scrim), var(--window-scrim));
-  backdrop-filter: blur(calc(var(--window-blur) * 2.4));
-  -webkit-backdrop-filter: blur(calc(var(--window-blur) * 2.4)); // Safari ≤17
+  background: transparent;
+  backdrop-filter: blur(calc(var(--window-blur) * 4));
+  -webkit-backdrop-filter: blur(calc(var(--window-blur) * 4)); // Safari ≤17
   border: 1px solid var(--border-floating);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
@@ -249,10 +254,24 @@
   white-space: nowrap;
   cursor: pointer;
   transition: all var(--transition-fast);
+
+  // Without a backdrop filter there is nothing at all between the label and
+  // whatever passes under it, so the old scrim comes back on those engines
+  // alone — a chip a shade darker than its surroundings is worth more there
+  // than a chip you cannot read.
+  @supports not (
+    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+  ) {
+    background: var(--window-scrim);
+  }
 }
 
-// The panel a chip opens. Same doubled scrim as the chip itself, so a menu
-// reads as the chip growing rather than as a different material arriving.
+// The panel a chip opens. The chip is the window's own surface, but a menu is
+// an overlay with a list of words in it, and it hangs over whatever the page
+// happens to be showing — so this is the one that keeps the doubled scrim (the
+// same coat the shortcuts panel takes, and for the same reason). The chip marks
+// itself open with a white wash at the same moment, so the two still read as
+// one object opening rather than as a stray dark box.
 @mixin floating-panel {
   position: absolute;
   top: calc(100% + 0.4rem);
