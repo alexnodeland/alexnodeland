@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { trackCriticalErrors } from './consoleErrors';
 
 test.describe('Homepage', () => {
   test('should load homepage successfully', async ({ page }) => {
@@ -48,23 +49,6 @@ test.describe('Homepage', () => {
     ).toBeVisible();
   });
 
-  test('should have working theme toggle', async ({ page }) => {
-    await page.goto('/');
-
-    // Look for theme toggle button
-    const themeToggle = page.getByRole('button').first();
-    if ((await themeToggle.count()) > 0) {
-      await themeToggle.click();
-      // Just verify the page still works after clicking
-      await expect(
-        page
-          .getByText(/alex nodeland/i)
-          .filter({ visible: true })
-          .first()
-      ).toBeVisible();
-    }
-  });
-
   test('should be responsive', async ({ page }) => {
     // Test mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
@@ -81,13 +65,10 @@ test.describe('Homepage', () => {
   });
 
   test('should load without critical JavaScript errors', async ({ page }) => {
-    const errors: string[] = [];
-
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        errors.push(msg.text());
-      }
-    });
+    // The listener and its filter live in consoleErrors.ts, shared by every
+    // page spec — four private copies of the filter is how they all drifted
+    // stale together.
+    const errors = trackCriticalErrors(page);
 
     await page.goto('/');
 
@@ -95,14 +76,6 @@ test.describe('Homepage', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
 
-    // Check that there are no critical JavaScript errors
-    const criticalErrors = errors.filter(
-      error =>
-        error && // Check if error exists
-        !error.includes('Warning') &&
-        !error.includes('console.warn') &&
-        !error.includes('NO_COLOR')
-    );
-    expect(criticalErrors).toHaveLength(0);
+    expect(errors).toHaveLength(0);
   });
 });

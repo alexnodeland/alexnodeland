@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { trackCriticalErrors } from './consoleErrors';
 
 test.describe('CV Page', () => {
   test('should load CV page successfully', async ({ page }) => {
@@ -19,17 +20,19 @@ test.describe('CV Page', () => {
   test('should have export functionality', async ({ page }) => {
     await page.goto('/cv');
 
-    // Check that export controls exist. The PDF is typeset by LaTeX at build
-    // time and served from static/cv/, so it is a link rather than a button.
+    // The control row is two dropdowns: pick a length, take the document
+    // away. The three formats live behind the download trigger.
     await expect(
-      page.getByRole('link', { name: /download pdf/i })
+      page.getByRole('button', { name: /choose cv length/i })
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: /download docx/i })
+      page.getByRole('button', { name: /download the cv/i })
     ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: /download markdown/i })
-    ).toBeVisible();
+
+    await page.getByRole('button', { name: /download the cv/i }).click();
+    await expect(page.getByRole('option', { name: 'pdf' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'docx' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'markdown' })).toBeVisible();
   });
 
   test('should have search functionality', async ({ page }) => {
@@ -49,62 +52,46 @@ test.describe('CV Page', () => {
     }
   });
 
-  test('should point the PDF link at the built artifact', async ({ page }) => {
-    await page.goto('/cv');
-
-    const pdfLink = page.getByRole('link', { name: /download pdf/i });
-    await expect(pdfLink).toHaveAttribute('href', '/cv/alex-nodeland-cv.pdf');
-
-    // Switching to the one-page view swaps in the one-page artifact.
-    await page.getByRole('button', { name: /one page/i }).click();
-    await expect(pdfLink).toHaveAttribute(
-      'href',
-      '/cv/alex-nodeland-resume.pdf'
-    );
-  });
-
-  test('should export DOCX when DOCX button is clicked', async ({ page }) => {
-    await page.goto('/cv');
-
-    // Set up download promise
+  // Opens the download menu and takes one format. The menu closes itself
+  // after the choice, so each call is self-contained.
+  const downloadAs = async (
+    page: import('@playwright/test').Page,
+    format: 'pdf' | 'docx' | 'markdown'
+  ) => {
     const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: /download the cv/i }).click();
+    await page.getByRole('option', { name: format, exact: true }).click();
+    return downloadPromise;
+  };
 
-    // Click DOCX export button
-    const docxButton = page.getByRole('button', { name: /download docx/i });
-    await docxButton.click();
-
-    // Wait for download to start (or timeout gracefully)
-    try {
-      const download = await downloadPromise;
-      expect(download.suggestedFilename()).toMatch(/\.docx$/);
-    } catch (error) {
-      // Download might not work in test environment, just verify button works
-      await expect(docxButton).toBeVisible();
-    }
-  });
-
-  test('should export Markdown when Markdown button is clicked', async ({
+  test('should download the PDF artifact for the current view', async ({
     page,
   }) => {
     await page.goto('/cv');
 
-    // Set up download promise
-    const downloadPromise = page.waitForEvent('download');
+    // The full CV serves the full artifact…
+    const fullDownload = await downloadAs(page, 'pdf');
+    expect(fullDownload.suggestedFilename()).toBe('alex-nodeland-cv.pdf');
 
-    // Click Markdown export button
-    const markdownButton = page.getByRole('button', {
-      name: /download markdown/i,
-    });
-    await markdownButton.click();
+    // …and switching to the one-page view swaps in the one-page artifact.
+    await page.getByRole('button', { name: /choose cv length/i }).click();
+    await page.getByRole('option', { name: 'one page' }).click();
+    const resumeDownload = await downloadAs(page, 'pdf');
+    expect(resumeDownload.suggestedFilename()).toBe('alex-nodeland-resume.pdf');
+  });
 
-    // Wait for download to start (or timeout gracefully)
-    try {
-      const download = await downloadPromise;
-      expect(download.suggestedFilename()).toMatch(/\.md$/);
-    } catch (error) {
-      // Download might not work in test environment, just verify button works
-      await expect(markdownButton).toBeVisible();
-    }
+  test('should export DOCX from the download menu', async ({ page }) => {
+    await page.goto('/cv');
+
+    const download = await downloadAs(page, 'docx');
+    expect(download.suggestedFilename()).toMatch(/\.docx$/);
+  });
+
+  test('should export Markdown from the download menu', async ({ page }) => {
+    await page.goto('/cv');
+
+    const download = await downloadAs(page, 'markdown');
+    expect(download.suggestedFilename()).toMatch(/\.md$/);
   });
 
   test('should display main resume sections', async ({ page }) => {
@@ -151,13 +138,10 @@ test.describe('CV Page', () => {
   });
 
   test('should load without critical JavaScript errors', async ({ page }) => {
-    const errors: string[] = [];
-
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        errors.push(msg.text());
-      }
-    });
+    // The listener and its filter live in consoleErrors.ts, shared by every
+    // page spec — four private copies of the filter is how they all drifted
+    // stale together.
+    const errors = trackCriticalErrors(page);
 
     await page.goto('/cv');
 
@@ -165,14 +149,6 @@ test.describe('CV Page', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
 
-    // Check that there are no critical JavaScript errors
-    const criticalErrors = errors.filter(
-      error =>
-        error && // Check if error exists
-        !error.includes('Warning') &&
-        !error.includes('console.warn') &&
-        !error.includes('NO_COLOR')
-    );
-    expect(criticalErrors).toHaveLength(0);
+    expect(errors).toHaveLength(0);
   });
 });
