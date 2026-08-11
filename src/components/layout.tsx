@@ -202,6 +202,12 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   } = React.useMemo(() => resolveHero(shownPath), [shownPath]);
   const shouldCollapse = Boolean(hero) && collapsible;
 
+  // The veil is there for the sticky control rows — the chips on blog,
+  // projects and cv that content scrolls underneath. The home page has no
+  // row, so the band up there was darkening a page nothing floats over: a
+  // slab of shade on the field, protecting a collision that cannot happen.
+  const wantsVeil = pathname.replace(/\/+$/, '') !== '';
+
   const previousPathRef = React.useRef<string | null>(null);
   const snapshotRef = React.useRef<HeroSnapshot | null>(null);
   const releaseHeightRef = React.useRef<(() => void) | null>(null);
@@ -669,8 +675,9 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
             <div className="layout" ref={windowRef}>
               {/* A tapered blur pinned to the window's visible top edge:
                   content dissolves as it scrolls out instead of colliding with
-                  whatever floats up there (the cv's sticky controls). */}
-              <div className="window-veil" aria-hidden="true" />
+                  whatever floats up there (the cv's sticky controls). Skipped
+                  where nothing floats — see `wantsVeil`. */}
+              {wantsVeil && <div className="window-veil" aria-hidden="true" />}
               <main className="main" ref={mainRef}>
                 {children}
               </main>

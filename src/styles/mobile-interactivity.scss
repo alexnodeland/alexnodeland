@@ -1,6 +1,12 @@
 // Mobile interactivity: the touch entry point into the animated backgrounds.
 // Everything in here is mobile-only — desktop drives the backgrounds from the
 // keyboard and its own control cluster.
+//
+// This one is imported by its component rather than through global.scss, so it
+// is its own compilation unit and has to pull the shared layers in itself —
+// the same two lines layout.scss and shortcuts.scss carry.
+@import 'variables';
+@import 'mixins';
 
 $mobile-breakpoint: 768px;
 
@@ -40,14 +46,15 @@ $mobile-breakpoint: 768px;
   width: 3rem; // Matches the chat launcher's box
   height: 3rem;
   padding: 0;
-  // Same floating surface as the chat launcher rather than its own hardcoded
-  // glass, so the two pieces of mobile chrome stay in step.
-  background: var(--bg-floating);
-  border: 1px solid var(--border-floating);
-  border-radius: var(--radius-lg);
-  color: var(--text-primary);
+  // The same machined housing every floating control on the field wears — the
+  // nav capsule, the chat launcher across the row. It used to reach for
+  // --bg-floating instead, which is a flat opaque near-black: over a dark
+  // field the two corners passed for each other, but over a bright one this
+  // one read as a black tile punched into the page while its twin stayed
+  // glass. One mixin, so they cannot drift again.
+  @include capsule-housing;
+  color: var(--text-secondary); // The chat launcher's ink, for the same reason
   cursor: pointer;
-  box-shadow: var(--shadow-lg);
   transition: all var(--transition-normal);
   -webkit-tap-highlight-color: transparent;
 

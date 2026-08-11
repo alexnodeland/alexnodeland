@@ -356,14 +356,22 @@
     // The chip row is taller on a phone (the thumb padding in controls.scss),
     // and at 88px the veil's solid zone ran out while the chips were still
     // overhead — full-strength text surfaced directly beneath them. The band
-    // deepens and holds solid past the row, so content dissolves before it
-    // ever reaches the chips.
+    // reaches past the row, so content dissolves before it ever reaches the
+    // chips.
+    //
+    // The tint is the light half of that job. It ran near-opaque, which over a
+    // bright field stopped reading as a veil and started reading as a black
+    // bar laid across the top of the page — a shape with its own edges,
+    // louder than the collision it was hiding. The blur is what actually
+    // destroys the text (18px, and the chips add their own on top); the tint
+    // only has to keep the smear from competing, and it does that at a third
+    // of the weight while letting the field show through.
     @media (max-width: 768px) {
       height: 140px;
       background: linear-gradient(
         to bottom,
-        rgba(7, 8, 10, 0.94) 0%,
-        rgba(7, 8, 10, 0.82) 50%,
+        rgba(7, 8, 10, 0.62) 0%,
+        rgba(7, 8, 10, 0.5) 50%,
         rgba(7, 8, 10, 0) 100%
       );
       mask-image: linear-gradient(

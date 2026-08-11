@@ -211,6 +211,16 @@
     min-width: 0;
   }
 
+  // Stuck, the row's own top padding is the entire gap between the chips and
+  // the window's frame, and 0.4rem leaves them all but touching it — on a
+  // phone, where the row is the first thing under the border and the frame is
+  // a hard bright line, that reads as a printing error rather than as a row
+  // parked at the top. More room above than below sets it off the edge; the
+  // bottom stays where it is, so nothing below the row moves.
+  @media (max-width: 768px) {
+    padding-top: 0.85rem;
+  }
+
   @media (max-width: 480px) {
     gap: var(--space-1);
   }
