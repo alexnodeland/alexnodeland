@@ -50,7 +50,10 @@ jobs:
         run: npm run test:coverage
 
       - name: Run integration tests
-        run: npm run test:integration
+        # The last integration suite left with the light-mode removal
+        # (d734d64); the step stays for when the directory returns, but an
+        # empty match is not a failure.
+        run: npm run test:integration -- --passWithNoTests
 
       - name: Upload coverage reports to Codecov
         if: matrix.node-version == '22.x'
