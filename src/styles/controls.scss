@@ -187,7 +187,7 @@
   // Nothing to clear is not an error, so it recedes rather than greys out
   // hard — but only its ink recedes. Whole-element opacity thinned the
   // frosting with the label, and content scrolling under the chip read
-  // straight through its body; the housing stays solid, the text and
+  // straight through its body; the housing keeps its blur, the text and
   // hairline drop contrast instead.
   &:disabled {
     cursor: not-allowed;
