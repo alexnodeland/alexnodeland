@@ -62,14 +62,6 @@ jest.mock('docx', () => ({
   WidthType: { DXA: 'dxa' },
 }));
 
-// Mock html2canvas
-jest.mock('html2canvas', () => ({
-  __esModule: true,
-  default: jest.fn().mockResolvedValue({
-    toDataURL: jest.fn().mockReturnValue('data:image/png;base64,test'),
-  }),
-}));
-
 // Mock localStorage
 const localStorageMock = {
   getItem: jest.fn(),
