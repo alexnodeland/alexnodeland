@@ -14,7 +14,8 @@
 // on keyboard focus, and rolls back the same way.
 .shortcuts-hint {
   position: fixed;
-  bottom: 2rem;
+  // The rail's bottom offset — this sits on the pills' own line.
+  bottom: var(--rail-inset-bottom);
   left: 50%;
   transform: translateX(-50%);
   height: var(--rail-height);
