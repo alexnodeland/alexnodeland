@@ -1,6 +1,14 @@
 import { createBackgroundConfig } from '../../core/baseConfig';
 import { SettingsSchema, StandardSettings } from '../../core/types';
-import CellularAutomatonBackground from './CellularAutomatonBackground';
+import { lazy } from 'react';
+// Lazy on purpose: the registry (and through it the persistent shell)
+// imports every config, so a static component import here would pull
+// the simulation — and three.js with it — into the critical bundle of
+// every page. The chunk loads when the background first renders,
+// behind the Suspense in BackgroundManager.
+const CellularAutomatonBackground = lazy(
+  () => import('./CellularAutomatonBackground')
+);
 
 /**
  * Life-like rules in B/S notation: a dead cell is born when its live neighbor

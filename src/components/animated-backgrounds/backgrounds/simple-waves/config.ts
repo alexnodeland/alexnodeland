@@ -1,6 +1,12 @@
 import { createBackgroundConfig } from '../../core/baseConfig';
 import { SettingsSchema, StandardSettings } from '../../core/types';
-import SimpleWaveBackground from './SimpleWaveBackground';
+import { lazy } from 'react';
+// Lazy on purpose: the registry (and through it the persistent shell)
+// imports every config, so a static component import here would pull
+// the simulation — and three.js with it — into the critical bundle of
+// every page. The chunk loads when the background first renders,
+// behind the Suspense in BackgroundManager.
+const SimpleWaveBackground = lazy(() => import('./SimpleWaveBackground'));
 
 // Custom settings specific to simple waves
 export interface SimpleWaveCustomSettings {
