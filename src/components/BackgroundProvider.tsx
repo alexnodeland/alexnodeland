@@ -5,6 +5,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -174,22 +175,63 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
   // Persist settings to localStorage. Guarded by `mounted` so the deterministic
   // default state written during the first render can't clobber a user's
   // persisted settings before the restore effect above has run.
+  //
+  // Debounced: this used to stringify the whole settings blob synchronously on
+  // every state change, which meant once per input event while a slider was
+  // being dragged — main-thread work billed to the exact frames the user was
+  // watching the background respond in. The write only has to happen once the
+  // dust settles.
+  const persistSettings = useCallback((value: BackgroundManagerState) => {
+    try {
+      localStorage.setItem('animatedBackgroundSettings', JSON.stringify(value));
+    } catch (error) {
+      console.warn(
+        'Failed to save background settings to localStorage:',
+        error
+      );
+    }
+  }, []);
+
+  // The state a debounced write still owes to storage, or null when storage is
+  // already up to date. Only ever set past `mounted`, so the flush paths below
+  // can never write the pre-restore defaults over a real saved setting.
+  const pendingWriteRef = useRef<BackgroundManagerState | null>(null);
+
   useEffect(() => {
     if (!mounted) return;
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(
-          'animatedBackgroundSettings',
-          JSON.stringify(state)
-        );
-      } catch (error) {
-        console.warn(
-          'Failed to save background settings to localStorage:',
-          error
-        );
-      }
-    }
-  }, [state, mounted]);
+    if (typeof window === 'undefined') return;
+    pendingWriteRef.current = state;
+    const timer = window.setTimeout(() => {
+      persistSettings(state);
+      pendingWriteRef.current = null;
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [state, mounted, persistSettings]);
+
+  // The debounce buys smooth frames at the cost of a 400ms window where a
+  // change exists only in memory, so every way out of that window flushes it.
+  // `pagehide` and the hidden `visibilitychange` are the pair that actually
+  // fire on mobile, where a backgrounded tab can be discarded outright without
+  // ever seeing `unload`; the cleanup covers a provider torn down in place.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const flush = () => {
+      const pending = pendingWriteRef.current;
+      if (pending === null) return;
+      pendingWriteRef.current = null;
+      persistSettings(pending);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      flush();
+    };
+  }, [persistSettings]);
 
   // Computed values
   const currentBackground = useMemo(() => {
@@ -312,23 +354,43 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
     }
   }, [isSettingsPanelOpen, setSettingsPanelOpen, setClosingSettingsPanel]);
 
-  const contextValue: BackgroundContextType = {
-    state,
-    switchToNextBackground,
-    switchToPreviousBackground,
-    selectBackground,
-    updateCurrentSettings,
-    resetCurrentSettings,
-    toggleSettingsPanel,
-    closeSettingsPanel,
-    audioControls,
-    setAudioControls,
-    overlayOpacity,
-    setOverlayOpacity,
-    currentBackground,
-    currentSettings,
-    mounted,
-  };
+  // Memoized so a provider render doesn't hand every consumer a fresh object
+  // — the callbacks above are all stable, so this only changes when one of the
+  // actual values does.
+  const contextValue: BackgroundContextType = useMemo(
+    () => ({
+      state,
+      switchToNextBackground,
+      switchToPreviousBackground,
+      selectBackground,
+      updateCurrentSettings,
+      resetCurrentSettings,
+      toggleSettingsPanel,
+      closeSettingsPanel,
+      audioControls,
+      setAudioControls,
+      overlayOpacity,
+      setOverlayOpacity,
+      currentBackground,
+      currentSettings,
+      mounted,
+    }),
+    [
+      state,
+      switchToNextBackground,
+      switchToPreviousBackground,
+      selectBackground,
+      updateCurrentSettings,
+      resetCurrentSettings,
+      toggleSettingsPanel,
+      closeSettingsPanel,
+      audioControls,
+      overlayOpacity,
+      currentBackground,
+      currentSettings,
+      mounted,
+    ]
+  );
 
   return (
     <BackgroundContext.Provider value={contextValue}>

@@ -6,6 +6,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { ShortestPathLabSettings } from './config';
 
@@ -97,7 +98,7 @@ const ShortestPathLabBackground: React.FC<
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(getRenderPixelRatio());
     container.appendChild(renderer.domElement);
 
     // Optional bloom composer
@@ -553,7 +554,12 @@ const ShortestPathLabBackground: React.FC<
 
     animationRef.current = requestAnimationFrame(render);
 
-    const handleResize = () => {
+    // Applied at most once per frame — a phone's URL bar fires resize
+    // repeatedly over a single flick, and each raw call reallocates the
+    // drawing buffer (and the bloom pass's render targets) mid-scroll.
+    let resizeFrame: number | null = null;
+    const applyResize = () => {
+      resizeFrame = null;
       renderer.setSize(window.innerWidth, window.innerHeight);
       // Line2 widths are in screen space, so the materials need to know how
       // big the screen is or the edges scale wrong after a resize.
@@ -562,11 +568,17 @@ const ShortestPathLabBackground: React.FC<
         composer.setSize(window.innerWidth, window.innerHeight);
       }
     };
+    const handleResize = () => {
+      if (resizeFrame === null) {
+        resizeFrame = requestAnimationFrame(applyResize);
+      }
+    };
     window.addEventListener('resize', handleResize);
 
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', handleResize);
+      if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
       edgeLines.forEach(l => l.geometry.dispose());
       baseEdgeMaterial.dispose();
       exploreEdgeMaterial.dispose();

@@ -5,6 +5,7 @@ import { useSettingsPanel } from '../SettingsPanelContext';
 import BackgroundControls from './BackgroundControls';
 import MobileInteractivity from './MobileInteractivity';
 import { useIsMobileViewport } from './core/useIsMobileViewport';
+import { usePrefersReducedMotion } from './core/usePrefersReducedMotion';
 
 interface BackgroundManagerProps {
   className?: string;
@@ -112,6 +113,14 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
   const fadeDurationMs = siteConfig.animatedBackgrounds?.fadeDurationMs ?? 1200;
   const cycleEnabled = siteConfig.animatedBackgrounds?.cycleEnabled ?? true;
 
+  // Someone who asked the OS for less motion should not get a fullscreen
+  // fade-to-black and a fresh WebGL scene every twelve seconds. The current
+  // background still runs; it just stays. Read through the hook rather than
+  // sampled inside the cycling effect, so that toggling the preference
+  // mid-session starts or stops the cycle instead of waiting for some
+  // unrelated dependency to change.
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   const fadeInTimeoutRef = useRef<number | null>(null);
   const playTimeoutRef = useRef<number | null>(null);
   const fadeOutTimeoutRef = useRef<number | null>(null);
@@ -139,6 +148,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
       state.showSettingsPanel ||
       state.closingSettingsPanel ||
       cyclePaused ||
+      prefersReducedMotion ||
       !cycleEnabled
     ) {
       clearTimers();
@@ -197,6 +207,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     state.showSettingsPanel,
     state.closingSettingsPanel,
     cyclePaused,
+    prefersReducedMotion,
   ]);
 
   // When the settings panel fully closes, resume cycle from visible phase

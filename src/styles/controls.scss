@@ -122,7 +122,7 @@
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  transition: all var(--transition-fast);
+  @include control-transition(var(--transition-fast));
 
   // One highlight for both routes in: the pointer and the arrow keys set the
   // same active index, so hover and keyboard cannot disagree about which item
@@ -230,7 +230,7 @@
     // sections and runs past a phone's field, and a clean elision reads as a
     // sentence continuing rather than as a word cut in half.
     text-overflow: ellipsis;
-    transition: all var(--transition-fast);
+    @include control-transition(var(--transition-fast));
 
     // Focus is a state of a text field rather than a result, so it says so
     // with a brighter hairline — matching the chips in the row above rather

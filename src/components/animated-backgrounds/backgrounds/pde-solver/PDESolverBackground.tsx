@@ -7,6 +7,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { PDESolverSettings } from './config';
 import { createInitialState, stepPDESolver, index } from './pde-solver';
@@ -92,7 +93,7 @@ const PDESolverBackground: React.FC<
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(getRenderPixelRatio());
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -166,8 +167,12 @@ const PDESolverBackground: React.FC<
 
     animate();
 
-    // Handle window resize
-    const handleResize = () => {
+    // Handle window resize, at most once per frame — a phone's URL bar fires
+    // resize repeatedly over a single flick, and each raw call reallocates the
+    // drawing buffer mid-scroll.
+    let resizeFrame: number | null = null;
+    const applyResize = () => {
+      resizeFrame = null;
       if (cameraRef.current && rendererRef.current) {
         const { innerWidth, innerHeight } = window;
         cameraRef.current.aspect = innerWidth / innerHeight;
@@ -176,12 +181,20 @@ const PDESolverBackground: React.FC<
         rendererRef.current.setSize(innerWidth, innerHeight);
       }
     };
+    const handleResize = () => {
+      if (resizeFrame === null) {
+        resizeFrame = requestAnimationFrame(applyResize);
+      }
+    };
 
     window.addEventListener('resize', handleResize);
 
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (resizeFrame !== null) {
+        cancelAnimationFrame(resizeFrame);
+      }
 
       if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);

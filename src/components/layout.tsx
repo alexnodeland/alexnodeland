@@ -506,6 +506,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       if (o === last) return;
       last = o;
       panel.style.setProperty('--veil-strength', String(o));
+      // At rest the veil is invisible but its backdrop blur was still a live
+      // filter surface the compositor had to keep resolving — over a canvas
+      // that repaints every frame. The class lets the stylesheet take the
+      // whole layer out (visibility) whenever there is nothing to veil.
+      panel.classList.toggle('veil-live', o > 0);
     };
     const onScroll = () => {
       if (frame) return;
@@ -521,6 +526,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       panel.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
       syncVeilRef.current = null;
+      panel.classList.remove('veil-live');
     };
   }, []);
 
@@ -529,15 +535,31 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   // sidebars, whose height must match the window's at all times. A
   // ResizeObserver catches every cause of movement (collapse, hero swap,
   // viewport resize), since each one changes the flex-sized panel's height.
-  React.useEffect(() => {
+  //
+  // Published only while a sidebar exists to read it. The property lives on
+  // the document root — the sidebars render in other subtrees — so each write
+  // invalidates style for the whole document, and the collapse moves this
+  // edge on every scroll frame; running the publisher permanently taxed every
+  // scroll on every page for two panels that are usually closed. A layout
+  // effect, so the value is in place before a freshly opened panel's first
+  // paint.
+  const sidebarVisible =
+    isSettingsPanelOpen ||
+    isClosingSettingsPanel ||
+    isChatPanelOpen ||
+    isClosingChatPanel;
+  React.useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
     const panel = windowRef.current;
-    if (!panel) return;
+    if (!panel || !sidebarVisible) return;
     let frame = 0;
+    let last = '';
     const publish = () => {
       frame = 0;
-      const top = Math.round(panel.getBoundingClientRect().top);
-      document.documentElement.style.setProperty('--window-top', `${top}px`);
+      const top = `${Math.round(panel.getBoundingClientRect().top)}px`;
+      if (top === last) return;
+      last = top;
+      document.documentElement.style.setProperty('--window-top', top);
     };
     const request = () => {
       if (frame) return;
@@ -553,7 +575,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       if (frame) window.cancelAnimationFrame(frame);
       document.documentElement.style.removeProperty('--window-top');
     };
-  }, []);
+  }, [sidebarVisible]);
 
   // The collapse choreography needs real widths: at full collapse the title
   // parks on the left edge and the tagline on the right, each travelling half
@@ -566,6 +588,12 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     const el = heroRef.current;
     if (!shouldCollapse || !el) return;
 
+    // The observer fires on every frame of the hero's height ease (the region
+    // is the thing being resized), but the widths the split depends on only
+    // change when the text or the column does — so identical readings are
+    // dropped before they turn into style writes, which would otherwise
+    // invalidate the hero's subtree once per animation frame.
+    let lastKey = '';
     const measure = () => {
       const h1 = el.querySelector('h1');
       const sub = el.querySelector('p');
@@ -577,21 +605,22 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
       const width = container.clientWidth;
       const subWidth = sub.offsetWidth;
-      el.style.setProperty(
-        '--title-shift',
-        `${(width - h1.offsetWidth) / 2}px`
-      );
-      el.style.setProperty('--sub-shift', `${(width - subWidth) / 2}px`);
-      el.style.setProperty(
-        '--row-lift',
-        `${(h1.offsetHeight + sub.offsetHeight) / 2}px`
-      );
+      const titleShift = (width - h1.offsetWidth) / 2;
+      const subShift = (width - subWidth) / 2;
+      const rowLift = (h1.offsetHeight + sub.offsetHeight) / 2;
       // Whether the tagline actually fits beside the shrunken title. Most of
       // them do, and this is 1; the projects tagline is nearly the full column
       // wide, so it scales down — pinned to its right edge — by exactly the
       // amount it overruns rather than colliding with the title.
       const room = width - h1.offsetWidth * TITLE_SCALE - COLLAPSED_GAP;
       const scale = subWidth > 0 ? Math.min(1, room / subWidth) : 1;
+
+      const key = `${titleShift}|${subShift}|${rowLift}|${scale}`;
+      if (key === lastKey) return;
+      lastKey = key;
+      el.style.setProperty('--title-shift', `${titleShift}px`);
+      el.style.setProperty('--sub-shift', `${subShift}px`);
+      el.style.setProperty('--row-lift', `${rowLift}px`);
       el.style.setProperty('--sub-scale', String(scale));
     };
 

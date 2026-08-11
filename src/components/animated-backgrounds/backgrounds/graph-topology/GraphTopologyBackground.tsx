@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { GraphTopologySettings } from './config';
 
@@ -204,7 +205,7 @@ const GraphTopologyBackground: React.FC<
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(getRenderPixelRatio());
     container.appendChild(renderer.domElement);
 
     // Animation Speed is a master multiplier over this background's own rates:
@@ -851,16 +852,27 @@ const GraphTopologyBackground: React.FC<
 
     animationRef.current = requestAnimationFrame(renderFrame);
 
-    const handleResize = () => {
+    // Applied at most once per frame — a phone's URL bar fires resize
+    // repeatedly over a single flick, and each raw call reallocates the
+    // drawing buffer mid-scroll.
+    let resizeFrame: number | null = null;
+    const applyResize = () => {
+      resizeFrame = null;
       renderer.setSize(window.innerWidth, window.innerHeight);
       // Line2 widths are screen-space, so the materials need the viewport size.
       lineResolution.set(window.innerWidth, window.innerHeight);
+    };
+    const handleResize = () => {
+      if (resizeFrame === null) {
+        resizeFrame = requestAnimationFrame(applyResize);
+      }
     };
     window.addEventListener('resize', handleResize);
 
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', handleResize);
+      if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
       // Cleanup
       edgeSegments.forEach(l => {
         l.geometry?.dispose?.();

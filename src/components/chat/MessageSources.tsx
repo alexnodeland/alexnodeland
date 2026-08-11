@@ -48,7 +48,9 @@ const MessageSources: React.FC<MessageSourcesProps> = ({ sources }) => {
       if (e.key === 'Escape') setOpen(false);
     };
     document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('touchstart', onPointerDown);
+    // Passive: the handler never prevents the default, and a non-passive
+    // document-level touchstart makes every scroll gesture wait on it.
+    document.addEventListener('touchstart', onPointerDown, { passive: true });
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('mousedown', onPointerDown);

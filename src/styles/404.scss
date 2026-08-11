@@ -35,7 +35,7 @@
   color: var(--text-primary);
   text-decoration: none;
   border-radius: var(--radius-lg);
-  transition: all var(--transition-normal);
+  @include control-transition(var(--transition-normal));
   box-shadow: var(--shadow-md);
 
   &:hover {

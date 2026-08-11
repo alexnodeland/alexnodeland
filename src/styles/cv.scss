@@ -333,7 +333,7 @@ section[id] {
     color: var(--text-secondary);
     font-size: 0.7rem;
     line-height: 1;
-    transition: all var(--transition-normal);
+    @include control-transition(var(--transition-normal));
   }
 }
 
@@ -747,7 +747,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   font-size: 0.925rem;
   @include outline-block;
   color: var(--text-secondary);
-  transition: all var(--transition-normal);
+  @include control-transition(var(--transition-normal));
   cursor: default;
 
   // A label the pointer cannot do anything with does not jump when the
@@ -786,7 +786,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
       padding: 1rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       cursor: pointer;
-      transition: all var(--transition-fast);
+      @include control-transition(var(--transition-fast));
 
       &:last-child {
         border-bottom: none;
@@ -938,7 +938,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     padding: 0.5rem 1rem;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all var(--transition-normal);
+    @include control-transition(var(--transition-normal));
 
     &:hover {
       background: rgba(255, 255, 255, 0.06);

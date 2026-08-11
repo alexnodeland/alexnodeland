@@ -26,7 +26,13 @@
   // the field is interactive — the simulations respond to the pointer. Only
   // the three real children take clicks; the gaps between them pass through.
   pointer-events: none;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  // Only what the panel choreography actually moves: the side offsets on a
+  // desktop, the dim on a phone. `all` here also armed top/bottom and every
+  // inherited property, and made each state flip a full style diff.
+  transition:
+    left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    right 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   > * {
     pointer-events: auto;
@@ -55,12 +61,10 @@
   // snap back once the closing class dropped.
   &.settings-panel-closing {
     left: var(--window-side);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   &.chat-panel-closing {
     right: var(--window-side);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   // Handle mixed states - one opening, one closing
@@ -245,6 +249,16 @@
       --collapsed-title-scale: 0.44;
     }
 
+    // No easing between scroll samples on a phone. Touch scroll delivers a
+    // continuous stream of positions, so there are no wheel-notch jumps for a
+    // 120ms tail to smooth over — what the tail actually did here was keep
+    // padding, margin and max-height animating (and the flex window
+    // relayouting, and its backdrop blur re-resolving) for 120ms after every
+    // single scroll frame. Tracking the finger exactly is both the cheaper
+    // frame and the more responsive one. The desktop rules below keep their
+    // easing; a mouse wheel steps.
+    transition: none;
+
     h1 {
       // Right-to-left: scale first (about the left edge, so --title-shift
       // stays honest at any scale), then the unscaled rise and slide. The
@@ -272,15 +286,13 @@
         var(--space-3) * (1 - var(--hero-collapse)) - 1.15em *
           var(--hero-collapse)
       );
-      transition:
-        transform 120ms linear,
-        margin-bottom 120ms linear;
+      transition: none;
     }
 
     // The tail goes with the tagline; the anchor keeps its ink the whole way.
     .hero-crumb-rest {
       opacity: calc(1 - var(--hero-collapse));
-      transition: opacity 120ms linear;
+      transition: none;
     }
 
     p {
@@ -288,10 +300,7 @@
       max-height: calc(6rem * (1 - var(--hero-collapse)));
       overflow: hidden;
       transform: translateY(calc(-0.5rem * var(--hero-collapse)));
-      transition:
-        opacity 120ms linear,
-        max-height 120ms linear,
-        transform 120ms linear;
+      transition: none;
     }
   }
 
@@ -330,6 +339,11 @@
     // fades in over the first ~90px of scroll (Layout publishes the value).
     opacity: var(--veil-strength, 0);
     transition: opacity 80ms linear;
+    // Fully invisible is fully off. An opacity-0 backdrop filter is still a
+    // live filter surface — over a canvas that repaints every frame, the
+    // compositor kept resolving an 18px blur nobody could see. The shell
+    // marks the window `veil-live` the moment there is any scroll to veil.
+    visibility: hidden;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px); // Safari 17 and earlier
     // Near-opaque at the very edge — content genuinely disappears under the
@@ -388,6 +402,12 @@
       );
     }
   }
+}
+
+// Anything scrolled under the veil: the blur layer comes back for exactly as
+// long as --veil-strength is above zero.
+.veil-live .window-veil::before {
+  visibility: visible;
 }
 
 // The content window — the scrolling panel the page lives in. It no longer
@@ -465,7 +485,11 @@
   justify-content: flex-end;
   align-items: center;
   flex-wrap: nowrap;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  // Right for the phone offset change, opacity for the phone dim — the two
+  // things the capsule's panel states actually touch.
+  transition:
+    right 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   // The capsule does not dodge. It used to slide inward by the sidebar's width
   // whenever the chat opened, which put the one fixed landmark on the field in
@@ -596,7 +620,7 @@
   color: var(--text-secondary);
   text-decoration: none;
   border-radius: var(--radius-md);
-  transition: all var(--transition-normal);
+  @include control-transition(var(--transition-normal));
   position: relative;
   overflow: hidden;
 
@@ -613,7 +637,7 @@
     display: inline-flex;
     width: 1.25rem;
     height: 1.25rem;
-    transition: all var(--transition-normal);
+    @include control-transition(var(--transition-normal));
 
     svg {
       width: 100%;

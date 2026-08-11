@@ -68,6 +68,20 @@ const MobileInteractivity: React.FC = () => {
     }
   }, [isMobile, isContentHidden, setContentHidden]);
 
+  // On this width the settings sheet belongs to explore mode — the sheet
+  // claims the lower half of the screen so the background above it can be
+  // watched, not the page. But the open flag persists in localStorage and
+  // explore mode does not, so a sheet left open on a desktop can restore on
+  // a phone with the page content still mounted behind it, dimmed by the
+  // stage's generic panel fallback instead of hidden. Arriving in that state
+  // adopts it into explore, exactly as if the sheet had been opened here.
+  useEffect(() => {
+    if (isMobile && settingsOpen && !isContentHidden) {
+      enteredHereRef.current = true;
+      setContentHidden(true);
+    }
+  }, [isMobile, settingsOpen, isContentHidden, setContentHidden]);
+
   // The "tap to hide" nudge is only useful the first moment of a session in
   // explore mode; retire it so the chrome settles into just the controls.
   useEffect(() => {

@@ -1,8 +1,10 @@
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -50,7 +52,10 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
     const restore = (key: string, apply: (open: boolean) => void) => {
       try {
         const saved = localStorage.getItem(key);
-        if (saved !== null) apply(saved === 'true');
+        // Loose on purpose: a spec-compliant store answers null for a missing
+        // key, but stubbed stores (tests, privacy shims) answer undefined,
+        // and either one means "nothing saved" — not "saved: closed".
+        if (saved != null) apply(saved === 'true');
       } catch (error) {
         console.warn(`Failed to load ${key} from localStorage:`, error);
       }
@@ -91,41 +96,59 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
     }
   }, [isChatPanelOpen, hydrated]);
 
-  const setSettingsPanelOpen = (isOpen: boolean) => {
+  // Stable setter identities and a memoized value: half the site consumes
+  // this context (the shell, both panels, the background manager), and every
+  // panel toggle re-renders them all — handing out fresh setter functions on
+  // top of that defeated every downstream memo and effect dep list.
+  const setSettingsPanelOpen = useCallback((isOpen: boolean) => {
     setIsSettingsPanelOpen(isOpen);
-  };
+  }, []);
 
-  const setClosingSettingsPanel = (isClosing: boolean) => {
+  const setClosingSettingsPanel = useCallback((isClosing: boolean) => {
     setIsClosingSettingsPanel(isClosing);
-  };
+  }, []);
 
-  const setChatPanelOpen = (isOpen: boolean) => {
+  const setChatPanelOpen = useCallback((isOpen: boolean) => {
     setIsChatPanelOpen(isOpen);
-  };
+  }, []);
 
-  const setClosingChatPanel = (isClosing: boolean) => {
+  const setClosingChatPanel = useCallback((isClosing: boolean) => {
     setIsClosingChatPanel(isClosing);
-  };
+  }, []);
 
-  const setContentHidden = (isHidden: boolean) => {
+  const setContentHidden = useCallback((isHidden: boolean) => {
     setIsContentHidden(isHidden);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      isSettingsPanelOpen,
+      isClosingSettingsPanel,
+      isChatPanelOpen,
+      isClosingChatPanel,
+      isContentHidden,
+      setSettingsPanelOpen,
+      setClosingSettingsPanel,
+      setChatPanelOpen,
+      setClosingChatPanel,
+      setContentHidden,
+    }),
+    [
+      isSettingsPanelOpen,
+      isClosingSettingsPanel,
+      isChatPanelOpen,
+      isClosingChatPanel,
+      isContentHidden,
+      setSettingsPanelOpen,
+      setClosingSettingsPanel,
+      setChatPanelOpen,
+      setClosingChatPanel,
+      setContentHidden,
+    ]
+  );
 
   return (
-    <SettingsPanelContext.Provider
-      value={{
-        isSettingsPanelOpen,
-        isClosingSettingsPanel,
-        isChatPanelOpen,
-        isClosingChatPanel,
-        isContentHidden,
-        setSettingsPanelOpen,
-        setClosingSettingsPanel,
-        setChatPanelOpen,
-        setClosingChatPanel,
-        setContentHidden,
-      }}
-    >
+    <SettingsPanelContext.Provider value={value}>
       {children}
     </SettingsPanelContext.Provider>
   );

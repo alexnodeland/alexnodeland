@@ -46,7 +46,6 @@ body {
     );
   background-attachment: fixed;
   min-height: 100vh;
-  transition: background var(--transition-slow);
   position: relative;
 
   // Reduce opacity of grid texture to let Three.js background shine through
@@ -196,5 +195,36 @@ img {
 @media (max-width: 768px) {
   .container {
     padding: 0 0.5rem;
+  }
+}
+
+/* Reduced motion, stated once for the chrome that moves. The hero transition
+   already checks the preference in the shell (layout.tsx), and the collapse
+   easing opts out in layout.scss; this covers the rest — the panel slides, the
+   stage shift, and the decorative infinite loops. Panels still open and close;
+   they simply appear in place. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .stage,
+  .nav,
+  .background-controls {
+    transition: none;
+  }
+
+  .chat-sidebar,
+  .settings-sidebar,
+  .chat-icon-container,
+  .background-controls {
+    animation: none !important;
+  }
+
+  .animate-glow,
+  .animate-bounce,
+  .animate-pulse,
+  .animate-rotate {
+    animation: none;
   }
 }
