@@ -11,30 +11,29 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+# Nothing here comments on PRs or writes checks — reading the repo is the
+# whole job.
 permissions:
   contents: read
-  pull-requests: write
-  checks: write
 
 jobs:
   test:
     name: Run Tests
-    # Runs on all pushes and PRs
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    strategy:
-      matrix:
-        node-version: ['18.x', '20.x', '22.x']
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      # One version, the active LTS, matching the deploy workflow. This is a
+      # site shipped from a single runtime, not a library supporting a range —
+      # the old 18/20/22 matrix tripled every run to test platforms nothing
+      # deploys on (and 18 and 20 are both past end-of-life).
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -46,17 +45,13 @@ jobs:
       - name: Run linter
         run: npm run lint
 
-      - name: Run unit tests with coverage
+      # `jest --coverage` runs every suite in the repo — unit today, and any
+      # integration directory the moment it returns — so there is no separate
+      # integration step to keep alive or double-run.
+      - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Run integration tests
-        # The last integration suite left with the light-mode removal
-        # (d734d64); the step stays for when the directory returns, but an
-        # empty match is not a failure.
-        run: npm run test:integration -- --passWithNoTests
-
       - name: Upload coverage reports to Codecov
-        if: matrix.node-version == '22.x'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

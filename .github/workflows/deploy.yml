@@ -1,7 +1,3 @@
-# Sample workflow for building and deploying a Gatsby site to GitHub Pages
-#
-# To get started with Gatsby see: https://www.gatsbyjs.com/docs/quick-start/
-#
 name: Deploy Gatsby site to Pages
 
 on:
@@ -24,7 +20,6 @@ concurrency:
   group: 'pages'
   cancel-in-progress: false
 
-# Default to bash
 defaults:
   run:
     shell: bash
@@ -33,31 +28,18 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Detect package manager
-        id: detect-package-manager
-        run: |
-          if [ -f "${{ github.workspace }}/yarn.lock" ]; then
-            echo "manager=yarn" >> $GITHUB_OUTPUT
-            echo "command=install" >> $GITHUB_OUTPUT
-            exit 0
-          elif [ -f "${{ github.workspace }}/package.json" ]; then
-            echo "manager=npm" >> $GITHUB_OUTPUT
-            echo "command=ci" >> $GITHUB_OUTPUT
-            exit 0
-          else
-            echo "Unable to determine package manager"
-            exit 1
-          fi
-
+      # npm, plainly — package-lock.json is committed. The sample workflow's
+      # yarn-detection dance guarded a choice this repo made long ago.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: ${{ steps.detect-package-manager.outputs.manager }}
+          node-version: '22'
+          cache: npm
 
       - name: Setup Pages
         id: pages
@@ -80,15 +62,28 @@ jobs:
             ${{ runner.os }}-gatsby-build-
 
       - name: Install dependencies
-        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+        run: npm ci
 
-      # `npm run build` runs scripts/build-cv.js, which typesets the CV PDFs
-      # into static/cv/ before Gatsby copies static/ into the bundle. These
-      # three packages cover what templates/cv/resume.tex.js uses (geometry,
+      # The typeset CV PDFs, keyed on exactly their inputs. On a hit the
+      # LaTeX toolchain is never installed: scripts/build-cv.js warns that
+      # pdflatex is missing and exits 0, leaving these cached PDFs in
+      # static/cv for Gatsby to ship — installing TeX Live was the longest
+      # step in the build, spent re-typesetting an unchanged CV. No
+      # restore-keys on purpose: a partial match would silently ship stale
+      # PDFs, so anything short of exact rebuilds them.
+      - name: Restore CV PDFs
+        id: cv-pdfs
+        uses: actions/cache@v4
+        with:
+          path: static/cv
+          key: ${{ runner.os }}-cv-pdfs-${{ hashFiles('src/config/cv.ts', 'templates/cv/**', 'scripts/build-cv.js') }}
+
+      # These packages cover what templates/cv/resume.tex.js uses (geometry,
       # titlesec, enumitem, hyperref, xcolor, microtype, charter) without
       # pulling the whole of TeX Live. Without them the build still succeeds,
       # but /cv/*.pdf ships as a 404.
       - name: Install LaTeX
+        if: steps.cv-pdfs.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -98,7 +93,7 @@ jobs:
             texlive-fonts-recommended
 
       - name: Build with Gatsby
-        run: ${{ steps.detect-package-manager.outputs.manager }} run build
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -111,6 +106,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     steps:
       - name: Deploy to GitHub Pages
