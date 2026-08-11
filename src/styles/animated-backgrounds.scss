@@ -18,8 +18,10 @@
 // Background controls container (bottom-left)
 .background-controls {
   position: fixed;
-  bottom: 2rem;
-  left: 2rem;
+  // The rail's own offsets — this is the left end of the same row of floating
+  // controls the chat pill closes on the right.
+  bottom: var(--rail-inset-bottom);
+  left: var(--rail-inset-left);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -831,15 +833,14 @@
 
 @media (max-width: 768px) {
   .background-controls {
-    bottom: 1rem;
-    left: 1rem;
+    // The offsets follow --rail-inset, which narrows in the token layer here.
 
     // On mobile, don't reposition - just dim background controls when any panel is open
     &.settings-panel-open,
     &.settings-panel-closing,
     &.chat-panel-open,
     &.chat-panel-closing {
-      left: 1rem;
+      left: var(--rail-inset-left);
       right: auto;
       transform: translateX(0);
       opacity: 0.3;
