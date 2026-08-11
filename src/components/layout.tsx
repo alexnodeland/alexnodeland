@@ -703,7 +703,13 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                   </div>
                   <p className="footer-copyright">
                     © {new Date().getFullYear()} all rights reserved,{' '}
-                    {siteConfig.author.toLowerCase()}
+                    {/* The line runs to two on the narrowest phones, and the
+                        only break it must not take is the one inside the name
+                        — "alex" left on one line and "nodeland" on the next
+                        reads as two people. */}
+                    <span className="footer-copyright-name">
+                      {siteConfig.author.toLowerCase()}
+                    </span>
                   </p>
                 </div>
               </footer>
