@@ -232,13 +232,13 @@ describe('Layout Component', () => {
   });
 
   it('should render copyright notice in footer', () => {
-    render(<TestWrapper>{mockChildren}</TestWrapper>);
+    const { container } = render(<TestWrapper>{mockChildren}</TestWrapper>);
 
-    expect(
-      screen.getByText(
-        `© ${new Date().getFullYear()} all rights reserved, test author`
-      )
-    ).toBeInTheDocument();
+    // Read as one line rather than one text node: the name is wrapped in its
+    // own element so a narrow phone cannot break it across two lines.
+    expect(container.querySelector('.footer-copyright')).toHaveTextContent(
+      `© ${new Date().getFullYear()} all rights reserved, test author`
+    );
   });
 
   it('should have proper HTML structure', () => {
