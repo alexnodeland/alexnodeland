@@ -185,11 +185,14 @@
   }
 
   // Nothing to clear is not an error, so it recedes rather than greys out
-  // hard: the chip keeps its frosting and drops its contrast.
+  // hard — but only its ink recedes. Whole-element opacity thinned the
+  // frosting with the label, and content scrolling under the chip read
+  // straight through its body; the housing stays solid, the text and
+  // hairline drop contrast instead.
   &:disabled {
-    opacity: 0.4;
     cursor: not-allowed;
-    color: var(--text-muted);
+    color: rgba(128, 128, 128, 0.55); // --text-muted, receded further
+    border-color: rgba(255, 255, 255, 0.08);
   }
 }
 

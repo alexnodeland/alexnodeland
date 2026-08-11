@@ -300,6 +300,33 @@
       black 40%,
       transparent 96%
     );
+
+    // The chip row is taller on a phone (the thumb padding in controls.scss),
+    // and at 88px the veil's solid zone ran out while the chips were still
+    // overhead — full-strength text surfaced directly beneath them. The band
+    // deepens and holds solid past the row, so content dissolves before it
+    // ever reaches the chips.
+    @media (max-width: 768px) {
+      height: 140px;
+      background: linear-gradient(
+        to bottom,
+        rgba(7, 8, 10, 0.94) 0%,
+        rgba(7, 8, 10, 0.82) 50%,
+        rgba(7, 8, 10, 0) 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        black 0%,
+        black 55%,
+        transparent 96%
+      );
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        black 0%,
+        black 55%,
+        transparent 96%
+      );
+    }
   }
 }
 
@@ -345,13 +372,17 @@
     opacity: 0.3; // Dim instead of resize
   }
 
+  // The capsule's own phone offset is set below, after the base .nav rule —
+  // put here it would lose to the base declaration, which is the trap this
+  // file keeps falling into (see the note on .chat-sidebar in chat.scss).
+
   // The capsule dims with the rest of the page rather than dodging: at this
   // width the panels are full-bleed and there is nowhere to dodge to.
   .nav.settings-panel-open,
   .nav.settings-panel-closing,
   .nav.chat-panel-open,
   .nav.chat-panel-closing {
-    right: var(--rail-inset);
+    right: var(--window-side);
     opacity: 0.3;
   }
 }
@@ -366,8 +397,8 @@
 // two would drift apart.
 .nav {
   position: fixed;
-  top: var(--rail-inset);
-  right: var(--rail-inset);
+  top: var(--rail-inset-top);
+  right: var(--rail-inset-right);
   // Above the window (1000) and below the sidebars (1002).
   z-index: 1001;
   display: flex;
@@ -555,12 +586,38 @@
   text-transform: lowercase;
 }
 
-@media (max-width: 768px) {
-  // The rail's own offsets narrow in the token layer; everything that clears
-  // it follows from --rail-clearance, so there is nothing to restate here.
+// The name travels as one word. The line has room to spare at every width
+// above a 320px phone, and takes the break before the name rather than inside
+// it below that.
+.footer-copyright-name {
+  white-space: nowrap;
+}
 
+@media (max-width: 768px) {
+  // The rail's vertical offsets narrow in the token layer; everything that
+  // clears it follows from --rail-clearance, so there is nothing to restate.
+  //
+  // Its right edge is another matter. On a phone the two launchers along the
+  // bottom sit flush with the window's own left and right edges rather than
+  // the viewport rail's (see chat.scss and mobile-interactivity.scss): the
+  // window is nearly the whole screen at this width, and a control held
+  // further in than the frame it belongs to reads as adrift. The capsule is
+  // the top of that same rail and takes the same edge. This has to sit after
+  // the base .nav rule — a media query adds no specificity, so declared above
+  // it, it would simply lose.
+  .nav {
+    right: var(--window-side);
+  }
+
+  // The capsule keeps the rail's height here, exactly as it does on a desktop:
+  // --rail-height goes to 3rem at this width for the chat disc, and a capsule
+  // that stayed at its old 2.6rem left the two ends of the rail sitting on
+  // different lines. The vertical padding is what makes up the difference —
+  // 0.5625rem around a 1.25rem line, inside 0.25rem of housing and a hairline,
+  // is 3rem — and it buys the links a thumb-sized row on the way. Only the
+  // horizontal padding tightens as the screen narrows, below.
   .nav-link {
-    padding: 0.35rem 0.7rem;
+    padding: 0.5625rem 0.7rem;
   }
 
   .site-hero {
@@ -594,12 +651,11 @@
 }
 
 @media (max-width: 480px) {
-  .nav-menu {
-    padding: 0.2rem;
-  }
-
+  // The housing keeps --rail-housing-pad: shaving it here would pull the
+  // capsule off the rail's height again. What gives is the room either side of
+  // a word, which is the only part a narrow screen is actually short of.
   .nav-link {
-    padding: 0.3rem 0.55rem;
+    padding-inline: 0.55rem;
   }
 
   .site-hero {
@@ -635,6 +691,6 @@
 // padding against ~270px of column, so it still holds one row.
 @media (max-width: 380px) {
   .nav-link {
-    padding: 0.3rem 0.45rem;
+    padding-inline: 0.45rem;
   }
 }
