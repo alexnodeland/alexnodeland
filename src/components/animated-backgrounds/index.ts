@@ -11,13 +11,10 @@ export { simpleWaveConfig } from './backgrounds/simple-waves/config';
 export { spectrogramOscilloscopeConfig } from './backgrounds/spectrogram-oscilloscope/config';
 export { pdeSolverConfig } from './backgrounds/pde-solver/config';
 
-// Background components
-export { default as CellularAutomatonBackground } from './backgrounds/cellular-automaton/CellularAutomatonBackground';
-export { default as GraphTopologyBackground } from './backgrounds/graph-topology/GraphTopologyBackground';
-export { default as ShortestPathLabBackground } from './backgrounds/shortest-path-lab/ShortestPathLabBackground';
-export { default as SimpleWaveBackground } from './backgrounds/simple-waves/SimpleWaveBackground';
-export { default as SpectrogramOscilloscopeBackground } from './backgrounds/spectrogram-oscilloscope/SpectrogramOscilloscopeBackground';
-export { default as PDESolverBackground } from './backgrounds/pde-solver/PDESolverBackground';
+// No component re-exports: the simulations are reached lazily through their
+// configs (see each config.ts), and a static export here would haul all six —
+// and three.js — back into whatever bundle imports this barrel. Tests import
+// components from their own files.
 
 // Management components
 export { default as BackgroundControls } from './BackgroundControls';

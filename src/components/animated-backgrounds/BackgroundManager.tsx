@@ -225,17 +225,22 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     };
   }, [state.currentBackgroundId, setAudioControls]);
 
-  // Render current background
+  // Render current background. The components are React.lazy (see each
+  // background's config.ts) so the simulations — and three.js — stay out of
+  // the page bundles; the null fallback is invisible because a background
+  // fades in from the black overlay anyway.
   const renderCurrentBackground = () => {
     if (!currentBackground) return null;
 
     const BackgroundComponent = currentBackground.component;
     return (
-      <BackgroundComponent
-        className={className}
-        settings={currentSettings}
-        onAudioControlsReady={publishAudioControls}
-      />
+      <React.Suspense fallback={null}>
+        <BackgroundComponent
+          className={className}
+          settings={currentSettings}
+          onAudioControlsReady={publishAudioControls}
+        />
+      </React.Suspense>
     );
   };
 
