@@ -229,26 +229,58 @@
   }
 
   // Phones have no room for the two side by side, so below the split's
-  // breakpoint the tagline does what it always did: it fades and closes its
-  // own height, and the window's top edge rises with it.
+  // breakpoint the hero linearizes into the navigator's own row instead: the
+  // title slides to the left edge, shrinks to the rail's scale, and rises
+  // until it sits on the nav capsule's line — "alex" on the left answering
+  // the page picker on the right. The crumb's tail ("→ blog") fades out with
+  // the tagline; the green brand is the whole collapsed header.
   @media (max-width: 768px) {
-    // The title shrinks in place as it collapses — the sideways travel is the
-    // split's, but a display-size name floating over a phone's window read as
-    // a headline that refused to leave. Centred origin, so it stays a header
-    // row under the nav rather than drifting toward either edge.
+    // How far the title shrinks at full collapse. Half its size lands it on
+    // the rail's own scale; the narrowest phones take it further so the
+    // homepage's full name still clears the nav capsule with real air (at
+    // 320px and 0.5 the two met with a single pixel between them).
+    --collapsed-title-scale: 0.5;
+
+    @media (max-width: 360px) {
+      --collapsed-title-scale: 0.44;
+    }
+
     h1 {
-      transform: scale(calc(1 - 0.3 * var(--hero-collapse)));
-      transform-origin: center top;
-      // A transform frees no layout height, so the glyph-height the scale
-      // gives up (~0.35em at full collapse) is handed back through the
-      // margin — the window rises into it instead of a whitespace band.
+      // Right-to-left: scale first (about the left edge, so --title-shift
+      // stays honest at any scale), then the unscaled rise and slide. The
+      // rise re-centres the line on the nav capsule: from a top padded to
+      // --rail-clearance that is half the rail, the clearance gap, and half
+      // the line's own height (~1.15em; the scale is about the centre, so
+      // the centre is what travels).
+      transform: translateX(
+          calc(-1 * var(--hero-collapse) * var(--title-shift, 0px))
+        )
+        translateY(
+          calc(
+            -1 * var(--hero-collapse) *
+              (var(--rail-height) / 2 + var(--space-2) + 0.575em)
+          )
+        )
+        scale(
+          calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse))
+        );
+      transform-origin: left center;
+      // The title leaves its band entirely, so the whole line-height is
+      // handed back through the margin and the window rises to just under
+      // the rail.
       margin-bottom: calc(
-        var(--space-3) * (1 - var(--hero-collapse)) - 0.35em *
+        var(--space-3) * (1 - var(--hero-collapse)) - 1.15em *
           var(--hero-collapse)
       );
       transition:
         transform 120ms linear,
         margin-bottom 120ms linear;
+    }
+
+    // The tail goes with the tagline; the anchor keeps its ink the whole way.
+    .hero-crumb-rest {
+      opacity: calc(1 - var(--hero-collapse));
+      transition: opacity 120ms linear;
     }
 
     p {
@@ -269,7 +301,8 @@
   @media (prefers-reduced-motion: reduce) {
     &,
     h1,
-    p {
+    p,
+    .hero-crumb-rest {
       transition: none;
     }
   }
