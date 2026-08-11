@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { SimpleWaveSettings } from './config';
 
@@ -26,7 +27,7 @@ const SimpleWaveBackground: React.FC<
 
     const renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(getRenderPixelRatio());
 
     container.appendChild(renderer.domElement);
 
@@ -151,14 +152,23 @@ const SimpleWaveBackground: React.FC<
 
     animate(0);
 
-    // Handle window resize
-    const handleResize = () => {
+    // Handle window resize, at most once per frame. A phone's URL bar sliding
+    // in and out fires resize repeatedly over a single flick, and each raw
+    // call reallocates the drawing buffer mid-scroll.
+    let resizeFrame: number | null = null;
+    const applyResize = () => {
+      resizeFrame = null;
       if (renderer && material.uniforms.uResolution) {
         renderer.setSize(window.innerWidth, window.innerHeight);
         material.uniforms.uResolution.value.set(
           window.innerWidth,
           window.innerHeight
         );
+      }
+    };
+    const handleResize = () => {
+      if (resizeFrame === null) {
+        resizeFrame = requestAnimationFrame(applyResize);
       }
     };
 
@@ -171,6 +181,9 @@ const SimpleWaveBackground: React.FC<
       }
 
       window.removeEventListener('resize', handleResize);
+      if (resizeFrame !== null) {
+        cancelAnimationFrame(resizeFrame);
+      }
 
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);

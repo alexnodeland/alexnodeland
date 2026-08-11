@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { SpectrogramOscilloscopeSettings } from './config';
 
@@ -287,7 +288,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(getRenderPixelRatio());
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     container.appendChild(renderer.domElement);
@@ -852,7 +853,9 @@ const SpectrogramOscilloscopeBackground: React.FC<
       mouseRef.current.y = event.clientY * pixelRatio;
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    // Passive: the handler only records coordinates for the next frame's
+    // uniform, so the browser never has to wait on it before scrolling.
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     // Web Audio API functions - now using stable callbacks
 
@@ -917,15 +920,24 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
     animate(0);
 
-    // Handle window resize
-    const handleResize = () => {
+    // Handle window resize, at most once per frame — a phone's URL bar fires
+    // resize repeatedly over a single flick, and each raw call reallocates the
+    // drawing buffer mid-scroll.
+    let resizeFrame: number | null = null;
+    const applyResize = () => {
+      resizeFrame = null;
       if (renderer && material.uniforms.uResolution) {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(getRenderPixelRatio());
         renderer.setSize(window.innerWidth, window.innerHeight);
         material.uniforms.uResolution.value.set(
           renderer.domElement.width,
           renderer.domElement.height
         );
+      }
+    };
+    const handleResize = () => {
+      if (resizeFrame === null) {
+        resizeFrame = requestAnimationFrame(applyResize);
       }
     };
 
@@ -941,6 +953,9 @@ const SpectrogramOscilloscopeBackground: React.FC<
       stableStopAudio();
 
       window.removeEventListener('resize', handleResize);
+      if (resizeFrame !== null) {
+        cancelAnimationFrame(resizeFrame);
+      }
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);

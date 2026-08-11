@@ -134,11 +134,20 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
 
   // Background cycling effect
   useEffect(() => {
+    // Someone who asked the OS for less motion should not get a fullscreen
+    // fade-to-black and a fresh WebGL scene every twelve seconds. The current
+    // background still runs; it just stays.
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     // Disable cycling when panel is open or closing
     if (
       state.showSettingsPanel ||
       state.closingSettingsPanel ||
       cyclePaused ||
+      prefersReducedMotion ||
       !cycleEnabled
     ) {
       clearTimers();

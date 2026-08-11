@@ -174,9 +174,16 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
   // Persist settings to localStorage. Guarded by `mounted` so the deterministic
   // default state written during the first render can't clobber a user's
   // persisted settings before the restore effect above has run.
+  //
+  // Debounced: this used to stringify the whole settings blob synchronously on
+  // every state change, which meant once per input event while a slider was
+  // being dragged — main-thread work billed to the exact frames the user was
+  // watching the background respond in. The write only has to happen once the
+  // dust settles.
   useEffect(() => {
     if (!mounted) return;
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+    const timer = window.setTimeout(() => {
       try {
         localStorage.setItem(
           'animatedBackgroundSettings',
@@ -188,7 +195,8 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
           error
         );
       }
-    }
+    }, 400);
+    return () => window.clearTimeout(timer);
   }, [state, mounted]);
 
   // Computed values
@@ -312,23 +320,43 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
     }
   }, [isSettingsPanelOpen, setSettingsPanelOpen, setClosingSettingsPanel]);
 
-  const contextValue: BackgroundContextType = {
-    state,
-    switchToNextBackground,
-    switchToPreviousBackground,
-    selectBackground,
-    updateCurrentSettings,
-    resetCurrentSettings,
-    toggleSettingsPanel,
-    closeSettingsPanel,
-    audioControls,
-    setAudioControls,
-    overlayOpacity,
-    setOverlayOpacity,
-    currentBackground,
-    currentSettings,
-    mounted,
-  };
+  // Memoized so a provider render doesn't hand every consumer a fresh object
+  // — the callbacks above are all stable, so this only changes when one of the
+  // actual values does.
+  const contextValue: BackgroundContextType = useMemo(
+    () => ({
+      state,
+      switchToNextBackground,
+      switchToPreviousBackground,
+      selectBackground,
+      updateCurrentSettings,
+      resetCurrentSettings,
+      toggleSettingsPanel,
+      closeSettingsPanel,
+      audioControls,
+      setAudioControls,
+      overlayOpacity,
+      setOverlayOpacity,
+      currentBackground,
+      currentSettings,
+      mounted,
+    }),
+    [
+      state,
+      switchToNextBackground,
+      switchToPreviousBackground,
+      selectBackground,
+      updateCurrentSettings,
+      resetCurrentSettings,
+      toggleSettingsPanel,
+      closeSettingsPanel,
+      audioControls,
+      overlayOpacity,
+      currentBackground,
+      currentSettings,
+      mounted,
+    ]
+  );
 
   return (
     <BackgroundContext.Provider value={contextValue}>

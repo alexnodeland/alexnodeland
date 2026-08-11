@@ -106,7 +106,11 @@ const Dropdown: React.FC<DropdownProps> = ({
       close(container.contains(document.activeElement));
     };
     document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('touchstart', handlePointerDown);
+    // Passive: the handler never prevents the default, and a non-passive
+    // document-level touchstart makes every scroll gesture wait on it.
+    document.addEventListener('touchstart', handlePointerDown, {
+      passive: true,
+    });
     return () => {
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('touchstart', handlePointerDown);

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { makeRuleTables, population, stepLife } from './automaton';
 import { CellularAutomatonSettings } from './config';
@@ -48,7 +49,7 @@ const CellularAutomatonBackground: React.FC<
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(getRenderPixelRatio());
     container.appendChild(renderer.domElement);
 
     const tables = makeRuleTables(rule);
@@ -359,7 +360,7 @@ const CellularAutomatonBackground: React.FC<
     const applyResize = () => {
       resizeFrame = null;
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(getRenderPixelRatio());
 
       // Most of those resizes are a few pixels of browser chrome and leave the
       // grid the same shape, in which case there is nothing to rebuild at all.

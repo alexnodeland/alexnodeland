@@ -55,7 +55,7 @@ $mobile-breakpoint: 768px;
   @include capsule-housing;
   color: var(--text-secondary); // The chat launcher's ink, for the same reason
   cursor: pointer;
-  transition: all var(--transition-normal);
+  @include control-transition(var(--transition-normal));
   -webkit-tap-highlight-color: transparent;
 
   // The glyph is the whole label, so it takes the text colour rather than the
@@ -226,7 +226,7 @@ $mobile-breakpoint: 768px;
   font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  @include control-transition(var(--transition-fast));
   -webkit-tap-highlight-color: transparent;
 
   &:active {

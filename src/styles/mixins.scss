@@ -1,5 +1,23 @@
 // SCSS Mixins for consistent styling patterns
 
+// The properties a control is allowed to ease, spelled out. `transition: all`
+// used to be the house habit, and it quietly promised to animate anything that
+// ever changed — including layout properties like width and padding, which
+// cannot be animated off the main thread. Every state change on this site is
+// some mix of ink, surface, hairline, elevation and a small transform, so that
+// is the whole list; a control that needs to ease anything else declares it
+// itself.
+@mixin control-transition($duration: var(--transition-fast)) {
+  transition:
+    color $duration,
+    background-color $duration,
+    border-color $duration,
+    box-shadow $duration,
+    opacity $duration,
+    filter $duration,
+    transform $duration;
+}
+
 @mixin button-base {
   display: inline-flex;
   align-items: center;
@@ -8,7 +26,7 @@
   border-radius: var(--radius-sm);
   text-decoration: none;
   font-size: 0.875rem;
-  transition: all var(--transition-normal);
+  @include control-transition(var(--transition-normal));
   border: 2px solid transparent;
   cursor: pointer;
   position: relative;
@@ -152,7 +170,7 @@
 // change hue: the card is not a link and not a state, so there is nothing for
 // a colour to say here.
 @mixin card-hover {
-  transition: all var(--transition-normal);
+  @include control-transition(var(--transition-normal));
 
   &:hover {
     transform: translateY(-2px);
@@ -241,6 +259,16 @@
   background: transparent;
   backdrop-filter: blur(calc(var(--window-blur) * 4));
   -webkit-backdrop-filter: blur(calc(var(--window-blur) * 4)); // Safari ≤17
+
+  // Half the radius on a phone. The chips sit over content that is moving —
+  // the one case a backdrop filter has to re-resolve every frame — and they
+  // share those frames with the veil above them and the window's own blur. A
+  // 10px smear still destroys a heading sliding under the chip; what it stops
+  // doing is asking a phone GPU for the desktop radius on every scroll frame.
+  @media (max-width: 768px) {
+    backdrop-filter: blur(calc(var(--window-blur) * 2));
+    -webkit-backdrop-filter: blur(calc(var(--window-blur) * 2));
+  }
   border: 1px solid var(--border-floating);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
@@ -253,7 +281,7 @@
   letter-spacing: -0.01em;
   white-space: nowrap;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  @include control-transition(var(--transition-fast));
 
   // Without a backdrop filter there is nothing at all between the label and
   // whatever passes under it, so the old scrim comes back on those engines
