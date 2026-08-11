@@ -232,6 +232,25 @@
   // breakpoint the tagline does what it always did: it fades and closes its
   // own height, and the window's top edge rises with it.
   @media (max-width: 768px) {
+    // The title shrinks in place as it collapses — the sideways travel is the
+    // split's, but a display-size name floating over a phone's window read as
+    // a headline that refused to leave. Centred origin, so it stays a header
+    // row under the nav rather than drifting toward either edge.
+    h1 {
+      transform: scale(calc(1 - 0.3 * var(--hero-collapse)));
+      transform-origin: center top;
+      // A transform frees no layout height, so the glyph-height the scale
+      // gives up (~0.35em at full collapse) is handed back through the
+      // margin — the window rises into it instead of a whitespace band.
+      margin-bottom: calc(
+        var(--space-3) * (1 - var(--hero-collapse)) - 0.35em *
+          var(--hero-collapse)
+      );
+      transition:
+        transform 120ms linear,
+        margin-bottom 120ms linear;
+    }
+
     p {
       opacity: calc(1 - var(--hero-collapse));
       max-height: calc(6rem * (1 - var(--hero-collapse)));
