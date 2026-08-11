@@ -870,15 +870,19 @@
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     border: none;
     border-top: 1px solid rgba(255, 255, 255, 0.18);
-    // Tint only, no backdrop filter. The blur+saturate here asked the phone's
-    // GPU to re-filter a full-width band of a canvas that repaints every
-    // frame, for as long as the sheet was up — which is exactly when the user
-    // is watching that canvas react to the sliders. The unobstructed upper
-    // half of the screen is where the background is actually watched; the
-    // sheet itself only owes its own labels a readable surface, and a slightly
-    // deeper tint does that alone. The slide up and down is now a pure
-    // compositor move.
-    background: rgba(8, 10, 14, 0.72);
+    // No background or backdrop-filter override: the sheet keeps the base
+    // rule's frosted glass — the same --window-scrim over blur(--window-blur)
+    // the content window and the desktop sidebar wear — so the whole kit is
+    // one material. (A 16px blur+saturate over its own tint used to live
+    // here; it was both the odd surface out and the most expensive thing a
+    // phone GPU was asked to hold.)
+    //
+    // The glass is worn only at rest: sliding a full-width backdrop filter
+    // over a canvas that repaints every frame forces the blur to be
+    // re-resolved per frame of the slide, which is exactly the 300ms the
+    // phone is also compositing the move itself. So the sheet travels as
+    // tint alone and the blur fades in once it has parked — the second
+    // animation below, keyframes further down.
     box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
     padding-bottom: env(safe-area-inset-bottom);
 
@@ -886,11 +890,18 @@
     z-index: 1003;
 
     // A sheet comes up from and goes back down to the bottom edge; the
-    // sidebar's horizontal slide reads wrong here.
-    animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    // sidebar's horizontal slide reads wrong here. The second animation is
+    // the blur arriving after the slide: `backwards` holds its filter-less
+    // first frame through the delay, so the static blur above never applies
+    // while the sheet is in motion.
+    animation:
+      slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      sheet-blur-in 220ms ease 0.3s backwards;
 
     &.closing {
       animation: slideDownToSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     // Grab-handle affordance along the top edge.
@@ -1137,6 +1148,20 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+// The sheet's frosted glass arriving after the slide (see .settings-sidebar's
+// mobile block): `none` interpolates from blur(0), so this is a short fade-up
+// to the window's own resting blur rather than a pop.
+@keyframes sheet-blur-in {
+  from {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  to {
+    backdrop-filter: blur(var(--window-blur));
+    -webkit-backdrop-filter: blur(var(--window-blur));
   }
 }
 

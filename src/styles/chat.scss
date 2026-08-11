@@ -481,28 +481,45 @@
     width: 100vw;
     height: 100vh;
     height: 100dvh; // Dynamic viewport height for mobile browsers
-    // Tint only, no backdrop filter. At 0.92 the blur was contributing almost
-    // nothing to legibility — the last 8% of a live simulation reads as a
-    // faint shimmer either way — but a full-screen blur+saturate over a canvas
-    // that repaints every frame is the single most expensive surface a phone
-    // GPU can be asked to hold, and it ran for the whole life of the sheet,
-    // including both 300ms slides. A couple of points more tint buys the same
-    // reading surface at a fraction of the price, and the slide becomes a pure
-    // compositor move.
-    background: rgba(7, 8, 10, 0.96);
+    // No background or backdrop-filter override: the sheet wears the same
+    // frosted glass as the content window and the desktop sidebar — the base
+    // rule's --window-scrim over blur(--window-blur) — so the whole kit is
+    // one material. (A near-opaque tint with a 16px blur+saturate used to
+    // live here; it was both the odd surface out and the most expensive
+    // thing a phone GPU was asked to hold.)
+    //
+    // The glass is worn only at rest. Sliding a full-screen backdrop filter
+    // over a canvas that repaints every frame forces the blur to be
+    // re-resolved on every frame of the slide, so the sheet travels as tint
+    // alone (the states below) and the blur fades back in once it has
+    // parked, via this transition.
+    transition:
+      backdrop-filter 220ms ease,
+      -webkit-backdrop-filter 220ms ease;
     border: none;
     border-radius: 0;
     box-shadow: none;
     z-index: 1003;
 
     // A sheet that owns the screen comes up from the bottom edge; the
-    // sidebar's horizontal slide reads wrong at this size.
+    // sidebar's horizontal slide reads wrong at this size. Both states shed
+    // the backdrop filter for the length of the move (see the note on the
+    // sheet's own blur above): the class drops ~300ms after opening, which is
+    // what hands the blur back through the transition.
     &.opening {
       animation: slideInFromBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     &.closing {
       animation: slideOutToBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      // An instant cut, not the settle fade in reverse: easing the blur out
+      // would keep a shrinking filter live under most of the slide, and a
+      // departing sheet has no rest state for the glass to belong to.
+      transition: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     // Edge to edge means edge to edge: the sheet runs under the status bar and
