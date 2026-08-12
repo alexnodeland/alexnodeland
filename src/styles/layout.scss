@@ -20,8 +20,6 @@
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  // Scroll-linked hero collapse, 0 → 1. Written by Layout, read by .site-hero.
-  --hero-collapse: 0;
   // The stage spans the field between the pills and the top of the screen, and
   // the field is interactive — the simulations respond to the pointer. Only
   // the three real children take clicks; the gaps between them pass through.
@@ -84,6 +82,11 @@
 // the window, which is why every hero already carries the halo. Its column is
 // the content column, so a title lines up with the prose under it.
 .site-hero {
+  // Scroll-linked hero collapse, 0 → 1. Written by Layout — on this element,
+  // not the stage: a custom property inherits, so publishing it any higher
+  // would drag the whole window's subtree into every scroll frame's style
+  // invalidation for a value only the hero and its two lines read.
+  --hero-collapse: 0;
   flex-shrink: 0;
   width: 100%;
   max-width: var(--content-max-width);
@@ -159,10 +162,17 @@
 }
 
 // Scroll-linked collapse. Layout publishes --hero-collapse (0 → 1) on the
-// stage from the window's scrollTop; everything here reads off that one
+// hero region from the window's scrollTop; everything here reads off that one
 // number, so the hero compresses in step with the scroll rather than snapping
 // between two states. The window is `flex: 1`, so every pixel the hero gives
 // up goes straight to the content.
+//
+// Nothing in this block carries a transition, deliberately. Six 120ms tails
+// used to ease these properties between wheel notches, and every scroll frame
+// re-targeted all six — two of them (padding, margin) animate in layout, so
+// the layout engine ran for 120ms past every notch, resizing the blurred
+// window under it the whole way. The wheel smoothing lives in Layout now: the
+// one published number is eased there, and everything below tracks it exactly.
 .site-hero.is-collapsible {
   // The collapse reclaims space but never lets the window's frame touch the
   // hero text, and never lets the collapsed row ride the screen edge: both
@@ -173,7 +183,6 @@
   padding-bottom: calc(
     var(--space-3) + var(--space-3) * (1 - var(--hero-collapse))
   );
-  transition: padding 120ms linear;
 
   // Every hero is a title and a tagline stacked and centred. The column of
   // content-width boxes is what lets the split below move each one outward by
@@ -188,7 +197,6 @@
   // The title stays — it is the page's name — but gives back the gap under it.
   h1 {
     margin-bottom: calc(var(--space-3) * (1 - var(--hero-collapse)));
-    transition: margin-bottom 120ms linear;
   }
 
   // The tagline is the last thing in the hero; the room under it is the hero's
@@ -203,7 +211,7 @@
   // edge and rises onto the title's row, so at full collapse they sit as one
   // line floating above the window. The pixel distances are measured by Layout
   // — they depend on rendered text widths — and everything here does is scale
-  // them by the same --hero-collapse the stage publishes.
+  // them by the same --hero-collapse the region publishes.
   @media (min-width: 769px) {
     h1 {
       transform: translateX(
@@ -211,9 +219,6 @@
         )
         scale(calc(1 - 0.45 * var(--hero-collapse)));
       transform-origin: left center;
-      transition:
-        transform 120ms linear,
-        margin-bottom 120ms linear;
     }
 
     p {
@@ -226,9 +231,6 @@
       transform: translateX(calc(var(--hero-collapse) * var(--sub-shift, 0px)))
         scale(calc(1 - (1 - var(--sub-scale, 1)) * var(--hero-collapse)));
       transform-origin: right center;
-      transition:
-        transform 120ms linear,
-        margin-top 120ms linear;
     }
   }
 
@@ -249,15 +251,11 @@
       --collapsed-title-scale: 0.44;
     }
 
-    // No easing between scroll samples on a phone. Touch scroll delivers a
-    // continuous stream of positions, so there are no wheel-notch jumps for a
-    // 120ms tail to smooth over — what the tail actually did here was keep
-    // padding, margin and max-height animating (and the flex window
-    // relayouting, and its backdrop blur re-resolving) for 120ms after every
-    // single scroll frame. Tracking the finger exactly is both the cheaper
-    // frame and the more responsive one. The desktop rules below keep their
-    // easing; a mouse wheel steps.
-    transition: none;
+    // No easing between scroll samples on a phone — Layout's publisher writes
+    // the finger's own position straight through here (touch is a continuous
+    // stream; there is no wheel notch to smooth over), and nothing in this
+    // file carries a transition for the collapse anywhere. Tracking the finger
+    // exactly is both the cheaper frame and the more responsive one.
 
     h1 {
       // Right-to-left: scale first (about the left edge, so --title-shift
@@ -286,13 +284,11 @@
         var(--space-3) * (1 - var(--hero-collapse)) - 1.15em *
           var(--hero-collapse)
       );
-      transition: none;
     }
 
     // The tail goes with the tagline; the anchor keeps its ink the whole way.
     .hero-crumb-rest {
       opacity: calc(1 - var(--hero-collapse));
-      transition: none;
     }
 
     p {
@@ -300,21 +296,13 @@
       max-height: calc(6rem * (1 - var(--hero-collapse)));
       overflow: hidden;
       transform: translateY(calc(-0.5rem * var(--hero-collapse)));
-      transition: none;
     }
   }
 
-  // The scroll link itself is position, not motion, so it stays. What goes is
-  // the easing between samples — with reduced motion the hero tracks the
-  // scroll exactly and never continues moving on its own.
-  @media (prefers-reduced-motion: reduce) {
-    &,
-    h1,
-    p,
-    .hero-crumb-rest {
-      transition: none;
-    }
-  }
+  // A `prefers-reduced-motion` block used to strip the collapse transitions
+  // here. There are none left to strip — Layout's publisher is where the wheel
+  // easing lives now, and it checks the same preference itself: reduced motion
+  // tracks the scroll exactly and never continues moving on its own.
 }
 
 // A steep tapered blur riding the window's visible top edge. Content scrolling
@@ -342,7 +330,8 @@
     // Fully invisible is fully off. An opacity-0 backdrop filter is still a
     // live filter surface — over a canvas that repaints every frame, the
     // compositor kept resolving an 18px blur nobody could see. The shell
-    // marks the window `veil-live` the moment there is any scroll to veil.
+    // marks the veil itself `veil-live` the moment there is any scroll to
+    // veil.
     visibility: hidden;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px); // Safari 17 and earlier
@@ -405,8 +394,10 @@
 }
 
 // Anything scrolled under the veil: the blur layer comes back for exactly as
-// long as --veil-strength is above zero.
-.veil-live .window-veil::before {
+// long as --veil-strength is above zero. Class and property both live on the
+// veil element itself — putting them on the scrolling window made every
+// twenty-step fade-in invalidate style for the whole page inside it.
+.window-veil.veil-live::before {
   visibility: visible;
 }
 
