@@ -419,7 +419,10 @@ describe('Layout Component', () => {
       });
 
       expect(windowPanel.scrollTop).toBe(0);
-      expect(windowPanel.style.getPropertyValue('--veil-strength')).toBe('0');
+      // The reset lands on the veil itself — the one element that reads it.
+      const veil = document.querySelector('.window-veil') as HTMLElement;
+      expect(veil.style.getPropertyValue('--veil-strength')).toBe('0');
+      expect(windowPanel.style.getPropertyValue('--veil-strength')).toBe('');
     });
 
     describe('the crossfade', () => {
@@ -526,38 +529,55 @@ describe('Layout Component', () => {
     render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
 
     const stage = document.querySelector('.stage') as HTMLElement;
+    const region = document.querySelector('.site-hero') as HTMLElement;
     const windowPanel = document.querySelector('.layout') as HTMLElement;
 
-    // jsdom runs rAF callbacks on a timer, so drive the frame by hand.
-    const flushFrame = () => {
-      const callbacks: ((time: number) => void)[] = [];
+    // jsdom runs rAF callbacks on a timer, so drive the frames by hand — and
+    // keep driving them: on a fine pointer the publisher eases toward the
+    // scroll's value over a handful of frames and stops by snapping to it,
+    // and both halves of that are under test here.
+    const settleFrames = () => {
+      let queue: ((time: number) => void)[] = [];
       const raf = jest
         .spyOn(window, 'requestAnimationFrame')
         .mockImplementation(cb => {
-          callbacks.push(cb);
+          queue.push(cb);
           return 1;
         });
       windowPanel.dispatchEvent(new Event('scroll'));
+      let now = performance.now();
+      for (let i = 0; i < 100 && queue.length > 0; i++) {
+        const callbacks = queue;
+        queue = [];
+        now += 16;
+        callbacks.forEach(cb => cb(now));
+      }
+      // The ease must come to rest on its own rather than run forever.
+      expect(queue).toHaveLength(0);
       raf.mockRestore();
-      callbacks.forEach(cb => cb(0));
     };
 
-    expect(stage.style.getPropertyValue('--hero-collapse')).toBe('0');
+    expect(region.style.getPropertyValue('--hero-collapse')).toBe('0');
 
     Object.defineProperty(windowPanel, 'scrollTop', {
       value: 80,
       configurable: true,
     });
-    flushFrame();
-    expect(stage.style.getPropertyValue('--hero-collapse')).toBe('0.5');
+    settleFrames();
+    expect(region.style.getPropertyValue('--hero-collapse')).toBe('0.5');
 
     // Past the range it saturates rather than running away.
     Object.defineProperty(windowPanel, 'scrollTop', {
       value: 4000,
       configurable: true,
     });
-    flushFrame();
-    expect(stage.style.getPropertyValue('--hero-collapse')).toBe('1');
+    settleFrames();
+    expect(region.style.getPropertyValue('--hero-collapse')).toBe('1');
+
+    // And it lands on the hero region alone — the one subtree that reads it.
+    // Published on the stage, a value that changes on every scroll frame put
+    // the entire page inside the window into each frame's style invalidation.
+    expect(stage.style.getPropertyValue('--hero-collapse')).toBe('');
   });
 
   describe('hero split geometry', () => {

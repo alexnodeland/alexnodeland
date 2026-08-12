@@ -79,14 +79,14 @@ const prefersReducedMotion = () => {
 const canAnimate = (el: Element | null | undefined): el is HTMLElement =>
   Boolean(el) && typeof (el as HTMLElement).animate === 'function';
 
-// The collapse the stage is publishing right now. Read before a navigation
+// The collapse the hero region is wearing right now. Read before a navigation
 // zeroes it, and pinned onto the ghost, so a hero that was scrolled down when
 // the reader clicked leaves looking exactly as it did.
-const readCollapse = (stage: HTMLElement): string => {
+const readCollapse = (region: HTMLElement): string => {
   if (typeof window === 'undefined') return '0';
   if (typeof window.getComputedStyle !== 'function') return '0';
   const value = window
-    .getComputedStyle(stage)
+    .getComputedStyle(region)
     .getPropertyValue('--hero-collapse')
     .trim();
   return value || '0';
@@ -188,6 +188,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   const windowRef = React.useRef<HTMLDivElement>(null);
   const mainRef = React.useRef<HTMLElement>(null);
   const heroRef = React.useRef<HTMLElement>(null);
+  const veilRef = React.useRef<HTMLDivElement>(null);
 
   const pathname = location?.pathname ?? '/';
 
@@ -271,7 +272,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
           height: box.height,
           // Pinned, so the ghost keeps the geometry the reader was actually
           // looking at while the live region below it goes back to rest.
-          '--hero-collapse': readCollapse(stage),
+          '--hero-collapse': readCollapse(region),
         } as React.CSSProperties,
       });
     } else {
@@ -283,11 +284,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     // never arrive already collapsed.
     if (panel) {
       panel.scrollTop = 0;
-      // The veil belongs to a scroll that no longer exists. It has its own
-      // short opacity transition, so writing 0 fades it rather than cutting.
-      panel.style.setProperty('--veil-strength', '0');
     }
-    stage?.style.setProperty('--hero-collapse', '0');
+    // The veil belongs to a scroll that no longer exists. It has its own
+    // short opacity transition, so writing 0 fades it rather than cutting.
+    veilRef.current?.style.setProperty('--veil-strength', '0');
+    region?.style.setProperty('--hero-collapse', '0');
     syncCollapseRef.current?.();
     syncVeilRef.current?.();
 
@@ -444,59 +445,131 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
   // Scroll-linked hero collapse. The page scrolls inside `.layout`, not the
   // document, so this reads that element's scrollTop and publishes it as a 0→1
-  // progress custom property on the stage. The interpolation itself is CSS —
-  // React only ever writes one number, and only when it has actually changed.
+  // progress custom property on the hero region itself — the only subtree that
+  // reads it. It used to land on the stage, and a custom property inherits, so
+  // every write put the whole page (the window, every card in it, the footer)
+  // in the invalidation set of a number six elements consume.
+  //
+  // The easing between wheel notches lives here too, not in CSS. The
+  // stylesheet used to run six independent 120ms `linear` transitions off this
+  // value — two of them on padding and margin, which animate in layout — and a
+  // scroll stream re-targeted all six every frame, so the layout engine was
+  // kept animating for 120ms past every notch and the boxes trailed the
+  // transforms. One number eased in one place keeps every derived property in
+  // lockstep and stops the moment it lands. Touch input is a continuous stream
+  // with no notch to smooth over, and reduced motion means exactly what it
+  // says, so both write the scroll's own value directly.
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
-    const stage = stageRef.current;
+    const region = heroRef.current;
     const panel = windowRef.current;
-    if (!shouldCollapse || !stage || !panel) return;
+    if (!shouldCollapse || !region || !panel) return;
+
+    // ~63% of the remaining distance every 40ms: settled (within a rounding
+    // step) in about the 120ms the CSS tail took, but decelerating, so the
+    // hero arrives instead of stopping.
+    const TAU_MS = 40;
+    // Both queries are held as live lists rather than re-resolved per frame;
+    // `.matches` is read at each decision so a mid-session change still lands.
+    const touch =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(max-width: 768px)')
+        : null;
+    const reduce =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)')
+        : null;
 
     let frame = 0;
-    let last = -1;
+    let dirty = false; // a scroll arrived since the last frame
+    let last = -1; // the value on the element, post-rounding
+    let current = 0; // the eased value
+    let target = 0;
+    let lastTime = 0;
 
-    const apply = () => {
-      frame = 0;
-      const progress = Math.min(
-        Math.max(panel.scrollTop / HERO_COLLAPSE_RANGE, 0),
-        1
-      );
+    const readTarget = () =>
+      Math.min(Math.max(panel.scrollTop / HERO_COLLAPSE_RANGE, 0), 1);
+
+    const write = (value: number) => {
       // Two decimals is finer than a pixel of travel and keeps the style
-      // write (and the paint it triggers) off most frames.
-      const rounded = Math.round(progress * 100) / 100;
+      // write (and the layout it triggers) off frames that moved less.
+      const rounded = Math.round(value * 100) / 100;
       if (rounded === last) return;
       last = rounded;
-      stage.style.setProperty('--hero-collapse', String(rounded));
+      region.style.setProperty('--hero-collapse', String(rounded));
+    };
+
+    const tick = (now: number) => {
+      frame = 0;
+      // A tab coming back from the background hands rAF a timestamp seconds
+      // past the last one; clamped, the worst it plays is one long step.
+      const dt = Math.min(now - lastTime, 100);
+      lastTime = now;
+      if (dirty) {
+        dirty = false;
+        target = readTarget();
+        if (touch?.matches || reduce?.matches) {
+          current = target;
+          write(current);
+          return;
+        }
+      }
+      current += (target - current) * (1 - Math.exp(-dt / TAU_MS));
+      // Inside half a rounding step of the target is on it.
+      if (Math.abs(target - current) < 0.005) current = target;
+      write(current);
+      if (current !== target || dirty) {
+        frame = window.requestAnimationFrame(tick);
+      }
     };
 
     const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(apply);
+      dirty = true;
+      if (!frame) {
+        lastTime = performance.now();
+        frame = window.requestAnimationFrame(tick);
+      }
     };
 
-    apply();
-    // How the transition hands the link back: forget the last written value —
-    // it describes a page that is gone — and republish from the real scroll.
+    // Wherever the effect lands it lands at once: mount is not motion.
+    current = target = readTarget();
+    write(current);
+
+    // How the transition hands the link back: drop any ease in flight, forget
+    // the last written value — both describe a page that is gone — and
+    // republish from the real scroll.
     syncCollapseRef.current = () => {
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+        frame = 0;
+      }
+      dirty = false;
       last = -1;
-      apply();
+      current = target = readTarget();
+      write(current);
     };
     panel.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       panel.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
       syncCollapseRef.current = null;
-      stage.style.removeProperty('--hero-collapse');
+      region.style.removeProperty('--hero-collapse');
     };
   }, [shouldCollapse]);
 
   // The veil only exists once something is actually under it: opacity tracks
   // the window's scroll over its first ~90px, so page tops read at full
   // strength at rest and the overscroll bounce never drags a gradient along.
+  //
+  // Both writes land on the veil element itself — the one node that reads
+  // them. They used to land on the window, which invalidated style for the
+  // whole scrolling page twenty times over the first 90px — and the publisher
+  // ran on the home page too, which renders no veil at all.
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
     const panel = windowRef.current;
-    if (!panel) return;
+    const veil = veilRef.current;
+    if (!panel || !veil) return;
     let frame = 0;
     let last = -1;
     const apply = () => {
@@ -505,12 +578,12 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         Math.round(Math.min(Math.max(panel.scrollTop / 90, 0), 1) * 20) / 20;
       if (o === last) return;
       last = o;
-      panel.style.setProperty('--veil-strength', String(o));
+      veil.style.setProperty('--veil-strength', String(o));
       // At rest the veil is invisible but its backdrop blur was still a live
       // filter surface the compositor had to keep resolving — over a canvas
       // that repaints every frame. The class lets the stylesheet take the
       // whole layer out (visibility) whenever there is nothing to veil.
-      panel.classList.toggle('veil-live', o > 0);
+      veil.classList.toggle('veil-live', o > 0);
     };
     const onScroll = () => {
       if (frame) return;
@@ -526,9 +599,9 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       panel.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
       syncVeilRef.current = null;
-      panel.classList.remove('veil-live');
+      veil.classList.remove('veil-live');
     };
-  }, []);
+  }, [wantsVeil]);
 
   // The window's top edge is dynamic now — it sits below the hero and rises
   // as the hero collapses — so its live position is published for the two
@@ -706,7 +779,9 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                   content dissolves as it scrolls out instead of colliding with
                   whatever floats up there (the cv's sticky controls). Skipped
                   where nothing floats — see `wantsVeil`. */}
-              {wantsVeil && <div className="window-veil" aria-hidden="true" />}
+              {wantsVeil && (
+                <div className="window-veil" ref={veilRef} aria-hidden="true" />
+              )}
               <main className="main" ref={mainRef}>
                 {children}
               </main>

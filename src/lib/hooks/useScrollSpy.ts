@@ -25,13 +25,21 @@ export function useScrollSpy<T extends HTMLElement>(
   { readingLine = 0.4 }: ScrollSpyOptions = {}
 ) {
   const containerRef = useRef<T | null>(null);
+  // The item list, kept between frames. Re-running the selector on every
+  // scroll frame walked the container's whole subtree sixty times a second to
+  // find a list that almost never changes; anything that can actually change
+  // it — filtering, an expansion, a webfont — also changes the container's
+  // geometry, and the ResizeObserver below drops the cache when it fires.
+  const itemsRef = useRef<Element[] | null>(null);
   const [activeIndices, setActiveIndices] = useState<readonly number[]>(NONE);
 
   const measure = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const items = Array.from(container.querySelectorAll(itemSelector));
+    const items = (itemsRef.current ??= Array.from(
+      container.querySelectorAll(itemSelector)
+    ));
     const viewportHeight = window.innerHeight;
     const line = viewportHeight * readingLine;
 
@@ -84,15 +92,22 @@ export function useScrollSpy<T extends HTMLElement>(
     window.addEventListener('resize', schedule);
 
     // Filtering a list, expanding a card, or a webfont landing all move items
-    // without a scroll, so watch the container's own geometry as well.
+    // without a scroll, so watch the container's own geometry as well — and
+    // re-run the selector when it fires, since the same causes are the ones
+    // that add and remove items.
+    const remeasure = () => {
+      itemsRef.current = null;
+      schedule();
+    };
     const resizeObserver =
       typeof ResizeObserver === 'undefined'
         ? null
-        : new ResizeObserver(schedule);
+        : new ResizeObserver(remeasure);
     if (resizeObserver && containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
 
+    itemsRef.current = null; // A new selector is a new list.
     measure();
 
     return () => {
@@ -100,6 +115,7 @@ export function useScrollSpy<T extends HTMLElement>(
       document.removeEventListener('scroll', schedule, { capture: true });
       window.removeEventListener('resize', schedule);
       resizeObserver?.disconnect();
+      itemsRef.current = null;
     };
   }, [measure]);
 

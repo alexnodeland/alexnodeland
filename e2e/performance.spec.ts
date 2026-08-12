@@ -94,11 +94,10 @@ test.describe('structural performance guards', () => {
 
     const veilState = () =>
       page.evaluate(() => {
-        const layout = document.querySelector('.layout');
         const veil = document.querySelector('.window-veil');
-        if (!layout || !veil) return null;
+        if (!veil) return null;
         return {
-          live: layout.classList.contains('veil-live'),
+          live: veil.classList.contains('veil-live'),
           visibility: getComputedStyle(veil, '::before').visibility,
         };
       });
@@ -124,6 +123,81 @@ test.describe('structural performance guards', () => {
         timeout: 20_000,
       })
       .toBe('visible');
+  });
+
+  test('the hero collapse eases nothing through CSS', async ({ page }) => {
+    await page.goto('/');
+    await settle(page);
+
+    const durations = await page.evaluate(() => {
+      const read = (selector: string) => {
+        const el = document.querySelector(selector);
+        return el ? getComputedStyle(el).transitionDuration : null;
+      };
+      return {
+        hero: read('.site-hero.is-collapsible'),
+        title: read('.site-hero.is-collapsible h1'),
+        tagline: read('.site-hero.is-collapsible p'),
+      };
+    });
+
+    // The scroll link re-targets on every frame, so a transition here — the
+    // old 120ms tails eased padding and margin, which animate in layout —
+    // keeps the layout engine running long past every wheel notch. The wheel
+    // smoothing lives in the Layout component's publisher now; these elements
+    // must track the published value exactly.
+    for (const value of Object.values(durations)) {
+      expect(value).not.toBeNull();
+      const zero = value!
+        .split(',')
+        .every(duration => parseFloat(duration) === 0);
+      expect(zero).toBe(true);
+    }
+  });
+
+  test('the scroll-linked properties land on their readers, not their containers', async ({
+    page,
+  }) => {
+    await page.goto('/blog');
+    await settle(page);
+
+    await page.evaluate(() => {
+      const layout = document.querySelector('.layout');
+      if (layout) layout.scrollTop = 200;
+    });
+
+    // 200px is past both ranges, so the two publishers settle at 1. They run
+    // on the page's animation frames — generous timeout, as everywhere here.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() =>
+            (
+              document.querySelector('.site-hero') as HTMLElement
+            ).style.getPropertyValue('--hero-collapse')
+          ),
+        { message: 'the collapse should settle at 1', timeout: 20_000 }
+      )
+      .toBe('1');
+
+    const placement = await page.evaluate(() => {
+      const inline = (selector: string, property: string) =>
+        (
+          document.querySelector(selector) as HTMLElement
+        ).style.getPropertyValue(property);
+      return {
+        collapseOnStage: inline('.stage', '--hero-collapse'),
+        veilOnWindow: inline('.layout', '--veil-strength'),
+        veilOnVeil: inline('.window-veil', '--veil-strength'),
+      };
+    });
+
+    // A custom property inherits, so a per-frame write must sit on the
+    // smallest subtree that reads it. On the stage or the window it drags
+    // every element of the page into every scroll frame's style invalidation.
+    expect(placement.collapseOnStage).toBe('');
+    expect(placement.veilOnWindow).toBe('');
+    expect(placement.veilOnVeil).toBe('1');
   });
 
   test('the mobile chat sheet sheds its backdrop filter while sliding', async ({
@@ -250,6 +324,16 @@ test.describe('measured metrics (chromium)', () => {
     // than any real device; give the sampler room to finish regardless.
     test.setTimeout(90_000);
 
+    // Pin the cheapest background, exactly as the pixel-ratio test does. The
+    // shell otherwise picks one at random per load, and the spread between
+    // simple-waves and the PDE field is an order of magnitude of per-frame GL
+    // cost — noise that swamps the chrome cost this test exists to watch.
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'animatedBackgroundSettings',
+        JSON.stringify({ currentBackgroundId: 'simple-waves' })
+      );
+    });
     await page.goto('/cv'); // the longest page — worst-case layout
     await settle(page, 2000);
 
@@ -310,6 +394,14 @@ test.describe('measured metrics (chromium)', () => {
     test.skip(browserName !== 'chromium', 'longtask observer is Blink-only');
     test.skip(isMobile, 'desktop project only — one stable baseline');
 
+    // Pinned for the same reason as the scroll sampler above: long tasks are
+    // main-thread, but a heavy random background steals the same cores.
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'animatedBackgroundSettings',
+        JSON.stringify({ currentBackgroundId: 'simple-waves' })
+      );
+    });
     await page.goto('/');
     await settle(page, 2000);
 
