@@ -165,8 +165,12 @@ async function fetchCommitCount() {
 async function main() {
   if (!TOKEN) {
     if (fs.existsSync(OUT)) {
+      // Deliberately says "existing", not "committed": in CI this is the
+      // normal path. The deploy fetches in its own tightly-scoped step and
+      // then runs the full build without a token, so what this keeps is the
+      // snapshot written moments ago rather than the one in git.
       console.warn(
-        'activity: no ACTIVITY_TOKEN/GITHUB_TOKEN — keeping committed snapshot'
+        'activity: no ACTIVITY_TOKEN/GITHUB_TOKEN — keeping existing snapshot'
       );
       return;
     }

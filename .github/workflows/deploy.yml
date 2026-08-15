@@ -97,15 +97,30 @@ jobs:
             texlive-latex-extra \
             texlive-fonts-recommended
 
-      - name: Build with Gatsby
-        run: npm run build
+      # The only step either token is exposed to, and it runs exactly one
+      # script. `npm run build` below drives Gatsby, its plugins, the chat
+      # indexer and the CV typesetter — every one of them, and everything in
+      # their dependency trees, can read whatever is in that step's
+      # environment. A credential that grants read access to private source
+      # has no business sitting there for the length of a full site build, so
+      # it lives and dies here instead.
+      #
+      # ACTIVITY_TOKEN is an optional read-only fine-grained PAT (a repository
+      # secret, never shipped — only the aggregated JSON reaches the site); it
+      # is what folds private repos into the counts. Without it the Actions
+      # token still refreshes the calendar and the public-repo numbers.
+      - name: Fetch GitHub activity
+        run: npm run build:activity
         env:
-          # For the activity panel (scripts/build-activity.mjs). ACTIVITY_TOKEN
-          # is a read-only fine-grained PAT — repository secret, never shipped;
-          # only the aggregated JSON reaches the site. Without it the Actions
-          # token still refreshes the calendar and the public-repo numbers.
           ACTIVITY_TOKEN: ${{ secrets.ACTIVITY_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+
+      # No token here on purpose. `npm run build` re-runs build:activity as
+      # part of its chain, finds no credential, and keeps the snapshot the
+      # step above just wrote — so the guard that protects credential-less
+      # builds is also what makes this scoping work, with no second code path.
+      - name: Build with Gatsby
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
