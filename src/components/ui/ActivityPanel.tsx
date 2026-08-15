@@ -2,17 +2,17 @@ import React from 'react';
 import activity from '../../data/activity.json';
 
 // The heatmap's ramp, darkest to brightest, ending on the site's own green.
-// Steps are validated ordinal-ramp values against the #0a0a0a surface —
-// monotone lightness, visible gaps, low end above 2:1 — so the scale stays
-// readable, not eyeballed. Level 0 is "no data": a whisper of surface, not a
-// rung on the ladder.
-const LEVEL_FILLS = [
-  'rgba(255, 255, 255, 0.06)',
-  '#0e5233',
-  '#0a7a47',
-  '#05b866',
-  '#00ff88',
-];
+// The four data steps are validated ordinal-ramp values against the site's
+// surface — monotone lightness, visible gaps, low end above 2:1 — so the
+// scale is measured, not eyeballed.
+//
+// Every step is opaque, including "no contributions". The card is
+// transparent like every other card on the site, so a translucent square
+// would take the hue of whatever the animation is doing behind it: over a
+// bright field an empty day would out-lighten a busy one and the scale would
+// read backwards. Level 0 is the darkest thing in the panel by construction,
+// lifted just off the window so an empty year still reads as a grid.
+const LEVEL_FILLS = ['#111a16', '#0e5233', '#0a7a47', '#05b866', '#00ff88'];
 
 // GitHub's own grid geometry: 11px cells on a 14px step, weeks as columns.
 const CELL = 11;

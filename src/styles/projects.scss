@@ -313,11 +313,12 @@
 // panel costs the visitor nothing and carries no credentials.
 .activity-panel {
   @include outline-block;
-  // The one card whose fills carry data: the green ramp reads best against a
-  // steady dark surface, so this card alone wears the window's scrim over
-  // the animation. A plain fill, no backdrop blur: the panel scrolls with
-  // the page, and a blur here would bill the compositor every frame.
-  background-color: var(--window-scrim);
+  // No surface of its own. The window underneath has already laid the site's
+  // one scrim down, and a second coat on top of it is the doubling that came
+  // off the control chips — a card darker than everything around it. The
+  // ramp's stability is handled where it belongs, on the cells: every step
+  // including "no contributions" is opaque, so no square transmits the field
+  // behind it and the scale cannot invert over a bright background.
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   margin-bottom: var(--space-5);
