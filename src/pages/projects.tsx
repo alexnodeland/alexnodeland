@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dropdown, SEO } from '../components';
+import { ActivityPanel, Dropdown, SEO } from '../components';
 import { DropdownOption } from '../components/ui/Dropdown';
 import { projectsConfig, getLanguageColor } from '../config';
 import type { GitHubProject, ProjectCategory } from '../config';
@@ -265,6 +265,10 @@ const ProjectsPage: React.FC = () => {
             </section>
           ))
         )}
+
+        {/* The year of github work, after the catalogue it produced and
+            ahead of the link out to the rest of it. */}
+        <ActivityPanel />
 
         <div className="github-cta">
           <p>want to see more?</p>
