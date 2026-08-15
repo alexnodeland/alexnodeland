@@ -15,6 +15,7 @@ export { default as SkillsSection } from './cv/CVSkillsSection';
 export { default as useCVExport } from './cv/useCVExport';
 
 // Shared UI primitives
+export { default as ActivityPanel } from './ui/ActivityPanel';
 export { default as Dropdown } from './ui/Dropdown';
 export type { DropdownOption } from './ui/Dropdown';
 export {

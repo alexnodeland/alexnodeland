@@ -15,6 +15,9 @@ jest.mock('../../../components', () => ({
   // The real dropdown — the controls under test are the shared component, so
   // mocking it here would test nothing.
   Dropdown: jest.requireActual('../../../components/ui/Dropdown').default,
+  // Stubbed: the activity panel has its own unit tests; here it only has to
+  // show up at the top of the page.
+  ActivityPanel: () => <div data-testid="activity-panel" />,
 }));
 
 // Mock SCSS
@@ -30,6 +33,7 @@ describe('Projects Page', () => {
     expect(
       screen.getByRole('button', { name: 'Filter projects by category' })
     ).toBeInTheDocument();
+    expect(screen.getByTestId('activity-panel')).toBeInTheDocument();
   });
 
   it('renders a section per category with projects, carrying its anchor id', () => {

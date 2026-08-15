@@ -8,6 +8,11 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+  # Nightly, so the activity panel's contribution graph tracks the profile
+  # rather than the last push to this repo.
+  schedule:
+    - cron: '17 5 * * *'
+
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
@@ -94,6 +99,13 @@ jobs:
 
       - name: Build with Gatsby
         run: npm run build
+        env:
+          # For the activity panel (scripts/build-activity.mjs). ACTIVITY_TOKEN
+          # is a read-only fine-grained PAT — repository secret, never shipped;
+          # only the aggregated JSON reaches the site. Without it the Actions
+          # token still refreshes the calendar and the public-repo numbers.
+          ACTIVITY_TOKEN: ${{ secrets.ACTIVITY_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

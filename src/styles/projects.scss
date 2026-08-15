@@ -307,6 +307,194 @@
   }
 }
 
+// Activity panel — the github year at the foot of the page, in the same card
+// grammar as everything above it: an outline, not a slab. The numbers are
+// baked into the bundle at build time (scripts/build-activity.mjs), so the
+// panel costs the visitor nothing and carries no credentials.
+.activity-panel {
+  @include outline-block;
+  // The one card whose fills carry data: the green ramp reads best against a
+  // steady dark surface, so this card alone wears the window's scrim over
+  // the animation. A plain fill, no backdrop blur: the panel scrolls with
+  // the page, and a blur here would bill the compositor every frame.
+  background-color: var(--window-scrim);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.activity-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.activity-title {
+  font-size: var(--text-h4);
+  color: var(--text-primary);
+  margin: 0;
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+}
+
+.activity-total {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+}
+
+// The grid keeps its geometry and scrolls sideways on narrow screens rather
+// than shrinking its squares into noise — the graph is the one element on the
+// site allowed to be wider than the window.
+.activity-graph {
+  overflow-x: auto;
+}
+
+.activity-graph-inner {
+  position: relative;
+  min-width: 740px;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}
+
+.activity-axis-label {
+  fill: var(--text-muted);
+  font-size: 9px;
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+}
+
+// The hovered square answers with a hairline, the way cards answer the
+// pointer elsewhere; gated on a real pointer so touch doesn't latch it.
+@media (hover: hover) and (pointer: fine) {
+  .activity-cell:hover {
+    stroke: rgba(255, 255, 255, 0.5);
+    stroke-width: 1;
+  }
+}
+
+// The dropdowns' glass, positioned by hand over the hovered square.
+.activity-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 6px));
+  background-color: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari ≤17
+  border: 1px solid var(--border-floating);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.55rem;
+  font-size: 0.72rem;
+  color: var(--text-primary);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+
+// The top rows have no headroom above them, so their tooltip hangs below.
+.activity-tooltip--below {
+  transform: translate(-50%, 6px);
+}
+
+// Three quiet facts under the graph, divided by the same interior hairline
+// the card footers use.
+.activity-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.activity-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+
+  & + & {
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    padding-left: var(--space-3);
+  }
+}
+
+.activity-metric-value {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+}
+
+.activity-metric-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  text-transform: lowercase;
+}
+
+.activity-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.activity-updated {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+}
+
+.activity-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+
+  span:first-child {
+    margin-right: 0.25rem;
+  }
+
+  span:last-child {
+    margin-left: 0.25rem;
+  }
+}
+
+.activity-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
 // Responsive Design
 @media (max-width: 768px) {
   .projects-page {
@@ -321,6 +509,10 @@
   .project-card-content {
     padding: var(--space-4);
   }
+
+  .activity-panel {
+    padding: var(--space-4);
+  }
 }
 
 @media (max-width: 480px) {
@@ -332,5 +524,9 @@
     flex-direction: column;
     gap: 0.75rem;
     align-items: flex-start;
+  }
+
+  .activity-metric-value {
+    font-size: 1.1rem;
   }
 }
