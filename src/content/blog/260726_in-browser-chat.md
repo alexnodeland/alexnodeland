@@ -7,13 +7,13 @@ category: 'Projects'
 
 there is a chat box on this site. when you open it, your browser downloads a 760mb language model and runs it on your gpu. nothing is sent anywhere — there is no server to send it to. it answers questions about me from the pages you are already reading.
 
-this is a note on how it works and what it took to make it fast. most of what i assumed going in turned out to be wrong.
+this is how it works, and what the numbers look like.
 
 ## the shape of it
 
 the first version put my entire cv, about 4,500 tokens, in front of every question. it also ran two throwaway yes/no generations before each answer, to decide whether the question was on-topic at all. three model calls per question, and it knew nothing about the blog or the projects page.
 
-now the site is chunked into 95 passages at build time and embedded into a 111kb file that ships with the page. your browser embeds only your question — one forward pass over about fifteen tokens, roughly two milliseconds — and searches that index. this post is in there too, which is a slightly strange thing to write.
+now the site is chunked into 95 passages at build time and embedded into a 111kb file that ships with the page. your browser embeds only your question — one forward pass over about fifteen tokens, roughly two milliseconds — and searches that index.
 
 the search is hybrid, and it needs to be. this corpus is one person's life, so everything in it is semantically adjacent to everything else; a 384-dimension vector cannot reliably separate "musiio" from "influize". exact term matching carries the proper nouns, embeddings carry the paraphrases ("where did he go to school"), and reciprocal rank fusion combines them without needing the two score scales to be comparable, which they are not.
 
@@ -32,7 +32,7 @@ what reaches the model is a short instruction block, the passages that came back
 | writing the answer | ~540ms              |
 | a refused question | ~0.1s               |
 
-reading the prompt costs more than writing the answer, about 2:1. i spent the first half of this project optimising the wrong half, because tokens per second is the number everyone quotes, and here it is the smaller cost.
+prefill dominates decode here, about 2:1. tokens per second is the number usually quoted for these models, and for a grounded chat it is the smaller cost.
 
 ## the cache
 
@@ -40,19 +40,19 @@ the instruction block is identical on every turn, so it is run through the model
 
 the cached part was 975 tokens and stayed 975 tokens no matter how long the conversation ran, so the _share_ of each prompt it covered went down as you talked — 55%, then 51%. a cache that stops growing matters less the longer the conversation runs.
 
-a cache can only skip a prefix that matches token for token, so what it can cover is decided by the order the prompt is assembled in. more of the prompt is fixed than i had assumed: earlier questions have their retrieved passages stripped out, and earlier answers have their citation markers removed, and both of those edits happen exactly once, when a turn stops being the current one. after that the history is frozen, so it can all be carried forward, and the cached region grows by one exchange per turn instead of standing still. seven turns in it covers 1,290 tokens rather than 975, and the conversation is prefilling about a quarter fewer tokens than it was.
+a cache can only skip a prefix that matches token for token, so what it can cover is decided by the order the prompt is assembled in. more of the prompt is fixed than it first appears: earlier questions have their retrieved passages stripped out, and earlier answers have their citation markers removed, and both of those edits happen exactly once, when a turn stops being the current one. after that the history is frozen, so it can all be carried forward, and the cached region grows by one exchange per turn instead of standing still. seven turns in it covers 1,290 tokens rather than 975, and the conversation is prefilling about a quarter fewer tokens than it was.
 
-i also measured two rearrangements that looked better on paper and were not. keeping every turn's passages in the prompt caches the most, but spends the savings carrying stale context, which is what used to make it answer turn four out of turn one's passages. pinning the passages to a fixed position so a repeated search matches came out no better than doing nothing, because retrieval has to return the same set in the same order for that to pay, which happens less often than you would think.
+two other arrangements measure worse. keeping every turn's passages in the prompt caches the most, but spends the savings carrying stale context, which is what used to make it answer turn four out of turn one's passages. pinning the passages to a fixed position so a repeated search matches came out no better than doing nothing, because retrieval has to return the same set in the same order for that to pay, which is rare in practice.
 
-## three things i was wrong about
+## model selection
 
-**smaller is not faster.** i tried a model with half the parameters expecting roughly half the latency. it was two to four times _slower_, because it wrote several hundred words where the larger one writes forty. decoding cost is per token, so verbosity swamps the parameter count.
+**smaller is not faster.** a model with half the parameters ran two to four times slower, because it wrote several hundred words where the larger one writes forty. decoding cost is per token, so verbosity dominates parameter count.
 
-**the fast one makes things up.** a 230m model loads in nine seconds instead of twenty-one and answers in under a second. asked whether i knew a language that appears nowhere in my skills list — with that list sitting in its context — it said yes. asked whether i had worked at a company i have never worked at, it said yes to that too. i tried to fix it with worked examples, including one showing it declining exactly that kind of question, two hundred tokens above where it was asked. it kept agreeing. that is not a prompt problem. models that small accept the premise of whatever you ask them.
+**the fast one fabricates.** a 230m model loads in nine seconds instead of twenty-one and answers in under a second, but asked whether i know a language that appears nowhere in my skills list, with that list in its context, it says yes. asked whether i worked at a company i never worked at, it says yes to that too. few-shot examples showing it declining exactly that kind of question, two hundred tokens above the point of use, did not change the behaviour. at this size the model accepts the premise of whatever it is asked.
 
-the examples also made the larger model worse. one of them mentioned musiio, and that was enough for it to start bringing up musiio in unrelated answers.
+the same examples degraded the larger model. one of them mentioned musiio, and that was enough for musiio to start appearing in unrelated answers.
 
-**reasoning did not help.** there is a variant of the same model that thinks step by step first. it scored worse in every category while taking four times as long, because it spent 658 tokens reasoning before the visitor saw a word. reading four retrieved passages is not a reasoning problem. the answer is already in the context.
+**reasoning does not help.** the step-by-step variant of the same model scored worse in every category and took four times as long, spending 658 tokens reasoning before the visitor saw a word. reading four retrieved passages is not a reasoning problem. the answer is already in the context.
 
 so the lineup is one model.
 
@@ -60,15 +60,15 @@ so the lineup is one model.
 
 there is a graded battery of 68 questions covering grounded lookups, multi-passage synthesis, follow-ups that depend on the previous turn, questions built on false premises, things that must be refused, and things that must _not_ be refused.
 
-the earlier version had twelve cases and the model passed all twelve. that felt good and told me nothing. a saturated test can only tell you something broke, not that something improved, so it cannot help you choose between two versions.
+the first version of the battery had twelve cases and the model passed all of them, which made it useless for comparing versions. a saturated test can only show that something broke.
 
-expanding it immediately found a failure class the small set never touched. asked where i got my mba — i don't have one — the model reported a doctorate i never finished. asked how old i am, it worked it out from my job dates and offered "early thirties." asked why i left a company, it invented a motive and hedged it with "probably."
+expanding it exposed a class of failure the small set never touched: false premises. asked where i got my mba (i don't have one), the model reported a doctorate i never finished. asked how old i am, it worked it out from my job dates and offered "early thirties." asked why i left a company, it invented a motive and hedged it with "probably."
 
-it currently sits at 55/68, and the gap is the to-do list: dates it gets wrong, gibberish it answers instead of refusing, and a couple of roleplay prompts that still talk it out of its job. each case is scored on a scale rather than pass/fail, and every lost point comes with a note on what went wrong, because a score alone does not tell you what to fix.
+it currently scores 55/68. the remaining failures are dates it gets wrong, gibberish it answers instead of refusing, and a couple of roleplay prompts that talk it out of its job. each case is scored on a scale rather than pass/fail, with a note on every lost point.
 
 ## what it still gets wrong
 
-ask it "archanan?" — just the word — and it recites where that company sits in my timeline instead of telling you what it was. the answer is being pulled out of the career summary that sits in every prompt, and i have not found a way to stop that without breaking the follow-up questions the summary is there to serve.
+ask it "archanan?" — just the word — and it recites where that company sits in my timeline instead of telling you what it was. the answer is coming from the career summary that sits in every prompt, and suppressing it breaks the follow-up questions the summary is there to serve.
 
 if your browser has no webgpu, it does not work at all, and it says so. it can't fall back to your cpu, and the reason is narrower than "too slow", though it is also too slow. every compressed version of this model stores its vocabulary in a format the cpu engine cannot read. the gpu engine can, which is why one works and the other does not. a faster cpu engine would not fix it either: the best one available runs a model this size at two to five words a second.
 
