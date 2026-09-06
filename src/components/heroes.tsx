@@ -83,7 +83,7 @@ const HEROES: Record<string, () => React.ReactNode> = {
   '/blog': () => (
     <header className="blog-header">
       {crumbTitle('blog')}
-      <p>notes and press, back to 2015.</p>
+      <p>notes and press.</p>
     </header>
   ),
   '/projects': () => (
@@ -95,7 +95,7 @@ const HEROES: Record<string, () => React.ReactNode> = {
   '/cv': () => (
     <header className="cv-page-header">
       {crumbTitle('cv')}
-      <p>everything, in order, back to 2010.</p>
+      <p>roles, research, and skills.</p>
     </header>
   ),
   [NOT_FOUND_KEY]: () => (

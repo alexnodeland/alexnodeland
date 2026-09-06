@@ -1003,18 +1003,40 @@
   font-size: 0.875rem;
 
   .chat-error-retry {
+    @include outline-button;
     margin-top: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm, 4px);
-    color: var(--text-primary);
-    cursor: pointer;
-    font-size: 0.8125rem;
+  }
+}
 
-    &:hover {
-      border-color: var(--border-active);
-    }
+// The model failed to load. The notice stands where the input would, and its
+// retry is the welcome screen's download button again — the same action,
+// tried a second time — so it wears the same outline rather than the
+// browser's own button.
+.model-error-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0;
+  text-align: center;
+
+  .model-error-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+  }
+
+  .model-error-detail {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    word-break: break-word;
+  }
+
+  .model-error-retry {
+    @include outline-button;
+    margin-top: 0.25rem;
   }
 }
 
@@ -2024,32 +2046,8 @@
       }
 
       .download-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        background: transparent;
-        color: var(--text-primary);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        padding: 0.75rem 1.25rem;
-        font-size: 0.8125rem; // Match reset button font sizing
-        cursor: pointer;
-        @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
+        @include outline-button;
         flex: 1;
-        font-family: inherit;
-
-        &:hover {
-          background: var(--bg-accent);
-          border-color: rgba(255, 255, 255, 0.45);
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-lg);
-        }
-
-        &:active {
-          transform: translateY(0);
-          box-shadow: var(--shadow-md);
-        }
 
         svg {
           flex-shrink: 0;

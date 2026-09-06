@@ -19,11 +19,6 @@
   margin-bottom: var(--space-5);
 }
 
-// The reset takes the far end of the row, whatever is to its left.
-.projects-clear-chip {
-  margin-left: auto;
-}
-
 // A search that empties the page still has to say so, rather than leaving the
 // controls floating over nothing.
 .projects-empty {

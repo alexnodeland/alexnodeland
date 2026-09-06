@@ -174,8 +174,12 @@ $mobile-breakpoint: 768px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 
+  // The chat header draws its 20px glyphs at 16px; the box lands on the same
+  // 34px only if this one does too.
   svg {
     display: block;
+    width: 16px;
+    height: 16px;
   }
 
   &:active {

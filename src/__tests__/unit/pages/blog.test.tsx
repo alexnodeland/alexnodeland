@@ -77,7 +77,6 @@ describe('Blog Page', () => {
     screen.getByRole('button', { name: 'Filter posts by tag' });
   const sortTrigger = () =>
     screen.getByRole('button', { name: 'Sort posts by date' });
-  const clearChip = () => screen.getByRole('button', { name: 'clear filters' });
 
   const pick = async (
     user: ReturnType<typeof userEvent.setup>,
@@ -102,6 +101,12 @@ describe('Blog Page', () => {
     expect(document.querySelector('select')).toBeNull();
     expect(
       screen.queryByRole('button', { name: 'ai' })
+    ).not.toBeInTheDocument();
+
+    // The row is the two pickers and the search: no reset chip. Each picker
+    // resets itself through its own "all" or default option.
+    expect(
+      screen.queryByRole('button', { name: 'clear filters' })
     ).not.toBeInTheDocument();
 
     expect(tagTrigger()).toHaveTextContent('all');
@@ -152,30 +157,6 @@ describe('Blog Page', () => {
 
     expect(screen.getAllByRole('article')).toHaveLength(1);
     expect(screen.getByText('Alpha Post')).toBeInTheDocument();
-  });
-
-  it('enables the clear chip only when something is filtered, and resets everything', async () => {
-    const user = userEvent.setup();
-    render(<BlogPage data={mockData as any} />);
-
-    expect(clearChip()).toBeDisabled();
-
-    await pick(user, tagTrigger(), 'ai');
-    await pick(user, sortTrigger(), 'oldest first');
-    fireEvent.change(screen.getByPlaceholderText('search posts...'), {
-      target: { value: 'alpha' },
-    });
-    expect(clearChip()).toBeEnabled();
-
-    await user.click(clearChip());
-
-    expect(screen.getAllByRole('article')).toHaveLength(2);
-    expect(tagTrigger()).toHaveTextContent('all');
-    expect(sortTrigger()).toHaveTextContent('newest first');
-    expect(
-      (screen.getByPlaceholderText('search posts...') as HTMLInputElement).value
-    ).toBe('');
-    expect(clearChip()).toBeDisabled();
   });
 
   it('drives the pickers from the keyboard', async () => {

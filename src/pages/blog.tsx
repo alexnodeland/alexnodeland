@@ -78,15 +78,6 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
   // the scroll is the page reacting to something the reader never asked for.
   // The pointer is the only thing that marks a card now.
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory(null);
-    setSortOrder('desc');
-  };
-
-  const hasFilters =
-    Boolean(searchTerm || selectedCategory) || sortOrder !== 'desc';
-
   // "all" plus one option per tag the posts actually carry, so the menu can
   // never offer a filter that would empty the list.
   const tagOptions: DropdownOption[] = useMemo(
@@ -112,8 +103,10 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
     <>
       <SEO title="blog" pathname={location?.pathname} />
       <div className="blog-page">
-        {/* The two pickers and the reset, loose chips sticky to the top of
-            the window's scroll — the same row the CV carries. */}
+        {/* The two pickers, left, and the way to the search box at the far
+            end: the one row every list page carries (see the cv and
+            projects). Each picker resets itself through its own "all" or
+            default option, so there is no separate reset. */}
         <div className="blog-control-bar">
           <Dropdown
             ariaLabel="Filter posts by tag"
@@ -134,15 +127,6 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
             onSelect={value => setSortOrder(value as 'desc' | 'asc')}
             className="blog-sort-dropdown"
           />
-
-          <button
-            type="button"
-            className="ui-chip-button blog-clear-chip"
-            onClick={clearFilters}
-            disabled={!hasFilters}
-          >
-            clear filters
-          </button>
 
           <SearchToggle
             open={searchOpen}

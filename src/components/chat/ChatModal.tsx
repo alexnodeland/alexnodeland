@@ -238,36 +238,19 @@ const ChatModal: React.FC = () => {
         <WelcomeScreen />
       )}
 
-      {/* Model load error with a clean retry affordance */}
+      {/* The model failed to load. The notice takes the input's place at the
+          bottom of the panel, and the retry wears the same outline button as
+          the welcome screen's download: it is the same action, tried again. */}
       {modelState?.status === 'error' && messages.length === 0 && (
         <div className="chat-input-container" aria-live="assertive">
-          <div
-            className="model-error-notice"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-              width: '100%',
-              padding: '1rem',
-              textAlign: 'center',
-            }}
-          >
-            <strong>Model failed to load</strong>
+          <div className="model-error-notice">
+            <p className="model-error-title">the model failed to load</p>
             {modelState.error && (
-              <p
-                className="model-error-detail"
-                style={{
-                  fontSize: '0.8rem',
-                  opacity: 0.7,
-                  margin: 0,
-                  wordBreak: 'break-word',
-                }}
-              >
-                {modelState.error}
-              </p>
+              <p className="model-error-detail">{modelState.error}</p>
             )}
             <button
-              className="download-button"
+              type="button"
+              className="model-error-retry"
               onClick={() => retryModelLoad && retryModelLoad()}
               aria-label="Retry loading the model"
             >

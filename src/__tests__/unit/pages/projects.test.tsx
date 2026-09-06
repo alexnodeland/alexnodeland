@@ -70,8 +70,6 @@ describe('Projects Page', () => {
       screen.getByRole('button', { name: 'Filter projects by category' });
     const sortTrigger = () =>
       screen.getByRole('button', { name: 'Sort projects' });
-    const clearChip = () =>
-      screen.getByRole('button', { name: 'clear filters' });
     const searchField = () => screen.getByPlaceholderText('search projects...');
 
     const pick = async (
@@ -105,6 +103,11 @@ describe('Projects Page', () => {
     it('offers every configured category behind an "all" default', async () => {
       const user = userEvent.setup();
       render(<ProjectsPage />);
+
+      // The row is the two pickers and the search: no reset chip.
+      expect(
+        screen.queryByRole('button', { name: 'clear filters' })
+      ).not.toBeInTheDocument();
 
       expect(categoryTrigger()).toHaveTextContent('all');
       await user.click(categoryTrigger());
@@ -220,30 +223,6 @@ describe('Projects Page', () => {
       expect(
         screen.getByText(/no projects match "zzzz-no-such-project"/)
       ).toBeInTheDocument();
-    });
-
-    it('enables the clear chip only off-defaults, and resets all three', async () => {
-      const user = userEvent.setup();
-      const { container } = render(<ProjectsPage />);
-
-      expect(clearChip()).toBeDisabled();
-
-      const target = projectsConfig.categories.find(category =>
-        projectsConfig.projects.some(p => p.category === category.id)
-      )!;
-      await pick(user, categoryTrigger(), target.title);
-      await pick(user, sortTrigger(), 'name a–z');
-      fireEvent.change(searchField(), { target: { value: 'a' } });
-      expect(clearChip()).toBeEnabled();
-
-      await user.click(clearChip());
-
-      expect(categoryTrigger()).toHaveTextContent('all');
-      expect(sortTrigger()).toHaveTextContent('curated');
-      expect((searchField() as HTMLInputElement).value).toBe('');
-      expect(clearChip()).toBeDisabled();
-      expect(cardNames()).toEqual(curatedOrder());
-      expect(sectionIds(container).length).toBeGreaterThan(0);
     });
 
     it('drives the category picker from the keyboard', async () => {
