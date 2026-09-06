@@ -125,17 +125,14 @@ test.describe('structural performance guards', () => {
       .toBe('visible');
   });
 
-  test('the hero collapse eases nothing that the scroll drives', async ({
-    page,
-  }) => {
+  test('the hero fold eases every property on one clock', async ({ page }) => {
     await page.goto('/');
     await settle(page);
 
-    const eased = await page.evaluate(() => {
-      // The properties an element actually eases: its transition-property
-      // list, minus every entry whose paired duration is zero. An element with
-      // no transition declared at all reports the initial `all 0s`, which
-      // eases nothing and must not read as a failure.
+    const clocks = await page.evaluate(() => {
+      // What an element actually eases: its transition-property list, minus
+      // every entry whose paired duration is zero (an element with no
+      // transition declared reports the initial `all 0s`).
       const read = (selector: string) => {
         const el = document.querySelector(selector);
         if (!el) return null;
@@ -145,10 +142,18 @@ test.describe('structural performance guards', () => {
           .map(property => property.trim());
         const durations = style.transitionDuration
           .split(',')
-          .map(duration => parseFloat(duration));
-        return properties.filter(
-          (_, index) => durations[index % durations.length] > 0
-        );
+          .map(duration => duration.trim());
+        const timings = style.transitionTimingFunction
+          .split(/,(?![^(]*\))/)
+          .map(timing => timing.trim());
+        const eased = properties
+          .map((property, index) => ({
+            property,
+            duration: durations[index % durations.length],
+            timing: timings[index % timings.length],
+          }))
+          .filter(entry => parseFloat(entry.duration) > 0);
+        return eased;
       };
       return {
         hero: read('.site-hero.is-collapsible'),
@@ -157,74 +162,119 @@ test.describe('structural performance guards', () => {
       };
     });
 
-    // The scroll link re-targets transform and opacity on every frame, and a
-    // transition on either would keep them trailing the published value past
-    // every wheel notch. The box flip that hands the hero's height back is
-    // eased — once, when the scroll has settled — but only ever on layout
-    // properties the scroll does not touch. `all` would catch both.
-    for (const properties of Object.values(eased)) {
-      expect(properties).not.toBeNull();
-      expect(properties).not.toContain('all');
-      expect(properties).not.toContain('transform');
-      expect(properties).not.toContain('opacity');
+    // The fold is one state change. Its box (the paddings), its title (the
+    // transform) and its tagline all have to ease on the same duration and
+    // the same curve, or they arrive at different times and the title spends
+    // frames under the window's edge — the mismatch this replaced.
+    const durations = new Set<string>();
+    const timings = new Set<string>();
+    for (const eased of Object.values(clocks)) {
+      expect(eased).not.toBeNull();
+      expect(eased!.length).toBeGreaterThan(0);
+      for (const entry of eased!) {
+        durations.add(entry.duration);
+        timings.add(entry.timing);
+      }
     }
+    expect([...durations]).toHaveLength(1);
+    expect([...timings]).toHaveLength(1);
+    expect(clocks.hero!.map(e => e.property)).toContain('padding-top');
+    expect(clocks.title!.map(e => e.property)).toContain('transform');
+    expect(clocks.tagline!.map(e => e.property)).toContain('transform');
   });
 
-  test('the hero collapse leaves the window alone while the scroll moves', async ({
+  test('the hero box and its title fold together in every frame', async ({
     page,
   }) => {
-    await page.goto('/');
+    // The projects list: long enough to scroll past the fold line on every
+    // device profile, which the homepage is not on a phone.
+    await page.goto('/projects');
     await settle(page);
 
-    // The window is the scroll container. Resizing it on the frames that
-    // scroll it is what stuttered on touch, so the hero's box must hold still
-    // while the scroll is live and give its height back only once the scroll
-    // has rested.
-    const readings = await page.evaluate(async () => {
+    // Hydration is what arms the fold, and on a loaded runner it can land
+    // after `settle`. So the first fold is only waited for — it proves the
+    // shell is live — and the hero is put back to rest before the run that
+    // is actually measured.
+    const collapsed = () =>
+      page.evaluate(() =>
+        document.querySelector('.site-hero')!.classList.contains('is-collapsed')
+      );
+    const scrollTo = (top: number) =>
+      page.evaluate(value => {
+        (document.querySelector('.layout') as HTMLElement).scrollTop = value;
+      }, top);
+    await scrollTo(200);
+    await expect
+      .poll(collapsed, { message: 'the hero should fold', timeout: 20_000 })
+      .toBe(true);
+    await scrollTo(0);
+    await expect
+      .poll(collapsed, { message: 'the hero should unfold', timeout: 20_000 })
+      .toBe(false);
+    // Past the unfold's ease, so the resting numbers below are resting.
+    await page.waitForTimeout(600);
+
+    // Scroll past the fold line and sample the box and the title's transform
+    // on every frame of the fold. The two are eased from the same class on
+    // the same clock, so their progress has to agree at every sample — a box
+    // that is closed around a title still at full size, or a title already
+    // tucked away above an open box, is the state this guards against.
+    const run = await page.evaluate(async () => {
       const layout = document.querySelector('.layout') as HTMLElement;
       const hero = document.querySelector('.site-hero') as HTMLElement;
+      const title = hero.querySelector('h1') as HTMLElement;
       const frame = () =>
-        new Promise<void>(resolve =>
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-        );
-      const before = hero.getBoundingClientRect().height;
-      const moving: { height: number; collapsed: boolean }[] = [];
-      for (const top of [20, 60, 100, 140]) {
-        layout.scrollTop = top;
+        new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      const padding = () => parseFloat(getComputedStyle(hero).paddingTop);
+      const scale = () => {
+        const transform = getComputedStyle(title).transform;
+        const matrix = transform.match(/matrix\(([^)]+)\)/);
+        return matrix ? parseFloat(matrix[1].split(',')[0]) : 1;
+      };
+      const restPadding = padding();
+      const foldedScale =
+        parseFloat(
+          getComputedStyle(hero).getPropertyValue('--collapsed-title-scale')
+        ) || 0.55;
+
+      layout.scrollTop = 200;
+      const samples: { collapsed: boolean; padding: number; scale: number }[] =
+        [];
+      const started = performance.now();
+      // Well past the 320ms fold, however long the runner's frames are.
+      while (performance.now() - started < 900) {
         await frame();
-        moving.push({
-          height: hero.getBoundingClientRect().height,
+        samples.push({
           collapsed: hero.classList.contains('is-collapsed'),
+          padding: padding(),
+          scale: scale(),
         });
       }
-      return { before, moving };
+      return { restPadding, foldedPadding: padding(), foldedScale, samples };
     });
 
-    // The settle that flips the box waits for the scroll to rest, and on a
-    // slow runner two animation frames can be longer than that wait. So the
-    // assertion is on the frames the scroll was still live — the box must not
-    // have moved on any of them — and a reading taken after the flip is the
-    // flip doing its job, not a stutter.
-    const live = readings.moving.filter(reading => !reading.collapsed);
-    expect(live.length).toBeGreaterThan(0);
-    for (const reading of live) {
-      expect(Math.abs(reading.height - readings.before)).toBeLessThan(1);
-    }
+    expect(run.foldedPadding).toBeLessThan(run.restPadding);
+    const last = run.samples[run.samples.length - 1];
+    expect(last.collapsed).toBe(true);
 
-    await expect
-      .poll(
-        () =>
-          page.evaluate(() =>
-            document
-              .querySelector('.site-hero')!
-              .classList.contains('is-collapsed')
-          ),
-        {
-          message: 'the box should collapse once the scroll rests',
-          timeout: 20_000,
-        }
-      )
-      .toBe(true);
+    for (const sample of run.samples) {
+      const box =
+        (run.restPadding - sample.padding) /
+        (run.restPadding - run.foldedPadding);
+      const titleProgress = (1 - sample.scale) / (1 - run.foldedScale);
+      if (!sample.collapsed) {
+        // Not yet folded: nothing has moved.
+        expect(box).toBeLessThan(0.02);
+        expect(titleProgress).toBeLessThan(0.02);
+      } else {
+        expect(Math.abs(box - titleProgress)).toBeLessThan(0.1);
+      }
+    }
+    // And the last frame has landed, both halves of it.
+    expect(
+      (run.restPadding - last.padding) / (run.restPadding - run.foldedPadding)
+    ).toBeGreaterThan(0.98);
+    expect((1 - last.scale) / (1 - run.foldedScale)).toBeGreaterThan(0.98);
   });
 
   test('the scroll-linked properties land on their readers, not their containers', async ({
@@ -238,17 +288,20 @@ test.describe('structural performance guards', () => {
       if (layout) layout.scrollTop = 200;
     });
 
-    // 200px is past both ranges, so the two publishers settle at 1. They run
-    // on the page's animation frames — generous timeout, as everywhere here.
+    // 200px is past both ranges: the hero folds and the veil's publisher
+    // settles at 1. Both run on the page's animation frames — generous
+    // timeout, as everywhere here.
     await expect
       .poll(
         () =>
           page.evaluate(() =>
-            (
+            getComputedStyle(
               document.querySelector('.site-hero') as HTMLElement
-            ).style.getPropertyValue('--hero-collapse')
+            )
+              .getPropertyValue('--hero-collapse')
+              .trim()
           ),
-        { message: 'the collapse should settle at 1', timeout: 20_000 }
+        { message: 'the hero should fold', timeout: 20_000 }
       )
       .toBe('1');
 
@@ -258,6 +311,7 @@ test.describe('structural performance guards', () => {
           document.querySelector(selector) as HTMLElement
         ).style.getPropertyValue(property);
       return {
+        collapseOnHero: inline('.site-hero', '--hero-collapse'),
         collapseOnStage: inline('.stage', '--hero-collapse'),
         veilOnWindow: inline('.layout', '--veil-strength'),
         veilOnVeil: inline('.window-veil', '--veil-strength'),
@@ -267,6 +321,9 @@ test.describe('structural performance guards', () => {
     // A custom property inherits, so a per-frame write must sit on the
     // smallest subtree that reads it. On the stage or the window it drags
     // every element of the page into every scroll frame's style invalidation.
+    // The hero's own value is not written per frame at all any more — it is
+    // the stylesheet's, from the folded state — so nothing inline carries it.
+    expect(placement.collapseOnHero).toBe('');
     expect(placement.collapseOnStage).toBe('');
     expect(placement.veilOnWindow).toBe('');
     expect(placement.veilOnVeil).toBe('1');

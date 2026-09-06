@@ -514,8 +514,12 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     gap: var(--space-5);
   }
 
-  // The same step down the blog and project cards take on a phone.
-  .cv-card,
+  // The same step down the blog and project cards take on a phone. A
+  // collapsing entry is excluded by name: its padding lives on its summary
+  // (see .cv-collapse above), and this rule reaching the <details> as well
+  // padded the experience and education cards twice over on a phone while
+  // the certifications beside them kept the one coat.
+  .cv-card:not(.cv-collapse),
   .cv-collapse-summary {
     padding: var(--space-5);
   }
