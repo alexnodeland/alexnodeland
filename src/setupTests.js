@@ -280,8 +280,14 @@ jest.mock('three', () => ({
     render: jest.fn(),
     domElement: createCanvasElement(),
     setPixelRatio: jest.fn(),
+    setRenderTarget: jest.fn(),
     dispose: jest.fn(),
     forceContextLoss: jest.fn(),
+  })),
+  WebGLRenderTarget: jest.fn(() => ({
+    texture: {},
+    setSize: jest.fn(),
+    dispose: jest.fn(),
   })),
   Color: jest.fn(() => ({ setRGB: jest.fn() })),
   Vector3: jest.fn(() => ({ set: jest.fn(), toArray: jest.fn() })),
@@ -291,6 +297,7 @@ jest.mock('three', () => ({
     return {
       setAttribute: jest.fn((name, attr) => attributes.set(name, attr)),
       getAttribute: jest.fn(name => attributes.get(name)),
+      setDrawRange: jest.fn(),
       dispose: jest.fn(),
     };
   }),
@@ -342,7 +349,13 @@ jest.mock('three', () => ({
   ShaderMaterial: jest.fn(config => ({ ...config, dispose: jest.fn() })),
   PlaneGeometry: jest.fn(() => ({ dispose: jest.fn() })),
   SphereGeometry: jest.fn(() => ({ dispose: jest.fn() })),
-  DataTexture: jest.fn(() => ({ needsUpdate: false, dispose: jest.fn() })),
+  // Carries its image the way the real one does, so a texture packed by hand
+  // (the 404 glyph) can be read back.
+  DataTexture: jest.fn((data, width, height) => ({
+    image: { data, width, height },
+    needsUpdate: false,
+    dispose: jest.fn(),
+  })),
   AdditiveBlending: 1,
 }));
 
@@ -388,7 +401,6 @@ jest.mock('three/examples/jsm/lines/Line2.js', () => ({
     computeLineDistances: jest.fn(),
   })),
 }));
-
 // Mock console methods to reduce noise in tests
 global.console = {
   ...console,

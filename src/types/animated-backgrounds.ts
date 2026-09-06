@@ -123,6 +123,8 @@ export interface AnimatedBackgroundConfig {
 export interface AnimatedBackgroundProps {
   className?: string;
   settings: BackgroundSettings;
+  frozen?: boolean;
+  notFound?: boolean;
 }
 
 export interface SettingsSchema {

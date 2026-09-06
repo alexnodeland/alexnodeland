@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { siteConfig } from '../../config';
+import { useNotFound } from '../../lib/notFound';
 import { useBackground } from '../BackgroundProvider';
 import { useSettingsPanel } from '../SettingsPanelContext';
 import BackgroundControls from './BackgroundControls';
@@ -15,6 +16,13 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
   // Use contexts
   const { isContentHidden, setContentHidden } = useSettingsPanel();
   const isMobile = useIsMobileViewport();
+
+  // The 404 page is a sequence every background has — its own problem with
+  // the number as the input — and the flag is simply handed to whichever
+  // background is on screen. The cycle runs on the 404 as it does on every
+  // other page: each background that comes up plays its sequence from the
+  // start, and the arrow keys switch the same way.
+  const notFound = useNotFound();
 
   // Mobile reaches the backgrounds by hiding the page content (see
   // MobileInteractivity), which is a deliberate "let me look at / tune this
@@ -263,6 +271,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
           className={className}
           settings={currentSettings}
           frozen={prefersReducedMotion}
+          notFound={notFound}
           onAudioControlsReady={publishAudioControls}
         />
       </React.Suspense>

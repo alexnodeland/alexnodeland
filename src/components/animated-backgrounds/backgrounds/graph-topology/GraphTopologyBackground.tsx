@@ -3,9 +3,24 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { glyphGraphFor } from '../../core/glyph';
+import { advanceMorph, beginMorph, Morph, writeLine } from '../../core/lines';
+import {
+  RESHAPE_SETTLE_MS,
+  viewportReshaped,
+} from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { GraphTopologySettings } from './config';
+
+// Room for either network the scheduler is shown: the configured one, or
+// the number (see numberNetwork).
+const NODE_CAPACITY = 320;
+// How long the machines take to fly into the number, to settle when it is
+// laid out again, and to scatter back once the page is left.
+const MORPH_IN_MS = 2200;
+const MORPH_AGAIN_MS = 700;
+const MORPH_OUT_MS = 1600;
 
 type Vector2 = { x: number; y: number };
 
@@ -138,6 +153,42 @@ function createClusteredGraph(
   return { nodes, edges };
 }
 
+/**
+ * The number as a network, for the 404 sequence — the same kind of network
+ * `createClusteredGraph` makes, with the digits as the datacenters. Each
+ * machine sits at its place inside a digit, and stays there: a datacenter
+ * has a location, and a node with one is pinned in the layout the way a
+ * pinned node is in any force-directed drawing. Links along a stroke are
+ * same-rack links and the links that bridge two digits are cross-datacenter
+ * ones, with the latencies and bandwidths the generator gives those. The
+ * scheduler's search then runs on it as on any other network.
+ */
+function numberNetwork(
+  width: number,
+  height: number,
+  rng: () => number
+): { nodes: GraphNode[]; edges: GraphEdge[] } | null {
+  const graph = glyphGraphFor(width, height, rng);
+  if (!graph) return null;
+  const nodes: GraphNode[] = graph.points.map((p, id) => ({
+    id,
+    position: { x: p.x, y: p.y },
+    velocity: { x: 0, y: 0 },
+    fixed: true,
+  }));
+  const edges: GraphEdge[] = graph.edges.map(e => {
+    const latencyMs = e.bridge ? 5 + rng() * 15 : 0.1 + rng() * 0.9;
+    const bandwidth = e.bridge ? 10 : 100; // Gbps
+    return {
+      source: e.a,
+      target: e.b,
+      latencyMs,
+      weight: bandwidth / latencyMs,
+    };
+  });
+  return { nodes, edges };
+}
+
 // Proper graph conductivity calculation for weighted undirected graphs
 // We want HIGH conductivity WITHIN the subgraph, LOW conductivity ACROSS the boundary
 function calculateSubgraphConductivity(
@@ -188,7 +239,7 @@ function calculateSubgraphConductivity(
 
 const GraphTopologyBackground: React.FC<
   AnimatedBackgroundProps<GraphTopologySettings>
-> = ({ className, settings, frozen }) => {
+> = ({ className, settings, frozen, notFound }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
 
@@ -205,6 +256,15 @@ const GraphTopologyBackground: React.FC<
   useEffect(() => {
     if (!frozen) resumeRef.current?.();
   }, [frozen]);
+
+  // The 404 sequence — see AnimatedBackgroundProps.notFound. Read off a ref
+  // each frame like the settings; the effect nudges a frozen loop so it draws
+  // the new state once.
+  const notFoundRef = useRef(Boolean(notFound));
+  notFoundRef.current = Boolean(notFound);
+  useEffect(() => {
+    resumeRef.current?.();
+  }, [notFound]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -252,11 +312,14 @@ const GraphTopologyBackground: React.FC<
       );
 
     const rng = mulberry32(1337);
-    const { nodes, edges } = createClusteredGraph(
+    let { nodes, edges } = createClusteredGraph(
       nodeCountParam,
       clusterCountParam,
       rng
     );
+    // Whether every node is pinned, in which case the layout has nothing to
+    // do and is not run.
+    let pinned = false;
 
     // Force-directed layout with spring lengths proportional to latency
     const desiredLen = (latency: number) =>
@@ -273,41 +336,53 @@ const GraphTopologyBackground: React.FC<
     let iterationCount = 0; // Track iterations for temperature schedule
     let currentTemperature = 1.0; // Track current temperature for visualization
 
-    // Initialize current set from random seed using proper graph connectivity
-    const seedIndex = Math.floor(rng() * nodes.length);
-    currentSet.add(seedIndex);
+    /**
+     * Starts the search over on the network as it stands: a connected seed
+     * subgraph grown from a random node, taken as the best so far.
+     */
+    const initSearch = () => {
+      currentSet = new Set<number>();
+      iterationCount = 0;
+      currentTemperature = 1.0;
 
-    // Expand by connected neighbors until target size (ensures connectivity)
-    while (currentSet.size < targetSubgraphSize) {
-      const boundary: number[] = [];
-      const currentArray = Array.from(currentSet);
+      // Initialize current set from random seed using proper graph connectivity
+      const seedIndex = Math.floor(rng() * nodes.length);
+      currentSet.add(seedIndex);
 
-      // Find all nodes connected to current subgraph
-      for (const nodeId of currentArray) {
-        for (const e of edges) {
-          if (e.source === nodeId && !currentSet.has(e.target)) {
-            boundary.push(e.target);
+      // Expand by connected neighbors until target size (ensures connectivity)
+      const size = Math.min(targetSubgraphSize, nodes.length - 1);
+      while (currentSet.size < size) {
+        const boundary: number[] = [];
+        const currentArray = Array.from(currentSet);
+
+        // Find all nodes connected to current subgraph
+        for (const nodeId of currentArray) {
+          for (const e of edges) {
+            if (e.source === nodeId && !currentSet.has(e.target)) {
+              boundary.push(e.target);
+            }
+            if (e.target === nodeId && !currentSet.has(e.source)) {
+              boundary.push(e.source);
+            }
           }
-          if (e.target === nodeId && !currentSet.has(e.source)) {
-            boundary.push(e.source);
-          }
+        }
+
+        if (boundary.length > 0) {
+          // Add a connected neighbor
+          const next = boundary[Math.floor(rng() * boundary.length)];
+          currentSet.add(next);
+        } else {
+          // Fallback: add random node if no connected neighbors
+          const next = Math.floor(rng() * nodes.length);
+          currentSet.add(next);
         }
       }
 
-      if (boundary.length > 0) {
-        // Add a connected neighbor
-        const next = boundary[Math.floor(rng() * boundary.length)];
-        currentSet.add(next);
-      } else {
-        // Fallback: add random node if no connected neighbors
-        const next = Math.floor(rng() * nodes.length);
-        currentSet.add(next);
-      }
-    }
-
-    // Initialize best solution and current score
-    bestSet = new Set(currentSet);
-    bestScore = calculateSubgraphConductivity(bestSet, edges, nodes.length);
+      // Initialize best solution and current score
+      bestSet = new Set(currentSet);
+      bestScore = calculateSubgraphConductivity(bestSet, edges, nodes.length);
+    };
+    initSearch();
 
     // Build Three.js geometry for edges (lines) and nodes (instanced circles).
     //
@@ -323,30 +398,43 @@ const GraphTopologyBackground: React.FC<
     );
 
     const edgeSegments: Line2[] = [];
-    for (const e of edges) {
-      const geometry = new LineGeometry();
-      geometry.setPositions([0, 0, 0, 0, 0, 0]);
-      const material = new LineMaterial({
-        color: new THREE.Color(0.1, 0.1, 0.12), // Very dark gray for background edges
-        transparent: true,
-        opacity: settings.opacity * 0.1, // Very faint by default; live below
-        linewidth: 1,
-        resolution: lineResolution,
+    const buildLines = () => {
+      for (const e of edges) {
+        const geometry = new LineGeometry();
+        geometry.setPositions([0, 0, 0, 0, 0, 0]);
+        const material = new LineMaterial({
+          color: new THREE.Color(0.1, 0.1, 0.12), // Very dark gray for background edges
+          transparent: true,
+          opacity: settings.opacity * 0.1, // Very faint by default; live below
+          linewidth: 1,
+          resolution: lineResolution,
+        });
+        const line = new Line2(geometry, material);
+        line.userData = { e };
+        scene.add(line);
+        edgeSegments.push(line);
+      }
+    };
+    const disposeLines = () => {
+      edgeSegments.forEach(l => {
+        scene.remove(l);
+        l.geometry?.dispose?.();
+        (l.material as LineMaterial)?.dispose?.();
       });
-      const line = new Line2(geometry, material);
-      line.userData = { e };
-      scene.add(line);
-      edgeSegments.push(line);
-    }
+      edgeSegments.length = 0;
+    };
+    buildLines();
 
-    // Node rendering: simple circles via Points
-    const nodePositions = new Float32Array(nodes.length * 3);
+    // Node rendering: simple circles via Points. Sized for the biggest
+    // network the scheduler is shown and drawn up to the one it has.
+    const nodePositions = new Float32Array(NODE_CAPACITY * 3);
     const nodeGeometry = new THREE.BufferGeometry();
     nodeGeometry.setAttribute(
       'position',
       new THREE.BufferAttribute(nodePositions, 3)
     );
-    const nodeColors = new Float32Array(nodes.length * 3);
+    nodeGeometry.setDrawRange(0, nodes.length);
+    const nodeColors = new Float32Array(NODE_CAPACITY * 3);
     nodeGeometry.setAttribute(
       'color',
       new THREE.BufferAttribute(nodeColors, 3)
@@ -362,7 +450,70 @@ const GraphTopologyBackground: React.FC<
     const points = new THREE.Points(nodeGeometry, nodeMaterial);
     scene.add(points);
 
+    // ── The 404 sequence ───────────────────────────────────────────────────
+    // The network the scheduler is shown becomes the number: the digits as
+    // datacenters, the machines at their places (see numberNetwork), and the
+    // same search for a well-connected subgraph running on it. Nothing is
+    // drawn but the network. Swapping one network for another is done the
+    // way the pathfinding lab does it — each machine of the new network sets
+    // off from where one of the old ones was and flies to its place — so
+    // there is no cut. Let go, the configured network comes back the same
+    // way and the layout picks up where it left off.
+    let isNumber = false;
+    let morph: Morph | null = null;
+    let glyphSize = { width: window.innerWidth, height: window.innerHeight };
+
+    const rebuild = (
+      built: { nodes: GraphNode[]; edges: GraphEdge[] },
+      number: boolean,
+      now: number,
+      morphMs: number
+    ) => {
+      const previous = nodes;
+      disposeLines();
+      nodes = built.nodes;
+      edges = built.edges;
+      isNumber = number;
+      pinned = nodes.every(n => n.fixed);
+      morph = beginMorph(previous, nodes, now, morphMs);
+      buildLines();
+      nodeGeometry.setDrawRange(0, nodes.length);
+      initSearch();
+    };
+
+    /** The network the flag asks for, if it is not the one on screen. */
+    const syncNetwork = (now: number) => {
+      const on = notFoundRef.current;
+      if (on === isNumber) return;
+      const snap = frozenRef.current;
+      if (on) {
+        const built = numberNetwork(glyphSize.width, glyphSize.height, rng);
+        // A number that could not be drawn leaves the network as it is,
+        // and is not asked for again every frame.
+        if (!built) {
+          isNumber = true;
+          return;
+        }
+        rebuild(built, true, now, snap ? 0 : MORPH_IN_MS);
+      } else {
+        rebuild(
+          createClusteredGraph(nodeCountParam, clusterCountParam, rng),
+          false,
+          now,
+          snap ? 0 : MORPH_OUT_MS
+        );
+      }
+    };
+
+    /** Carries nodes in flight along. */
+    const carryMorph = (now: number) => {
+      if (morph && advanceMorph(morph, nodes, now)) morph = null;
+    };
+
     function stepLayout(dt: number) {
+      // Nodes in flight are not laid out, and pinned ones have nowhere to go.
+      if (morph || pinned) return;
+
       // Limit dt to prevent instability
       dt = Math.min(dt, 0.02);
 
@@ -429,6 +580,8 @@ const GraphTopologyBackground: React.FC<
 
       // Update positions with velocity limiting
       for (const n of nodes) {
+        if (n.fixed) continue;
+
         // Apply damping
         n.velocity.x *= damping;
         n.velocity.y *= damping;
@@ -672,6 +825,8 @@ const GraphTopologyBackground: React.FC<
       const opacity = live.opacity;
       const edgeThickness = live.edgeThickness || 2.0;
       const dt = Math.min(0.05, liveSimulationSpeed() * 0.016);
+      syncNetwork(timeMs);
+      carryMorph(timeMs);
       stepLayout(dt);
       mcmcStep(timeMs);
 
@@ -691,7 +846,7 @@ const GraphTopologyBackground: React.FC<
         const e = line.userData.e as GraphEdge;
         const a = nodes[e.source].position;
         const b = nodes[e.target].position;
-        line.geometry.setPositions([a.x, a.y, 0, b.x, b.y, 0]);
+        writeLine(line, a.x, a.y, b.x, b.y);
 
         // Determine edge state
         const sourceInCurrent = currentSet.has(e.source);
@@ -770,6 +925,14 @@ const GraphTopologyBackground: React.FC<
         edgeLineMaterial.linewidth = linewidth * edgeThickness;
       }
 
+      // How strongly each node is linked into the current set, for visual
+      // emphasis: one pass over the edges, since ids are indices.
+      const connectivity = new Float32Array(nodes.length);
+      for (const e of edges) {
+        if (currentSet.has(e.target)) connectivity[e.source] += e.weight;
+        if (currentSet.has(e.source)) connectivity[e.target] += e.weight;
+      }
+
       // Update node positions and colors
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
@@ -779,18 +942,7 @@ const GraphTopologyBackground: React.FC<
 
         const inCurrent = currentSet.has(n.id);
         const inBest = bestSet.has(n.id);
-
-        // Calculate node connectivity for visual emphasis
-        let nodeConnectivity = 0;
-        for (const e of edges) {
-          if (
-            (e.source === n.id && currentSet.has(e.target)) ||
-            (e.target === n.id && currentSet.has(e.source))
-          ) {
-            nodeConnectivity += e.weight;
-          }
-        }
-        const normalizedConnectivity = Math.min(1, nodeConnectivity / 500);
+        const normalizedConnectivity = Math.min(1, connectivity[i] / 500);
 
         let r: number, g: number, b: number;
         let brightness: number;
@@ -816,9 +968,11 @@ const GraphTopologyBackground: React.FC<
           [r, g, b] = live.colors.secondary;
           brightness = 1.1 + searchPulse * 0.3;
         } else {
-          // Background nodes: background color, barely visible
+          // Background nodes: background color, barely visible — except a
+          // pinned one, which has a location and is drawn there like a
+          // landmark on a map.
           [r, g, b] = live.colors.background;
-          brightness = 0.1 + normalizedConnectivity * 0.1; // Very dim
+          brightness = n.fixed ? 0.75 : 0.1 + normalizedConnectivity * 0.1;
         }
 
         // Apply temperature visualization (redder = hotter = more exploration)
@@ -873,11 +1027,26 @@ const GraphTopologyBackground: React.FC<
     // repeatedly over a single flick, and each raw call reallocates the
     // drawing buffer mid-scroll.
     let resizeFrame: number | null = null;
+    let reshapeTimer = 0;
     const applyResize = () => {
       resizeFrame = null;
       renderer.setSize(window.innerWidth, window.innerHeight);
       // Line2 widths are screen-space, so the materials need the viewport size.
       lineResolution.set(window.innerWidth, window.innerHeight);
+      // The number is laid out for the viewport's shape. A URL bar sliding
+      // away is not a new shape; a real one gets the number laid out again
+      // once the resize has settled, not on every frame of a drag.
+      const size = { width: window.innerWidth, height: window.innerHeight };
+      if (viewportReshaped(glyphSize, size)) {
+        window.clearTimeout(reshapeTimer);
+        reshapeTimer = window.setTimeout(() => {
+          glyphSize = size;
+          if (isNumber && !frozenRef.current) {
+            const built = numberNetwork(size.width, size.height, rng);
+            if (built) rebuild(built, true, performance.now(), MORPH_AGAIN_MS);
+          }
+        }, RESHAPE_SETTLE_MS);
+      }
     };
     const handleResize = () => {
       if (resizeFrame === null) {
@@ -891,11 +1060,9 @@ const GraphTopologyBackground: React.FC<
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', handleResize);
       if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+      window.clearTimeout(reshapeTimer);
       // Cleanup
-      edgeSegments.forEach(l => {
-        l.geometry?.dispose?.();
-        (l.material as LineMaterial)?.dispose?.();
-      });
+      disposeLines();
       nodeGeometry.dispose();
       (points.material as THREE.Material).dispose();
       renderer.dispose();
