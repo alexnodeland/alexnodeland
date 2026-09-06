@@ -17,21 +17,18 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
   const { isContentHidden, setContentHidden } = useSettingsPanel();
   const isMobile = useIsMobileViewport();
 
-  // The 404 page is a sequence the background plays — it comes apart into
-  // the number over several seconds and then holds. Whichever background was
-  // on screen when the reader hit the missing page is the one that plays it:
-  // arriving from inside the site that is the one they were looking at, and
-  // on a cold load it is the one the visit drew. The cycle holds while the
-  // page is up, because advancing would fade the field to black and start a
-  // different background's sequence from nothing every twelve seconds. The
-  // arrow keys still switch, and the next background plays its own.
+  // The 404 page is a sequence every background has — its own problem with
+  // the number as the input — and the flag is simply handed to whichever
+  // background is on screen. The cycle runs on the 404 as it does on every
+  // other page: each background that comes up plays its sequence from the
+  // start, and the arrow keys switch the same way.
   const notFound = useNotFound();
 
   // Mobile reaches the backgrounds by hiding the page content (see
   // MobileInteractivity), which is a deliberate "let me look at / tune this
   // one" gesture — auto-advancing out from under it would fight the user.
   // Desktop's H key is a passive lean-back view, so it keeps cycling.
-  const cyclePaused = (isMobile && isContentHidden) || notFound;
+  const cyclePaused = isMobile && isContentHidden;
   const {
     state,
     switchToNextBackground,

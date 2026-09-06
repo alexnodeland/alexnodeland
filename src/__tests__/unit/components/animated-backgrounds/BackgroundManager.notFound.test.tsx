@@ -86,20 +86,15 @@ describe('BackgroundManager and the 404', () => {
     expect(screen.getByTestId('bg')).toHaveAttribute('data-not-found', 'no');
   });
 
-  it('holds the cycle while the 404 is up, and resumes after', () => {
+  it('keeps cycling while the 404 is up, as on every other page', () => {
     render(<BackgroundManager />);
     act(() => markNotFound(true));
     act(() => {
       jest.advanceTimersByTime(60000);
     });
-    expect(mockSwitchToNextBackground).not.toHaveBeenCalled();
-    // Never stranded on the fade-to-black frame either.
-    expect(mockSetOverlayOpacity).toHaveBeenLastCalledWith(0);
-
-    act(() => markNotFound(false));
-    act(() => {
-      jest.advanceTimersByTime(60000);
-    });
     expect(mockSwitchToNextBackground).toHaveBeenCalled();
+    // Each background that comes up is handed the flag.
+    expect(screen.getByTestId('bg')).toHaveAttribute('data-not-found', 'yes');
+    expect(mockSetOverlayOpacity).toHaveBeenCalled();
   });
 });

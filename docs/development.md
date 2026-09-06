@@ -141,8 +141,8 @@ one, and each is the background's own problem with the number as its input:
 an initial condition for the PDE, the network itself for the two graphs, an
 interference pattern of sources for the waves, fixed cells for the automaton,
 an additive voice for the synth. They share the glyph field and the
-graph-from-glyph construction in `core/glyph.ts`, so the one on screen when a
-reader hits a missing page is the one that plays.
+graph-from-glyph construction in `core/glyph.ts`. The cycle runs on the 404
+as on every other page, so each background that comes up plays its own.
 
 ### 4. Running it
 
