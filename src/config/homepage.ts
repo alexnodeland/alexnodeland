@@ -77,7 +77,7 @@ export const homepageConfig: HomepageConfig = {
         icon: '🤖',
         title: 'ai systems',
         description:
-          'agent orchestration, structured context, constrained generation, and evaluation loops',
+          'agent orchestration, structured context, constrained generation, observability and auditability',
       },
       {
         icon: '⚙️',
