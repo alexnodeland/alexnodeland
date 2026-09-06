@@ -447,7 +447,7 @@ const GraphTopologyBackground: React.FC<
     );
     recruitGeometry.setDrawRange(0, 0);
     const recruitMaterial = new THREE.PointsMaterial({
-      size: settings.elementSize * 200,
+      size: settings.elementSize * 260,
       vertexColors: true,
       transparent: true,
       opacity: settings.opacity,
@@ -588,7 +588,7 @@ const GraphTopologyBackground: React.FC<
         if (r.spawned) {
           const since = sequence.seconds - r.born;
           const fadeIn = frozenRef.current ? 1 : Math.min(1, since / 0.6);
-          const pulse = 0.72 + 0.28 * Math.sin(timeMs * 0.0025 + i * 1.7);
+          const pulse = 0.85 + 0.3 * Math.sin(timeMs * 0.0025 + i * 1.7);
           bright = fadeIn * pulse * (on ? 1 : progress);
           arrival[i] = Math.max(
             0,
@@ -608,7 +608,7 @@ const GraphTopologyBackground: React.FC<
         recruitGeometry.getAttribute('color') as THREE.BufferAttribute
       ).needsUpdate = true;
       recruitMaterial.size =
-        live.elementSize * 200 * (0.9 + 0.1 * Math.sin(timeMs * 0.002));
+        live.elementSize * 260 * (0.9 + 0.1 * Math.sin(timeMs * 0.002));
       recruitMaterial.opacity = live.opacity;
 
       // A link is drawn once both its ends are in place, and twinkles.
@@ -628,7 +628,10 @@ const GraphTopologyBackground: React.FC<
         pos[o + 5] = 0;
         const twinkle = 0.55 + 0.45 * Math.sin(timeMs * 0.003 + k * 0.9);
         const strength =
-          Math.min(arrival[i], arrival[j]) * twinkle * (on ? 1 : progress);
+          Math.min(arrival[i], arrival[j]) *
+          twinkle *
+          1.3 *
+          (on ? 1 : progress);
         for (let c = 0; c < 6; c += 3) {
           col[o + c] = lr * strength;
           col[o + c + 1] = lg * strength;
@@ -638,7 +641,7 @@ const GraphTopologyBackground: React.FC<
       webGeometry.instanceCount = webPairs.length;
       webPositionBuffer.needsUpdate = true;
       webColorBuffer.needsUpdate = true;
-      webMaterial.opacity = live.opacity * 0.6;
+      webMaterial.opacity = live.opacity * 0.8;
       webMaterial.linewidth = (live.edgeThickness || 2) * 0.5;
     };
 
@@ -672,7 +675,8 @@ const GraphTopologyBackground: React.FC<
           r.x = origin.x;
           r.y = origin.y;
           if (on && (snap || sequence.seconds >= r.born)) r.spawned = true;
-          continue;
+          // A still is one frame: what spawns in it has to arrive in it too.
+          if (!snap) continue;
         }
         const gx = on ? r.tx : origin.x;
         const gy = on ? r.ty : origin.y;
@@ -1033,7 +1037,8 @@ const GraphTopologyBackground: React.FC<
         if (progress > 0.15 && edgeLife[i] >= 1) {
           const length = Math.hypot(a.x - b.x, a.y - b.y);
           if (length > desiredLen(e.latencyMs) * 2.2 + 0.12)
-            edgeLife[i] = 0.999;
+            // In a still there is no time for it to go: it is gone.
+            edgeLife[i] = frozenRef.current ? 0 : 0.999;
         }
         if (edgeLife[i] < 1) {
           edgeLife[i] = on

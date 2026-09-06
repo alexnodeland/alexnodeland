@@ -98,6 +98,8 @@ const CellularAutomatonBackground: React.FC<
     let mask: Uint8Array = new Uint8Array(0);
     const sequence = new NotFoundSequence();
     let progress = 0;
+    // Whether the number is being let go of, as opposed to formed.
+    let releasing = false;
 
     /** Fills the grid with random soup at the configured density. */
     const seed = () => {
@@ -226,10 +228,24 @@ const CellularAutomatonBackground: React.FC<
       // number stands solid — a block Conway's count would otherwise churn.
       // What keeps it alive at rest: a flicker inside, sparks outside, and
       // the rule itself still working the edge.
+      //
+      // Let go, it runs the other way: the number dies away and the field
+      // around it is reseeded, thinly at first, so the soup grows back
+      // rather than cutting in.
       const p = progress;
-      if (p > 0) {
-        const birth = 0.04 + 0.42 * p;
-        const die = 0.05 + 0.5 * p;
+      if (releasing && p < 1) {
+        const dissolve = 0.3 * (1 - p);
+        const reseed = initialDensity * 0.12 * (1 - p);
+        for (let i = 0; i < next.length; i++) {
+          if (mask[i]) {
+            if (next[i] && Math.random() < dissolve) next[i] = 0;
+          } else if (!next[i] && Math.random() < reseed) {
+            next[i] = 1;
+          }
+        }
+      } else if (p > 0) {
+        const birth = 0.06 + 0.5 * p;
+        const die = 0.08 + 0.6 * p;
         const spark = 0.0012 * (1 - p) + 0.0002;
         for (let i = 0; i < next.length; i++) {
           if (mask[i]) {
@@ -433,6 +449,7 @@ const CellularAutomatonBackground: React.FC<
       lastFrame = now;
 
       const on = notFoundRef.current;
+      releasing = !on && sequence.active;
       if (frozenRef.current) {
         if (on && sequence.raw < 1) {
           syncGrid();
