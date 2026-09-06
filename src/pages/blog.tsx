@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { graphql, Link } from 'gatsby';
 import Dropdown from '../components/ui/Dropdown';
-import { ArrowOutIcon, EntryKind, PostIcon } from '../components/ui/EntryIcons';
+import { ArrowOutIcon } from '../components/ui/EntryIcons';
 import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
@@ -175,13 +175,11 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
                   // pickers has already said which tag the list is showing.
                   data-category={post.frontmatter.category}
                 >
-                  {/* The kind mark in the corner, then the title, the body,
-                      and one meta band at the foot — the grammar the project
-                      and cv cards are built to as well, so the three list
-                      pages read as one system. */}
-                  <EntryKind>
-                    <PostIcon />
-                  </EntryKind>
+                  {/* The title, the body, then one meta band at the foot —
+                      the grammar the project and cv cards are built to as
+                      well, so the three list pages read as one system. No
+                      glyph marks what kind of thing the card is: the page
+                      already has. */}
                   <div className="post-header">
                     <h2 className="post-title">
                       <Link to={`/blog${post.fields.slug}`}>

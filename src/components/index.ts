@@ -18,12 +18,7 @@ export { default as useCVExport } from './cv/useCVExport';
 export { default as ActivityPanel } from './ui/ActivityPanel';
 export { default as Dropdown } from './ui/Dropdown';
 export type { DropdownOption } from './ui/Dropdown';
-export {
-  BriefcaseIcon,
-  CertificateIcon,
-  GraduationIcon,
-  PostIcon,
-} from './ui/EntryIcons';
+export { ArrowOutIcon, GitHubIcon } from './ui/EntryIcons';
 
 // Chat components
 export * from './chat';

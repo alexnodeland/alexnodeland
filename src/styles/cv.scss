@@ -183,19 +183,14 @@ section[id] {
 }
 
 // Shared card style for experience, education, and certifications — the blog
-// preview's grammar applied to a cv entry: an outline, the same padding, the
-// kind mark in the corner, a title row, and one meta band. Nothing lifts and
-// nothing scales; the hairline eases brighter under the pointer and eases back
-// when it leaves (see `card-highlight` in mixins.scss).
+// preview's grammar applied to a cv entry: an outline, the same padding, a
+// title row, and one meta band. Nothing lifts and nothing scales; the
+// hairline eases brighter under the pointer and eases back when it leaves
+// (see `card-highlight` in mixins.scss).
 .cv-card {
   @include outline-block;
   @include card-highlight;
-  // The kind mark in the corner (.entry-kind, cards.scss) is pinned to this
-  // box, at the padding's inset — on a collapsible card the summary carries
-  // that padding, but the inset is the same number.
-  position: relative;
-  --card-pad: var(--space-5);
-  padding: var(--card-pad);
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
 
   @include reading-emphasis {
@@ -230,10 +225,9 @@ section[id] {
 }
 
 // The title row: the name at one end, the duration chip and the chevron at
-// the other, and the whole row kept clear of the kind mark in the corner,
-// which sits on the name's first line beyond the chevron.
+// the other. The briefcase that used to open it is gone — every card in the
+// section is a role, and the heading has said so.
 .experience-header {
-  @include entry-kind-clearance;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -283,7 +277,7 @@ section[id] {
 // The whole summary is the toggle — it fills the collapsed card edge to edge —
 // so it has to look like it, rather than leaving the chevron as the only cue.
 .cv-collapse-summary {
-  padding: var(--card-pad);
+  padding: var(--space-5);
   cursor: pointer;
   display: block;
   // The card no longer clips its children (the travelling light rides its
@@ -448,9 +442,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   display: flex;
   flex-direction: column;
 
-  // The title row: the name alone, kept clear of the kind mark in the corner.
+  // The title row: the name alone.
   .cert-header {
-    @include entry-kind-clearance;
     margin-bottom: var(--space-3);
   }
 
@@ -627,10 +620,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 }
 
 // Education specific styles (using cv-card base). Same title row as an
-// experience entry — the name, the duration chip at the far end, the kind
-// mark in the corner beyond it.
+// experience entry — the name, the duration chip at the far end.
 .education-header {
-  @include entry-kind-clearance;
   display: flex;
   justify-content: space-between;
   align-items: center;

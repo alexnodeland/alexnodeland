@@ -1,7 +1,7 @@
 import React from 'react';
 import ActivityPanel from '../components/ui/ActivityPanel';
 import Dropdown from '../components/ui/Dropdown';
-import { EntryKind, GitHubIcon, RepoIcon } from '../components/ui/EntryIcons';
+import { GitHubIcon } from '../components/ui/EntryIcons';
 import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
@@ -57,11 +57,8 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
       className="project-card"
     >
       <div className="project-card-content">
-        {/* The kind mark in the corner, then the name, the body, the tags,
-            and one meta band at the foot — the blog preview's grammar. */}
-        <EntryKind>
-          <RepoIcon />
-        </EntryKind>
+        {/* The name, the body, the tags, and one meta band at the foot —
+            the blog preview's grammar. */}
         <div className="project-header">
           <h3 className="project-name">{project.name}</h3>
         </div>

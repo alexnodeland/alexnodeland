@@ -1,6 +1,5 @@
 import React from 'react';
 import { EducationItem } from '../../types';
-import { EntryKind, GraduationIcon } from '../ui/EntryIcons';
 
 interface CVEducationSectionProps {
   education: EducationItem[];
@@ -19,10 +18,6 @@ const CVEducationSection: React.FC<CVEducationSectionProps> = ({
       {education.map((edu, index) => (
         <details key={index} className="cv-card cv-collapse">
           <summary className="cv-collapse-summary">
-            {/* The kind mark in the card's corner, then the title row. */}
-            <EntryKind>
-              <GraduationIcon />
-            </EntryKind>
             <div className="education-header">
               <div className="cv-entry-title">
                 <h3>{edu.degree}</h3>

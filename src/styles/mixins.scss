@@ -210,13 +210,6 @@
 // it carries its own material (see `frosted-chip`). The gaps between the chips
 // are dead to the pointer, so scroll and clicks aimed at the document pass
 // straight through the row instead of being caught by an invisible strip.
-// The room a card's title row leaves for the kind mark in the corner (see
-// .entry-kind in cards.scss): the glyph's width and a breath, so a long name
-// wraps short of it rather than running underneath.
-@mixin entry-kind-clearance {
-  padding-right: calc(18px + var(--space-3));
-}
-
 @mixin sticky-control-row {
   position: sticky;
   top: 0;

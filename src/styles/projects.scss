@@ -96,17 +96,13 @@
   gap: var(--space-5);
 }
 
-// Project Card — the blog preview's grammar in a grid cell: the kind mark in
-// the corner, the name, the body, then one meta band at the foot. It does not
-// move under the pointer; its hairline eases brighter and eases back (see
-// `card-highlight` in mixins.scss).
+// Project Card — the blog preview's grammar in a grid cell: the name, the
+// body, then one meta band at the foot. It does not move under the pointer;
+// its hairline eases brighter and eases back (see `card-highlight` in
+// mixins.scss).
 .project-card {
   @include outline-block;
   @include card-highlight;
-  // The kind mark in the corner (.entry-kind, cards.scss) is pinned to this
-  // box, at the padding's inset.
-  position: relative;
-  --card-pad: var(--space-5);
   border-radius: var(--radius-lg);
   text-decoration: none;
   display: block;
@@ -118,16 +114,16 @@
 
 .project-card-content {
   // The blog preview's padding, so a card reads the same on either page.
-  padding: var(--card-pad);
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-// The title row: the name alone, now that its glyph is in the corner — and
-// kept clear of the mark, which sits on its first line.
+// The title row: the name alone. The repo glyph that used to open it is
+// gone — every card on the page is a repo, and the octocat at the foot
+// already says where it leads.
 .project-header {
-  @include entry-kind-clearance;
   margin-bottom: var(--space-3);
 }
 
@@ -487,9 +483,8 @@
     gap: var(--space-4);
   }
 
-  // The corner mark follows the padding in (it is pinned at --card-pad).
-  .project-card {
-    --card-pad: var(--space-4);
+  .project-card-content {
+    padding: var(--space-4);
   }
 
   .activity-panel {
