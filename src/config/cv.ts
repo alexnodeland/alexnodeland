@@ -84,7 +84,7 @@ export const cvData: CVData = {
     location: 'Upstate, New York, USA',
     website: 'alexnodeland.com',
     summary:
-      'Engineer and mathematician working on AI systems — agent orchestration, evaluation infrastructure, and the semantic models underneath — currently at Perch Insights. Previously co-founded and ran a supercomputing startup in Singapore for four years, led engineering at a music-ML company acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Most useful on problems that sit between mathematics and production systems.',
+      'Engineer and mathematician working on AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Interested in problems that need both mathematics and production engineering.',
   },
 
   experience: [
@@ -97,11 +97,11 @@ export const cvData: CVData = {
       achievements: [
         'Built a DAG-based orchestration framework that lets autonomous agents carry out multi-step data analysis end to end',
         'Designed a DSL that non-technical users write analysis workflows in, mixing LLM agents with conventional ML models in the same pipeline',
-        'Extended the semantic data model with ontological abstractions and higher-order business concepts — the layer that makes automated root-cause analysis and data discovery possible at all',
-        'Built the feedback loop that turns user corrections into evaluation data and downstream few-shot examples, so the system improves without a retraining cycle',
-        'Wrote tabular insight agents on Jinja templates that carry full lineage and provenance, so any generated number can be traced back to source for enterprise audit',
+        'Extended the semantic data model with ontological abstractions and higher-order business concepts, which automated root-cause analysis and data discovery are built on',
+        'Built a feedback loop that turns user corrections into evaluation data and few-shot examples, so the system improves without retraining',
+        'Wrote tabular insight agents on Jinja templates with full lineage and provenance, so every generated number can be traced back to its source',
         'Ran a fault-tolerant distributed worker fleet on AWS (ECS/SNS/SQS) with dead-letter queue handling and zero-downtime deploys',
-        'Lead AI engineering for the analytics product, turning analyst workflows that were manual or simply not possible into automated ones',
+        'Lead AI engineering for the analytics product, automating analyst workflows that were previously manual',
       ],
       skills: [
         'Python',
@@ -120,13 +120,13 @@ export const cvData: CVData = {
       location: 'Remote, NY',
       duration: '2023 - 2024',
       achievements: [
-        'Started the AI function from nothing and shipped its first systems to production',
+        'Started the AI function and shipped its first systems to production',
         "Built the RAG pipeline behind the product's generated responses, covering retrieval, chunking, and grounding",
         'Designed the Postgres schema and backend on Supabase, including authentication and access control',
-        'Architected the API layer the AI pipelines sit behind, which cut latency and raised throughput',
+        'Designed the API layer in front of the AI pipelines, improving latency and throughput',
         'Moved infrastructure to CloudFormation and CI/CD to GitHub Actions',
-        'Added monitoring across the AI pipelines to catch quality regressions before customers did',
-        'Built ontological models that gave the data model a consistent vocabulary to work from',
+        'Added monitoring across the AI pipelines to catch quality regressions',
+        'Built ontological models to give the data model a consistent vocabulary',
         'Restructured the Postgres schema as the access patterns became clear and load grew',
         'Coordinated with external development teams on platform integration, and ran project management out of GitHub',
       ],
@@ -147,13 +147,13 @@ export const cvData: CVData = {
       location: 'Remote, NY',
       duration: '2022 - Present',
       achievements: [
-        'Advise startups and established companies on where AI belongs in their stack, and where it does not',
+        'Advise startups and established companies on where AI fits in their stack',
         'Delivered a keynote on ChatGPT to a room of CIOs and founders',
         'Advised a blockchain unicorn on engineering process and operational flow',
         'Run technology assessments and build-versus-buy analysis for teams committing to an AI direction',
-        'Led migrations to AI-integrated systems, reducing cost and manual effort',
+        'Led migrations onto AI-integrated systems that reduced cost and manual work',
         'Consulted on personal knowledge management systems built around LLMs',
-        'Help early-stage startups choose a technology stack they will not have to abandon in a year',
+        'Help early-stage startups choose a technology stack that will last',
       ],
       skills: [
         'Strategic Planning',
@@ -172,10 +172,10 @@ export const cvData: CVData = {
         'Led a cross-functional engineering team, working alongside the music, research, and sales sides of the company',
         'Ran GCP infrastructure: Kubernetes and Istio, monitored with Grafana and Prometheus',
         'Rebuilt CI/CD on Jenkins with Cypress end-to-end coverage',
-        'Built a custom data ingestion pipeline and automated the manual steps that had grown around it',
-        'Introduced Scrum, along with the scheduling and coordination practice needed to make it stick',
+        'Built a custom data ingestion pipeline and automated the manual steps around it',
+        'Introduced Scrum and the planning practices around it',
         'Set technical direction against customer and partner requirements, planning releases with the founders',
-        'Mentored engineers on the team and ran training sessions off the back of operational reviews',
+        'Mentored engineers and ran training sessions based on operational reviews',
       ],
       skills: [
         'Python',
@@ -199,7 +199,7 @@ export const cvData: CVData = {
         'Raised early rounds from government, VC, and angel investors',
         'Won early customers including Fortune 500 companies and national governments',
         'Grew the team from 3 to 15 in the first year',
-        'Set the business model and go-to-market strategy, with the financial model underneath it',
+        'Set the business model, go-to-market strategy, and financial model',
         'Managed relationships with several levels of government across the region',
         'Ran investor relations and board communications',
         'Negotiated the contracts with partners and suppliers',
@@ -220,10 +220,10 @@ export const cvData: CVData = {
       achievements: [
         'Co-founded Archanan out of the programme',
         'Secured letters of intent from early customers before committing to a build',
-        'Tested several ideas against the market and killed the ones that did not hold up',
-        'Built the financial model and the go-to-market plan that came out of it',
+        'Tested several ideas with potential customers and dropped the ones that did not hold up',
+        'Built the financial model and go-to-market plan',
         'Led the first fundraise',
-        'Formed the early partnerships the company ran on',
+        "Formed the company's early partnerships",
       ],
       skills: [
         'Entrepreneurship',
@@ -240,9 +240,9 @@ export const cvData: CVData = {
       duration: '2016 - 2017',
       achievements: [
         'Designed and built the MVPs, then the production cloud middleware that replaced them',
-        'Directed algorithm development for the core computational problems the product depended on',
+        "Directed algorithm development for the product's core computational problems",
         'Raised seed capital from VCs and angels',
-        'Led the engineering team and set the code review and QA standards it worked to',
+        'Led the engineering team and set its code review and QA standards',
         'Got the company into the Grand Central Tech accelerator',
         'Worked directly with clients on what to build next',
       ],
@@ -261,8 +261,8 @@ export const cvData: CVData = {
       duration: '2016 - 2017',
       achievements: [
         'Designed, prototyped, and tested audio synthesizers, including the circuit design',
-        'Led seminars on where music and mathematics meet',
-        'Turned research into work that could actually be performed and heard',
+        'Led seminars on music and mathematics',
+        'Turned research into pieces that could be performed',
         'Collaborated with people from the music technology industry on novel audio hardware',
       ],
       skills: [
@@ -279,10 +279,10 @@ export const cvData: CVData = {
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Researched optimal wavelet bases for audio compression, searching for a general procedure rather than a one-off basis',
+        'Researched optimal wavelet bases for audio compression, looking for a general selection procedure',
         'Ran a supercomputing project funded by the High Performance Computing Consortium of New York',
         'Performed real-time signal analysis on spectrum data',
-        'Kept the project documentation and datasets in a state other researchers could pick up',
+        'Maintained project documentation and datasets for other researchers',
       ],
       skills: [
         'Research',
@@ -297,14 +297,13 @@ export const cvData: CVData = {
       company: 'Absara Audio',
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
-      description:
-        'First software job, and first hardware job — where I learned how shipped products actually get made.',
+      description: 'My first software job, and my first hardware job.',
       achievements: [
         'Wrote production firmware for digital guitar pedals',
-        "Shipped feature releases through the team's existing continuous integration process",
-        'Worked to the established test practice, catching firmware defects before release',
+        "Shipped feature releases through the team's continuous integration process",
+        "Followed the team's test practice to catch firmware defects before release",
         'Wrote the technical documentation and user manuals',
-        'Fed customer feedback back into what got built next',
+        'Fed customer feedback into product planning',
       ],
       skills: [
         'Firmware Development',

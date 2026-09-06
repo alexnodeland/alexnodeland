@@ -54,7 +54,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'fugue-evo',
       description:
-        'a probabilistic genetic algorithm library for rust — evolution as inference.',
+        'a probabilistic genetic algorithm library for rust: evolution as inference.',
       language: 'Rust',
       tags: ['library', 'evolutionary-algorithms', 'inference'],
       url: 'https://github.com/alexnodeland/fugue-evo',
@@ -86,7 +86,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'auracle',
       description:
-        'a synthesizer that searches for your sound — preference-learning evolutionary synthesis on fugue-evo and quiver.',
+        'a synthesizer that evolves patches toward the ones you prefer, built on fugue-evo and quiver.',
       language: 'Rust',
       tags: ['app', 'synthesis', 'preference-learning'],
       url: 'https://github.com/alexnodeland/auracle',
@@ -95,8 +95,7 @@ export const projectsConfig: ProjectsConfig = {
     },
     {
       name: 'sleeve',
-      description:
-        'one long video in, a tagged album out — slices a recording into a properly tagged release.',
+      description: 'slices one long video into a properly tagged album.',
       language: 'Rust',
       tags: ['tool', 'cli', 'audio'],
       url: 'https://github.com/alexnodeland/sleeve',
@@ -106,7 +105,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'llmcomposer',
       description:
-        'compose music with an llm copilot — a research exploration of cross-modal musical understanding in language models.',
+        'an experiment in composing music with an llm, and in how much musical understanding language models have.',
       language: 'Python',
       tags: ['experiment', 'music', 'llm'],
       url: 'https://github.com/alexnodeland/llmcomposer',
@@ -149,7 +148,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'curator',
       description:
-        'local-first knowledge plane — any markdown vault, one embedded index, mcp for agents, and a deterministic librarian.',
+        'a local embedded index over any markdown vault, served to agents over mcp.',
       language: 'Rust',
       tags: ['tool', 'mcp', 'local-first'],
       url: 'https://github.com/alexnodeland/curator',
@@ -168,7 +167,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'crewlit',
       description:
-        'brings the power of crewai to your browser, making multi-agent ai systems accessible to everyone.',
+        'crewai in the browser: define agents, tasks, and crews in a streamlit ui instead of a python file.',
       language: 'Python',
       tags: ['app', 'multi-agent', 'streamlit'],
       url: 'https://github.com/alexnodeland/crewlit',
@@ -178,7 +177,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'finance-crew',
       description:
-        'ai-powered market analysis, strategy development, and risk management for day traders, using crewai.',
+        'a crewai system for market analysis: agents that pull data, propose a strategy, and assess its risk.',
       language: 'Python',
       tags: ['tool', 'multi-agent', 'finance'],
       url: 'https://github.com/alexnodeland/finance-crew',
@@ -188,7 +187,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'resume-crew',
       description:
-        'helps job seekers tailor their resumes and prepare for interviews, using crewai.',
+        'a crewai system that tailors a resume to a job posting and generates interview questions for it.',
       language: 'Python',
       tags: ['tool', 'multi-agent'],
       url: 'https://github.com/alexnodeland/resume-crew',
@@ -200,7 +199,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'md-share',
       description:
-        'a lightweight markdown renderer that speaks six dialects, reads itself aloud, and compresses your whole document into a shareable url. no backend.',
+        'a markdown renderer that supports six dialects, has text-to-speech, and compresses the whole document into a shareable url. no backend.',
       language: 'TypeScript',
       tags: ['app', 'markdown', 'url-sharing'],
       url: 'https://github.com/alexnodeland/md-share',
@@ -210,7 +209,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'curio-rss',
       description:
-        'local-first macos rss & read-later reader that lives in your notes — plain-markdown export, no telemetry.',
+        'a local-first rss and read-later reader for macos that keeps everything in your notes as plain markdown. no telemetry.',
       language: 'Rust',
       tags: ['app', 'rss', 'local-first', 'macos'],
       url: 'https://github.com/alexnodeland/curio-rss',
@@ -220,7 +219,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'tome',
       description:
-        'a personal library for technical documentation — read any docs site offline, search everything, let your agent read along over mcp.',
+        'an offline library for technical documentation: save any docs site, search it, and let your agent read it over mcp.',
       language: 'HTML',
       tags: ['app', 'documentation', 'local-first', 'mcp'],
       url: 'https://github.com/alexnodeland/tome',
@@ -229,7 +228,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'no-doze',
       description:
-        'keep your mac awake from the menu bar — a free, open-source caffeinate wrapper with a 100%-tested core.',
+        'a menu bar wrapper around caffeinate that keeps your mac awake.',
       language: 'Swift',
       tags: ['app', 'macos', 'menu-bar'],
       url: 'https://github.com/alexnodeland/no-doze',
@@ -239,7 +238,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'claude-telegram',
       description:
-        'telegram-to-claude code bridge — control your codebase from your phone.',
+        'a telegram bridge to claude code, so you can drive it from your phone.',
       language: 'TypeScript',
       tags: ['tool', 'claude-code', 'telegram'],
       url: 'https://github.com/alexnodeland/claude-telegram',

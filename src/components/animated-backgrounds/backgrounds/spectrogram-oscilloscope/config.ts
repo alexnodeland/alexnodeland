@@ -684,7 +684,7 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
   name: 'Dual FM Oscillator',
   shortName: 'oscillator',
   description:
-    "A working FM synthesizer. Two oscillators, one modulating the other's phase — the trick that let a DX7 make a bell out of two sine waves while subtractive synths needed a filter bank. The signal then runs through filter, delay, distortion, and reverb. Top is an oscilloscope: amplitude against time. Bottom is a spectrogram: frequency low-to-high, scrolling left-to-right, brightness as intensity. Every spectrogram bin is a windowed DFT of the same samples the oscilloscope draws, so the sidebands, harmonic series and ring-mod tones are measured rather than drawn. Same signal in both domains at once, which is the fastest way to build intuition for what FM does to a spectrum. Hold the speaker button to hear it.",
+    "A working FM synthesizer. Two oscillators, one modulating the other's phase — the trick that let a DX7 make a bell out of two sine waves while subtractive synths needed a filter bank. The signal then runs through filter, delay, distortion, and reverb. Top is an oscilloscope: amplitude against time. Bottom is a spectrogram: frequency low-to-high, scrolling left-to-right, brightness as intensity. Every spectrogram bin is a windowed DFT of the same samples the oscilloscope draws, so the sidebands, harmonic series and ring-mod tones are measured rather than drawn. Seeing the same signal in both domains at once is a good way to build intuition for what FM does to a spectrum. Hold the speaker button to hear it.",
   component: SpectrogramOscilloscopeBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

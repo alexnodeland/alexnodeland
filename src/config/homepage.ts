@@ -50,15 +50,15 @@ export const homepageConfig: HomepageConfig = {
   },
   about: {
     paragraphs: [
-      'i build ai systems, mostly the parts nobody demos: agent orchestration, evaluation loops, and the semantic layer underneath that has to be right before any of it works. currently senior ai engineer at perch insights.',
-      'before that i co-founded archanan in singapore and ran it as ceo for four years — we built cloud emulators of supercomputers so people could develop at scale without waiting in a queue. then led engineering at musiio, a music-ml company soundcloud later acquired. earlier still: wavelet bases for audio compression at stony brook, and firmware for guitar pedals before that.',
-      'i write rust on weekends, mostly audio synthesis and probabilistic programming. the backgrounds on this site are live simulations rather than video — the gear icon opens their controls.',
+      'i build ai systems. most of my time goes to the unglamorous parts: agent orchestration, evaluation loops, and the data model everything else depends on. currently senior ai engineer at perch insights.',
+      'before that i co-founded archanan in singapore and ran it as ceo for four years. we built cloud emulators of supercomputers so people could develop at scale without waiting for time on the real machine. i also led engineering at musiio, a music-ml company that soundcloud later acquired. before any of that i worked on wavelet bases for audio compression at stony brook, and wrote firmware for guitar pedals.',
+      'i write rust on weekends, mostly audio synthesis and probabilistic programming. the backgrounds on this site are simulations running in your browser, not video. the gear icon opens their controls.',
     ],
   },
   consulting: {
     title: 'consulting',
     description:
-      'i take on a few engagements a year, split about evenly between two kinds of problem people bring me. the first is a team whose llm prototype demos well and falls over in production — i get called in after that happens, and the fix is almost never the model; it is the data model, the evals, or the failure handling. the second is the earlier question, before anything is built: what to build with ai, or whether to build it at all.',
+      'i take on a few consulting engagements a year, and they tend to be one of two things. sometimes a team has an llm prototype that demos well and breaks in production, and wants help finding out why. in my experience the problem is rarely the model. it is usually the data model, the evals, or how failures are handled. other times a team is earlier than that, and wants a second opinion on whether ai belongs in their product before they commit to building it.',
     ctaButtons: {
       primary: {
         text: 'send me an email',
@@ -77,31 +77,28 @@ export const homepageConfig: HomepageConfig = {
         icon: '🤖',
         title: 'ai systems',
         description:
-          'agent orchestration, rag, tool use, and the failure modes that only appear under real traffic',
+          'agent orchestration, rag, tool use, and debugging what goes wrong under real traffic',
       },
       {
         icon: '⚙️',
         title: 'infrastructure',
-        description:
-          'aws, kubernetes, infrastructure as code, and deploy pipelines that nobody has to babysit',
+        description: 'aws, kubernetes, infrastructure as code, and ci/cd',
       },
       {
         icon: '📊',
         title: 'data engineering',
-        description:
-          'pipelines, semantic models, and lineage you can actually audit after the fact',
+        description: 'pipelines, semantic models, and data lineage',
       },
       {
         icon: '🔍',
         title: 'evaluation & observability',
         description:
-          'eval sets, feedback loops, and catching a regression before a customer does',
+          'eval sets, feedback loops, and monitoring for regressions',
       },
       {
         icon: '🧠',
         title: 'technical strategy',
-        description:
-          'architecture review, build-vs-buy, and deciding which half of the roadmap to cut',
+        description: 'architecture review, build-vs-buy, and roadmap planning',
       },
       {
         icon: '🎛️',

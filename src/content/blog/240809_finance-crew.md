@@ -5,9 +5,9 @@ description: 'A CrewAI system for market analysis — agents that pull data, dev
 category: 'Projects'
 ---
 
-a crewai system for market analysis: agents that pull financial data, work a strategy up against it, and assess the risk of actually running that strategy.
+a crewai system for market analysis: agents that pull financial data, work a strategy up against it, and assess the risk of running it.
 
-the part worth stealing is the separation between the agent that proposes and the agent that assesses. a system that only proposes will always sound confident, because fluent writing about a trade and a good trade are produced by exactly the same machinery. giving the risk assessment its own step, with its own context and no stake in the proposal, is the cheapest available correction for that.
+the useful idea is the separation between the agent that proposes and the agent that assesses. a system that only proposes always sounds confident, because a fluent argument for a trade and a good trade come out of the same machinery. giving risk assessment its own step, with its own context and no stake in the proposal, is a cheap correction for that.
 
 it is a study in multi-agent design, not financial advice, and i would treat any number it produces as a prompt for your own analysis rather than a conclusion.
 

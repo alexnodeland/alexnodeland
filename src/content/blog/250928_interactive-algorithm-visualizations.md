@@ -5,7 +5,7 @@ description: "Six simulations render the backgrounds on this site — Conway's L
 category: 'Projects'
 ---
 
-the backgrounds on this site are running, not looping. every one is computed per frame in your browser. the gear icon in the corner opens a panel with the parameters for whichever is on screen, and they cycle every twelve seconds unless you turn that off.
+the backgrounds on this site are simulations, not video loops. every one is computed per frame in your browser. the gear icon in the corner opens a panel with the parameters for whichever is on screen, and they cycle every twelve seconds unless you turn that off.
 
 six of them, in cycle order:
 
@@ -34,7 +34,7 @@ random soup under conway settles into still lifes and period-two oscillators wit
 
 three sine waves summed in a shader. one runs along x, one along y at 0.8× the frequency, one diagonally at 0.6×, each drifting at a different rate. colour maps amplitude: bright where they reinforce, dark where they cancel.
 
-this is superposition and nothing more, which is the point — interference is the whole mechanism behind a great deal of signal processing, and it is three lines of arithmetic. i spent a couple of years on wavelet bases for audio compression at stony brook and the thing that stays with me is how little machinery the underlying physics actually needs.
+it is nothing but superposition. interference is the mechanism behind a great deal of signal processing, and it takes three lines of arithmetic. i spent a couple of years on wavelet bases for audio compression at stony brook, and what stayed with me is how little machinery the underlying physics needs.
 
 turn `wave frequency` up and `wave speed` down to freeze the interference pattern in place.
 
@@ -56,9 +56,9 @@ set `number of clusters` to 2 and `requested subgraph size` to something close t
 
 ## <a id="fm-synthesis"></a>dual fm oscillator
 
-a functioning synthesizer. two oscillators, where one modulates the other's phase — that is the whole trick behind fm synthesis, and it is why a dx7 could make a bell out of two sine waves when subtractive synths needed a filter bank. the signal then runs through filter, delay, distortion and reverb.
+a working synthesizer. two oscillators, one modulating the other's phase. that is all fm synthesis is, and it is how a dx7 could make a bell out of two sine waves when a subtractive synth needed a filter bank. the signal then runs through filter, delay, distortion and reverb.
 
-top display is an oscilloscope: amplitude against time. bottom is a spectrogram: frequency low-to-high, scrolling left-to-right, brightness as intensity. every bin is a hann-windowed discrete fourier transform of the same samples the oscilloscope is drawing, so the sidebands, the harmonic series of a square wave, and the sum and difference tones from the ring modulator are all measured rather than drawn. watching one signal in both domains at once is the fastest way i know to build intuition for what fm does to a spectrum.
+top display is an oscilloscope: amplitude against time. bottom is a spectrogram: frequency low-to-high, scrolling left-to-right, brightness as intensity. every bin is a hann-windowed discrete fourier transform of the same samples the oscilloscope is drawing, so the sidebands, the harmonic series of a square wave, and the sum and difference tones from the ring modulator are all measured rather than drawn. watching one signal in both domains at once is a good way to build intuition for what fm does to a spectrum.
 
 push `vco 1 fm amount` up slowly and watch the sidebands appear in pairs either side of the carrier, spaced at the modulator frequency.
 
@@ -78,7 +78,7 @@ seeded random graph, real priority frontier, and one slider that changes which a
 - **w = 1** — a\*. the heuristic is admissible, so the path is still optimal, but exploration stretches toward the goal instead of spreading evenly.
 - **w > 1** — greedy. it over-trusts the heuristic, drives almost straight at the goal, and gives up the optimality guarantee to do it.
 
-the shape of the explored region is the thing to watch: a circle, then an ellipse, then a corridor. that is the entire optimality-versus-effort tradeoff rendered as a shape, and it is why i left this one in the rotation.
+watch the shape of the explored region: a circle, then an ellipse, then a corridor. that is the optimality-versus-effort tradeoff drawn as a shape, and it is why i kept this one in the rotation.
 
 turn `steps per second` down to about 5 to watch the frontier expand node by node.
 
@@ -88,7 +88,7 @@ turn `steps per second` down to about 5 to watch the frontier expand node by nod
 
 explicit finite differences on a grid, solving either the heat equation `∂u/∂t = α∇²u` or the wave equation `∂²u/∂t² = c²∇²u`. the laplacian is a five-point stencil; heat uses forward-time centred-space, wave uses a centred second difference in time. grid runs at 64², 128² or 256².
 
-the parameters that change the physics rather than the look are `boundary condition` and `initial condition`. dirichlet fixes the edge value, so waves reflect inverted. neumann sets the edge derivative to zero, so they reflect upright. periodic wraps, so anything leaving the right edge arrives at the left. pick a gaussian pulse on the wave equation and switch between the three — the difference in reflection is immediate and it is the clearest demonstration of boundary conditions i have found.
+the parameters that change the physics rather than the look are `boundary condition` and `initial condition`. dirichlet fixes the edge value, so waves reflect inverted. neumann sets the edge derivative to zero, so they reflect upright. periodic wraps, so anything leaving the right edge arrives at the left. pick a gaussian pulse on the wave equation and switch between the three — the difference in reflection is immediate. it is the clearest demonstration of boundary conditions i know of.
 
 you cannot make it explode. explicit schemes are only conditionally stable — heat needs `α·dt·(1/dx² + 1/dy²) ≤ 0.5`, wave needs the cfl condition `c·dt·√(1/dx² + 1/dy²) ≤ 1` — so the timestep is clamped to the stable maximum before every step. push thermal diffusivity to its limit and the simulation slows down rather than diverging.
 
@@ -98,4 +98,4 @@ you cannot make it explode. explicit schemes are only conditionally stable — h
 
 they render to webgl or canvas depending on the background, pause when the tab is hidden, and cycle on a twelve-second timer with a 1.2-second crossfade. every parameter you change is live.
 
-the actual reason they exist: a static background is a wasted surface, and i wanted somewhere to put the numerical methods i do not otherwise get to write at work.
+why they exist: a static background is a wasted surface, and i wanted somewhere to put the numerical methods i do not get to write at work.

@@ -1,23 +1,23 @@
 ---
 title: 'The Chat Box Is a Language Model on Your Machine'
 date: '2026-07-26'
-description: 'A 1.2B model runs in your browser and answers from this site — no server, no API key. How the retrieval works, what the optimisation actually bought, and the three things I expected to be true that were not.'
+description: 'A 1.2B model runs in your browser and answers questions from this site, with no server and no API key. How the retrieval works, what the optimisation bought, and three things I got wrong.'
 category: 'Projects'
 ---
 
 there is a chat box on this site. when you open it, your browser downloads a 760MB language model and runs it on your GPU. nothing is sent anywhere — there is no server to send it to. it answers questions about me from the pages you are already reading.
 
-this is a note about how it works and what it cost to make it fast, because most of what i assumed going in was wrong.
+this is a note on how it works and what it took to make it fast. most of what i assumed going in turned out to be wrong.
 
 ## the shape of it
 
-the first version stapled my entire CV — about 4,500 tokens — to the front of every single question. it also ran two throwaway yes/no generations before each answer, to decide whether the question was on-topic at all. three model calls per question, and it knew nothing about the blog or the projects page.
+the first version put my entire CV, about 4,500 tokens, in front of every question. it also ran two throwaway yes/no generations before each answer, to decide whether the question was on-topic at all. three model calls per question, and it knew nothing about the blog or the projects page.
 
 now the site is chunked into 95 passages at build time and embedded into a 111KB file that ships with the page. your browser embeds only your question — one forward pass over about fifteen tokens, roughly two milliseconds — and searches that index. this post is in there too, which is a slightly strange thing to write.
 
-the search is hybrid, and it has to be. this corpus is one person's life, so everything in it is semantically adjacent to everything else; a 384-dimension vector cannot reliably separate "musiio" from "influize". exact term matching carries the proper nouns, embeddings carry the paraphrases ("where did he go to school"), and reciprocal rank fusion combines them without needing the two score scales to mean the same thing, which they don't.
+the search is hybrid, and it needs to be. this corpus is one person's life, so everything in it is semantically adjacent to everything else; a 384-dimension vector cannot reliably separate "musiio" from "influize". exact term matching carries the proper nouns, embeddings carry the paraphrases ("where did he go to school"), and reciprocal rank fusion combines them without needing the two score scales to be comparable, which they are not.
 
-then a gate. if nothing in the index is close enough to your question, there is nothing to ground an answer in, so it says so — in about a tenth of a second, without waking the model at all. that gate replaced both classifier calls and is more accurate than they were. three generations per turn became one.
+then there is a gate. if nothing in the index is close enough to the question, there is nothing to ground an answer in, so it says so, in about a tenth of a second and without running the model. that gate replaced both classifier calls and is more accurate than they were. three generations per turn became one.
 
 what reaches the model is a short instruction block, the passages that came back, and your question. it cites what it used, and those citations become links under the answer.
 
@@ -32,62 +32,62 @@ what reaches the model is a short instruction block, the passages that came back
 | writing the answer | ~540ms              |
 | a refused question | ~0.1s               |
 
-the interesting line is that reading the prompt costs more than writing the answer — about 2:1. i spent the first half of this optimising the wrong half, because tokens-per-second is the number everyone quotes and it turns out to be the smaller one.
+the line worth noticing is that reading the prompt costs more than writing the answer, about 2:1. i spent the first half of this project optimising the wrong half, because tokens per second is the number everyone quotes, and here it is the smaller cost.
 
-## the bug that had never once worked
+## the cache that never hit
 
 the prompt block is identical on every turn, so it should be computed once and reused. that is what a key-value cache is for, and the code had one.
 
-it had never hit. not once.
+it had never hit.
 
-the cache is filled by running the model over the prompt and keeping the intermediate state. the code asked for that state by the wrong name — a name the library only sets on a different code path — so it always got nothing, always stored nothing, and always silently recomputed. no error, no warning, just a cache that was permanently empty and a comment above it confidently describing the optimisation.
+the cache is filled by running the model over the prompt and keeping the intermediate state. the code asked for that state by the wrong name — a name the library only sets on a different code path — so it always got nothing, always stored nothing, and always silently recomputed. no error, no warning. just a permanently empty cache with a comment above it describing the optimisation.
 
-the fix was one function call. it also turned out to matter that this model is a hybrid architecture: half its state lives under different names again, so the obvious string-replacement fix would have quietly dropped half of it. worth about 420ms a turn, which is a quarter of the answer.
+the fix was one function call. it also mattered that this model is a hybrid architecture: half its state lives under different names again, so the obvious string-replacement fix would have silently dropped half of it. the fix is worth about 420ms a turn, a quarter of the total.
 
 i only found it because i had started printing the hit rate. it read `0/12`.
 
-once it worked, the number it printed raised a better question. the cached part was 975 tokens and stayed 975 tokens no matter how long the conversation ran, so the _share_ of each prompt it covered went down as you talked — 55%, then 51%. a cache that stops growing is a cache that matters less the longer you use it.
+once it worked, the hit rate raised another question. the cached part was 975 tokens and stayed 975 tokens no matter how long the conversation ran, so the _share_ of each prompt it covered went down as you talked — 55%, then 51%. a cache that stops growing matters less the longer the conversation runs.
 
-a cache can only skip a prefix that matches token for token, so what it can possibly cover is decided by the order the prompt is assembled in. it turned out there was more of that order that never changes than i had assumed: earlier questions have their retrieved passages stripped out, and earlier answers have their citation markers removed, and both of those edits happen exactly once — when a turn stops being the current one. after that the history is frozen. so it can all be carried forward, and the cached region grows by one exchange per turn instead of standing still. seven turns in it covers 1,290 tokens rather than 975, and the conversation is prefilling about a quarter fewer tokens than it was.
+a cache can only skip a prefix that matches token for token, so what it can possibly cover is decided by the order the prompt is assembled in. more of the prompt is fixed than i had assumed: earlier questions have their retrieved passages stripped out, and earlier answers have their citation markers removed, and both of those edits happen exactly once — when a turn stops being the current one. after that the history is frozen. so it can all be carried forward, and the cached region grows by one exchange per turn instead of standing still. seven turns in it covers 1,290 tokens rather than 975, and the conversation is prefilling about a quarter fewer tokens than it was.
 
-i also measured two rearrangements that looked better and were not. keeping every turn's passages in the prompt forever caches the most on paper, and spends it on carrying stale context that used to make it answer turn four out of turn one. pinning the passages to a fixed position so a repeated search matches came out no better than doing nothing at all, because retrieval has to return the same set in the same order for that to pay, which is rarer than it sounds. both are still in the repo as a two-second script that measures the ceiling before anyone writes the code.
+i also measured two rearrangements that looked better on paper and were not. keeping every turn's passages in the prompt caches the most, but spends the savings carrying stale context, which is what used to make it answer turn four out of turn one's passages. pinning the passages to a fixed position so a repeated search matches came out no better than doing nothing at all, because retrieval has to return the same set in the same order for that to pay, which happens less often than you would think. both are still in the repo as a short script that measures the ceiling before anyone writes the code.
 
 ## three things i was wrong about
 
-**smaller is not faster.** i tried a model with half the parameters expecting roughly half the latency. it was two to four times _slower_, because it wrote several hundred words where the larger one writes forty. decoding is per-token. verbosity swamps everything.
+**smaller is not faster.** i tried a model with half the parameters expecting roughly half the latency. it was two to four times _slower_, because it wrote several hundred words where the larger one writes forty. decoding cost is per token, so verbosity swamps the parameter count.
 
-**the genuinely fast one lies.** a 230M model loads in nine seconds instead of twenty-one and answers in under a second. asked whether i knew a language that appears nowhere in my skills list — with that list sitting in its context — it said yes. asked whether i had worked at a company i have never worked at, it said yes to that too. i tried to fix it with worked examples, including one showing it declining exactly that kind of question, two hundred tokens above where it was asked. it kept agreeing. that is not a prompt problem; models that small accept the premise of whatever you ask them.
+**the fast one makes things up.** a 230M model loads in nine seconds instead of twenty-one and answers in under a second. asked whether i knew a language that appears nowhere in my skills list — with that list sitting in its context — it said yes. asked whether i had worked at a company i have never worked at, it said yes to that too. i tried to fix it with worked examples, including one showing it declining exactly that kind of question, two hundred tokens above where it was asked. it kept agreeing. that is not a prompt problem. models that small accept the premise of whatever you ask them.
 
-those examples also made the _large_ model worse. one of them mentioned musiio, and that was enough for it to start reaching for musiio in unrelated answers. names in a cached prefix get grabbed.
+the examples also made the larger model worse. one of them mentioned musiio, and that was enough for it to start bringing up musiio in unrelated answers.
 
-**reasoning bought nothing.** there is a variant of the same model that thinks step by step first. it scored worse in every category while taking four times as long, because it spent 658 tokens reasoning before the visitor saw a word. reading four retrieved passages is not a reasoning problem — the answer is already sitting in the context.
+**reasoning did not help.** there is a variant of the same model that thinks step by step first. it scored worse in every category while taking four times as long, because it spent 658 tokens reasoning before the visitor saw a word. reading four retrieved passages is not a reasoning problem. the answer is already in the context.
 
-the lineup is now one model. every rejection is written down next to it, with the command to re-check the claim.
+the lineup is now one model. each rejected model is documented next to it, with the command to re-check the claim.
 
-## the evals, and why a perfect score is useless
+## the evals
 
 there is a graded battery of 68 questions covering grounded lookups, multi-passage synthesis, follow-ups that depend on the previous turn, questions built on false premises, things that must be refused, and things that must _not_ be refused.
 
-the earlier version had twelve cases and the model passed all twelve. that felt good and was worthless: a saturated test can only ever tell you something broke, never that something improved, so it cannot help you choose between two versions.
+the earlier version had twelve cases and the model passed all twelve. that felt good and told me nothing. a saturated test can only tell you something broke, not that something improved, so it cannot help you choose between two versions.
 
-expanding it immediately found a whole failure class the small set never touched. asked where i got my MBA — i don't have one — the model reported a doctorate i never finished. asked how old i am, it worked it out from my job dates and offered "early thirties." asked why i left a company, it invented a motive and hedged it with "probably."
+expanding it immediately found a failure class the small set never touched. asked where i got my MBA — i don't have one — the model reported a doctorate i never finished. asked how old i am, it worked it out from my job dates and offered "early thirties." asked why i left a company, it invented a motive and hedged it with "probably."
 
-it currently sits at 55/68. that is the point. the gap is where the work is — dates it gets wrong, gibberish it answers instead of refusing, and a couple of roleplay prompts that still talk it out of its job.
+it currently sits at 55/68, and the gap is the to-do list: dates it gets wrong, gibberish it answers instead of refusing, and a couple of roleplay prompts that still talk it out of its job.
 
-each case is scored continuously rather than pass/fail, and every lost point comes with a written note about what went wrong, because "worse" is not enough to act on and "invented a credential the question assumed" is.
+each case is scored on a scale rather than pass/fail, and every lost point comes with a note on what went wrong, because a score alone does not tell you what to fix.
 
-## a note on grading yourself
+## measuring the measurement
 
 five times during this, a failure turned out to be my measurement rather than the model. the harness looked for `doesn't` and the model wrote `doesn’t` with a typographic apostrophe. it looked for "no mention of" and got "no clear indication that." it reported every answer as two seconds slower than it was, because it counted its own settling delay.
 
-each one looked exactly like a regression. if you are optimising against a number, the number is part of the system, and it is usually the least tested part of it.
+each one looked like a regression. if you are optimising against a number, the number is part of the system, and it is usually the least tested part.
 
 ## what it still gets wrong
 
 ask it "archanan?" — just the word — and it recites where that company sits in my timeline instead of telling you what it was. the answer is being pulled out of the career summary that sits in every prompt, and i have not found a way to stop that without breaking the follow-up questions the summary is there to serve.
 
-and if your browser has no webgpu, it does not work at all. it now says so in about a minute instead of sitting there with a disabled box, which took some finding — the failure was reported correctly by the part that failed, and then hidden by the part that was supposed to display it. the error message it wrote went into the transcript, and the notice carrying the real reason only appears when the transcript is empty. so the more precisely it reported the problem, the more thoroughly it concealed it.
+and if your browser has no webgpu, it does not work at all. it now says so in about a minute instead of sitting there with a disabled box, which took some finding. the part that failed reported the failure correctly, and the part that was supposed to display it hid it: the error went into the transcript, and the notice carrying the real reason only appears when the transcript is empty.
 
-the reason it can't fall back to your cpu is narrower than "too slow", though it is also too slow. every compressed version of this model stores its vocabulary in a format the cpu engine has no code to read — the gpu engine does, which is why one works and one doesn't. and the fix isn't a faster cpu engine: the best one available runs a model this size at two to five words a second, which is not a chat, it's correspondence.
+it can't fall back to your cpu, and the reason is narrower than "too slow", though it is also too slow. every compressed version of this model stores its vocabulary in a format the cpu engine cannot read. the gpu engine can, which is why one works and the other does not. a faster cpu engine would not fix it either: the best one available runs a model this size at two to five words a second.
 
-it also will not tell you anything that is not on this site, which is most things. that is the design, not a limitation to be fixed. it can tell you where i worked and what i have built; it cannot tell you what i think about your architecture. for that, [email me](mailto:alex@ournature.studio).
+it also will not tell you anything that is not on this site, which is most things. that is by design. it can tell you where i worked and what i have built. it cannot tell you what i think about your architecture. for that, [email me](mailto:alex@ournature.studio).
