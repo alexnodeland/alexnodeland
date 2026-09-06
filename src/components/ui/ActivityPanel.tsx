@@ -1,5 +1,6 @@
 import React from 'react';
 import activity from '../../data/activity.json';
+import { GitHubIcon } from './EntryIcons';
 
 // The heatmap's ramp, darkest to brightest, ending on the site's own green.
 // The four data steps are validated ordinal-ramp values against the site's
@@ -230,16 +231,29 @@ const ActivityPanel: React.FC = () => {
         <span className="activity-updated">
           as of {formatDay(generatedAt.slice(0, 10))}
         </span>
-        <div className="activity-legend" aria-hidden="true">
-          <span>less</span>
-          {LEVEL_FILLS.map(fill => (
-            <span
-              key={fill}
-              className="activity-legend-swatch"
-              style={{ backgroundColor: fill }}
-            />
-          ))}
-          <span>more</span>
+        {/* The legend, and beside it the way out to the rest of github —
+            the one place on the page that link belongs. */}
+        <div className="activity-foot-end">
+          <div className="activity-legend" aria-hidden="true">
+            <span>less</span>
+            {LEVEL_FILLS.map(fill => (
+              <span
+                key={fill}
+                className="activity-legend-swatch"
+                style={{ backgroundColor: fill }}
+              />
+            ))}
+            <span>more</span>
+          </div>
+          <a
+            href="https://github.com/alexnodeland"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="activity-link"
+          >
+            <GitHubIcon />
+            <span>all repositories on github</span>
+          </a>
         </div>
       </div>
     </section>

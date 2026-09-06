@@ -155,29 +155,19 @@
   flex: 1;
 }
 
-// The tags get their own uncluttered band, directly above the meta foot.
+// The tags, as one line directly above the meta foot — the same quiet band
+// a cv card lists its key skills in. They used to be a row of outlined chips,
+// which made the projects page the one place a list of words wore boxes.
 .project-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-bottom: var(--space-2);
-}
-
-.project-tag {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.6rem;
-  @include outline-block;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--text-muted);
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;
   text-transform: lowercase;
-  @include control-transition(var(--transition-fast));
-
-  .project-card:hover & {
-    border-color: rgba(255, 255, 255, 0.32);
-  }
+  word-break: break-word;
 }
 
 // The meta band, the same shape the blog card carries: quiet facts on the
@@ -242,51 +232,13 @@
   }
 }
 
-// GitHub CTA — one line of navigation, not a hero moment: a question and a
-// green link, the same as any other action on the site.
-.github-cta {
-  margin-top: var(--space-6);
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-3);
-
-  p {
-    color: var(--text-secondary);
-    font-style: italic;
-    margin: 0;
-  }
-}
-
-.github-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--ink-primary);
-  text-decoration: none;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  text-transform: lowercase;
-  transition: color var(--transition-fast);
-
-  svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-  }
-
-  &:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.25em;
-  }
-}
-
-// Activity panel — the github year at the head of the page, ahead of the
-// control row and the catalogue, in the same card grammar as everything below
-// it: an outline, not a slab. The numbers are baked into the bundle at build
+// Activity panel — the github year at the foot of the page, after the
+// catalogue, in the same card grammar as everything above it: an outline,
+// not a slab. The numbers are baked into the bundle at build
 // time (scripts/build-activity.mjs), so the panel costs the visitor nothing
-// and carries no credentials.
+// and carries no credentials. The link out to the rest of github lives in
+// its foot: it used to be a line of its own at the bottom of the page, a
+// long way from the github-shaped thing it belongs to.
 .activity-panel {
   @include outline-block;
   // No surface of its own. The window underneath has already laid the site's
@@ -297,7 +249,9 @@
   // behind it and the scale cannot invert over a bright background.
   border-radius: var(--radius-lg);
   padding: var(--space-5);
-  margin-bottom: var(--space-5);
+  // No gap of its own: the last section's bottom margin is the space above
+  // it, the same space the sections keep between each other.
+  margin: 0;
 }
 
 .activity-header {
@@ -438,6 +392,39 @@
   margin-top: var(--space-4);
 }
 
+// The legend and the way out, together at the far end of the foot.
+.activity-foot-end {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+// The link out, in the link colour with the octocat the project cards use.
+.activity-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--ink-primary);
+  text-decoration: none;
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
+  text-transform: lowercase;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+}
+
 .activity-updated {
   font-size: 0.72rem;
   color: var(--text-muted);
@@ -489,6 +476,22 @@
 
   .activity-panel {
     padding: var(--space-4);
+  }
+
+  // On a phone the year's grid is 740px wide behind a sideways scroll that
+  // shows the last four months, and it stood a whole screen tall between the
+  // last card and the foot of the page. The panel keeps its total, its three
+  // numbers and its link, and the grid — with the legend that reads it —
+  // waits for a screen that can show it whole.
+  .activity-graph,
+  .activity-legend {
+    display: none;
+  }
+
+  .activity-metrics {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
   }
 }
 

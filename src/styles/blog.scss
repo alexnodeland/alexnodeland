@@ -129,17 +129,14 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-// The site's one chip: an outline with a hairline. Categories, tags and skills
-// all use it — none of them are a status, so none of them get a hue, and none
-// of them get a fill either now that they sit on the window's scrim. An
-// article's own header still wears its tag; the previews no longer do (the
-// filter row above the list has already said which tag is showing).
+// The tag on an article's own header: quiet text at the far end of the date
+// row, matching the preview's date-and-arrow band rather than wearing a chip.
+// The previews carry no tag at all — the filter row above the list has
+// already said which one is showing.
 .post-category {
-  @include outline-block;
-  color: var(--text-secondary);
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.8rem;
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: var(--text-small);
   font-family:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
     monospace;

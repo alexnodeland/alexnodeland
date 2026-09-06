@@ -300,30 +300,24 @@ section[id] {
     gap: 0.75rem;
   }
 
+  // The same caret the dropdown triggers carry, and nothing around it: the
+  // circle it used to sit in was one more outlined control on a row that
+  // already had one, and the summary is the toggle, not the chevron.
   .cv-collapse-chevron {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 1.75rem;
-    height: 1.75rem;
-    border: 1px solid var(--border-floating);
-    border-radius: 50%;
-    background: transparent;
+    width: 1rem;
     color: var(--text-secondary);
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     line-height: 1;
     @include control-transition(var(--transition-normal));
   }
 }
 
-.cv-collapse-summary:hover .cv-collapse-chevron {
-  border-color: rgba(255, 255, 255, 0.32);
-  color: var(--text-primary);
-}
-
+.cv-collapse-summary:hover .cv-collapse-chevron,
 .cv-collapse[open] .cv-collapse-chevron {
-  border-color: rgba(255, 255, 255, 0.45);
   color: var(--text-primary);
 }
 
@@ -375,14 +369,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-// A date range chip, and chips are outlines now.
+// The date range, as quiet text — the same treatment the blog card gives its
+// date and the project card its language. It used to be an outlined chip,
+// which put a box beside the chevron's box on every title row.
 .experience-duration {
   color: var(--text-secondary);
   white-space: nowrap;
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  @include outline-block;
+  font-size: var(--text-small);
 }
 
 .experience-bullets {
@@ -644,10 +637,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 .education-duration {
   color: var(--text-secondary);
   white-space: nowrap;
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  @include outline-block;
+  font-size: var(--text-small);
 }
 
 .education-institution {
@@ -705,13 +695,14 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 }
 
 // One chip, not three. The technical / soft / language variants each had their
-// own gradient, but the group they belong to is already stated by the subtitle
+// own gradient, but the group they belong to is already stated by the heading
 // directly above them, so the colour was restating a heading in a code the
-// reader has no key for.
+// reader has no key for. And one size: the site's small chip (the one the
+// control rows and the tag lists used), not a larger cousin of it.
 .skill-tag {
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--radius-md);
-  font-size: 0.925rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
   @include outline-block;
   color: var(--text-secondary);
   @include control-transition(var(--transition-normal));
