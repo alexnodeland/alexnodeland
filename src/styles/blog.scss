@@ -47,11 +47,6 @@
   margin-bottom: var(--space-5);
 }
 
-// The reset takes the far end of the row, whatever is to its left.
-.blog-clear-chip {
-  margin-left: auto;
-}
-
 // Only the spacing is the blog's own — the panel and its field come from
 // .ui-search-panel in controls.scss. The list below it wants more air than
 // the shared default gives.
@@ -193,6 +188,11 @@
   font-size: var(--text-body);
   margin-bottom: var(--space-3);
   line-height: 1.6;
+  // The frontmatter descriptions are written in sentence case — they are
+  // also the meta descriptions, where that reads better — but on the page
+  // they sit directly above a lowercase excerpt, so they take the house
+  // case the way the headings do.
+  text-transform: lowercase;
 }
 
 .post-excerpt {

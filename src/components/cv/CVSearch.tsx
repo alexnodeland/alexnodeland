@@ -146,7 +146,7 @@ const CVSearch: React.FC<CVSearchProps> = ({
       <input
         ref={inputRef}
         type="text"
-        placeholder="search experiences, education, skills..."
+        placeholder="search the cv..."
         aria-label="Search the CV"
         value={searchTerm}
         onChange={handleSearchChange}

@@ -29,9 +29,11 @@ interface CVControlBarProps {
 }
 
 /**
- * The CV's one row of chrome: pick a length on the left, take the document
- * away on the right, and nothing else — the search is a place to type rather
- * than a control, and it stays in its own panel below. The row sticks to the
+ * The CV's one row of chrome: pick a length, take the document away, and
+ * nothing else — the search is a place to type rather than a control, and it
+ * stays in its own panel below. The row is the one every list page carries:
+ * two menus on the left and, on a phone, the chip that unfolds the search
+ * panel at the far right. The row sticks to the
  * top of the window's own scroll, so — like the section nav that used to live
  * here — it cannot be a pure outline: the document runs underneath it, and it
  * takes the window's scrim, blur and hairline so headings do not read straight
@@ -61,6 +63,17 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
         className="cv-view-dropdown"
       />
 
+      <Dropdown
+        ariaLabel="Download the CV"
+        triggerLabel={isExporting ? 'generating...' : 'download'}
+        options={DOWNLOAD_OPTIONS}
+        onSelect={value => exportAs(value as CVExportFormat)}
+        tone="action"
+        className="cv-download-dropdown"
+      />
+
+      {/* At the far end, as on the blog and projects rows: the two menus sit
+          left and the way to the search box takes the right. */}
       {onToggleSearch && (
         <SearchToggle
           open={searchOpen}
@@ -68,16 +81,6 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
           controls="cv-search"
         />
       )}
-
-      <Dropdown
-        ariaLabel="Download the CV"
-        triggerLabel={isExporting ? 'generating...' : 'download'}
-        options={DOWNLOAD_OPTIONS}
-        onSelect={value => exportAs(value as CVExportFormat)}
-        align="end"
-        tone="action"
-        className="cv-download-dropdown"
-      />
     </div>
   );
 };

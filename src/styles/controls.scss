@@ -273,6 +273,9 @@
   .ui-search-toggle {
     display: inline-flex;
     flex-shrink: 0;
+    // The far end of the row, whatever is to its left: every list page's
+    // row is its pickers on the left and this on the right.
+    margin-left: auto;
   }
 
   .ui-search-panel {

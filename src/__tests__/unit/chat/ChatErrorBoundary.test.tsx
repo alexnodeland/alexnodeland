@@ -49,7 +49,7 @@ describe('ChatErrorBoundary', () => {
     );
 
     expect(screen.getByText('Chat broke!')).toBeInTheDocument();
-    expect(screen.getByText('Try again')).toBeInTheDocument();
+    expect(screen.getByText('try again')).toBeInTheDocument();
     expect(screen.queryByText('Child content')).not.toBeInTheDocument();
   });
 
@@ -61,7 +61,7 @@ describe('ChatErrorBoundary', () => {
     );
 
     expect(
-      screen.getByText('Something went wrong displaying chat messages.')
+      screen.getByText('something went wrong displaying chat messages.')
     ).toBeInTheDocument();
   });
 
@@ -73,14 +73,14 @@ describe('ChatErrorBoundary', () => {
     );
 
     // Verify fallback is shown
-    expect(screen.getByText('Try again')).toBeInTheDocument();
+    expect(screen.getByText('try again')).toBeInTheDocument();
 
     // Clicking retry calls setState to reset hasError
     // Even though the child will throw again (causing error boundary to catch again),
     // we verify the button is functional
-    fireEvent.click(screen.getByText('Try again'));
+    fireEvent.click(screen.getByText('try again'));
 
     // After retry with same throwing child, the error boundary catches again
-    expect(screen.getByText('Try again')).toBeInTheDocument();
+    expect(screen.getByText('try again')).toBeInTheDocument();
   });
 });

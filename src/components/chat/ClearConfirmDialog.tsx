@@ -56,7 +56,7 @@ const ClearConfirmDialog: React.FC<ClearConfirmDialogProps> = ({
           </p>
           {isGenerating && (
             <p className="generation-warning">
-              <strong>Cannot clear while generating response</strong>
+              <strong>cannot clear while generating a response</strong>
             </p>
           )}
 
@@ -84,8 +84,8 @@ const ClearConfirmDialog: React.FC<ClearConfirmDialogProps> = ({
             disabled={isGenerating}
             title={
               isGenerating
-                ? 'Cannot clear while generating response'
-                : 'Clear chat history'
+                ? 'cannot clear while generating a response'
+                : 'clear chat history'
             }
           >
             clear

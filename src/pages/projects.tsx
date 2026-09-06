@@ -194,15 +194,6 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
   const sortLabel =
     SORT_OPTIONS.find(option => option.value === sort)?.label ?? 'curated';
 
-  const hasFilters =
-    category !== null || sort !== 'curated' || searchTerm !== '';
-
-  const clearFilters = () => {
-    setCategory(null);
-    setSort('curated');
-    setSearchTerm('');
-  };
-
   return (
     <>
       <SEO
@@ -211,8 +202,10 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
         pathname={location?.pathname}
       />
       <div className="projects-page">
-        {/* The two pickers and the reset, loose chips sticky to the top of
-            the window's scroll — the same row the cv and the blog carry. */}
+        {/* The two pickers, left, and the way to the search box at the far
+            end: the one row every list page carries (see the cv and the
+            blog). Each picker resets itself through its own "all" or default
+            option, so there is no separate reset. */}
         <div className="projects-control-bar">
           <Dropdown
             ariaLabel="Filter projects by category"
@@ -235,15 +228,6 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
             onSelect={value => setSort(value as ProjectSort)}
             className="projects-sort-dropdown"
           />
-
-          <button
-            type="button"
-            className="ui-chip-button projects-clear-chip"
-            onClick={clearFilters}
-            disabled={!hasFilters}
-          >
-            clear filters
-          </button>
 
           <SearchToggle
             open={searchOpen}

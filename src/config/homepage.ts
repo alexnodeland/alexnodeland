@@ -77,12 +77,13 @@ export const homepageConfig: HomepageConfig = {
         icon: '🤖',
         title: 'ai systems',
         description:
-          'agent orchestration, rag, tool use, and debugging what goes wrong under real traffic',
+          'agent orchestration, structured context, constrained generation, observability and auditability',
       },
       {
         icon: '⚙️',
         title: 'infrastructure',
-        description: 'aws, kubernetes, infrastructure as code, and ci/cd',
+        description:
+          'aws, container orchestration, infrastructure as code, and ci/cd',
       },
       {
         icon: '📊',

@@ -278,14 +278,14 @@ describe('Layout Component', () => {
     });
 
     it.each([
-      ['/blog', '.blog-header', 'blog', 'notes and press, back to 2015.'],
+      ['/blog', '.blog-header', 'blog', 'notes and press.'],
       [
         '/projects',
         '.projects-header',
         'projects',
         'open source projects, tools, and experiments.',
       ],
-      ['/cv', '.cv-page-header', 'cv', 'everything, in order, back to 2010.'],
+      ['/cv', '.cv-page-header', 'cv', 'roles, research, and skills.'],
     ])(
       'should wear the %s crumb hero',
       (pathname, selector, label, tagline) => {

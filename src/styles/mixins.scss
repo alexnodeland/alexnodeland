@@ -300,6 +300,44 @@
 // same coat the shortcuts panel takes, and for the same reason). The chip marks
 // itself open with a white wash at the same moment, so the two still read as
 // one object opening rather than as a stray dark box.
+// The panel action: an outline in the panel's own hairline, lowercase mono,
+// lifting a pixel on hover. The welcome screen's download, the retry when
+// the model fails to load, and the error boundary's retry are all this one
+// control — the same action, in different moments — so they share it.
+@mixin outline-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  text-transform: lowercase;
+  cursor: pointer;
+  @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
+
+  &:hover:not(:disabled) {
+    background: var(--bg-accent);
+    border-color: rgba(255, 255, 255, 0.45);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: var(--shadow-md);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 @mixin floating-panel {
   position: absolute;
   top: calc(100% + 0.4rem);
