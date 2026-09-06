@@ -6,11 +6,8 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import {
-  glyphSpacingFor,
-  rasterizeGlyph,
-  sampleGlyphPoints,
-} from '../../core/glyph';
+import { glyphGraphFor } from '../../core/glyph';
+import { Morph, morphProgress, writeLine } from '../../core/lines';
 import {
   NotFoundSequence,
   viewportReshaped,
@@ -19,15 +16,9 @@ import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { ShortestPathLabSettings } from './config';
 
-// The 404 sequence. The number is sampled at this many columns across the
-// viewport and drawn with between these many nodes, by viewport area; each
-// joined to its nearest neighbours. The search runs at least this fast
-// through it, since two hundred nodes at four steps a second is a minute,
-// and the dot walks the path this much faster than usual.
-const GLYPH_COLS = 160;
-const MIN_GLYPH_NODES = 140;
-const MAX_GLYPH_NODES = 240;
-const GLYPH_LINKS = 3;
+// The 404 sequence. The search runs at least this fast through the number,
+// since two hundred nodes at four steps a second is a minute, and the dot
+// walks the path this much faster than usual.
 const GLYPH_MIN_STEPS_PER_SECOND = 22;
 const GLYPH_WALK_BOOST = 3;
 // Room for either graph the lab draws.
@@ -108,82 +99,26 @@ function heuristic(a: LabNode, b: LabNode): number {
 }
 
 /**
- * The number as a graph, for the 404 sequence: nodes sampled evenly inside
- * it, each joined to its nearest neighbours so that the edges run along the
- * strokes, and the digits bridged by the shortest links between them so that
- * a path across the whole number always exists. Null when the number cannot
- * be drawn (no canvas to rasterise it on).
+ * The number as a graph, for the 404 sequence: the shared construction (see
+ * glyphGraph), with each edge weighted by its length — the same Euclidean
+ * weight the random graph's edges carry, so the search is the same search.
+ * Null when the number cannot be drawn (no canvas to rasterise it on).
  */
 function generateGlyphGraph(
   width: number,
   height: number,
-  count: number,
   rng: () => number
 ): { nodes: LabNode[]; edges: LabEdge[] } | null {
-  const cols = GLYPH_COLS;
-  const rows = Math.max(24, Math.round((cols * height) / Math.max(1, width)));
-  const field = rasterizeGlyph(cols, rows, { maxHeight: 0.62 });
-  const spacing = glyphSpacingFor(field, count);
-  const spots = sampleGlyphPoints(field, count, spacing, rng);
-  if (spots.length < 4) return null;
-
-  const nodes: LabNode[] = spots.map((p, i) => ({
-    id: i,
-    position: { x: (p.x / cols) * 2 - 1, y: 1 - (p.y / rows) * 2 },
-  }));
-  const n = nodes.length;
-  const distance = (i: number, j: number) =>
-    Math.hypot(
-      nodes[i].position.x - nodes[j].position.x,
-      nodes[i].position.y - nodes[j].position.y
-    );
-
-  const edges: LabEdge[] = [];
-  const seen = new Set<string>();
-  const parent = nodes.map((_, i) => i);
-  const find = (i: number): number => {
-    while (parent[i] !== i) {
-      parent[i] = parent[parent[i]];
-      i = parent[i];
-    }
-    return i;
+  const graph = glyphGraphFor(width, height, rng);
+  if (!graph) return null;
+  return {
+    nodes: graph.points.map((p, id) => ({ id, position: { x: p.x, y: p.y } })),
+    edges: graph.edges.map(e => ({
+      source: e.a,
+      target: e.b,
+      weight: e.length,
+    })),
   };
-  const link = (i: number, j: number) => {
-    const key = i < j ? `${i}-${j}` : `${j}-${i}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    edges.push({ source: i, target: j, weight: distance(i, j) });
-    parent[find(i)] = find(j);
-  };
-
-  // Along the strokes: the nearest few, within a stroke's width or so.
-  const reach = spacing * (2 / cols) * 3.2;
-  for (let i = 0; i < n; i++) {
-    const near: Array<{ j: number; d: number }> = [];
-    for (let j = 0; j < n; j++) {
-      if (j === i) continue;
-      const d = distance(i, j);
-      if (d <= reach) near.push({ j, d });
-    }
-    near.sort((a, b) => a.d - b.d);
-    for (const { j } of near.slice(0, GLYPH_LINKS)) link(i, j);
-  }
-
-  // Across the gaps: the closest pair not yet joined, until everything is.
-  for (;;) {
-    let best: { i: number; j: number; d: number } | null = null;
-    for (let i = 0; i < n; i++) {
-      for (let j = i + 1; j < n; j++) {
-        if (find(i) === find(j)) continue;
-        const d = distance(i, j);
-        if (!best || d < best.d) best = { i, j, d };
-      }
-    }
-    if (!best) break;
-    link(best.i, best.j);
-  }
-
-  return { nodes, edges };
 }
 
 /**
@@ -326,19 +261,7 @@ const ShortestPathLabBackground: React.FC<
     let glyphRuns = 0;
     let glyphSize = { width: window.innerWidth, height: window.innerHeight };
     // Nodes in flight between two layouts.
-    let morph: {
-      from: Float32Array;
-      to: Float32Array;
-      start: number;
-      duration: number;
-    } | null = null;
-
-    const glyphNodeCount = () => {
-      const area = window.innerWidth * window.innerHeight;
-      return Math.round(
-        Math.max(MIN_GLYPH_NODES, Math.min(MAX_GLYPH_NODES, area / 7000))
-      );
-    };
+    let morph: Morph | null = null;
 
     // Edge lines (contrasting style vs topology): light dashed base, thick vivid
     // action colors. These seed the materials; renderFrame refreshes them.
@@ -393,28 +316,6 @@ const ShortestPathLabBackground: React.FC<
       line.computeLineDistances(); // required for dashed
       line.userData = { e };
       return line;
-    };
-
-    // Moves a line's ends in place. setPositions allocates a fresh buffer
-    // every call, and a few hundred lines are moved every frame while the
-    // nodes are in flight.
-    const writeLine = (line: Line2, a: Vector2, b: Vector2) => {
-      const attribute = line.geometry.attributes.instanceStart as
-        | THREE.InterleavedBufferAttribute
-        | undefined;
-      const buffer = attribute?.data;
-      if (buffer && buffer.array.length >= 6) {
-        const array = buffer.array as Float32Array;
-        array[0] = a.x;
-        array[1] = a.y;
-        array[2] = 0;
-        array[3] = b.x;
-        array[4] = b.y;
-        array[5] = 0;
-        buffer.needsUpdate = true;
-      } else {
-        line.geometry.setPositions([a.x, a.y, 0, b.x, b.y, 0]);
-      }
     };
 
     const edgeLines: Line2[] = [];
@@ -670,12 +571,7 @@ const ShortestPathLabBackground: React.FC<
       const wasGlyph = glyphMode;
       let built: { nodes: LabNode[]; edges: LabEdge[] } | null = null;
       if (wantGlyph) {
-        built = generateGlyphGraph(
-          glyphSize.width,
-          glyphSize.height,
-          glyphNodeCount(),
-          rngFunc
-        );
+        built = generateGlyphGraph(glyphSize.width, glyphSize.height, rngFunc);
       }
       glyphMode = built !== null;
       if (!built) {
@@ -709,8 +605,7 @@ const ShortestPathLabBackground: React.FC<
     /** Carries nodes in flight along, and their edges with them. */
     const advanceMorph = (now: number) => {
       if (!morph) return;
-      const t = Math.min(1, (now - morph.start) / morph.duration);
-      const eased = 1 - Math.pow(1 - t, 3);
+      const eased = morphProgress(morph, now);
       const { from, to } = morph;
       for (let i = 0; i < nodes.length; i++) {
         const x = from[i * 2] + (to[i * 2] - from[i * 2]) * eased;
@@ -725,9 +620,11 @@ const ShortestPathLabBackground: React.FC<
       ).needsUpdate = true;
       for (const line of edgeLines) {
         const e = line.userData.e as LabEdge;
-        writeLine(line, nodes[e.source].position, nodes[e.target].position);
+        const a = nodes[e.source].position;
+        const b = nodes[e.target].position;
+        writeLine(line, a.x, a.y, b.x, b.y);
       }
-      if (t >= 1) {
+      if (eased >= 1) {
         morph = null;
         // The dashes are measured along the line, which has just moved.
         for (const line of edgeLines) line.computeLineDistances();

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { rasterizeGlyph } from '../../core/glyph';
-import { NotFoundSequence } from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { makeRuleTables, population, stepLife } from './automaton';
@@ -13,14 +12,16 @@ const MAX_CELLS = 40000;
 // Generations of unchanged population before the grid is treated as stalled.
 const STALL_GENERATIONS = 24;
 
-// The fewest columns the number can be drawn across and still be read. A
-// phone at the default cell size has under twenty, so the 404 sequence
-// refines the grid until it has at least this many.
+// The 404 sequence: the number's cells are switched on over this many
+// seconds, in a random order, and held; the fewest columns the number can be
+// read across, which a phone at the default cell size falls short of, so the
+// grid is refined for it there.
+const WRITE_SECONDS = 4;
 const MIN_GLYPH_COLS = 48;
-
-// Generations the reduced-motion still is run for before it is drawn: enough
-// for the soup outside the number to die back and the number to fill.
-const SETTLE_GENERATIONS = 30;
+// Generations a reduced-motion still is run on past the number being put
+// down, so that it shows the number settled rather than the moment of
+// writing.
+const STILL_GENERATIONS = 60;
 
 /**
  * Renders a Life-like cellular automaton.
@@ -62,8 +63,8 @@ const CellularAutomatonBackground: React.FC<
   }, [frozen]);
 
   // The 404 sequence — see AnimatedBackgroundProps.notFound. Read off a ref
-  // each generation; the effect nudges a frozen loop so it draws the new
-  // state once.
+  // each frame; the effect nudges a frozen loop so it draws the new state
+  // once.
   const notFoundRef = useRef(Boolean(notFound));
   notFoundRef.current = Boolean(notFound);
   useEffect(() => {
@@ -92,22 +93,53 @@ const CellularAutomatonBackground: React.FC<
     let texture: THREE.DataTexture | null = null;
     let pixels = new Uint8Array(0);
 
-    // The 404 sequence: the number as a mask on this grid, and how far along
-    // the picture is in coming apart into it. The mask is rasterised with
-    // the grid, so it is always the grid's own shape.
+    // The 404 sequence: the number as fixed cells. A cell in `held` is
+    // clamped alive every generation — a boundary condition, the way the
+    // PDE's Dirichlet edges are fixed values — and the rule runs honestly
+    // around it: the number's edge is a wall of live cells, and Life births
+    // and kills against a wall without rest, so the digits boil at their
+    // rims and throw off what they throw off. The cells are switched on one
+    // by one over a few seconds, in the order `writeOrder` gives, the way a
+    // pattern is put down on a grid; let go, the clamp lifts and the rule
+    // takes the number apart on its own terms.
     let mask: Uint8Array = new Uint8Array(0);
-    const sequence = new NotFoundSequence();
-    let progress = 0;
-    // Whether the number is being let go of, as opposed to formed.
-    let releasing = false;
+    let held: Uint8Array = new Uint8Array(0);
+    let writeOrder: Uint32Array = new Uint32Array(0);
+    let written = 0;
+    let writeClock = 0;
 
-    /** Fills the grid with random soup at the configured density. */
+    /** Fills the grid with random soup at the configured density. Held cells stay. */
     const seed = () => {
       for (let i = 0; i < current.length; i++) {
-        current[i] = Math.random() < initialDensity ? 1 : 0;
+        current[i] = held[i] || Math.random() < initialDensity ? 1 : 0;
         age[i] = current[i];
       }
       previous.set(current);
+    };
+
+    /** Rasterises the number onto the grid and shuffles the order it is written in. */
+    const buildMask = () => {
+      const field = rasterizeGlyph(cols, rows, { maxHeight: 0.72 });
+      // The texture's rows run bottom-up; the field's run top-down.
+      mask = new Uint8Array(cols * rows);
+      for (let y = 0; y < rows; y++) {
+        mask.set(
+          field.mask.subarray((rows - 1 - y) * cols, (rows - y) * cols),
+          y * cols
+        );
+      }
+      const order: number[] = [];
+      for (let i = 0; i < mask.length; i++) if (mask[i]) order.push(i);
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      writeOrder = Uint32Array.from(order);
+      held = new Uint8Array(cols * rows);
+      // A grid rebuilt mid-sequence keeps as much of the number as was down.
+      const keep = Math.min(written, writeOrder.length);
+      for (let k = 0; k < keep; k++) held[writeOrder[k]] = 1;
+      written = keep;
     };
 
     /** Grid dimensions the current viewport calls for, within the cell budget. */
@@ -171,20 +203,10 @@ const CellularAutomatonBackground: React.FC<
           }
         }
         previous.set(current);
-      } else {
-        seed();
       }
 
-      // The state texture's first row is drawn at the bottom of the screen,
-      // and the glyph's first row is its top.
-      const glyph = rasterizeGlyph(cols, rows, { maxHeight: 0.72 }).mask;
-      mask = new Uint8Array(size);
-      for (let y = 0; y < rows; y++) {
-        mask.set(
-          glyph.subarray((rows - 1 - y) * cols, (rows - y) * cols),
-          y * cols
-        );
-      }
+      buildMask();
+      if (!prev) seed();
 
       texture?.dispose();
       texture = new THREE.DataTexture(
@@ -222,57 +244,44 @@ const CellularAutomatonBackground: React.FC<
         }
       }
 
-      // The 404 sequence, as a bias on the rule. Outside the number life
-      // fails, more surely the further along the sequence is; inside it,
-      // deaths are suppressed and births encouraged, until at the end the
-      // number stands solid — a block Conway's count would otherwise churn.
-      // What keeps it alive at rest: a flicker inside, sparks outside, and
-      // the rule itself still working the edge.
-      //
-      // Let go, it runs the other way: the number dies away and the field
-      // around it is reseeded, thinly at first, so the soup grows back
-      // rather than cutting in.
-      const p = progress;
-      if (releasing && p < 1) {
-        const dissolve = 0.3 * (1 - p);
-        const reseed = initialDensity * 0.12 * (1 - p);
-        for (let i = 0; i < next.length; i++) {
-          if (mask[i]) {
-            if (next[i] && Math.random() < dissolve) next[i] = 0;
-          } else if (!next[i] && Math.random() < reseed) {
-            next[i] = 1;
-          }
-        }
-      } else if (p > 0) {
-        const birth = 0.06 + 0.5 * p;
-        const die = 0.08 + 0.6 * p;
-        const spark = 0.0012 * (1 - p) + 0.0002;
-        for (let i = 0; i < next.length; i++) {
-          if (mask[i]) {
-            if (next[i]) {
-              if (p >= 1 && Math.random() < 0.012) next[i] = 0;
-            } else if (current[i] && Math.random() < p) {
-              next[i] = 1;
-            } else if (Math.random() < birth) {
-              next[i] = 1;
-            }
-          } else if (next[i]) {
-            // A birth outside the number is the rule working its edge and
-            // filling its counters; those are refused outright by the end,
-            // or the digits blur into a block.
-            const born = !current[i];
-            if (Math.random() < (born ? Math.max(die, p) : die)) next[i] = 0;
-          } else if (Math.random() < spark) {
-            next[i] = 1;
-          }
-        }
-      }
+      // The fixed cells, applied after the rule like any boundary condition.
+      for (let k = 0; k < written; k++) next[writeOrder[k]] = 1;
 
       previous.set(current);
       for (let i = 0; i < next.length; i++) {
         // Age saturates at 255 so long-lived structures stop shifting color.
         age[i] = next[i] === 1 ? Math.min(255, age[i] + 1) : 0;
         current[i] = next[i];
+      }
+    };
+
+    /**
+     * Advances the writing of the number by `dt` seconds while the flag is
+     * up, and lifts it all at once when the flag drops. What is written is
+     * held from the next generation on.
+     */
+    const writeNumber = (dt: number, on: boolean) => {
+      if (!on) {
+        if (written) {
+          written = 0;
+          writeClock = 0;
+          held.fill(0);
+        }
+        return;
+      }
+      writeClock = Math.min(WRITE_SECONDS, writeClock + dt);
+      const target = frozenRef.current
+        ? writeOrder.length
+        : Math.round((writeClock / WRITE_SECONDS) * writeOrder.length);
+      for (; written < target; written++) {
+        const i = writeOrder[written];
+        held[i] = 1;
+        // Put down now rather than at the next generation, so the number
+        // is seen being written rather than appearing a step at a time —
+        // and in the generation before as well, since the shader eases each
+        // cell in from that one and a still gets no second frame.
+        current[i] = 1;
+        previous[i] = 1;
       }
     };
 
@@ -436,30 +445,27 @@ const CellularAutomatonBackground: React.FC<
       material.uniforms.uGrid.value.set(cols, rows);
     };
 
-    // The reduced-motion still: the end of the sequence, reached at once.
-    const settle = () => {
-      progress = sequence.settle(true);
-      for (let i = 0; i < SETTLE_GENERATIONS; i++) step();
-      uploadState();
-    };
-
     const animate = (now: number) => {
       const elapsed = now - lastStep;
+      // Clamped so a tab coming back from the background plays one long
+      // frame rather than the whole time it was away.
       const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.1) : 0;
       lastFrame = now;
 
-      const on = notFoundRef.current;
-      releasing = !on && sequence.active;
-      if (frozenRef.current) {
-        if (on && sequence.raw < 1) {
-          syncGrid();
-          settle();
-        } else if (!on) {
-          progress = sequence.settle(false);
-        }
-      } else {
-        progress = sequence.advance(dt, on);
-        syncGrid();
+      const wasWriting = written > 0;
+      syncGrid();
+      writeNumber(dt, notFoundRef.current);
+      // A still gets one frame, and the frame the number was put down in is
+      // not the one to hold: every cell on the grid is the same age, and the
+      // soup still fills the digits' counters. What a still shows is the
+      // grid some generations on — the number aged into its own colour, the
+      // rule having worked the soup around it.
+      if (frozenRef.current && written > 0 && !wasWriting) {
+        for (let i = 0; i < STILL_GENERATIONS; i++) step();
+      }
+      // The number arriving, or leaving, is worth a frame of its own.
+      if (written > 0 !== wasWriting || written < writeOrder.length) {
+        uploadState();
       }
 
       if (elapsed >= stepIntervalMs) {
@@ -469,14 +475,12 @@ const CellularAutomatonBackground: React.FC<
 
         // A grid whose population stops changing has converged on still lifes
         // and short oscillators; reseed rather than sit on a frozen frame.
-        // Not while the number is on it — standing still is the point then.
+        // Held cells count too, and a held number never stalls: its rim is
+        // always being born against.
         const live = population(current);
         stalledFor = live === lastPopulation ? stalledFor + 1 : 0;
         lastPopulation = live;
-        if (
-          !sequence.active &&
-          (stalledFor >= STALL_GENERATIONS || live === 0)
-        ) {
+        if (stalledFor >= STALL_GENERATIONS || live === 0) {
           seed();
           uploadState();
           stalledFor = 0;

@@ -3,30 +3,21 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
-import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
-import {
-  glyphSpacingFor,
-  rasterizeGlyph,
-  sampleGlyphPoints,
-} from '../../core/glyph';
-import {
-  NotFoundSequence,
-  viewportReshaped,
-} from '../../core/notFoundSequence';
+import { glyphGraphFor } from '../../core/glyph';
+import { Morph, morphProgress, writeLine } from '../../core/lines';
+import { viewportReshaped } from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { GraphTopologySettings } from './config';
 
-// The 404 sequence. The number is sampled at this many columns across the
-// viewport; the network recruits between these many extra nodes to draw it,
-// by viewport area; and a recruit links to this many of its neighbours.
-const GLYPH_COLS = 160;
-const MIN_RECRUITS = 150;
-const MAX_RECRUITS = 320;
-const WEB_LINKS = 2;
-// A recruit counts as arrived within this distance of its place.
-const ARRIVAL = 0.05;
+// Room for either network the scheduler is shown: the configured one, or
+// the number (see numberNetwork).
+const NODE_CAPACITY = 320;
+// How long the machines take to fly into the number, to settle when it is
+// laid out again, and to scatter back once the page is left.
+const MORPH_IN_MS = 2200;
+const MORPH_AGAIN_MS = 700;
+const MORPH_OUT_MS = 1600;
 
 type Vector2 = { x: number; y: number };
 
@@ -159,6 +150,42 @@ function createClusteredGraph(
   return { nodes, edges };
 }
 
+/**
+ * The number as a network, for the 404 sequence — the same kind of network
+ * `createClusteredGraph` makes, with the digits as the datacenters. Each
+ * machine sits at its place inside a digit, and stays there: a datacenter
+ * has a location, and a node with one is pinned in the layout the way a
+ * pinned node is in any force-directed drawing. Links along a stroke are
+ * same-rack links and the links that bridge two digits are cross-datacenter
+ * ones, with the latencies and bandwidths the generator gives those. The
+ * scheduler's search then runs on it as on any other network.
+ */
+function numberNetwork(
+  width: number,
+  height: number,
+  rng: () => number
+): { nodes: GraphNode[]; edges: GraphEdge[] } | null {
+  const graph = glyphGraphFor(width, height, rng);
+  if (!graph) return null;
+  const nodes: GraphNode[] = graph.points.map((p, id) => ({
+    id,
+    position: { x: p.x, y: p.y },
+    velocity: { x: 0, y: 0 },
+    fixed: true,
+  }));
+  const edges: GraphEdge[] = graph.edges.map(e => {
+    const latencyMs = e.bridge ? 5 + rng() * 15 : 0.1 + rng() * 0.9;
+    const bandwidth = e.bridge ? 10 : 100; // Gbps
+    return {
+      source: e.a,
+      target: e.b,
+      latencyMs,
+      weight: bandwidth / latencyMs,
+    };
+  });
+  return { nodes, edges };
+}
+
 // Proper graph conductivity calculation for weighted undirected graphs
 // We want HIGH conductivity WITHIN the subgraph, LOW conductivity ACROSS the boundary
 function calculateSubgraphConductivity(
@@ -282,11 +309,14 @@ const GraphTopologyBackground: React.FC<
       );
 
     const rng = mulberry32(1337);
-    const { nodes, edges } = createClusteredGraph(
+    let { nodes, edges } = createClusteredGraph(
       nodeCountParam,
       clusterCountParam,
       rng
     );
+    // Whether every node is pinned, in which case the layout has nothing to
+    // do and is not run.
+    let pinned = false;
 
     // Force-directed layout with spring lengths proportional to latency
     const desiredLen = (latency: number) =>
@@ -303,41 +333,53 @@ const GraphTopologyBackground: React.FC<
     let iterationCount = 0; // Track iterations for temperature schedule
     let currentTemperature = 1.0; // Track current temperature for visualization
 
-    // Initialize current set from random seed using proper graph connectivity
-    const seedIndex = Math.floor(rng() * nodes.length);
-    currentSet.add(seedIndex);
+    /**
+     * Starts the search over on the network as it stands: a connected seed
+     * subgraph grown from a random node, taken as the best so far.
+     */
+    const initSearch = () => {
+      currentSet = new Set<number>();
+      iterationCount = 0;
+      currentTemperature = 1.0;
 
-    // Expand by connected neighbors until target size (ensures connectivity)
-    while (currentSet.size < targetSubgraphSize) {
-      const boundary: number[] = [];
-      const currentArray = Array.from(currentSet);
+      // Initialize current set from random seed using proper graph connectivity
+      const seedIndex = Math.floor(rng() * nodes.length);
+      currentSet.add(seedIndex);
 
-      // Find all nodes connected to current subgraph
-      for (const nodeId of currentArray) {
-        for (const e of edges) {
-          if (e.source === nodeId && !currentSet.has(e.target)) {
-            boundary.push(e.target);
+      // Expand by connected neighbors until target size (ensures connectivity)
+      const size = Math.min(targetSubgraphSize, nodes.length - 1);
+      while (currentSet.size < size) {
+        const boundary: number[] = [];
+        const currentArray = Array.from(currentSet);
+
+        // Find all nodes connected to current subgraph
+        for (const nodeId of currentArray) {
+          for (const e of edges) {
+            if (e.source === nodeId && !currentSet.has(e.target)) {
+              boundary.push(e.target);
+            }
+            if (e.target === nodeId && !currentSet.has(e.source)) {
+              boundary.push(e.source);
+            }
           }
-          if (e.target === nodeId && !currentSet.has(e.source)) {
-            boundary.push(e.source);
-          }
+        }
+
+        if (boundary.length > 0) {
+          // Add a connected neighbor
+          const next = boundary[Math.floor(rng() * boundary.length)];
+          currentSet.add(next);
+        } else {
+          // Fallback: add random node if no connected neighbors
+          const next = Math.floor(rng() * nodes.length);
+          currentSet.add(next);
         }
       }
 
-      if (boundary.length > 0) {
-        // Add a connected neighbor
-        const next = boundary[Math.floor(rng() * boundary.length)];
-        currentSet.add(next);
-      } else {
-        // Fallback: add random node if no connected neighbors
-        const next = Math.floor(rng() * nodes.length);
-        currentSet.add(next);
-      }
-    }
-
-    // Initialize best solution and current score
-    bestSet = new Set(currentSet);
-    bestScore = calculateSubgraphConductivity(bestSet, edges, nodes.length);
+      // Initialize best solution and current score
+      bestSet = new Set(currentSet);
+      bestScore = calculateSubgraphConductivity(bestSet, edges, nodes.length);
+    };
+    initSearch();
 
     // Build Three.js geometry for edges (lines) and nodes (instanced circles).
     //
@@ -353,30 +395,43 @@ const GraphTopologyBackground: React.FC<
     );
 
     const edgeSegments: Line2[] = [];
-    for (const e of edges) {
-      const geometry = new LineGeometry();
-      geometry.setPositions([0, 0, 0, 0, 0, 0]);
-      const material = new LineMaterial({
-        color: new THREE.Color(0.1, 0.1, 0.12), // Very dark gray for background edges
-        transparent: true,
-        opacity: settings.opacity * 0.1, // Very faint by default; live below
-        linewidth: 1,
-        resolution: lineResolution,
+    const buildLines = () => {
+      for (const e of edges) {
+        const geometry = new LineGeometry();
+        geometry.setPositions([0, 0, 0, 0, 0, 0]);
+        const material = new LineMaterial({
+          color: new THREE.Color(0.1, 0.1, 0.12), // Very dark gray for background edges
+          transparent: true,
+          opacity: settings.opacity * 0.1, // Very faint by default; live below
+          linewidth: 1,
+          resolution: lineResolution,
+        });
+        const line = new Line2(geometry, material);
+        line.userData = { e };
+        scene.add(line);
+        edgeSegments.push(line);
+      }
+    };
+    const disposeLines = () => {
+      edgeSegments.forEach(l => {
+        scene.remove(l);
+        l.geometry?.dispose?.();
+        (l.material as LineMaterial)?.dispose?.();
       });
-      const line = new Line2(geometry, material);
-      line.userData = { e };
-      scene.add(line);
-      edgeSegments.push(line);
-    }
+      edgeSegments.length = 0;
+    };
+    buildLines();
 
-    // Node rendering: simple circles via Points
-    const nodePositions = new Float32Array(nodes.length * 3);
+    // Node rendering: simple circles via Points. Sized for the biggest
+    // network the scheduler is shown and drawn up to the one it has.
+    const nodePositions = new Float32Array(NODE_CAPACITY * 3);
     const nodeGeometry = new THREE.BufferGeometry();
     nodeGeometry.setAttribute(
       'position',
       new THREE.BufferAttribute(nodePositions, 3)
     );
-    const nodeColors = new Float32Array(nodes.length * 3);
+    nodeGeometry.setDrawRange(0, nodes.length);
+    const nodeColors = new Float32Array(NODE_CAPACITY * 3);
     nodeGeometry.setAttribute(
       'color',
       new THREE.BufferAttribute(nodeColors, 3)
@@ -393,299 +448,97 @@ const GraphTopologyBackground: React.FC<
     scene.add(points);
 
     // ── The 404 sequence ───────────────────────────────────────────────────
-    // The whole network is pulled into the number: every node is given a
-    // place inside it and drawn there, and any link stretched past twice its
-    // length on the way breaks. Thirty-odd machines cannot draw three digits,
-    // so the network recruits: new nodes spawn out of the existing ones, a
-    // few at a time, fly to their own places and link up with their nearest
-    // neighbours as they arrive — the same sparse web the clusters are joined
-    // by. Let go, the recruits fly back into the nodes they came from, the
-    // broken links heal, and the layout picks up where it was.
-    const sequence = new NotFoundSequence();
-    let progress = 0;
-
-    interface Recruit {
-      x: number;
-      y: number;
-      tx: number;
-      ty: number;
-      /** The node it spawns out of, and flies back into. */
-      from: number;
-      /** Seconds into the sequence at which it appears. */
-      born: number;
-      spawned: boolean;
-      /** Which digit it belongs to, for its colour. */
-      third: number;
-    }
-    let recruits: Recruit[] = [];
-    let webPairs: Array<[number, number]> = [];
-    let nodeTargets = nodes.map(n => ({ x: n.position.x, y: n.position.y }));
-    const edgeLife = new Float32Array(edges.length).fill(1);
+    // The network the scheduler is shown becomes the number: the digits as
+    // datacenters, the machines at their places (see numberNetwork), and the
+    // same search for a well-connected subgraph running on it. Nothing is
+    // drawn but the network. Swapping one network for another is done the
+    // way the pathfinding lab does it — each machine of the new network sets
+    // off from where one of the old ones was and flies to its place — so
+    // there is no cut. Let go, the configured network comes back the same
+    // way and the layout picks up where it left off.
+    let isNumber = false;
+    let morph: Morph | null = null;
     let glyphSize = { width: window.innerWidth, height: window.innerHeight };
-    let numberBuilt = false;
 
-    const recruitCount = () => {
-      const area = window.innerWidth * window.innerHeight;
-      return Math.round(
-        Math.max(MIN_RECRUITS, Math.min(MAX_RECRUITS, area / 5000))
-      );
-    };
-
-    // The recruits' points and their web, allocated once at the most either
-    // can hold and drawn up to what is in use; the buffers are written in
-    // place each frame rather than reallocated.
-    const recruitPositions = new Float32Array(MAX_RECRUITS * 3);
-    const recruitColors = new Float32Array(MAX_RECRUITS * 3);
-    const recruitGeometry = new THREE.BufferGeometry();
-    recruitGeometry.setAttribute(
-      'position',
-      new THREE.BufferAttribute(recruitPositions, 3)
-    );
-    recruitGeometry.setAttribute(
-      'color',
-      new THREE.BufferAttribute(recruitColors, 3)
-    );
-    recruitGeometry.setDrawRange(0, 0);
-    const recruitMaterial = new THREE.PointsMaterial({
-      size: settings.elementSize * 260,
-      vertexColors: true,
-      transparent: true,
-      opacity: settings.opacity,
-      sizeAttenuation: true,
-    });
-    const recruitPoints = new THREE.Points(recruitGeometry, recruitMaterial);
-    recruitPoints.visible = false;
-    scene.add(recruitPoints);
-
-    const MAX_WEB = MAX_RECRUITS * WEB_LINKS;
-    const webGeometry = new LineSegmentsGeometry();
-    webGeometry.setPositions(new Float32Array(MAX_WEB * 6));
-    webGeometry.setColors(new Float32Array(MAX_WEB * 6));
-    webGeometry.instanceCount = 0;
-    const webMaterial = new LineMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: settings.opacity,
-      linewidth: 1,
-      resolution: lineResolution,
-    });
-    const web = new LineSegments2(webGeometry, webMaterial);
-    web.visible = false;
-    scene.add(web);
-    const webPositionBuffer = (
-      webGeometry.attributes.instanceStart as THREE.InterleavedBufferAttribute
-    ).data;
-    const webColorBuffer = (
-      webGeometry.attributes
-        .instanceColorStart as THREE.InterleavedBufferAttribute
-    ).data;
-
-    /**
-     * Lays the number out for the current viewport: a place inside it for
-     * every node and every recruit, and the web between the recruits. On a
-     * rebuild (the viewport changed shape) the recruits keep where they are
-     * and only their places move, so they glide rather than jump.
-     */
-    const buildNumber = () => {
-      numberBuilt = true;
-      const cols = GLYPH_COLS;
-      const rows = Math.max(
-        24,
-        Math.round((cols * glyphSize.height) / glyphSize.width)
-      );
-      const field = rasterizeGlyph(cols, rows);
-      const wanted = recruitCount();
-      const total = wanted + nodes.length;
-      const seeded = mulberry32(4040 + nodes.length);
-      const spots = sampleGlyphPoints(
-        field,
-        total,
-        glyphSpacingFor(field, total),
-        seeded
-      ).map(p => ({
-        x: (p.x / cols) * 2 - 1,
-        y: 1 - (p.y / rows) * 2,
-      }));
-
-      // A number that could not be drawn (no canvas to rasterise it on)
-      // leaves everything where it is.
-      if (!spots.length) {
-        nodeTargets = nodes.map(n => ({ x: n.position.x, y: n.position.y }));
-        recruits = [];
-        webPairs = [];
-        return;
-      }
-
-      // The existing nodes take the first places; the recruits the rest.
-      nodeTargets = nodes.map((_, i) => spots[i % spots.length]);
-      const places = spots.slice(nodes.length);
-      const previous = recruits;
-      recruits = places.map((place, i) => {
-        const kept = previous[i];
-        const from = Math.floor(seeded() * nodes.length);
-        const origin = nodes[from].position;
-        return {
-          x: kept ? kept.x : origin.x,
-          y: kept ? kept.y : origin.y,
-          tx: place.x,
-          ty: place.y,
-          from: kept ? kept.from : from,
-          born: kept ? kept.born : 0.4 + seeded() * 4.2,
-          spawned: kept ? kept.spawned : false,
-          // The digits sit in three bands across the number's width.
-          third: place.x < -0.25 ? 0 : place.x > 0.25 ? 2 : 1,
-        };
-      });
-
-      // Each recruit to its nearest neighbours by place, deduplicated, and
-      // never across the gap between two digits.
-      const reach = glyphSpacingFor(field, total) * (2 / cols) * 3.5;
-      const seen = new Set<string>();
-      webPairs = [];
-      for (let i = 0; i < recruits.length && webPairs.length < MAX_WEB; i++) {
-        const a = recruits[i];
-        const near: Array<{ j: number; d: number }> = [];
-        for (let j = 0; j < recruits.length; j++) {
-          if (j === i) continue;
-          const b = recruits[j];
-          const d = Math.hypot(a.tx - b.tx, a.ty - b.ty);
-          if (d <= reach) near.push({ j, d });
-        }
-        near.sort((u, v) => u.d - v.d);
-        for (const { j } of near.slice(0, WEB_LINKS)) {
-          const key = i < j ? `${i}-${j}` : `${j}-${i}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          webPairs.push([i, j]);
-        }
-      }
-    };
-
-    /** Draws the recruits and their web for this frame. */
-    const drawRecruits = (
-      live: GraphTopologySettings,
-      timeMs: number,
-      on: boolean
+    const rebuild = (
+      built: { nodes: GraphNode[]; edges: GraphEdge[] },
+      number: boolean,
+      now: number,
+      morphMs: number
     ) => {
-      const showing = sequence.active && recruits.length > 0;
-      recruitPoints.visible = showing;
-      web.visible = showing && webPairs.length > 0;
-      if (!showing) return;
-
-      const hues = [
-        live.colors.primary,
-        live.colors.secondary,
-        live.colors.accent,
-      ];
-      const arrival = new Float32Array(recruits.length);
-      for (let i = 0; i < recruits.length; i++) {
-        const r = recruits[i];
-        const o = i * 3;
-        recruitPositions[o] = r.x;
-        recruitPositions[o + 1] = r.y;
-        recruitPositions[o + 2] = 0;
-        let bright = 0;
-        if (r.spawned) {
-          const since = sequence.seconds - r.born;
-          const fadeIn = frozenRef.current ? 1 : Math.min(1, since / 0.6);
-          const pulse = 0.85 + 0.3 * Math.sin(timeMs * 0.0025 + i * 1.7);
-          bright = fadeIn * pulse * (on ? 1 : progress);
-          arrival[i] = Math.max(
-            0,
-            1 - Math.hypot(r.tx - r.x, r.ty - r.y) / ARRIVAL
-          );
-        }
-        const [hr, hg, hb] = hues[r.third];
-        recruitColors[o] = hr * bright;
-        recruitColors[o + 1] = hg * bright;
-        recruitColors[o + 2] = hb * bright;
+      const previous = nodes;
+      const count = built.nodes.length;
+      const from = new Float32Array(count * 2);
+      const to = new Float32Array(count * 2);
+      for (let i = 0; i < count; i++) {
+        const origin = previous.length
+          ? previous[i % previous.length].position
+          : built.nodes[i].position;
+        from[i * 2] = origin.x;
+        from[i * 2 + 1] = origin.y;
+        to[i * 2] = built.nodes[i].position.x;
+        to[i * 2 + 1] = built.nodes[i].position.y;
       }
-      recruitGeometry.setDrawRange(0, recruits.length);
-      (
-        recruitGeometry.getAttribute('position') as THREE.BufferAttribute
-      ).needsUpdate = true;
-      (
-        recruitGeometry.getAttribute('color') as THREE.BufferAttribute
-      ).needsUpdate = true;
-      recruitMaterial.size =
-        live.elementSize * 260 * (0.9 + 0.1 * Math.sin(timeMs * 0.002));
-      recruitMaterial.opacity = live.opacity;
-
-      // A link is drawn once both its ends are in place, and twinkles.
-      const [lr, lg, lb] = live.colors.primary;
-      const pos = webPositionBuffer.array as Float32Array;
-      const col = webColorBuffer.array as Float32Array;
-      for (let k = 0; k < webPairs.length; k++) {
-        const [i, j] = webPairs[k];
-        const a = recruits[i];
-        const b = recruits[j];
-        const o = k * 6;
-        pos[o] = a.x;
-        pos[o + 1] = a.y;
-        pos[o + 2] = 0;
-        pos[o + 3] = b.x;
-        pos[o + 4] = b.y;
-        pos[o + 5] = 0;
-        const twinkle = 0.55 + 0.45 * Math.sin(timeMs * 0.003 + k * 0.9);
-        const strength =
-          Math.min(arrival[i], arrival[j]) *
-          twinkle *
-          1.3 *
-          (on ? 1 : progress);
-        for (let c = 0; c < 6; c += 3) {
-          col[o + c] = lr * strength;
-          col[o + c + 1] = lg * strength;
-          col[o + c + 2] = lb * strength;
+      disposeLines();
+      nodes = built.nodes;
+      edges = built.edges;
+      isNumber = number;
+      pinned = nodes.every(n => n.fixed);
+      if (morphMs > 0) {
+        for (let i = 0; i < count; i++) {
+          nodes[i].position.x = from[i * 2];
+          nodes[i].position.y = from[i * 2 + 1];
         }
+        morph = { from, to, start: now, duration: morphMs };
+      } else {
+        morph = null;
       }
-      webGeometry.instanceCount = webPairs.length;
-      webPositionBuffer.needsUpdate = true;
-      webColorBuffer.needsUpdate = true;
-      webMaterial.opacity = live.opacity * 0.8;
-      webMaterial.linewidth = (live.edgeThickness || 2) * 0.5;
+      buildLines();
+      nodeGeometry.setDrawRange(0, nodes.length);
+      initSearch();
     };
 
-    /**
-     * Advances the sequence by `dt` seconds: the nodes toward their places,
-     * the recruits out of the nodes and toward theirs — or back, once the
-     * page is left.
-     */
-    const stepNumber = (dt: number, on: boolean) => {
-      if (!sequence.active) {
-        // Fully let go: the next visit starts from nothing again.
-        for (const r of recruits) r.spawned = false;
-        return;
-      }
-      if (!numberBuilt) buildNumber();
+    /** The network the flag asks for, if it is not the one on screen. */
+    const syncNetwork = (now: number) => {
+      const on = notFoundRef.current;
+      if (on === isNumber) return;
       const snap = frozenRef.current;
-      const pull = snap ? 1 : 1 - Math.exp(-dt * 3 * progress);
-      for (let i = 0; i < nodes.length; i++) {
-        const n = nodes[i];
-        const t = nodeTargets[i];
-        n.position.x += (t.x - n.position.x) * pull;
-        n.position.y += (t.y - n.position.y) * pull;
-        // The layout's own forces give way to the number.
-        n.velocity.x *= 1 - progress;
-        n.velocity.y *= 1 - progress;
-      }
-      const fly = snap ? 1 : 1 - Math.exp(-dt * 2.6);
-      for (const r of recruits) {
-        const origin = nodes[r.from].position;
-        if (!r.spawned) {
-          r.x = origin.x;
-          r.y = origin.y;
-          if (on && (snap || sequence.seconds >= r.born)) r.spawned = true;
-          // A still is one frame: what spawns in it has to arrive in it too.
-          if (!snap) continue;
+      if (on) {
+        const built = numberNetwork(glyphSize.width, glyphSize.height, rng);
+        // A number that could not be drawn leaves the network as it is,
+        // and is not asked for again every frame.
+        if (!built) {
+          isNumber = true;
+          return;
         }
-        const gx = on ? r.tx : origin.x;
-        const gy = on ? r.ty : origin.y;
-        r.x += (gx - r.x) * fly;
-        r.y += (gy - r.y) * fly;
+        rebuild(built, true, now, snap ? 0 : MORPH_IN_MS);
+      } else {
+        rebuild(
+          createClusteredGraph(nodeCountParam, clusterCountParam, rng),
+          false,
+          now,
+          snap ? 0 : MORPH_OUT_MS
+        );
       }
+    };
+
+    /** Carries nodes in flight along. */
+    const advanceMorph = (now: number) => {
+      if (!morph) return;
+      const t = morphProgress(morph, now);
+      const { from, to } = morph;
+      for (let i = 0; i < nodes.length; i++) {
+        nodes[i].position.x = from[i * 2] + (to[i * 2] - from[i * 2]) * t;
+        nodes[i].position.y =
+          from[i * 2 + 1] + (to[i * 2 + 1] - from[i * 2 + 1]) * t;
+      }
+      if (t >= 1) morph = null;
     };
 
     function stepLayout(dt: number) {
+      // Nodes in flight are not laid out, and pinned ones have nowhere to go.
+      if (morph || pinned) return;
+
       // Limit dt to prevent instability
       dt = Math.min(dt, 0.02);
 
@@ -752,6 +605,8 @@ const GraphTopologyBackground: React.FC<
 
       // Update positions with velocity limiting
       for (const n of nodes) {
+        if (n.fixed) continue;
+
         // Apply damping
         n.velocity.x *= damping;
         n.velocity.y *= damping;
@@ -990,29 +845,15 @@ const GraphTopologyBackground: React.FC<
       return proposal;
     }
 
-    let lastFrameMs = 0;
     function renderFrame(timeMs: number) {
       const live = settingsRef.current;
       const opacity = live.opacity;
       const edgeThickness = live.edgeThickness || 2.0;
       const dt = Math.min(0.05, liveSimulationSpeed() * 0.016);
-      // Real seconds since the last frame, for the sequence: clamped so a tab
-      // coming back from the background plays one long frame rather than
-      // the whole time it was away.
-      const real = lastFrameMs
-        ? Math.min((timeMs - lastFrameMs) / 1000, 0.1)
-        : 0;
-      lastFrameMs = timeMs;
+      syncNetwork(timeMs);
+      advanceMorph(timeMs);
       stepLayout(dt);
       mcmcStep(timeMs);
-
-      // The 404 sequence, after the layout so that it has the last word on
-      // where everything is. A frozen frame tells the whole story at once.
-      const on = notFoundRef.current;
-      progress = frozenRef.current
-        ? sequence.settle(on)
-        : sequence.advance(real, on);
-      stepNumber(real, on);
 
       // Check for convergence
       const hasConverged =
@@ -1030,21 +871,7 @@ const GraphTopologyBackground: React.FC<
         const e = line.userData.e as GraphEdge;
         const a = nodes[e.source].position;
         const b = nodes[e.target].position;
-        line.geometry.setPositions([a.x, a.y, 0, b.x, b.y, 0]);
-
-        // The 404 sequence: a link stretched past twice its length breaks,
-        // flaring as it goes; a broken one heals once the number is let go.
-        if (progress > 0.15 && edgeLife[i] >= 1) {
-          const length = Math.hypot(a.x - b.x, a.y - b.y);
-          if (length > desiredLen(e.latencyMs) * 2.2 + 0.12)
-            // In a still there is no time for it to go: it is gone.
-            edgeLife[i] = frozenRef.current ? 0 : 0.999;
-        }
-        if (edgeLife[i] < 1) {
-          edgeLife[i] = on
-            ? Math.max(0, edgeLife[i] - real * 1.4)
-            : Math.min(1, edgeLife[i] + real * 0.8);
-        }
+        writeLine(line, a.x, a.y, b.x, b.y);
 
         // Determine edge state
         const sourceInCurrent = currentSet.has(e.source);
@@ -1116,18 +943,6 @@ const GraphTopologyBackground: React.FC<
           linewidth = 0.5;
         }
 
-        // A breaking link flares to the accent on its way out.
-        const life = edgeLife[i];
-        if (life < 1) {
-          const flare = 1 - life;
-          color = [
-            color[0] + (live.colors.accent[0] - color[0]) * flare,
-            color[1] + (live.colors.accent[1] - color[1]) * flare,
-            color[2] + (live.colors.accent[2] - color[2]) * flare,
-          ];
-          alpha = Math.max(alpha, 0.8) * life;
-        }
-
         // Apply settings
         const edgeLineMaterial = line.material as LineMaterial;
         edgeLineMaterial.color.setRGB(color[0], color[1], color[2]);
@@ -1181,9 +996,11 @@ const GraphTopologyBackground: React.FC<
           [r, g, b] = live.colors.secondary;
           brightness = 1.1 + searchPulse * 0.3;
         } else {
-          // Background nodes: background color, barely visible
+          // Background nodes: background color, barely visible — except a
+          // pinned one, which has a location and is drawn there like a
+          // landmark on a map.
           [r, g, b] = live.colors.background;
-          brightness = 0.1 + normalizedConnectivity * 0.1; // Very dim
+          brightness = n.fixed ? 0.75 : 0.1 + normalizedConnectivity * 0.1;
         }
 
         // Apply temperature visualization (redder = hotter = more exploration)
@@ -1220,8 +1037,6 @@ const GraphTopologyBackground: React.FC<
       (points.material as THREE.PointsMaterial).size = dynamicSize;
       (points.material as THREE.PointsMaterial).opacity = opacity;
 
-      drawRecruits(live, timeMs, on);
-
       renderer.render(scene, camera);
       if (frozenRef.current) {
         animationRef.current = null;
@@ -1246,12 +1061,14 @@ const GraphTopologyBackground: React.FC<
       // Line2 widths are screen-space, so the materials need the viewport size.
       lineResolution.set(window.innerWidth, window.innerHeight);
       // The number is laid out for the viewport's shape. A URL bar sliding
-      // away is not a new shape, and re-laying it out for one would send
-      // every recruit somewhere new.
+      // away is not a new shape; a real one gets the number laid out again.
       const size = { width: window.innerWidth, height: window.innerHeight };
       if (viewportReshaped(glyphSize, size)) {
         glyphSize = size;
-        if (numberBuilt) buildNumber();
+        if (isNumber && !frozenRef.current) {
+          const built = numberNetwork(size.width, size.height, rng);
+          if (built) rebuild(built, true, performance.now(), MORPH_AGAIN_MS);
+        }
       }
     };
     const handleResize = () => {
@@ -1267,16 +1084,9 @@ const GraphTopologyBackground: React.FC<
       window.removeEventListener('resize', handleResize);
       if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
       // Cleanup
-      edgeSegments.forEach(l => {
-        l.geometry?.dispose?.();
-        (l.material as LineMaterial)?.dispose?.();
-      });
+      disposeLines();
       nodeGeometry.dispose();
       (points.material as THREE.Material).dispose();
-      recruitGeometry.dispose();
-      recruitMaterial.dispose();
-      webGeometry.dispose();
-      webMaterial.dispose();
       renderer.dispose();
       // dispose() releases three's own objects but leaves the GL context
       // alive until the canvas is collected. These components rebuild on every

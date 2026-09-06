@@ -307,22 +307,120 @@ export const glyphTexture = (field: GlyphField): THREE.DataTexture => {
   return texture;
 };
 
+// ── The number as a graph ────────────────────────────────────────────────────
+
+export interface GlyphGraphEdge {
+  a: number;
+  b: number;
+  /** Straight-line length between the two, in camera units. */
+  length: number;
+  /** True for a link added to join two digits that were not otherwise connected. */
+  bridge: boolean;
+}
+
+export interface GlyphGraph {
+  /** Node places in camera coordinates: x and y both −1 → 1 across the viewport. */
+  points: Array<{ x: number; y: number }>;
+  edges: GlyphGraphEdge[];
+}
+
 /**
- * GLSL for reading the texture back: the soft coverage and the signed
- * distance in cells. Pasted into the shaders that take the number.
+ * A field as a graph: `count` nodes sampled evenly inside it, each joined to
+ * its `links` nearest neighbours within a stroke's width or so, so the
+ * edges run along the strokes; and the pieces — the digits, in the number's
+ * case — bridged by the shortest links between them, so the whole thing is
+ * one connected graph. Null when the field has too little in it. The two
+ * graph backgrounds both build their 404 from this (see glyphGraphFor) and
+ * give the edges their own meaning.
  */
-export const GLYPH_GLSL = `
-  uniform sampler2D uGlyph;
-  uniform float uNotFound;
+export const glyphGraph = (
+  field: GlyphField,
+  count: number,
+  random: () => number = Math.random,
+  links = 3
+): GlyphGraph | null => {
+  const { cols, rows } = field;
+  const spacing = glyphSpacingFor(field, count);
+  const spots = sampleGlyphPoints(field, count, spacing, random);
+  if (spots.length < 4) return null;
 
-  // Soft coverage of the number at a uv, 0 outside → 1 inside.
-  float glyphCover(vec2 uv) {
-    return texture2D(uGlyph, uv).g;
+  const points = spots.map(p => ({
+    x: (p.x / cols) * 2 - 1,
+    y: 1 - (p.y / rows) * 2,
+  }));
+  const n = points.length;
+  const distance = (i: number, j: number) =>
+    Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y);
+
+  const edges: GlyphGraphEdge[] = [];
+  const seen = new Set<string>();
+  const parent = points.map((_, i) => i);
+  const find = (i: number): number => {
+    while (parent[i] !== i) {
+      parent[i] = parent[parent[i]];
+      i = parent[i];
+    }
+    return i;
+  };
+  const link = (i: number, j: number, bridge: boolean) => {
+    const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    edges.push({ a: i, b: j, length: distance(i, j), bridge });
+    parent[find(i)] = find(j);
+  };
+
+  // Along the strokes.
+  const reach = spacing * (2 / cols) * 3.2;
+  for (let i = 0; i < n; i++) {
+    const near: Array<{ j: number; d: number }> = [];
+    for (let j = 0; j < n; j++) {
+      if (j === i) continue;
+      const d = distance(i, j);
+      if (d <= reach) near.push({ j, d });
+    }
+    near.sort((u, v) => u.d - v.d);
+    for (const { j } of near.slice(0, links)) link(i, j, false);
   }
 
-  // Signed distance to the number's edge at a uv, in grid cells: negative
-  // inside, positive outside.
-  float glyphDist(vec2 uv) {
-    return (texture2D(uGlyph, uv).b - 0.5) * ${(2 * GLYPH_TEXTURE_RANGE).toFixed(1)};
+  // Across the gaps: the closest pair not yet joined, until everything is.
+  for (;;) {
+    let best: { i: number; j: number; d: number } | null = null;
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (find(i) === find(j)) continue;
+        const d = distance(i, j);
+        if (!best || d < best.d) best = { i, j, d };
+      }
+    }
+    if (!best) break;
+    link(best.i, best.j, true);
   }
-`;
+
+  return { points, edges };
+};
+
+/**
+ * The number as a graph for a viewport: rasterised at the viewport's aspect
+ * and drawn with as many nodes as the viewport calls for (see
+ * glyphGraphSize), in camera coordinates.
+ */
+export const glyphGraphFor = (
+  width: number,
+  height: number,
+  random: () => number = Math.random,
+  links = 3
+): GlyphGraph | null => {
+  const cols = 160;
+  const rows = Math.max(24, Math.round((cols * height) / Math.max(1, width)));
+  const field = rasterizeGlyph(cols, rows, { maxHeight: 0.62 });
+  return glyphGraph(field, glyphGraphSize(width, height), random, links);
+};
+
+/**
+ * How many nodes the number is drawn with for a viewport: enough to read at
+ * a phone's width, more across a desktop, never so many that the graph
+ * algorithms behind it stop being interactive.
+ */
+export const glyphGraphSize = (width: number, height: number): number =>
+  Math.round(Math.max(140, Math.min(260, (width * height) / 6500)));

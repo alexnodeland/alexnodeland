@@ -1,6 +1,8 @@
 import {
   fieldFromMask,
   glyphCoverage,
+  glyphGraph,
+  glyphGraphSize,
   glyphSpacingFor,
   glyphTexture,
   rasterizeGlyph,
@@ -98,5 +100,69 @@ describe('glyph field', () => {
     expect(f.inside).toHaveLength(0);
     expect(sampleGlyphPoints(f, 10, 1)).toHaveLength(0);
     expect(f.dist[0]).toBeGreaterThan(0);
+  });
+});
+
+describe('glyph graph', () => {
+  const seeded = () => {
+    let seed = 7;
+    return () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  };
+
+  // Two blobs on a 24×12 grid, like two digits with a gap between them.
+  const twoBlobs = () => {
+    const cols = 24;
+    const rows = 12;
+    const mask = new Uint8Array(cols * rows);
+    for (let y = 2; y < 10; y++) {
+      for (let x = 2; x < 9; x++) mask[y * cols + x] = 1;
+      for (let x = 15; x < 22; x++) mask[y * cols + x] = 1;
+    }
+    return fieldFromMask(cols, rows, mask);
+  };
+
+  it('joins the pieces into one connected graph, bridging the gap', () => {
+    const graph = glyphGraph(twoBlobs(), 40, seeded());
+    expect(graph).not.toBeNull();
+    const { points, edges } = graph!;
+    expect(points.length).toBeGreaterThan(20);
+    // Every point is in camera coordinates, inside the frame.
+    for (const p of points) {
+      expect(Math.abs(p.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(p.y)).toBeLessThanOrEqual(1);
+    }
+    // Connected: a flood from node 0 reaches every node.
+    const adjacent = new Map<number, number[]>();
+    for (const e of edges) {
+      adjacent.set(e.a, [...(adjacent.get(e.a) ?? []), e.b]);
+      adjacent.set(e.b, [...(adjacent.get(e.b) ?? []), e.a]);
+    }
+    const reached = new Set([0]);
+    const queue = [0];
+    while (queue.length) {
+      for (const j of adjacent.get(queue.shift()!) ?? []) {
+        if (!reached.has(j)) {
+          reached.add(j);
+          queue.push(j);
+        }
+      }
+    }
+    expect(reached.size).toBe(points.length);
+    // The gap is crossed by a bridge, and only bridges are long.
+    const bridges = edges.filter(e => e.bridge);
+    expect(bridges.length).toBeGreaterThanOrEqual(1);
+    const longest = Math.max(
+      ...edges.filter(e => !e.bridge).map(e => e.length)
+    );
+    expect(Math.max(...bridges.map(e => e.length))).toBeGreaterThan(longest);
+  });
+
+  it('gives up on a field with nothing in it', () => {
+    expect(glyphGraph(rasterizeGlyph(32, 16), 40, seeded())).toBeNull();
+    expect(glyphGraphSize(390, 780)).toBe(140);
+    expect(glyphGraphSize(1920, 1080)).toBe(260);
   });
 });

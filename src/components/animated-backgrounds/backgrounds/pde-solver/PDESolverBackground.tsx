@@ -8,14 +8,16 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { glyphCoverage, rasterizeGlyph } from '../../core/glyph';
-import {
-  NotFoundSequence,
-  viewportReshaped,
-} from '../../core/notFoundSequence';
+import { viewportReshaped } from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { PDESolverSettings } from './config';
-import { createInitialState, stepPDESolver, index } from './pde-solver';
+import {
+  applyBoundaryConditions,
+  createInitialState,
+  index,
+  stepPDESolver,
+} from './pde-solver';
 import { PDEState, PDESolverConfig } from './types';
 
 // Framing constants. The height field is a PLANE_SIZE-square plate held very
@@ -32,11 +34,16 @@ export const BASE_FOV_DEGREES = 50;
 const BASE_STEPS_PER_SECOND = 300;
 const MAX_STEPS_PER_FRAME = 40;
 
-// The 404 sequence: how hard the field is pulled toward the number once the
-// sequence has fully formed, per second, and how quickly the plate comes
-// back upright to show it.
-const NOT_FOUND_PULL = 4.5;
-const NOT_FOUND_RIGHTING = 1.5;
+// The 404 sequence: the number is the initial condition. It is applied again
+// once the solution has stopped resembling it — spread to this fraction of
+// its starting height, which the heat equation does to everything, or
+// dispersed until its correlation with the number falls below this, which is
+// what the wave equation does to it — and never within this many seconds of
+// the last time. And how quickly the plate comes back upright to show it.
+const REAPPLY_BELOW = 0.2;
+const REAPPLY_CORRELATION = 0.3;
+const REAPPLY_INTERVAL_SECONDS = 4;
+const RIGHTING_PER_SECOND = 1.5;
 
 /**
  * Vertical FOV for a given viewport.
@@ -135,29 +142,67 @@ const PDESolverBackground: React.FC<
     const state = createInitialState(config, settings.equationType);
     stateRef.current = state;
 
-    // The 404 sequence: the number as a target height field, at the height
-    // the initial disturbance had. The plate is square and its rows run top
-    // to bottom the way the glyph's do, so the two line up as they are; the
-    // edge is softened over a cell or so, which is what keeps the relief's
-    // lighting from going to stair-steps. In portrait the plate is zoomed
-    // until its inscribed circle reaches the screen's corners (see
-    // fovForViewport), so only the middle of it is on screen and the number
-    // is set to that width; it is set again when the viewport changes shape.
-    const target = new Float32Array(config.gridSizeX * config.gridSizeY);
+    // The 404 sequence: the number as an initial condition, at the height the
+    // configured one has, its edge softened over a cell or so — a step edge
+    // is a stair in the lighting and a shock to the wave equation. The plate
+    // is square and its rows run top to bottom the way the glyph's do. In
+    // portrait the plate is zoomed until its inscribed circle reaches the
+    // screen's corners (see fovForViewport), so only the middle of it is on
+    // screen and the number is set to that width; it is set again when the
+    // viewport changes shape.
+    const numberField = new Float32Array(config.gridSizeX * config.gridSizeY);
     let glyphSize = { width: window.innerWidth, height: window.innerHeight };
-    const buildTarget = () => {
+    const buildNumber = () => {
       const { width, height } = glyphSize;
       const visible = width >= height ? 1 : width / Math.hypot(width, height);
       const glyph = rasterizeGlyph(config.gridSizeX, config.gridSizeY, {
         maxWidth: 0.8 * visible,
         maxHeight: 0.62,
       });
-      for (let i = 0; i < target.length; i++) {
-        target[i] = settings.initialAmplitude * glyphCoverage(glyph, i, 2);
+      for (let i = 0; i < numberField.length; i++) {
+        numberField[i] = settings.initialAmplitude * glyphCoverage(glyph, i, 2);
       }
     };
-    buildTarget();
-    const sequence = new NotFoundSequence();
+    buildNumber();
+
+    // Whether the state on the plate was last set from the number, its
+    // height then, and how long ago — what the re-application is judged
+    // against.
+    let numberApplied = false;
+    let appliedHeight = 0;
+    let sinceApplied = 0;
+    let numberNorm = 0;
+
+    /** How much the solution still looks like the number: −1 → 1. */
+    const resemblance = (u: Float32Array) => {
+      let dot = 0;
+      let norm = 0;
+      for (let i = 0; i < u.length; i++) {
+        dot += u[i] * numberField[i];
+        norm += u[i] * u[i];
+      }
+      return dot / Math.max(1e-9, Math.sqrt(norm) * numberNorm);
+    };
+
+    /** Sets the number as the initial condition and restarts the clock. */
+    const applyNumber = () => {
+      const s = stateRef.current;
+      if (!s) return;
+      s.u = new Float32Array(numberField);
+      applyBoundaryConditions(s.u, configRef.current ?? config);
+      // At rest: the wave equation reads its initial velocity off uPrev.
+      if (s.uPrev) s.uPrev = new Float32Array(s.u);
+      s.time = 0;
+      s.step = 0;
+      numberApplied = true;
+      appliedHeight = Math.max(1e-6, settings.initialAmplitude);
+      sinceApplied = 0;
+      let norm = 0;
+      for (let i = 0; i < numberField.length; i++) {
+        norm += numberField[i] * numberField[i];
+      }
+      numberNorm = Math.max(1e-9, Math.sqrt(norm));
+    };
 
     // Create geometry and mesh
     const { geometry, material } = createVisualizationMesh(state, settings);
@@ -188,14 +233,36 @@ const PDESolverBackground: React.FC<
 
       const live = settingsRef.current;
 
-      // A frozen frame tells the whole story at once; a live one advances
-      // it. The step is clamped so a tab coming back from the background
-      // plays one long frame rather than the whole time it was away.
+      // The 404 sequence. The moment the flag goes up the number is the
+      // initial condition; from there the equation has it. Once the solution
+      // has stopped resembling it — flattened by the heat equation, or rung
+      // apart by the wave equation — the initial condition is applied
+      // again. When the flag drops the field simply carries on from where it
+      // is: what the number became is what is there.
       const on = notFoundRef.current;
-      const step = Math.min(deltaTime, 0.1);
-      const progress = frozenRef.current
-        ? sequence.settle(on)
-        : sequence.advance(step, on);
+      if (on && stateRef.current) {
+        if (!numberApplied) {
+          applyNumber();
+        } else {
+          sinceApplied += deltaTime;
+          if (sinceApplied >= REAPPLY_INTERVAL_SECONDS) {
+            let peak = 0;
+            const u = stateRef.current.u;
+            for (let i = 0; i < u.length; i++) {
+              const v = u[i] < 0 ? -u[i] : u[i];
+              if (v > peak) peak = v;
+            }
+            if (
+              peak < appliedHeight * REAPPLY_BELOW ||
+              resemblance(u) < REAPPLY_CORRELATION
+            ) {
+              applyNumber();
+            }
+          }
+        }
+      } else if (!on) {
+        numberApplied = false;
+      }
 
       if (stateRef.current && configRef.current) {
         // Solver steps are whole, so bank the fractional part rather than
@@ -213,44 +280,23 @@ const PDESolverBackground: React.FC<
           stepPDESolver(stateRef.current, configRef.current, live.equationType);
         }
 
-        // The 404 sequence: the field is pulled toward the number, harder
-        // the further along the sequence is. The wave equation's previous
-        // step is pulled with it, so the pull sets the surface rather than
-        // kicking it — what rings is the solver working the number's edge,
-        // which is the point. Let go, the number disperses as waves.
-        if (progress > 0) {
-          const { u, uPrev } = stateRef.current;
-          const pull = frozenRef.current
-            ? 1
-            : 1 - Math.exp(-step * NOT_FOUND_PULL * progress);
-          for (let i = 0; i < u.length; i++) {
-            u[i] += (target[i] - u[i]) * pull;
-          }
-          if (uPrev) {
-            for (let i = 0; i < uPrev.length; i++) {
-              uPrev[i] += (target[i] - uPrev[i]) * pull;
-            }
-          }
-        }
-
         // Update mesh geometry
         updateMeshGeometry(meshRef.current!, stateRef.current, live);
 
-        // Auto-rotate camera. The number has to be read, so the spin eases
-        // out and the plate comes back to the nearest upright as the
-        // sequence forms, and picks the spin back up when it is released.
+        // Auto-rotate camera. The number has to be read, so while it is up
+        // the spin eases out and the plate comes to the nearest upright; the
+        // spin picks up again when it is let go. Framing, not physics.
         if (meshRef.current) {
           const mesh = meshRef.current;
-          if (live.autoRotate) {
-            mesh.rotation.z +=
-              live.rotationSpeed * 0.001 * deltaTime * 60 * (1 - progress);
+          if (live.autoRotate && !on) {
+            mesh.rotation.z += live.rotationSpeed * 0.001 * deltaTime * 60;
           }
-          if (progress > 0) {
+          if (on) {
             const turn = Math.PI * 2;
             const upright = Math.round(mesh.rotation.z / turn) * turn;
             const righting = frozenRef.current
               ? 1
-              : 1 - Math.exp(-step * NOT_FOUND_RIGHTING * progress);
+              : 1 - Math.exp(-Math.min(deltaTime, 0.1) * RIGHTING_PER_SECOND);
             mesh.rotation.z += (upright - mesh.rotation.z) * righting;
           }
         }
@@ -286,7 +332,7 @@ const PDESolverBackground: React.FC<
       const size = { width: window.innerWidth, height: window.innerHeight };
       if (viewportReshaped(glyphSize, size)) {
         glyphSize = size;
-        buildTarget();
+        buildNumber();
       }
     };
     const handleResize = () => {

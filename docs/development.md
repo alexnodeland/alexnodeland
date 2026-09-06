@@ -136,10 +136,12 @@ Each simulation lives in
 are lazy-loaded through their configs so three.js stays out of the page
 bundles. A background takes `settings`, `frozen` (set under
 `prefers-reduced-motion`: draw one frame and hold) and `notFound` (set while
-the 404 page is up: play the background's 404 sequence, in which it comes
-apart into the number over about seven seconds and holds there). Every
-background has a sequence, built on the shared glyph field in `core/glyph.ts`
-and the clock in `core/notFoundSequence.ts`, so the one on screen when a
+the 404 page is up: play the background's 404 sequence). Every background has
+one, and each is the background's own problem with the number as its input:
+an initial condition for the PDE, the network itself for the two graphs, an
+interference pattern of sources for the waves, fixed cells for the automaton,
+an additive voice for the synth. They share the glyph field and the
+graph-from-glyph construction in `core/glyph.ts`, so the one on screen when a
 reader hits a missing page is the one that plays.
 
 ### 4. Running it

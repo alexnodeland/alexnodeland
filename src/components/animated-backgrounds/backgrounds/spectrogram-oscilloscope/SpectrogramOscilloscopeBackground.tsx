@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { GLYPH_GLSL, glyphTexture, rasterizeGlyph } from '../../core/glyph';
+import { glyphTexture, rasterizeGlyph } from '../../core/glyph';
 import {
   NotFoundSequence,
   viewportReshaped,
@@ -9,10 +9,26 @@ import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { SpectrogramOscilloscopeSettings } from './config';
 
-// The oscilloscope takes the top of the screen and the spectrogram the rest;
-// the number lives in the spectrogram, so it is set to that panel's shape.
+// The oscilloscope takes the top of the screen and the spectrogram the rest.
 const SCOPE_HEIGHT = 0.3;
+
+// The 404 sequence: the number, played. An additive voice of this many
+// partials, spread across the spectrogram's frequency axis, whose amplitudes
+// follow the number's columns row by row over PHRASE_SECONDS — so the
+// spectrogram, analysing the signal as it always does, shows the number
+// scrolling down its history the way anything played does. The phrase
+// repeats after a rest. While it plays the analyser's time span is widened
+// to the phrase, since at the default it holds half a second of history and
+// a phrase cannot be seen in that; that is the instrument's zoom, not the
+// signal. The number is set to the panel's shape.
+const PARTIALS = 48;
+const PHRASE_SECONDS = 7;
+const PHRASE_REST = 0.35;
 const GLYPH_COLS = 256;
+// How long the fader takes to bring the voice up.
+const FADER_SECONDS = 1.5;
+// A signal time no phrase has reached: the voice is off.
+const VOICE_OFF = 1e30;
 
 interface SpectrogramOscilloscopeBackgroundProps
   extends AnimatedBackgroundProps<SpectrogramOscilloscopeSettings> {
@@ -353,11 +369,16 @@ const SpectrogramOscilloscopeBackground: React.FC<
     };
     let glyph = buildGlyph();
     const sequence = new NotFoundSequence();
+    // The signal time at which the phrase started; the voice is silent
+    // before it.
+    let voiceStart = VOICE_OFF;
 
     // Fragment shader for spectrogram and oscilloscope visualization
     const fragmentShader = `
       const float TWO_PI = 6.283185307179586;
       const float SCOPE_HEIGHT = ${SCOPE_HEIGHT.toFixed(2)};
+      const int PARTIALS = ${PARTIALS};
+      const float PHRASE_REST = ${PHRASE_REST.toFixed(2)};
       // FM amount sliders run 0-1; scale them into a usable modulation index.
       const float FM_INDEX_SCALE = 8.0;
       // Upper bound for the analysis loop. Each step evaluates the full
@@ -436,9 +457,57 @@ const SpectrogramOscilloscopeBackground: React.FC<
       uniform float uMinLogFreq;
       uniform float uMaxLogFreq;
 
+      // The 404 sequence: the number's columns by row, the fader on its
+      // voice, when the phrase started, and how long it runs (all in signal
+      // time).
+      uniform sampler2D uGlyph;
+      uniform float uNotFound;
+      uniform float uVoiceStart;
+      uniform float uPhrase;
+
       varying vec2 vUv;
 
-      ${GLYPH_GLSL}
+      // The frequency the spectrogram shows at a horizontal position, in the
+      // analysis's own units — log or linear, as configured.
+      float displayFrequency(float x) {
+        if (uUseLogScale > 0.5) {
+          float logFreq = mix(log(uMinLogFreq), log(uMaxLogFreq), x);
+          return exp(logFreq) / 100.0;
+        }
+        return x * uFrequencyScale * 20.0;
+      }
+
+      // Which row of the number the voice is playing at signal time t, 0 at
+      // the bottom row → 1 at the top, or below zero during the rest. The
+      // bottom row goes first: it is the oldest by the time the top row
+      // plays, and so the lowest on the panel — the number lands upright.
+      float voiceRow(float t) {
+        float p = mod(t - uVoiceStart, uPhrase * (1.0 + PHRASE_REST)) / uPhrase;
+        return t < uVoiceStart || p > 1.0 ? -1.0 : p;
+      }
+
+      // The amplitude of the voice's partial at horizontal position x at
+      // signal time t: the number's coverage there.
+      float voiceLevel(float x, float t) {
+        float row = voiceRow(t);
+        if (row < 0.0) return 0.0;
+        return texture2D(uGlyph, vec2(x, row)).g;
+      }
+
+      // The voice itself: its partials summed, each at the frequency its
+      // column sits at on the panel, with staggered phases so they do not
+      // all cross zero together. Normalised to about the synth's own level.
+      float voiceSignal(float t) {
+        float sum = 0.0;
+        for (int k = 0; k < PARTIALS; k++) {
+          float x = (float(k) + 0.5) / float(PARTIALS);
+          float level = voiceLevel(x, t);
+          if (level > 0.0) {
+            sum += level * sin(displayFrequency(x) * t + float(k) * 1.7);
+          }
+        }
+        return sum / (float(PARTIALS) * 0.3);
+      }
 
       // Generate waveform based on type
       float generateWaveform(float phase, float waveformType) {
@@ -699,9 +768,12 @@ const SpectrogramOscilloscopeBackground: React.FC<
           float displayTime = uTime + timeOffset;
           float signal = generateSignal(displayTime);
 
-          // The 404 sequence: the signal dies back to a flat line. What was
-          // in it is in the spectrogram below.
-          signal *= 1.0 - 0.92 * uNotFound;
+          // The 404 sequence: the voice comes up on the mixer and the synth
+          // ducks under it. What the scope draws is the sum.
+          if (uNotFound > 0.0) {
+            float voice = voiceSignal(displayTime);
+            signal = mix(signal, signal * 0.3 + voice, uNotFound);
+          }
 
           // Map signal to scope Y position
           float waveY = signal * 0.4 + 0.5;
@@ -723,18 +795,18 @@ const SpectrogramOscilloscopeBackground: React.FC<
           // === SPECTROGRAM SECTION ===
           float spectrogramY = 1.0 - (uv.y / scopeEnd); // Inverted so newest is at top
 
-          // Calculate time offset for this row
-          float timeOffset = spectrogramY * 5.0 * uTimeScale; // History depth
+          // Calculate time offset for this row. The history the panel holds
+          // is the configured span, widened to the phrase while the number
+          // plays.
+          float history = mix(5.0 * uTimeScale, uPhrase, uNotFound);
+          float timeOffset = spectrogramY * history;
           float analysisTime = uTime - timeOffset;
 
           // Map horizontal position to frequency (linear or logarithmic)
-          float frequency;
+          float frequency = displayFrequency(uv.x);
           if (uUseLogScale > 0.5) {
-            // Logarithmic scale for better frequency distribution
             float logMin = log(uMinLogFreq);
             float logMax = log(uMaxLogFreq);
-            float logFreq = mix(logMin, logMax, uv.x);
-            frequency = exp(logFreq) / 100.0; // Convert back to our internal scale
 
             // Draw logarithmic frequency grid
             float octave = log(frequency * 100.0) / log(2.0);
@@ -749,9 +821,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
               }
             }
           } else {
-            // Linear scale (original)
-            frequency = uv.x * uFrequencyScale * 20.0;
-
             // Frequency grid lines
             float freqGrid = smoothstep(0.003, 0.001, abs(fract(uv.x * 10.0) - 0.5));
             finalColor += uColorGrid * 0.5 * freqGrid * 0.3;
@@ -760,26 +829,18 @@ const SpectrogramOscilloscopeBackground: React.FC<
           // Get magnitude at this frequency and time
           float magnitude = getFrequencyMagnitude(frequency, analysisTime);
 
-          // Apply fade with distance (older = dimmer)
-          float ageFade = 1.0 - spectrogramY * 0.7;
-
-          // The 404 sequence: the number is in the signal. It went into it
-          // the moment the page came up, so it scrolls down the history the
-          // way everything played does — newest rows first — and the rest
-          // of the spectrum dies back around it. The signal's own structure
-          // shows through it as texture rather than a flat fill.
+          // The 404 sequence: the voice's partial at this frequency has the
+          // amplitude the number gives it at this time — which is what the
+          // transform of an additive voice measures — and the synth is
+          // ducked under it, as on the scope. The phrase scrolls down the
+          // history like anything played, and repeats.
           if (uNotFound > 0.0) {
-            vec2 guv = vec2(uv.x, uv.y / scopeEnd);
-            float cover = glyphCover(guv);
-            float edge = uNotFound * 1.12 - 0.06;
-            float reveal = 1.0 - smoothstep(edge - 0.1, edge + 0.02, spectrogramY);
-            float burn = cover * reveal;
-            float grain = 0.06 * sin(uv.x * 90.0 + analysisTime * 3.0);
-            magnitude = magnitude * (1.0 - 0.85 * reveal)
-              + burn * (0.44 + 0.5 * magnitude + grain);
-            ageFade = mix(ageFade, 1.0 - spectrogramY * 0.25, burn);
+            float voice = voiceLevel(uv.x, analysisTime) * 0.7;
+            magnitude = mix(magnitude, magnitude * 0.3 + voice, uNotFound);
           }
 
+          // Apply fade with distance (older = dimmer)
+          float ageFade = 1.0 - spectrogramY * 0.7;
           magnitude *= ageFade;
 
           // Color based on magnitude
@@ -799,15 +860,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
         // Mouse frequency analyzer
         vec2 mouseUV = uMouse / uResolution;
         if (length(uv - mouseUV) < 0.05 && uv.y < scopeEnd) {
-          float mouseFreq;
-          if (uUseLogScale > 0.5) {
-            float logMin = log(uMinLogFreq);
-            float logMax = log(uMaxLogFreq);
-            float logFreq = mix(logMin, logMax, mouseUV.x);
-            mouseFreq = exp(logFreq) / 100.0;
-          } else {
-            mouseFreq = mouseUV.x * uFrequencyScale * 20.0;
-          }
+          float mouseFreq = displayFrequency(mouseUV.x);
           float mouseMag = getFrequencyMagnitude(mouseFreq, uTime);
           float intensity = exp(-length(uv - mouseUV) * 40.0) * mouseMag;
           finalColor += vec3(1.0, 0.8, 0.0) * intensity;
@@ -904,6 +957,8 @@ const SpectrogramOscilloscopeBackground: React.FC<
         uMaxLogFreq: { value: settings.maxLogFreq },
         uGlyph: { value: glyph },
         uNotFound: { value: 0 },
+        uVoiceStart: { value: VOICE_OFF },
+        uPhrase: { value: PHRASE_SECONDS },
       },
       vertexShader,
       fragmentShader,
@@ -966,17 +1021,35 @@ const SpectrogramOscilloscopeBackground: React.FC<
       lastTime = time;
       phase += deltaSec * live.globalTimeMultiplier;
 
-      // A frozen frame tells the whole story at once; a live one advances it.
-      // The step is clamped so a tab coming back from the background plays
-      // one long frame rather than the whole time it was away.
+      // The 404 sequence: the fader on the voice — up in a moment, since
+      // the phrase starts the moment the flag goes up and should be heard
+      // from its first row; down on the sequence's own release — and, for
+      // a still, the phrase started one phrase ago, so the whole number is
+      // on the panel in the one frame there is.
       const on = notFoundRef.current;
-      const progress = frozenRef.current
+      const released = frozenRef.current
         ? sequence.settle(on)
         : sequence.advance(Math.min(deltaSec, 0.1), on);
+      const progress = on
+        ? frozenRef.current
+          ? 1
+          : Math.min(1, sequence.seconds / FADER_SECONDS)
+        : released;
+      // The phrase is PHRASE_SECONDS of wall time; signal time runs at the
+      // master speed, so in the shader's units it is that many times the
+      // speed.
+      const phrase = PHRASE_SECONDS * live.globalTimeMultiplier;
+      if (on && voiceStart === VOICE_OFF) {
+        voiceStart = frozenRef.current ? phase - phrase : phase;
+      } else if (!on && !sequence.active) {
+        voiceStart = VOICE_OFF;
+      }
 
       const u = material.uniforms;
       u.uTime.value = phase;
       u.uNotFound.value = progress;
+      u.uVoiceStart.value = voiceStart;
+      u.uPhrase.value = phrase;
 
       for (const [name, key] of Object.entries(SCALAR_UNIFORMS)) {
         if (u[name]) u[name].value = live[key];
