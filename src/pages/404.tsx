@@ -1,7 +1,5 @@
-import { Link } from 'gatsby';
 import React from 'react';
 import SEO from '../components/seo';
-import { siteConfig } from '../config';
 import { markNotFound } from '../lib/notFound';
 import '../styles/404.scss';
 
@@ -14,9 +12,13 @@ import '../styles/404.scss';
 // `notFound` on AnimatedBackgroundProps) — and whichever one is on screen
 // plays it: the one the reader was looking at if they came from inside the
 // site, the one the visit drew if they landed here cold. Nothing is drawn
-// over the field; the field itself becomes the number. Meanwhile the shell's
-// chrome drifts off it (404.scss, keyed off `data-not-found` on the root),
-// leaving the hero, the page's one line, and the ways out.
+// over the field; the field itself becomes the number. Meanwhile the window
+// drifts off it (404.scss, keyed off `data-not-found` on the root), leaving
+// the hero and the page's one line.
+//
+// There are no ways out drawn here. The hero's crumb already leads home and
+// the nav capsule already lists the sections, so a second set of the same
+// links inside the window was the page saying everything twice.
 const NotFoundPage: React.FC = () => {
   // The address that was typed, read after mount: the server render has no
   // address, and the page has to hydrate against what it shipped.
@@ -60,24 +62,6 @@ const NotFoundPage: React.FC = () => {
         <p>
           there is no page at this address. the rest of the site is where it
           was.
-        </p>
-        <nav className="not-found-ways" aria-label="ways back">
-          <Link to="/" className="back-home">
-            back to the front page
-          </Link>
-          {siteConfig.navigation.main.map(item => (
-            <Link key={item.name} to={item.href} className="not-found-way">
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-        {/* The field is the show, and it is different on every background.
-            The arrow keys are the shell's own shortcut; this only says so,
-            and only where there is a keyboard to press them on. */}
-        <p className="not-found-hint">
-          behind this window the field is coming apart around the number.{' '}
-          <kbd>←</kbd> <kbd>→</kbd> swaps the simulation; each one comes apart
-          its own way.
         </p>
       </div>
     </>

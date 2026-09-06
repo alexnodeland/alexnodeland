@@ -6,7 +6,9 @@ import NotFoundPage from '../../../pages/404';
 // No Layout mock: the shell wraps the page (wrapPageElement) rather than the
 // page rendering it, so a 404 is just its own content — plus the flag it
 // raises so the shell wears the 404 hero and the background plays its
-// sequence. Nothing is drawn over the field by the page itself.
+// sequence. Nothing is drawn over the field by the page itself, and no ways
+// back are drawn inside the window: the hero's crumb and the nav capsule are
+// already those.
 
 jest.mock('../../../components/seo', () => ({
   __esModule: true,
@@ -24,16 +26,12 @@ describe('404 Page', () => {
     expect(
       screen.getByText(/there is no page at this address/)
     ).toBeInTheDocument();
-    const backLink = screen.getByText('back to the front page');
-    expect(backLink).toHaveAttribute('href', '/');
-    expect(backLink).toHaveClass('back-home');
   });
 
-  it('offers the site sections as ways back', () => {
-    render(<NotFoundPage />);
-    expect(screen.getByText('blog')).toHaveAttribute('href', '/blog');
-    expect(screen.getByText('projects')).toHaveAttribute('href', '/projects');
-    expect(screen.getByText('cv')).toHaveAttribute('href', '/cv');
+  it('draws no links of its own — the shell already carries the ways back', () => {
+    const { container } = render(<NotFoundPage />);
+    expect(container.querySelector('a')).toBeNull();
+    expect(container.querySelector('nav')).toBeNull();
   });
 
   it('shows the address that was typed, once mounted', () => {

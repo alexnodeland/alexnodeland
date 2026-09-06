@@ -15,12 +15,12 @@ describe('CVSkillsSection Component', () => {
     ).toBeInTheDocument();
   });
 
-  it('should render technical skills', () => {
+  it('should render technical skills under the one heading', () => {
     render(<CVSkillsSection skills={mockSkills} />);
 
-    expect(
-      screen.getByRole('heading', { level: 3, name: 'Technical Skills' })
-    ).toBeInTheDocument();
+    // One group, one heading: the "technical skills" subtitle that used to
+    // sit directly under "skills" is gone.
+    expect(screen.queryByRole('heading', { level: 3 })).not.toBeInTheDocument();
 
     mockSkills.technical.forEach(skill => {
       expect(screen.getByText(skill)).toBeInTheDocument();
@@ -64,12 +64,14 @@ describe('CVSkillsSection Component', () => {
       technical: [],
     };
 
-    render(<CVSkillsSection skills={emptySkills} />);
+    const { container } = render(<CVSkillsSection skills={emptySkills} />);
 
-    // Header should still be present
+    // Header should still be present, over an empty row
     expect(
-      screen.getByRole('heading', { level: 3, name: 'Technical Skills' })
+      screen.getByRole('heading', { level: 2, name: 'Skills' })
     ).toBeInTheDocument();
+    expect(container.querySelector('.skill-tags')).toBeInTheDocument();
+    expect(container.querySelectorAll('.skill-tag')).toHaveLength(0);
   });
 
   it('should handle a single skill', () => {

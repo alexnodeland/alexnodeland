@@ -1,6 +1,5 @@
 import React from 'react';
 import { EducationItem } from '../../types';
-import { GraduationIcon } from '../ui/EntryIcons';
 
 interface CVEducationSectionProps {
   education: EducationItem[];
@@ -21,9 +20,6 @@ const CVEducationSection: React.FC<CVEducationSectionProps> = ({
           <summary className="cv-collapse-summary">
             <div className="education-header">
               <div className="cv-entry-title">
-                <span className="cv-entry-icon">
-                  <GraduationIcon />
-                </span>
                 <h3>{edu.degree}</h3>
               </div>
               <div className="summary-right">

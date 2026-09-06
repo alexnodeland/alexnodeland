@@ -1,6 +1,5 @@
 import React from 'react';
 import { ExperienceItem } from '../../types';
-import { BriefcaseIcon } from '../ui/EntryIcons';
 
 interface CVExperienceSectionProps {
   experiences: ExperienceItem[];
@@ -24,9 +23,6 @@ const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
           <summary className="cv-collapse-summary">
             <div className="experience-header">
               <div className="cv-entry-title">
-                <span className="cv-entry-icon">
-                  <BriefcaseIcon />
-                </span>
                 <h3>
                   {exp.title}, {exp.company}
                 </h3>

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { graphql, Link } from 'gatsby';
 import Dropdown from '../components/ui/Dropdown';
-import { PostIcon } from '../components/ui/EntryIcons';
+import { ArrowOutIcon } from '../components/ui/EntryIcons';
 import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
@@ -167,14 +167,20 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
           ) : (
             <div className="posts-list">
               {filteredPosts.map(post => (
-                <article key={post.id} className="post-preview">
-                  {/* Icon and title, then the body, then one meta band at the
-                      foot — the grammar the project and cv cards are built to
-                      as well, so the three list pages read as one system. */}
+                <article
+                  key={post.id}
+                  className="post-preview"
+                  // The tag is what the filter above keys on; it is carried
+                  // here as data rather than drawn as a chip, since the row of
+                  // pickers has already said which tag the list is showing.
+                  data-category={post.frontmatter.category}
+                >
+                  {/* The title, the body, then one meta band at the foot —
+                      the grammar the project and cv cards are built to as
+                      well, so the three list pages read as one system. No
+                      glyph marks what kind of thing the card is: the page
+                      already has. */}
                   <div className="post-header">
-                    <span className="post-icon">
-                      <PostIcon />
-                    </span>
                     <h2 className="post-title">
                       <Link to={`/blog${post.fields.slug}`}>
                         {post.frontmatter.title}
@@ -187,6 +193,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
                     </p>
                   )}
                   <p className="post-excerpt">{post.excerpt}</p>
+                  {/* The date at one end, the way in at the other. */}
                   <div className="post-meta">
                     <time dateTime={post.frontmatter.date}>
                       {new Date(post.frontmatter.date).toLocaleDateString(
@@ -198,13 +205,12 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
                         }
                       )}
                     </time>
-                    {post.frontmatter.category && (
-                      <span className="post-category">
-                        {post.frontmatter.category}
-                      </span>
-                    )}
-                    <Link to={`/blog${post.fields.slug}`} className="read-more">
-                      read more →
+                    <Link
+                      to={`/blog${post.fields.slug}`}
+                      className="read-more"
+                      aria-label={`read ${post.frontmatter.title}`}
+                    >
+                      <ArrowOutIcon />
                     </Link>
                   </div>
                 </article>
