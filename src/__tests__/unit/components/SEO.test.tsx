@@ -11,7 +11,7 @@ jest.mock('../../../config', () => ({
       defaultTitle: 'alex nodeland',
       defaultDescription:
         'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.',
-      defaultImage: '/images/icon.png',
+      defaultImage: '/images/social-card.png',
     },
   },
 }));
@@ -31,6 +31,18 @@ describe('SEO Component', () => {
     expect(metaDescription).toHaveAttribute(
       'content',
       'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.'
+    );
+
+    // The social card, made absolute for the crawlers.
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    const twitterImage = document.querySelector('meta[name="twitter:image"]');
+    expect(ogImage).toHaveAttribute(
+      'content',
+      'https://alexnodeland.com/images/social-card.png'
+    );
+    expect(twitterImage).toHaveAttribute(
+      'content',
+      'https://alexnodeland.com/images/social-card.png'
     );
   });
 

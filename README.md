@@ -1,3 +1,5 @@
+![alex nodeland · math → audio dsp → distributed systems → ai](.github/banner.png)
+
 simple parts, explicit rules, emergent wholes ✨
 
 ---
