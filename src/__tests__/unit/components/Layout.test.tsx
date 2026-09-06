@@ -526,59 +526,56 @@ describe('Layout Component', () => {
     });
   });
 
-  it('should publish the window scroll position as hero collapse progress', () => {
+  it('should fold the hero at the threshold and unfold it under the dead band', () => {
     render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
 
-    const stage = document.querySelector('.stage') as HTMLElement;
     const region = document.querySelector('.site-hero') as HTMLElement;
     const windowPanel = document.querySelector('.layout') as HTMLElement;
 
-    // jsdom runs rAF callbacks on a timer, so drive the frames by hand — and
-    // keep driving them: on a fine pointer the publisher eases toward the
-    // scroll's value over a handful of frames and stops by snapping to it,
-    // and both halves of that are under test here.
-    const settleFrames = () => {
-      let queue: ((time: number) => void)[] = [];
+    // jsdom runs rAF callbacks on a timer, so drive the frame by hand. Two
+    // scroll events land in the same frame here on purpose: the decision is
+    // made once per frame however many arrive (the veil's publisher shares
+    // the event and queues a frame of its own, so the queue is not counted).
+    const scrollTo = (top: number) => {
+      const queue: ((time: number) => void)[] = [];
       const raf = jest
         .spyOn(window, 'requestAnimationFrame')
         .mockImplementation(cb => {
           queue.push(cb);
           return 1;
         });
+      Object.defineProperty(windowPanel, 'scrollTop', {
+        value: top,
+        configurable: true,
+      });
       windowPanel.dispatchEvent(new Event('scroll'));
-      let now = performance.now();
-      for (let i = 0; i < 100 && queue.length > 0; i++) {
-        const callbacks = queue;
-        queue = [];
-        now += 16;
-        callbacks.forEach(cb => cb(now));
-      }
-      // The ease must come to rest on its own rather than run forever.
-      expect(queue).toHaveLength(0);
+      windowPanel.dispatchEvent(new Event('scroll'));
+      queue.forEach(cb => cb(performance.now()));
       raf.mockRestore();
     };
 
-    expect(region.style.getPropertyValue('--hero-collapse')).toBe('0');
+    expect(region).not.toHaveClass('is-collapsed');
 
-    Object.defineProperty(windowPanel, 'scrollTop', {
-      value: 80,
-      configurable: true,
-    });
-    settleFrames();
-    expect(region.style.getPropertyValue('--hero-collapse')).toBe('0.5');
+    // The middle of the dead band, from rest: nothing happens.
+    scrollTo(80);
+    expect(region).not.toHaveClass('is-collapsed');
 
-    // Past the range it saturates rather than running away.
-    Object.defineProperty(windowPanel, 'scrollTop', {
-      value: 4000,
-      configurable: true,
-    });
-    settleFrames();
-    expect(region.style.getPropertyValue('--hero-collapse')).toBe('1');
+    // Past the fold line.
+    scrollTo(88);
+    expect(region).toHaveClass('is-collapsed');
 
-    // And it lands on the hero region alone — the one subtree that reads it.
-    // Published on the stage, a value that changes on every scroll frame put
-    // the entire page inside the window into each frame's style invalidation.
-    expect(stage.style.getPropertyValue('--hero-collapse')).toBe('');
+    // Back into the dead band, from folded: still folded — a scroll resting
+    // near the line cannot flap the hero.
+    scrollTo(80);
+    expect(region).toHaveClass('is-collapsed');
+
+    // Under the unfold line.
+    scrollTo(72);
+    expect(region).not.toHaveClass('is-collapsed');
+
+    // Nothing is written per frame: the fold is the class, and the
+    // stylesheet owns the value the transforms read.
+    expect(region.style.getPropertyValue('--hero-collapse')).toBe('');
   });
 
   describe('hero split geometry', () => {

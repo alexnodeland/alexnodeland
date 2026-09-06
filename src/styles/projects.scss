@@ -84,8 +84,17 @@
   @include outline-block;
   @include card-highlight;
   border-radius: var(--radius-lg);
-  text-decoration: none;
   display: block;
+  // A block of content that happens to be a link, not a link in running
+  // text: the global anchor rule's hover underline (see `text-link`) would
+  // otherwise rule every line on the card in green — and on a phone stay
+  // that way, since a tap latches :hover until the next one.
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+  }
 
   @include reading-emphasis {
     @include card-highlight-on;

@@ -28,18 +28,18 @@ interface LayoutProps {
   location?: { pathname?: string };
 }
 
-// How far the window has to scroll before the hero is fully collapsed. Short
-// on purpose: the subtitle should be gone by the time the first card clears
-// the top of the frame, not halfway down the page.
+// Where the hero folds. The window's scrollTop is read against this range,
+// and the hero folds when it passes COLLAPSE_ON and unfolds when it comes
+// back under COLLAPSE_OFF — a dead band, so a scroll resting near the line
+// cannot flap. Short on purpose: the tagline should be gone by the time the
+// first card clears the top of the frame, not halfway down the page.
+//
+// The fold is one state change (`.is-collapsed`, see layout.scss), eased in
+// CSS on every property alike. It used to be two: the title and tagline
+// tracked the scroll frame by frame while the box waited for the scroll to
+// rest and then flipped, and on a phone the two came apart for the whole of a
+// momentum scroll. One state cannot disagree with itself.
 const HERO_COLLAPSE_RANGE = 160;
-
-// The hero's box has two states (see `.is-collapsed` in layout.scss), and
-// the flip between them is the one part of the collapse that touches layout —
-// so it waits until the scroll has been still for this long, and then goes
-// once. Flipping mid-gesture would resize the scroll container under the
-// finger, which is the stutter this replaces. The thresholds are a pair so a
-// scroll that hovers near the middle cannot flap.
-const COLLAPSE_SETTLE_MS = 200;
 const COLLAPSE_ON = 0.55;
 const COLLAPSE_OFF = 0.45;
 
@@ -89,9 +89,10 @@ const RISE_IN = [
 const canAnimate = (el: Element | null | undefined): el is HTMLElement =>
   Boolean(el) && typeof (el as HTMLElement).animate === 'function';
 
-// The collapse the hero region is wearing right now. Read before a navigation
-// zeroes it, and pinned onto the ghost, so a hero that was scrolled down when
-// the reader clicked leaves looking exactly as it did.
+// The collapse the hero region is wearing right now — the stylesheet's 0 or 1
+// for its folded state. Read before a navigation unfolds it, and pinned onto
+// the ghost, so a hero that was scrolled down when the reader clicked leaves
+// looking exactly as it did.
 const readCollapse = (region: HTMLElement): string => {
   if (typeof window === 'undefined') return '0';
   if (typeof window.getComputedStyle !== 'function') return '0';
@@ -303,7 +304,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     // The veil belongs to a scroll that no longer exists. It has its own
     // short opacity transition, so writing 0 fades it rather than cutting.
     veilRef.current?.style.setProperty('--veil-strength', '0');
-    region?.style.setProperty('--hero-collapse', '0');
     syncCollapseRef.current?.();
     syncVeilRef.current?.();
 
@@ -458,136 +458,53 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     };
   }, [shownPath]);
 
-  // Scroll-linked hero collapse. The page scrolls inside `.layout`, not the
-  // document, so this reads that element's scrollTop and publishes it as a 0→1
-  // progress custom property on the hero region itself — the only subtree that
-  // reads it. It used to land on the stage, and a custom property inherits, so
-  // every write put the whole page (the window, every card in it, the footer)
-  // in the invalidation set of a number six elements consume.
-  //
-  // The easing between wheel notches lives here too, not in CSS. The
-  // stylesheet used to run six independent 120ms `linear` transitions off this
-  // value — two of them on padding and margin, which animate in layout — and a
-  // scroll stream re-targeted all six every frame, so the layout engine was
-  // kept animating for 120ms past every notch and the boxes trailed the
-  // transforms. One number eased in one place keeps every derived property in
-  // lockstep and stops the moment it lands. Touch input is a continuous stream
-  // with no notch to smooth over, and reduced motion means exactly what it
-  // says, so both write the scroll's own value directly.
+  // The hero fold. The page scrolls inside `.layout`, not the document, so
+  // this reads that element's scrollTop, once per animation frame while the
+  // scroll is live, and toggles the hero's folded state at the threshold.
+  // That class is the whole of what the scroll does to the hero: the
+  // stylesheet eases every property of the fold from it, on one duration and
+  // one curve, so the title, the tagline and the box move together.
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
     const region = heroRef.current;
     const panel = windowRef.current;
     if (!shouldCollapse || !region || !panel) return;
 
-    // ~63% of the remaining distance every 40ms: settled (within a rounding
-    // step) in about the 120ms the CSS tail took, but decelerating, so the
-    // hero arrives instead of stopping.
-    const TAU_MS = 40;
-    // Both queries are held as live lists rather than re-resolved per frame;
-    // `.matches` is read at each decision so a mid-session change still lands.
-    const touch =
-      typeof window.matchMedia === 'function'
-        ? window.matchMedia('(max-width: 768px)')
-        : null;
-    const reduce =
-      typeof window.matchMedia === 'function'
-        ? window.matchMedia('(prefers-reduced-motion: reduce)')
-        : null;
-
     let frame = 0;
-    let dirty = false; // a scroll arrived since the last frame
-    let last = -1; // the value on the element, post-rounding
-    let current = 0; // the eased value
-    let target = 0;
-    let lastTime = 0;
+    let collapsed = false;
 
-    const readTarget = () =>
+    const readProgress = () =>
       Math.min(Math.max(panel.scrollTop / HERO_COLLAPSE_RANGE, 0), 1);
 
-    // Three decimals: the title travels a few hundred pixels across the
-    // range, so a hundredth was a 3px step and a slow drag moved it in
-    // visible increments. Nothing that reads the value lays out any more, so
-    // a finer write costs a composite and no more.
-    const write = (value: number) => {
-      const rounded = Math.round(value * 1000) / 1000;
-      if (rounded === last) return;
-      last = rounded;
-      region.style.setProperty('--hero-collapse', String(rounded));
-    };
-
-    // The box flip. Decided from the scroll's own position (not the eased
-    // value, which can still be moving after the wheel has stopped), applied
-    // once the scroll has gone quiet, with a dead band between the two
-    // thresholds so it cannot flap.
-    let collapsed = false;
-    let settleTimer = 0;
-    const settle = () => {
-      settleTimer = 0;
-      const want = collapsed ? target > COLLAPSE_OFF : target >= COLLAPSE_ON;
+    const apply = () => {
+      frame = 0;
+      const progress = readProgress();
+      const want = collapsed
+        ? progress > COLLAPSE_OFF
+        : progress >= COLLAPSE_ON;
       if (want === collapsed) return;
       collapsed = want;
       region.classList.toggle('is-collapsed', want);
     };
-    const scheduleSettle = () => {
-      window.clearTimeout(settleTimer);
-      settleTimer = window.setTimeout(settle, COLLAPSE_SETTLE_MS);
-    };
 
-    const tick = (now: number) => {
-      frame = 0;
-      // A tab coming back from the background hands rAF a timestamp seconds
-      // past the last one; clamped, the worst it plays is one long step.
-      const dt = Math.min(now - lastTime, 100);
-      lastTime = now;
-      if (dirty) {
-        dirty = false;
-        target = readTarget();
-        if (touch?.matches || reduce?.matches) {
-          current = target;
-          write(current);
-          return;
-        }
-      }
-      current += (target - current) * (1 - Math.exp(-dt / TAU_MS));
-      // Inside half a rounding step of the target is on it.
-      if (Math.abs(target - current) < 0.005) current = target;
-      write(current);
-      if (current !== target || dirty) {
-        frame = window.requestAnimationFrame(tick);
-      }
-    };
-
+    // One decision per frame however many scroll events land in it.
     const onScroll = () => {
-      dirty = true;
-      if (!frame) {
-        lastTime = performance.now();
-        frame = window.requestAnimationFrame(tick);
-      }
-      scheduleSettle();
+      if (!frame) frame = window.requestAnimationFrame(apply);
     };
 
     // Wherever the effect lands it lands at once: mount is not motion.
-    current = target = readTarget();
-    write(current);
+    apply();
 
-    // How the transition hands the link back: drop any ease in flight, forget
-    // the last written value — both describe a page that is gone — and
-    // republish from the real scroll. The box goes back to rest in the same
-    // breath, without its ease: the region is about to be measured for the
-    // navigation's own height animation, and a padding still in flight would
-    // hand that measurement a number from the middle of a transition.
+    // How the navigation hands the fold back: drop any decision in flight and
+    // put the box back to rest without its ease — the region is about to be
+    // measured for the navigation's own height animation, and a padding
+    // still in flight would hand that measurement a number from the middle
+    // of a transition.
     syncCollapseRef.current = () => {
       if (frame) {
         window.cancelAnimationFrame(frame);
         frame = 0;
       }
-      window.clearTimeout(settleTimer);
-      settleTimer = 0;
-      dirty = false;
-      last = -1;
-      current = target = readTarget();
-      write(current);
       if (collapsed) {
         collapsed = false;
         region.style.transition = 'none';
@@ -600,9 +517,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     return () => {
       panel.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
-      window.clearTimeout(settleTimer);
       syncCollapseRef.current = null;
-      region.style.removeProperty('--hero-collapse');
       region.classList.remove('is-collapsed');
     };
   }, [shouldCollapse]);

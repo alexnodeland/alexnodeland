@@ -62,10 +62,10 @@
 // the window, which is why every hero already carries the halo. Its column is
 // the content column, so a title lines up with the prose under it.
 .site-hero {
-  // Scroll-linked hero collapse, 0 → 1. Written by Layout — on this element,
-  // not the stage: a custom property inherits, so publishing it any higher
-  // would drag the whole window's subtree into every scroll frame's style
-  // invalidation for a value only the hero and its two lines read.
+  // The hero's collapse, 0 at rest and 1 collapsed. The collapsible hero
+  // below flips it with its `.is-collapsed` state; it is a number rather than
+  // a second set of rules so the title's and tagline's transforms can be
+  // written once, as functions of it.
   --hero-collapse: 0;
   flex-shrink: 0;
   width: 100%;
@@ -135,31 +135,33 @@
   color: var(--text-muted);
 }
 
-// Scroll-linked collapse. Layout publishes --hero-collapse (0 → 1) on the
-// hero region from the window's scrollTop, and everything that moves with the
-// scroll reads off that one number — by transform and opacity alone, so a
-// scroll frame costs a composite and nothing else.
+// The collapse. Scrolled past a threshold the hero folds to a compact row
+// above the window — the title to the left edge, shrunk; the tagline beside
+// it on a desktop, faded out on a phone — and the window rises to take the
+// room. Scrolled back it unfolds.
 //
-// The hero's *box* does not follow the scroll. It used to: the paddings, the
-// title's margin and the tagline's max-height were all functions of the same
-// number, so every frame that moved laid the stage out again and resized the
-// window — which is the scroll container being scrolled — under the finger.
-// On a phone that is the textbook touch stutter, and because the window's top
-// edge rose as its content scrolled, the page moved at 1.7× the finger's
-// speed on top of it. The box has two states now, resting and `.is-collapsed`,
-// and Layout flips between them once the scroll has come to rest, in one
-// eased step on the stage's own curve. While the finger is down nothing in
-// this block touches layout.
+// It is one state change, not a scroll-linked scrub. It used to be two
+// things: the title and tagline followed the scroll frame by frame while the
+// box (the paddings, the title's margin, the tagline's clip) waited for the
+// scroll to rest and then flipped. On a phone the two came apart for the
+// whole of a momentum scroll — the box open with the title already gone, or
+// the box shut with the full title tucked under the window's edge — because
+// nothing tied the picture to the box. Now Layout toggles `.is-collapsed` at a
+// threshold (with a dead band, so a scroll resting near it cannot flap) and
+// this block eases every property of the fold on one duration and one curve,
+// so the box, the title and the tagline arrive together and cannot disagree
+// in any frame. A scroll frame costs nothing here at all; the fold itself
+// lays out for its 320ms, once, the way the nav's own state changes do.
 .site-hero.is-collapsible {
-  // How far the title shrinks at full collapse. Layout reads this for the
-  // fit calculation too, so it lives here and nowhere else. Just over half on
-  // a desktop, where the tagline has to fit beside it; half on a phone, which
+  // How far the title shrinks when folded. Layout reads this for the fit
+  // calculation too, so it lives here and nowhere else. Just over half on a
+  // desktop, where the tagline has to fit beside it; half on a phone, which
   // lands it on the rail's own scale; the narrowest phones take it further so
   // the homepage's full name still clears the nav capsule with real air.
   --collapsed-title-scale: 0.55;
 
   // The resting box, stated outright — it is the base .site-hero padding, but
-  // the collapsed state below needs a definite value to ease from.
+  // the folded state below needs a definite value to ease from.
   padding-top: calc(var(--rail-clearance) + var(--space-2));
   padding-bottom: var(--space-6);
   transition:
@@ -167,8 +169,8 @@
     padding-bottom var(--transition-slow);
 
   // Every hero is a title and a tagline stacked and centred. The column of
-  // content-width boxes is what lets the split below move each one outward by
-  // transform alone, without either of them reflowing.
+  // content-width boxes is what lets the fold move each one outward by
+  // transform, without either of them reflowing.
   > * {
     display: flex;
     flex-direction: column;
@@ -179,30 +181,31 @@
 
   h1 {
     margin-bottom: var(--space-4);
-    transition: margin-bottom var(--transition-slow);
-    // On its own layer for the life of the page: the title scales and travels
-    // on every scroll frame, and a shadowed text run that is not promoted is
-    // re-rasterised for each step rather than composited.
-    will-change: transform;
     transform-origin: left center;
     transform: translateX(
         calc(-1 * var(--hero-collapse) * var(--title-shift, 0px))
       )
       scale(calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse)));
+    transition:
+      transform var(--transition-slow),
+      margin-bottom var(--transition-slow);
   }
 
   // The tagline is the last thing in the hero; the room under it is the
   // hero's own padding, not a paragraph margin.
   p {
     margin-bottom: 0;
-    will-change: transform, opacity;
+    transition:
+      transform var(--transition-slow),
+      opacity var(--transition-slow);
   }
 
-  // The collapsed box. The hero gives back the breath above the title and the
+  // The folded box. The hero gives back the breath above the title and the
   // gap under it; both paddings bottom out at a floor rather than zero, so
-  // the window's frame never touches the hero text and the collapsed row
-  // never rides the screen edge.
+  // the window's frame never touches the hero text and the folded row never
+  // rides the screen edge.
   &.is-collapsed {
+    --hero-collapse: 1;
     padding-top: var(--rail-clearance);
     padding-bottom: var(--space-4);
 
@@ -211,12 +214,11 @@
     }
   }
 
-  // The split. At rest the two are stacked and centred; on scroll the title
-  // slides to the left edge and shrinks while the tagline slides to the right
-  // edge and rises onto the title's row, so at full collapse they sit as one
-  // line floating above the window. The pixel distances are measured by
-  // Layout — they depend on rendered text widths — and everything here does
-  // is scale them by the same --hero-collapse the region publishes.
+  // The split. At rest the two are stacked and centred; folded, the title
+  // sits at the left edge, shrunk, and the tagline at the right edge, risen
+  // onto the title's row, so the two make one line floating above the window.
+  // The pixel distances are measured by Layout — they depend on rendered text
+  // widths — and everything here does is scale them by --hero-collapse.
   @media (min-width: 769px) {
     p {
       // The tagline travels rather than fading, so it keeps its ink the whole
@@ -234,8 +236,8 @@
       transform-origin: right center;
     }
 
-    // Collapsed, the tagline has risen onto the title's row, so its own row
-    // is handed back — through a negative margin on the column, not on the
+    // Folded, the tagline has risen onto the title's row, so its own row is
+    // handed back — through a negative margin on the column, not on the
     // tagline. Its box has to stay where it was: the transform above already
     // moved the picture, and a box that moved too would move it twice.
     &.is-collapsed > * {
@@ -244,11 +246,11 @@
   }
 
   // Phones have no room for the two side by side, so below the split's
-  // breakpoint the hero linearizes into the navigator's own row instead: the
+  // breakpoint the hero folds into the navigator's own row instead: the
   // title slides to the left edge, shrinks to the rail's scale, and rises
   // until it sits on the nav capsule's line — "alex" on the left answering
   // the page picker on the right. The crumb's tail ("→ blog") fades out with
-  // the tagline; the green brand is the whole collapsed header.
+  // the tagline; the green brand is the whole folded header.
   @media (max-width: 768px) {
     --collapsed-title-scale: 0.5;
 
@@ -259,12 +261,6 @@
     // The resting box at this width (the base .site-hero's phone padding).
     padding-top: calc(var(--rail-clearance) + var(--space-2));
     padding-bottom: var(--space-4);
-
-    // Layout's publisher writes the finger's own position straight through
-    // here (touch is a continuous stream; there is no wheel notch to smooth
-    // over), and nothing in this block eases the per-frame properties.
-    // Tracking the finger exactly is both the cheaper frame and the more
-    // responsive one.
 
     h1 {
       // Right-to-left: scale first (about the left edge, so --title-shift
@@ -290,23 +286,27 @@
     // The tail goes with the tagline; the anchor keeps its ink the whole way.
     .hero-crumb-rest {
       opacity: calc(1 - var(--hero-collapse));
+      transition: opacity var(--transition-slow);
     }
 
-    // The tagline fades and drifts up as the finger moves, and is clipped
-    // away once the box collapses. The clip's resting height is the
-    // tagline's own, published by Layout, so the ease runs over the real
-    // distance rather than idling through empty headroom first.
+    // The tagline fades and drifts up, and its box closes with it. The clip's
+    // resting height is the tagline's own, published by Layout, so the ease
+    // runs over the real distance rather than idling through empty headroom
+    // first.
     p {
       opacity: calc(1 - var(--hero-collapse));
       max-height: var(--tagline-height, 6rem);
       overflow: hidden;
       transform: translateY(calc(-0.5rem * var(--hero-collapse)));
-      transition: max-height var(--transition-slow);
+      transition:
+        transform var(--transition-slow),
+        opacity var(--transition-slow),
+        max-height var(--transition-slow);
     }
 
-    // Collapsed, the title has left its band entirely, so the whole
-    // line-height is handed back through the margin and the window rises to
-    // just under the rail; the tagline's box closes with it.
+    // Folded, the title has left its band entirely, so the whole line-height
+    // is handed back through the margin and the window rises to just under
+    // the rail; the tagline's box closes with it.
     &.is-collapsed {
       padding-top: var(--rail-clearance);
       padding-bottom: 0;
@@ -331,15 +331,14 @@
     }
   }
 
-  // Less motion: the box still has its two states; it simply changes between
-  // them in place. The per-frame properties carry no easing to strip — the
-  // wheel smoothing lives in Layout's publisher, which checks the same
-  // preference itself and tracks the scroll exactly under it.
+  // Less motion: the hero still has its two states; it simply changes between
+  // them in place.
   @media (prefers-reduced-motion: reduce) {
     &,
     > *,
     h1,
-    p {
+    p,
+    .hero-crumb-rest {
       transition: none;
     }
   }

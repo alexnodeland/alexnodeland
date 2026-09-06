@@ -867,6 +867,21 @@ The standards in §9 went in as written, with these differences from the plan:
   through every scroll step at both widths and lands on exactly the old
   collapsed geometry. Scroll-driven animations remain the next step if a
   device still shows the one-frame lag.
+
+  _Revised after a hand on a phone._ The two halves — a title scrubbed by
+  the scroll, a box flipped 200ms after it rested — came apart for the whole
+  of a momentum scroll: the box open with the title already gone above an
+  empty band, or the box shut with the full-size title tucked under the
+  window's blurred edge. Nothing tied the picture to the box. The fold is now
+  one state change: Layout toggles `.is-collapsed` at the threshold (same
+  0.45/0.55 dead band, decided once per frame while the scroll is live) and
+  the stylesheet eases the paddings, the title's transform and margin, the
+  tagline's transform, opacity and clip on the one slow clock, so no frame
+  can show one half without the other. A scroll frame now costs the hero
+  nothing at all; the fold lays out for its 320ms, once. The e2e guards were
+  rewritten to the new contract: every eased property shares one duration
+  and curve, and the box's and the title's progress agree in every frame.
+
 - **Spacing** was renumbered onto a 4px base (`--space-1` … `--space-9`, with
   the 0.75rem step at `--space-3`) rather than given a `--space-2-5`. Every
   stylesheet was rewritten onto it; the raw values left are the nav capsule's
