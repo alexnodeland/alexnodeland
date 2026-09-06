@@ -152,33 +152,39 @@
           font-size: 1rem; // Match chat panel font sizing
         }
 
+        // The chat panel's close button (see .chat-close-button in
+        // chat.scss): the same bordered box around the same 16px glyph, so
+        // putting either panel away is one control. It used to be a bare
+        // "×" character with no border.
         .close-button {
-          background: none;
-          border: none;
-          color: var(--text-secondary);
-          cursor: pointer;
-          width: 2rem;
-          height: 2rem;
+          flex-shrink: 0;
+          background: transparent;
+          border: 1px solid var(--border-color);
           border-radius: var(--radius-md);
+          color: var(--text-muted);
+          cursor: pointer;
+          padding: 0.5rem;
           display: flex;
           align-items: center;
           justify-content: center;
-          @include control-transition(var(--transition-fast));
-          font-family: inherit;
+          @include control-transition(var(--transition-normal));
 
           &:hover {
+            border-color: var(--border-active);
             color: var(--text-primary);
             background: var(--bg-hover);
           }
 
-          svg {
-            width: 20px;
-            height: 20px;
+          &:focus-visible {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px var(--primary-color);
           }
 
-          &:before {
-            content: '×';
-            font-size: 1.5rem;
+          svg {
+            display: block;
+            width: 16px;
+            height: 16px;
           }
         }
       }
@@ -654,27 +660,9 @@
     // conversion path — magenta made it the loudest control in a panel of
     // sliders.
     .reset-button {
+      @include outline-button;
       width: 100%;
-      padding: 0.75rem 1rem;
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: var(--radius-md);
-      color: var(--text-primary);
-      font-size: 0.8125rem; // Match chat font sizing
-      cursor: pointer;
-      @include control-transition(var(--transition-fast));
-      font-family: inherit;
       margin-bottom: 1rem;
-
-      &:hover {
-        background: var(--bg-accent);
-        border-color: rgba(255, 255, 255, 0.45);
-        transform: translateY(-1px);
-      }
-
-      &:active {
-        transform: translateY(0);
-      }
     }
 
     .sidebar-keyboard-hints {
@@ -1062,8 +1050,10 @@
 
     .description-toggle {
       flex-shrink: 0;
-      width: 2rem;
-      height: 2rem;
+      // The close beside it is a 16px glyph in 0.5rem of padding and a
+      // hairline; the same 34px here, so the two sit as one row.
+      width: calc(1rem + 1rem + 2px);
+      height: calc(1rem + 1rem + 2px);
       display: flex;
       align-items: center;
       justify-content: center;

@@ -61,7 +61,7 @@ describe('ChatErrorBoundary', () => {
     );
 
     expect(
-      screen.getByText('Something went wrong displaying chat messages.')
+      screen.getByText('something went wrong displaying chat messages.')
     ).toBeInTheDocument();
   });
 

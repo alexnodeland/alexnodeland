@@ -1032,6 +1032,8 @@
     color: var(--text-secondary);
     font-size: 0.8125rem;
     word-break: break-word;
+    // The worker's own wording ("Worker error"), in the panel's case.
+    text-transform: lowercase;
   }
 
   .model-error-retry {

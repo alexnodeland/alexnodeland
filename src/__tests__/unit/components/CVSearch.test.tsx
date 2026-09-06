@@ -51,7 +51,7 @@ const mockCVData: CVData = {
   ],
 };
 
-const SEARCH_PLACEHOLDER = 'search experiences, education, skills...';
+const SEARCH_PLACEHOLDER = 'search the cv...';
 
 const renderSearch = () => render(<CVSearch resumeData={mockCVData} />);
 const input = () => screen.getByPlaceholderText(SEARCH_PLACEHOLDER);

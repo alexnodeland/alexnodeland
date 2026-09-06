@@ -33,7 +33,7 @@ class ChatErrorBoundary extends Component<Props, State> {
         <div className="chat-error-boundary">
           <p>
             {this.props.fallbackMessage ||
-              'Something went wrong displaying chat messages.'}
+              'something went wrong displaying chat messages.'}
           </p>
           <button
             type="button"
