@@ -38,6 +38,11 @@ test.describe('CV Page', () => {
   test('should have search functionality', async ({ page }) => {
     await page.goto('/cv');
 
+    // On a phone the search panel is folded away behind a chip in the
+    // control row; unfold it first. A desktop never draws the chip.
+    const toggle = page.locator('.ui-search-toggle');
+    if (await toggle.isVisible()) await toggle.click();
+
     // Look for search input (any input should work)
     const searchInput = page.locator('input').first();
     if ((await searchInput.count()) > 0) {

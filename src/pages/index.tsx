@@ -1,6 +1,6 @@
 import React from 'react';
-import { SEO } from '../components';
-import { getCTAButtonURL, homepageConfig } from '../config';
+import SEO from '../components/seo';
+import { getCTAButtonURL, getPersonSchema, homepageConfig } from '../config';
 import { expertiseIcons } from '../components/expertise-icons';
 import { useScrollSpy } from '../lib/hooks';
 import '../styles/index.scss';
@@ -9,7 +9,11 @@ import '../styles/index.scss';
 // once for the whole site and resolves its own hero from the path, so every
 // hero lives in src/components/heroes.tsx. This page is what scrolls inside
 // the window.
-const IndexPage: React.FC = () => {
+// `location` is what Gatsby hands every page; optional so the page can still
+// be rendered bare (tests do).
+const IndexPage: React.FC<{ location?: { pathname?: string } }> = ({
+  location,
+}) => {
   // The grid used to sit lit up wherever a tap left it, on cards that go
   // nowhere when clicked. Reading position drives the highlight instead.
   const { containerRef: expertiseRef, isActive: isExpertiseActive } =
@@ -20,6 +24,8 @@ const IndexPage: React.FC = () => {
       <SEO
         title={homepageConfig.hero.title}
         description="AI engineer and mathematician. Agent systems, distributed infrastructure, and audio DSP."
+        pathname={location?.pathname}
+        jsonLd={getPersonSchema()}
       />
       <div className="home">
         <section className="about">

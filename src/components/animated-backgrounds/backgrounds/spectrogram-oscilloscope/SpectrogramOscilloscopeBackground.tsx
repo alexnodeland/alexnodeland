@@ -74,7 +74,7 @@ const COLOR_UNIFORMS: Record<
 
 const SpectrogramOscilloscopeBackground: React.FC<
   SpectrogramOscilloscopeBackgroundProps
-> = ({ className, settings, onAudioControlsReady }) => {
+> = ({ className, settings, frozen, onAudioControlsReady }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -85,6 +85,15 @@ const SpectrogramOscilloscopeBackground: React.FC<
   // of which outlive the render that created them.
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+
+  // Draw one frame and hold — see AnimatedBackgroundProps.frozen. The loop
+  // reads the ref each frame; the effect restarts it when the hold is lifted.
+  const frozenRef = useRef(Boolean(frozen));
+  frozenRef.current = Boolean(frozen);
+  const resumeRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!frozen) resumeRef.current?.();
+  }, [frozen]);
 
   // Web Audio API references
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -915,10 +924,18 @@ const SpectrogramOscilloscopeBackground: React.FC<
       // Update spectrogram texture row counter
 
       renderer.render(scene, camera);
+      if (frozenRef.current) {
+        animationFrameRef.current = null;
+        return;
+      }
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
     animate(0);
+    resumeRef.current = () => {
+      if (animationFrameRef.current === null)
+        animationFrameRef.current = requestAnimationFrame(animate);
+    };
 
     // Handle window resize, at most once per frame — a phone's URL bar fires
     // resize repeatedly over a single flick, and each raw call reallocates the
@@ -945,6 +962,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
     // Cleanup function
     return () => {
+      resumeRef.current = null;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }

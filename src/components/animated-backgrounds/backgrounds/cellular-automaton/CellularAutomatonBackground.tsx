@@ -25,7 +25,7 @@ const STALL_GENERATIONS = 24;
  */
 const CellularAutomatonBackground: React.FC<
   AnimatedBackgroundProps<CellularAutomatonSettings>
-> = ({ className, settings }) => {
+> = ({ className, settings, frozen }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
 
@@ -40,6 +40,15 @@ const CellularAutomatonBackground: React.FC<
   const perturbationRate = settings.perturbationRate;
   const perturbationRef = useRef(perturbationRate);
   perturbationRef.current = perturbationRate;
+
+  // Draw one frame and hold — see AnimatedBackgroundProps.frozen. The loop
+  // reads the ref each frame; the effect restarts it when the hold is lifted.
+  const frozenRef = useRef(Boolean(frozen));
+  frozenRef.current = Boolean(frozen);
+  const resumeRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!frozen) resumeRef.current?.();
+  }, [frozen]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -348,10 +357,17 @@ const CellularAutomatonBackground: React.FC<
         (now - lastStep) / stepIntervalMs
       );
       renderer.render(scene, camera);
+      if (frozenRef.current) {
+        frameId = null;
+        return;
+      }
       frameId = requestAnimationFrame(animate);
     };
 
     frameId = requestAnimationFrame(animate);
+    resumeRef.current = () => {
+      if (frameId === null) frameId = requestAnimationFrame(animate);
+    };
 
     // A URL bar sliding in and out can fire resize many times over a single
     // flick, so collapse the burst into one rebuild per frame.
@@ -381,6 +397,7 @@ const CellularAutomatonBackground: React.FC<
     window.addEventListener('resize', handleResize);
 
     return () => {
+      resumeRef.current = null;
       if (frameId !== null) cancelAnimationFrame(frameId);
       if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
       window.removeEventListener('resize', handleResize);

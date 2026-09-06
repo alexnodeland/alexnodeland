@@ -18,6 +18,7 @@ export interface BlogPost {
 }
 
 export interface BlogPageProps {
+  location?: { pathname?: string };
   data: {
     allMarkdownRemark: {
       nodes: BlogPost[];

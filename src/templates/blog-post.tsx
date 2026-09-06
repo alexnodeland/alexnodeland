@@ -5,11 +5,12 @@ import '../styles/blog.scss';
 
 interface BlogPostProps {
   data: any;
+  location?: { pathname?: string };
 }
 
 // A post carries its own title inside the window, so the shell wears no hero
 // here — the hero region collapses to nothing and the window takes the room.
-const BlogPost: React.FC<BlogPostProps> = ({ data }) => {
+const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
   const post = data.markdownRemark;
 
   return (
@@ -17,6 +18,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ data }) => {
       <SEO
         title={post.frontmatter.title}
         description={post.frontmatter.description}
+        pathname={location?.pathname}
       />
       <div className="blog-post-page">
         <header className="post-header">

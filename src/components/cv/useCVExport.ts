@@ -1,11 +1,8 @@
 import { useCallback, useState } from 'react';
 import { CVData } from '../../config/cv';
-import {
-  CVVariant,
-  downloadMarkdown,
-  exportCVAsDOCX,
-  exportCVAsMarkdown,
-} from '../../lib/utils/export';
+import type { CVVariant } from '../../lib/utils/export/docx';
+import { exportCVAsMarkdown } from '../../lib/utils/export/markdown';
+import { downloadMarkdown } from '../../lib/utils/export/utils';
 
 // The PDFs are typeset by LaTeX at build time rather than generated in the
 // browser — see scripts/build-cv.js — so "download pdf" is a plain fetch of
@@ -65,6 +62,10 @@ export const useCVExport = (
   const exportDOCX = useCallback(async () => {
     setIsExporting(true);
     try {
+      // The DOCX builder is the heaviest thing on the page — docx and its zip
+      // library, ~90KB gzipped — and it is wanted once per download at most,
+      // so it is fetched here rather than shipped with every page.
+      const { exportCVAsDOCX } = await import('../../lib/utils/export/docx');
       await exportCVAsDOCX(
         resumeData,
         cvExportFilename(resumeData, 'docx'),

@@ -32,6 +32,9 @@ export interface SettingsSchema {
 export interface AnimatedBackgroundProps<TSettings = StandardSettings> {
   className?: string;
   settings: TSettings;
+  // Draw one frame and hold it. Set under prefers-reduced-motion: the picture
+  // stays, nothing moves, and the frame loop is not running at all.
+  frozen?: boolean;
   // Backgrounds that make sound publish their transport here so the settings
   // panel can offer a button for it. Without this the controls are reachable
   // only by keyboard, which on a touch device means not at all.

@@ -24,16 +24,6 @@ jest.mock('../../../components/seo', () => {
 // Mock SCSS import
 jest.mock('../../../styles/index.scss', () => ({}));
 
-// Fully mock components barrel to avoid animated backgrounds side effects
-jest.mock('../../../components', () => ({
-  // No Layout here: the shell wraps the page (wrapPageElement) rather than the
-  // page rendering it, and the hero it wears is resolved from the path — both
-  // are covered by the Layout tests. A page renders only its own content now.
-  SEO: ({ title, description }: { title?: string; description?: string }) => (
-    <div data-testid="seo" data-title={title} data-description={description} />
-  ),
-}));
-
 describe('Index Page', () => {
   it('renders its SEO and its content, and no hero of its own', () => {
     const { container } = render(<IndexPage />);

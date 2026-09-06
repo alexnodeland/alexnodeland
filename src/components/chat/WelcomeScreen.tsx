@@ -142,12 +142,17 @@ const WelcomeScreen: React.FC = () => {
           <p className="download-note">
             downloads once ({modelSize}), cached forever
           </p>
+          {/* There is no CPU path for this model: every quantized export
+              block-quantizes its embeddings with an op the wasm provider has
+              no kernel for (see docs/chat-management.md, "The WASM
+              fallback"). Better to say so here than after a 760MB download. */}
           {webGPUSupported === false && (
             <p
               className="download-note download-note-warning"
               style={{ color: 'var(--text-secondary)' }}
             >
-              no WebGPU detected — will run on CPU (slower)
+              this browser has no webgpu, and the model needs it to run. chrome
+              or edge on a recent device will work.
             </p>
           )}
 
@@ -155,6 +160,7 @@ const WelcomeScreen: React.FC = () => {
             <button
               className="download-button"
               onClick={handleStartDownload}
+              disabled={webGPUSupported === false}
               aria-label={`Download ${modelName} model`}
             >
               <svg

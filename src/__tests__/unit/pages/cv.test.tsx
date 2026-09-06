@@ -5,17 +5,16 @@ import { cvData, resumeData } from '../../../config';
 import CVPage from '../../../pages/cv';
 
 // Mock components barrel to avoid animated backgrounds
-jest.mock('../../../components', () => ({
-  // No Layout here: the shell wraps the page (wrapPageElement) rather than the
-  // page rendering it, and the hero it wears is resolved from the path — both
-  // are covered by the Layout tests. A page renders only its own content now.
-  SEO: ({ title }: { title?: string }) => (
+jest.mock('../../../components/seo', () => ({
+  __esModule: true,
+  default: ({ title }: { title?: string }) => (
     <div data-testid="seo" data-title={title} />
   ),
-  // The sticky control row owns the view state and the downloads; the page
-  // owns which length is on screen, so the mock has to report both the value
-  // it was handed and a way to change it.
-  CVControlBar: ({
+}));
+
+jest.mock('../../../components/cv/CVControlBar', () => ({
+  __esModule: true,
+  default: ({
     view,
     onViewChange,
   }: {
@@ -28,19 +27,28 @@ jest.mock('../../../components', () => ({
       </button>
     </div>
   ),
-  // Search is not chrome and did not move into the row — it keeps its own
-  // panel below it, and its own copy of the data.
-  CVSearch: ({
-    resumeData,
-  }: {
-    resumeData: { personal: { name: string } };
-  }) => <div data-testid="cv-search" data-name={resumeData.personal.name} />,
-  ExperienceSection: () => <section id="cv-experience-body" />,
-  EducationSection: () => <section id="cv-education-body" />,
-  SkillsSection: () => <section id="cv-skills-body" />,
-  // The glyph on a certification card; the page draws those itself.
-  CertificateIcon: jest.requireActual('../../../components/ui/EntryIcons')
-    .CertificateIcon,
+}));
+
+jest.mock('../../../components/cv/CVSearch', () => ({
+  __esModule: true,
+  default: ({ resumeData }: { resumeData: { personal: { name: string } } }) => (
+    <div data-testid="cv-search" data-name={resumeData.personal.name} />
+  ),
+}));
+
+jest.mock('../../../components/cv/CVExperienceSection', () => ({
+  __esModule: true,
+  default: () => <section id="cv-experience-body" />,
+}));
+
+jest.mock('../../../components/cv/CVEducationSection', () => ({
+  __esModule: true,
+  default: () => <section id="cv-education-body" />,
+}));
+
+jest.mock('../../../components/cv/CVSkillsSection', () => ({
+  __esModule: true,
+  default: () => <section id="cv-skills-body" />,
 }));
 
 // Mock SCSS import

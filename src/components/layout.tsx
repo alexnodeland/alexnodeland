@@ -1,11 +1,18 @@
 import { Link } from 'gatsby';
 import React from 'react';
 import { getAllSocialLinks, siteConfig } from '../config';
+import { useNotFound } from '../lib/notFound';
 import '../styles/layout.scss';
 import { useSettingsPanel } from './SettingsPanelContext';
-import { ChatIcon, ChatModal, KeyboardShortcuts } from './chat';
-import { heroKeyFor, resolveHero } from './heroes';
+import ChatIcon from './chat/ChatIcon';
+import KeyboardShortcuts from './chat/KeyboardShortcuts';
+import { heroKeyFor, NOT_FOUND_KEY, resolveHero } from './heroes';
 import Shortcuts from './ShortcutsModal';
+
+// The modal carries the markdown renderer and the syntax highlighter, and
+// neither is wanted until someone opens the panel — so the whole thing is
+// fetched then, rather than shipped with every page.
+const ChatModal = React.lazy(() => import('./chat/ChatModal'));
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -190,7 +197,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   const heroRef = React.useRef<HTMLElement>(null);
   const veilRef = React.useRef<HTMLDivElement>(null);
 
-  const pathname = location?.pathname ?? '/';
+  // A missing page is rendered at whatever address was typed, so it cannot
+  // be told from its path; it raises a flag instead, and the shell resolves
+  // the 404 hero from that for as long as the flag is up.
+  const notFound = useNotFound();
+  const pathname = notFound ? NOT_FOUND_KEY : (location?.pathname ?? '/');
 
   // The hero the shell is currently wearing. It follows the router in the same
   // frame — the outgoing one is held separately, as a ghost, rather than by
@@ -603,6 +614,99 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     };
   }, [wantsVeil]);
 
+  // The page scrolls inside the window, not the document, so a wheel turned
+  // over the field beside it — a fifth of a wide screen — used to do nothing,
+  // and neither did PageDown on a fresh load. Both reach the window from
+  // here. Anything with a scroll of its own (the window itself, the sidebars,
+  // the shortcuts list, an open menu) keeps its native handling; the window
+  // is focusable, so a click inside it hands the keyboard over natively too.
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const panel = windowRef.current;
+    if (!panel) return;
+
+    const OWN_SCROLL =
+      '.settings-sidebar, .chat-sidebar, .shortcuts-panel, .ui-dropdown-menu';
+    const ownsScroll = (target: EventTarget | null) =>
+      target instanceof Element &&
+      (panel.contains(target) || target.closest(OWN_SCROLL) !== null);
+
+    const onWheel = (event: WheelEvent) => {
+      if (event.defaultPrevented || event.ctrlKey) return; // pinch-zoom
+      if (ownsScroll(event.target)) return;
+      const unit =
+        event.deltaMode === 1
+          ? 16
+          : event.deltaMode === 2
+            ? panel.clientHeight
+            : 1;
+      panel.scrollTop += event.deltaY * unit;
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey
+      )
+        return;
+      // Anything focused handles its own keys — the window included, which
+      // scrolls natively once a click has put focus in it.
+      const active = document.activeElement;
+      if (
+        active &&
+        active !== document.body &&
+        active !== document.documentElement
+      )
+        return;
+      const page = panel.clientHeight * 0.85;
+      const smooth = prefersReducedMotion() ? 'auto' : 'smooth';
+      const scrollTo = (top: number) => {
+        if (typeof panel.scrollTo === 'function')
+          panel.scrollTo({ top, behavior: smooth });
+        else panel.scrollTop = top;
+      };
+      let by: number;
+      switch (event.key) {
+        case 'PageDown':
+          by = page;
+          break;
+        case 'PageUp':
+          by = -page;
+          break;
+        case ' ':
+          by = event.shiftKey ? -page : page;
+          break;
+        case 'ArrowDown':
+          by = 48;
+          break;
+        case 'ArrowUp':
+          by = -48;
+          break;
+        case 'Home':
+          event.preventDefault();
+          scrollTo(0);
+          return;
+        case 'End':
+          event.preventDefault();
+          scrollTo(panel.scrollHeight);
+          return;
+        default:
+          return;
+      }
+      event.preventDefault();
+      scrollTo(panel.scrollTop + by);
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: true });
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
+
   // The window's top edge is dynamic now — it sits below the hero and rises
   // as the hero collapses — so its live position is published for the two
   // sidebars, whose height must match the window's at all times. A
@@ -774,7 +878,10 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                 {resolveHero(ghost.path).hero}
               </section>
             )}
-            <div className="layout" ref={windowRef}>
+            {/* Focusable so a click inside hands it the keyboard: PageDown and
+                the arrows then scroll it natively. Not in the tab order — the
+                links inside it are. */}
+            <div className="layout" ref={windowRef} tabIndex={-1}>
               {/* A tapered blur pinned to the window's visible top edge:
                   content dissolves as it scrolls out instead of colliding with
                   whatever floats up there (the cv's sticky controls). Skipped
@@ -837,7 +944,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
           the whole site, so the pill's entry animation plays on arrival and
           never again. */}
       <ChatIcon />
-      <ChatModal />
+      {(isChatPanelOpen || isClosingChatPanel) && (
+        <React.Suspense fallback={null}>
+          <ChatModal />
+        </React.Suspense>
+      )}
       <KeyboardShortcuts />
     </>
   );

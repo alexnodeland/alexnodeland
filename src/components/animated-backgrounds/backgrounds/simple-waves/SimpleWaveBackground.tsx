@@ -6,7 +6,7 @@ import { SimpleWaveSettings } from './config';
 
 const SimpleWaveBackground: React.FC<
   AnimatedBackgroundProps<SimpleWaveSettings>
-> = ({ className, settings }) => {
+> = ({ className, settings, frozen }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -16,6 +16,15 @@ const SimpleWaveBackground: React.FC<
   // render that created it.
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+
+  // Draw one frame and hold — see AnimatedBackgroundProps.frozen. The loop
+  // reads the ref each frame; the effect restarts it when the hold is lifted.
+  const frozenRef = useRef(Boolean(frozen));
+  frozenRef.current = Boolean(frozen);
+  const resumeRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!frozen) resumeRef.current?.();
+  }, [frozen]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -147,10 +156,18 @@ const SimpleWaveBackground: React.FC<
       u.uColorBackground.value.set(...live.colors.background);
 
       renderer.render(scene, camera);
+      if (frozenRef.current) {
+        animationFrameRef.current = null;
+        return;
+      }
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
     animate(0);
+    resumeRef.current = () => {
+      if (animationFrameRef.current === null)
+        animationFrameRef.current = requestAnimationFrame(animate);
+    };
 
     // Handle window resize, at most once per frame. A phone's URL bar sliding
     // in and out fires resize repeatedly over a single flick, and each raw
@@ -176,6 +193,7 @@ const SimpleWaveBackground: React.FC<
 
     // Cleanup function
     return () => {
+      resumeRef.current = null;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }

@@ -445,4 +445,34 @@
     align-items: flex-start;
     gap: var(--space-2);
   }
+
+  // An article's own title block was a full phone screen on its own — date,
+  // chip, title and standfirst each holding a desktop's worth of air, with the
+  // first line of the piece somewhere below the fold. The same block, closer
+  // set: the reader should reach the writing on the first screen.
+  .blog-post-page .post-header {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+
+    .post-meta {
+      flex-direction: row;
+      align-items: center;
+      gap: var(--space-2) var(--space-3);
+      margin-bottom: var(--space-2);
+    }
+
+    .post-title {
+      margin-bottom: var(--space-2);
+    }
+
+    .post-description {
+      font-size: var(--text-small);
+      line-height: 1.5;
+      margin-bottom: 0;
+    }
+  }
+
+  .post-content {
+    padding: var(--space-4);
+  }
 }

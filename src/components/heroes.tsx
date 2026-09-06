@@ -42,12 +42,22 @@ const crumbTitle = (label: string) => (
     <Link to="/" className="hero-crumb" data-brand-anchor>
       alex
     </Link>
+    {/* The space lives between the two boxes, not inside the second: leading
+        whitespace at the start of an inline-block collapses, which is how the
+        title used to render as "alex→ blog". */}{' '}
     <span className="hero-crumb-rest">
-      <span className="hero-crumb-sep"> → </span>
+      <span className="hero-crumb-sep">→ </span>
       {label}
     </span>
   </h1>
 );
+
+/**
+ * The key the shell resolves while the 404 page is up. Not a path, so no
+ * address a visitor could type resolves to it by accident — the page itself
+ * asks for it (see src/lib/notFound.ts).
+ */
+export const NOT_FOUND_KEY = '404:';
 
 // Each entry is built on demand rather than held as a module constant: the
 // elements are cheap, and a fresh tree per resolution keeps the outgoing and
@@ -88,9 +98,16 @@ const HEROES: Record<string, () => React.ReactNode> = {
       <p>everything, in order, back to 2010.</p>
     </header>
   ),
+  [NOT_FOUND_KEY]: () => (
+    <header className="not-found-header">
+      {crumbTitle('404')}
+      <p>nothing here. the page came apart.</p>
+    </header>
+  ),
 };
 
-// What a path with no hero of its own resolves to — blog posts and the 404.
+// What a path with no hero of its own resolves to — blog posts, and any
+// address that is not a page until the 404 raises its flag.
 const NO_HERO = 'none';
 
 /**

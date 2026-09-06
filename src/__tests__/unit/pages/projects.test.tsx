@@ -5,19 +5,16 @@ import ProjectsPage from '../../../pages/projects';
 import { projectsConfig } from '../../../config/projects';
 
 // Mock components barrel to avoid animated backgrounds
-jest.mock('../../../components', () => ({
-  // No Layout here: the shell wraps the page (wrapPageElement) rather than the
-  // page rendering it, and the hero it wears is resolved from the path — both
-  // are covered by the Layout tests. A page renders only its own content now.
-  SEO: ({ title }: { title?: string }) => (
+jest.mock('../../../components/seo', () => ({
+  __esModule: true,
+  default: ({ title }: { title?: string }) => (
     <div data-testid="seo" data-title={title} />
   ),
-  // The real dropdown — the controls under test are the shared component, so
-  // mocking it here would test nothing.
-  Dropdown: jest.requireActual('../../../components/ui/Dropdown').default,
-  // Stubbed: the activity panel has its own unit tests; here it only has to
-  // show up at the top of the page.
-  ActivityPanel: () => <div data-testid="activity-panel" />,
+}));
+
+jest.mock('../../../components/ui/ActivityPanel', () => ({
+  __esModule: true,
+  default: () => <div data-testid="activity-panel" />,
 }));
 
 // Mock SCSS

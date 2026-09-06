@@ -48,7 +48,9 @@ const ChatModal: React.FC = () => {
 
   // Track if we just opened the panel to trigger animation only on actual open transition
   const [justOpened, setJustOpened] = useState(false);
-  const wasOpenRef = useRef(isChatPanelOpen);
+  // False rather than the current flag: the modal is mounted on demand now
+  // (see the shell), so its first render is the one that should animate.
+  const wasOpenRef = useRef(false);
 
   // Close chat panel with animation
   const closeChatPanel = useCallback(() => {

@@ -61,28 +61,17 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
       }
     };
 
-    restore('settings-panel-open', setIsSettingsPanelOpen);
+    // The settings panel is per visit: it used to be restored here too, so
+    // anyone who had opened it once got it open on every page of every later
+    // visit. The key it wrote is cleared so an old value cannot linger.
+    try {
+      localStorage.removeItem('settings-panel-open');
+    } catch {
+      // Storage unavailable: nothing to clear.
+    }
     restore('chat-panel-open', setIsChatPanelOpen);
     setHydrated(true);
   }, []);
-
-  // Persist settings panel state to localStorage
-  useEffect(() => {
-    if (!hydrated) return;
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(
-          'settings-panel-open',
-          isSettingsPanelOpen.toString()
-        );
-      } catch (error) {
-        console.warn(
-          'Failed to save settings panel state to localStorage:',
-          error
-        );
-      }
-    }
-  }, [isSettingsPanelOpen, hydrated]);
 
   // Persist chat panel state to localStorage
   useEffect(() => {

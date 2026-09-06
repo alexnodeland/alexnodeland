@@ -54,7 +54,17 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
         return;
       }
 
+      // Already taken by something closer to the user — the shortcuts list
+      // closing on Escape, say.
+      if (event.defaultPrevented) return;
+
       switch (event.code) {
+        case 'Escape':
+          if (state.showSettingsPanel && !state.closingSettingsPanel) {
+            event.preventDefault();
+            closeSettingsPanel();
+          }
+          break;
         case 'ArrowLeft':
           event.preventDefault();
           switchToPreviousBackground();
@@ -78,6 +88,9 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
       switchToPreviousBackground,
       toggleSettingsPanel,
       toggleContentHidden,
+      closeSettingsPanel,
+      state.showSettingsPanel,
+      state.closingSettingsPanel,
     ]
   );
 
@@ -113,12 +126,12 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
   const fadeDurationMs = siteConfig.animatedBackgrounds?.fadeDurationMs ?? 1200;
   const cycleEnabled = siteConfig.animatedBackgrounds?.cycleEnabled ?? true;
 
-  // Someone who asked the OS for less motion should not get a fullscreen
-  // fade-to-black and a fresh WebGL scene every twelve seconds. The current
-  // background still runs; it just stays. Read through the hook rather than
-  // sampled inside the cycling effect, so that toggling the preference
-  // mid-session starts or stops the cycle instead of waiting for some
-  // unrelated dependency to change.
+  // Someone who asked the OS for less motion gets a still: the cycle stops
+  // (no fullscreen fade-to-black and fresh WebGL scene every twelve seconds)
+  // and the current background draws one frame and holds it — `frozen` below.
+  // Read through the hook rather than sampled inside the cycling effect, so
+  // that toggling the preference mid-session takes effect instead of waiting
+  // for some unrelated dependency to change.
   const prefersReducedMotion = usePrefersReducedMotion();
 
   const fadeInTimeoutRef = useRef<number | null>(null);
@@ -249,6 +262,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
         <BackgroundComponent
           className={className}
           settings={currentSettings}
+          frozen={prefersReducedMotion}
           onAudioControlsReady={publishAudioControls}
         />
       </React.Suspense>

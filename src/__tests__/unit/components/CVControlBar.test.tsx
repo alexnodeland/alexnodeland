@@ -2,12 +2,28 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import CVControlBar from '../../../components/cv/CVControlBar';
-import * as exportUtils from '../../../lib/utils/export';
+import * as docxUtils from '../../../lib/utils/export/docx';
+import * as markdownUtils from '../../../lib/utils/export/markdown';
+import * as downloadUtils from '../../../lib/utils/export/utils';
 import { CVData } from '../../../types/cv';
 
-// Mock the export utilities
-jest.mock('../../../lib/utils/export');
-const mockExportUtils = exportUtils as jest.Mocked<typeof exportUtils>;
+// Mock the export utilities by module: the hook reaches each one directly
+// (and the DOCX builder lazily) rather than through the barrel, so the
+// barrel is not on the path.
+jest.mock('../../../lib/utils/export/docx');
+jest.mock('../../../lib/utils/export/markdown');
+jest.mock('../../../lib/utils/export/utils');
+const mockExportUtils = {
+  exportCVAsDOCX: docxUtils.exportCVAsDOCX as jest.MockedFunction<
+    typeof docxUtils.exportCVAsDOCX
+  >,
+  exportCVAsMarkdown: markdownUtils.exportCVAsMarkdown as jest.MockedFunction<
+    typeof markdownUtils.exportCVAsMarkdown
+  >,
+  downloadMarkdown: downloadUtils.downloadMarkdown as jest.MockedFunction<
+    typeof downloadUtils.downloadMarkdown
+  >,
+};
 
 const mockCVData: CVData = {
   personal: {
