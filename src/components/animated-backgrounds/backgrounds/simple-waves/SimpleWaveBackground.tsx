@@ -20,6 +20,10 @@ import { SimpleWaveSettings } from './config';
 // shader, so it is fixed.
 const SOURCE_COUNT = 128;
 const GLYPH_COLS = 160;
+// How long the plane waves take to give way to the sources. Shorter than
+// the default: the cycle gives each background twelve seconds on the 404,
+// and the number should be up for most of them.
+const FORM_SECONDS = 3;
 
 const SimpleWaveBackground: React.FC<
   AnimatedBackgroundProps<SimpleWaveSettings>
@@ -102,7 +106,7 @@ const SimpleWaveBackground: React.FC<
       });
     };
     placeSources();
-    const sequence = new NotFoundSequence();
+    const sequence = new NotFoundSequence({ formSeconds: FORM_SECONDS });
 
     // Fragment shader for simple sine waves
     const fragmentShader = `

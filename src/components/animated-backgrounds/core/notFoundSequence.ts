@@ -11,7 +11,10 @@
  * a slider, a tab coming back from the background — nothing restarts it.
  */
 
-/** How long the picture takes to come apart into the number, in seconds. */
+/**
+ * How long the picture takes to come apart into the number, in seconds,
+ * unless a sequence asks for its own time.
+ */
 export const NOT_FOUND_FORM_SECONDS = 7;
 
 /** How long it takes to let the number go once the page is left. */
@@ -24,6 +27,12 @@ export class NotFoundSequence {
   raw = 0;
   /** Seconds since the sequence began; holds while it is released. */
   seconds = 0;
+  /** How long this sequence takes to form. */
+  readonly formSeconds: number;
+
+  constructor(options: { formSeconds?: number } = {}) {
+    this.formSeconds = options.formSeconds ?? NOT_FOUND_FORM_SECONDS;
+  }
 
   /** The progress the sequences read: raw, eased so it neither snaps in nor out. */
   get value(): number {
@@ -38,7 +47,7 @@ export class NotFoundSequence {
   /** Advance by `dt` seconds toward the flag. */
   advance(dt: number, on: boolean): number {
     if (on) {
-      this.raw = clamp01(this.raw + dt / NOT_FOUND_FORM_SECONDS);
+      this.raw = clamp01(this.raw + dt / this.formSeconds);
       this.seconds += dt;
     } else {
       this.raw = clamp01(this.raw - dt / NOT_FOUND_RELEASE_SECONDS);
@@ -53,7 +62,7 @@ export class NotFoundSequence {
    */
   settle(on: boolean): number {
     this.raw = on ? 1 : 0;
-    this.seconds = on ? NOT_FOUND_FORM_SECONDS : 0;
+    this.seconds = on ? this.formSeconds : 0;
     return this.value;
   }
 }

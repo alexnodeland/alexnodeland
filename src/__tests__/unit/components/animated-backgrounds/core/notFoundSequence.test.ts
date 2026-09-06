@@ -40,6 +40,16 @@ describe('NotFoundSequence', () => {
     expect(s.active).toBe(false);
   });
 
+  it('forms in its own time when asked', () => {
+    const s = new NotFoundSequence({ formSeconds: 2 });
+    s.advance(1, true);
+    expect(s.raw).toBeCloseTo(0.5, 5);
+    s.advance(1, true);
+    expect(s.raw).toBe(1);
+    expect(s.settle(true)).toBe(1);
+    expect(s.seconds).toBe(2);
+  });
+
   it('settles to either end at once', () => {
     const s = new NotFoundSequence();
     expect(s.settle(true)).toBe(1);
