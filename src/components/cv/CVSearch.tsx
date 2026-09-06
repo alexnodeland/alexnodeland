@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CVData } from '../../config/cv';
 
 type CVSearchResultType =
@@ -92,6 +92,8 @@ export const searchCV = (
 
 interface CVSearchProps {
   resumeData: CVData;
+  /** Phone only: whether the panel is folded out (see .ui-search-toggle). */
+  open?: boolean;
   className?: string;
 }
 
@@ -101,8 +103,17 @@ interface CVSearchProps {
  * type, with a result list long enough that it belongs in the flow of the page
  * rather than hanging over it.
  */
-const CVSearch: React.FC<CVSearchProps> = ({ resumeData, className = '' }) => {
+const CVSearch: React.FC<CVSearchProps> = ({
+  resumeData,
+  open = false,
+  className = '',
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Folded out on a phone: put the caret where the thumb just asked for it.
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
   const [searchResults, setSearchResults] = useState<CVSearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
 
@@ -126,8 +137,14 @@ const CVSearch: React.FC<CVSearchProps> = ({ resumeData, className = '' }) => {
   };
 
   return (
-    <div className={`ui-search-panel cv-search-panel ${className}`.trim()}>
+    <div
+      id="cv-search"
+      className={`ui-search-panel cv-search-panel${
+        open ? ' is-open' : ''
+      } ${className}`.trim()}
+    >
       <input
+        ref={inputRef}
         type="text"
         placeholder="search experiences, education, skills..."
         aria-label="Search the CV"

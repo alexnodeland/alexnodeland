@@ -1,3 +1,4 @@
+import { cvData } from './cv';
 import { siteConfig } from './site';
 
 /**
@@ -66,4 +67,28 @@ export const getCTAButtonURL = (
     default:
       return '#';
   }
+};
+
+/**
+ * Structured data for the homepage: who this site is about, in the form
+ * search engines read. Built from the same config the visible pages use, so
+ * it cannot drift from them.
+ */
+export const getPersonSchema = (): Record<string, unknown> => {
+  const current = cvData.experience[0];
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: cvData.personal.name,
+    url: siteConfig.siteUrl,
+    email: `mailto:${siteConfig.contact.email}`,
+    jobTitle: cvData.personal.title,
+    worksFor: { '@type': 'Organization', name: current.company },
+    address: {
+      '@type': 'PostalAddress',
+      addressRegion: 'New York',
+      addressCountry: 'US',
+    },
+    sameAs: [siteConfig.social.linkedin, siteConfig.social.github],
+  };
 };

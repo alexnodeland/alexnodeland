@@ -73,8 +73,11 @@ const Shortcuts: React.FC = () => {
       event.preventDefault();
       toggle();
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    // Capture phase, so an Escape that closes this list is marked handled
+    // before the background manager — which closes the settings panel on the
+    // same key — gets to see it.
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [open, toggle, close]);
 
   // Focus in on open, and back where it came from on close.

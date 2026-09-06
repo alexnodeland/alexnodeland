@@ -188,7 +188,7 @@ function calculateSubgraphConductivity(
 
 const GraphTopologyBackground: React.FC<
   AnimatedBackgroundProps<GraphTopologySettings>
-> = ({ className, settings }) => {
+> = ({ className, settings, frozen }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
 
@@ -196,6 +196,15 @@ const GraphTopologyBackground: React.FC<
   // that created it.
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+
+  // Draw one frame and hold — see AnimatedBackgroundProps.frozen. The loop
+  // reads the ref each frame; the effect restarts it when the hold is lifted.
+  const frozenRef = useRef(Boolean(frozen));
+  frozenRef.current = Boolean(frozen);
+  const resumeRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!frozen) resumeRef.current?.();
+  }, [frozen]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -847,10 +856,18 @@ const GraphTopologyBackground: React.FC<
       (points.material as THREE.PointsMaterial).opacity = opacity;
 
       renderer.render(scene, camera);
+      if (frozenRef.current) {
+        animationRef.current = null;
+        return;
+      }
       animationRef.current = requestAnimationFrame(renderFrame);
     }
 
     animationRef.current = requestAnimationFrame(renderFrame);
+    resumeRef.current = () => {
+      if (animationRef.current === null)
+        animationRef.current = requestAnimationFrame(renderFrame);
+    };
 
     // Applied at most once per frame — a phone's URL bar fires resize
     // repeatedly over a single flick, and each raw call reallocates the
@@ -870,6 +887,7 @@ const GraphTopologyBackground: React.FC<
     window.addEventListener('resize', handleResize);
 
     return () => {
+      resumeRef.current = null;
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', handleResize);
       if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);

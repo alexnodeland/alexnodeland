@@ -1,32 +1,23 @@
 @import 'variables';
 @import 'mixins';
 
-// This page has no card of its own — it sits straight on the animated
-// background, so both lines carry the halo. Left-aligned like every other
-// page header: there is nothing here to centre against.
+// ── The page's own content ───────────────────────────────────────────────────
+// What is left inside the window: one line and the way back. The window is
+// about to drift off the field, so this is short on purpose — the hero
+// (title and crumb) is what stays put.
 .not-found {
-  padding: var(--space-7) 0;
+  padding: var(--space-6) 0;
   max-width: 600px;
-  margin: 0 auto;
-
-  h1 {
-    font-size: var(--text-h1);
-    margin-bottom: var(--space-3);
-    color: var(--text-primary);
-    @include over-background;
-  }
 
   p {
     font-size: var(--text-h4);
     color: var(--text-secondary);
-    @include over-background;
+    line-height: 1.6;
     margin-bottom: var(--space-5);
   }
 }
 
-// Navigation, not a conversion action — so it takes the neutral treatment
-// rather than the accent fill. It sits on the bare background with nothing
-// under it, so it borrows the floating chrome surface for legibility.
+// Navigation, not a conversion action — the neutral treatment.
 .back-home {
   display: inline-block;
   padding: 0.875rem 2rem;
@@ -45,8 +36,165 @@
   }
 }
 
+// ── The scene ────────────────────────────────────────────────────────────────
+// Over the background, under the stage. It fades in over the running
+// simulation rather than replacing it in a cut, so for the first seconds the
+// two are one picture.
+.not-found-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  animation: nf-scene-in 4s ease-out forwards;
+}
+
+@keyframes nf-scene-in {
+  to {
+    opacity: 1;
+  }
+}
+
+// ── The chrome coming apart ──────────────────────────────────────────────────
+// Keyed off the root while the 404 is up (src/pages/404.tsx sets it, and
+// the three --nf-* numbers that make each visit's breakdown its own). The
+// window sinks, leans and thins out but stays clickable; the pills on the
+// rail sink after it; the capsule of page links stays where it is, since it
+// is the way out, and only floats; the hero holds still and glitches.
+html[data-not-found] {
+  .stage .layout {
+    animation: nf-window-adrift 9s cubic-bezier(0.4, 0, 0.6, 1) 0.8s forwards;
+  }
+
+  .nav {
+    animation: nf-float 11s ease-in-out infinite alternate;
+  }
+
+  .background-controls {
+    animation: nf-sink 10s ease-in 1.4s forwards;
+  }
+
+  .chat-icon-container {
+    animation: nf-sink 10s ease-in 2s forwards;
+  }
+
+  .shortcuts-hint {
+    animation: nf-sink 8s ease-in 1s forwards;
+  }
+
+  .site-hero .hero-crumb-rest {
+    display: inline-block;
+    animation: nf-glitch 6s steps(1, end) 3s infinite;
+  }
+
+  .site-hero p {
+    animation: nf-breathe 5s ease-in-out 4s infinite alternate;
+  }
+}
+
+@keyframes nf-window-adrift {
+  to {
+    translate: var(--nf-dx, 0px) var(--nf-dy, 120px);
+    rotate: var(--nf-rot, -2deg);
+    scale: 0.94;
+    opacity: 0.35;
+  }
+}
+
+@keyframes nf-float {
+  from {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  to {
+    translate: -4px 7px;
+    rotate: 0.8deg;
+  }
+}
+
+@keyframes nf-sink {
+  to {
+    translate: 0 48px;
+    opacity: 0.4;
+  }
+}
+
+@keyframes nf-glitch {
+  0%,
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+  2% {
+    translate: -4px 1px;
+    opacity: 0.7;
+  }
+  3.2% {
+    translate: 3px -1px;
+  }
+  4.4% {
+    translate: 0 0;
+    opacity: 1;
+  }
+  52% {
+    translate: 0 0;
+  }
+  53% {
+    translate: 2px 0;
+    opacity: 0.6;
+  }
+  54% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes nf-breathe {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.55;
+  }
+}
+
 @media (max-width: 768px) {
   .not-found {
-    padding: var(--space-6) 0;
+    padding: var(--space-5) 0;
+  }
+
+  // A phone has nowhere for the window to go; it thins out where it stands.
+  html[data-not-found] .stage .layout {
+    animation-name: nf-window-thin;
+  }
+}
+
+@keyframes nf-window-thin {
+  to {
+    translate: 0 24px;
+    rotate: var(--nf-rot, -1deg);
+    scale: 0.97;
+    opacity: 0.4;
+  }
+}
+
+// Less motion means the scene's end state drawn once (NotFoundScene handles
+// that) and the chrome staying exactly where it is.
+@media (prefers-reduced-motion: reduce) {
+  .not-found-scene {
+    animation: none;
+    opacity: 1;
+  }
+
+  html[data-not-found] {
+    .stage .layout,
+    .nav,
+    .background-controls,
+    .chat-icon-container,
+    .shortcuts-hint,
+    .site-hero .hero-crumb-rest,
+    .site-hero p {
+      animation: none;
+    }
   }
 }

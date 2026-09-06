@@ -81,7 +81,7 @@ function heuristic(a: LabNode, b: LabNode): number {
 
 const ShortestPathLabBackground: React.FC<
   AnimatedBackgroundProps<ShortestPathLabSettings>
-> = ({ className, settings }) => {
+> = ({ className, settings, frozen }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
 
@@ -89,6 +89,15 @@ const ShortestPathLabBackground: React.FC<
   // that created it.
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+
+  // Draw one frame and hold — see AnimatedBackgroundProps.frozen. The loop
+  // reads the ref each frame; the effect restarts it when the hold is lifted.
+  const frozenRef = useRef(Boolean(frozen));
+  frozenRef.current = Boolean(frozen);
+  const resumeRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!frozen) resumeRef.current?.();
+  }, [frozen]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -549,10 +558,18 @@ const ShortestPathLabBackground: React.FC<
       } else {
         renderer.render(scene, camera);
       }
+      if (frozenRef.current) {
+        animationRef.current = null;
+        return;
+      }
       animationRef.current = requestAnimationFrame(render);
     }
 
     animationRef.current = requestAnimationFrame(render);
+    resumeRef.current = () => {
+      if (animationRef.current === null)
+        animationRef.current = requestAnimationFrame(render);
+    };
 
     // Applied at most once per frame — a phone's URL bar fires resize
     // repeatedly over a single flick, and each raw call reallocates the
@@ -576,6 +593,7 @@ const ShortestPathLabBackground: React.FC<
     window.addEventListener('resize', handleResize);
 
     return () => {
+      resumeRef.current = null;
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', handleResize);
       if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);

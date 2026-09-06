@@ -1,7 +1,8 @@
 import React from 'react';
 import { CVData } from '../../config/cv';
-import { CVVariant } from '../../lib/utils/export';
+import type { CVVariant } from '../../lib/utils/export/docx';
 import Dropdown, { DropdownOption } from '../ui/Dropdown';
+import SearchToggle from '../ui/SearchToggle';
 import useCVExport, { CVExportFormat } from './useCVExport';
 
 const VIEW_OPTIONS: DropdownOption[] = [
@@ -21,6 +22,9 @@ interface CVControlBarProps {
   /** Which length is on screen; picks the PDF artifact and the DOCX layout. */
   view: CVVariant;
   onViewChange: (view: CVVariant) => void;
+  /** Phone only: the search panel below is folded away behind a chip here. */
+  searchOpen?: boolean;
+  onToggleSearch?: () => void;
   className?: string;
 }
 
@@ -37,6 +41,8 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
   resumeData,
   view,
   onViewChange,
+  searchOpen = false,
+  onToggleSearch,
   className = '',
 }) => {
   const { isExporting, exportAs } = useCVExport(resumeData, view);
@@ -54,6 +60,14 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
         onSelect={value => onViewChange(value as CVVariant)}
         className="cv-view-dropdown"
       />
+
+      {onToggleSearch && (
+        <SearchToggle
+          open={searchOpen}
+          onToggle={onToggleSearch}
+          controls="cv-search"
+        />
+      )}
 
       <Dropdown
         ariaLabel="Download the CV"

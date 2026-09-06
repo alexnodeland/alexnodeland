@@ -1,6 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { graphql, Link } from 'gatsby';
-import { Dropdown, PostIcon, SEO } from '../components';
+import Dropdown from '../components/ui/Dropdown';
+import { PostIcon } from '../components/ui/EntryIcons';
+import SearchToggle from '../components/ui/SearchToggle';
+import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
 import { BlogPageProps } from '../types';
 import '../styles/blog.scss';
@@ -15,7 +18,7 @@ const SORT_OPTIONS: DropdownOption[] = [
 // the page tests for; the dropdown needs a string, so this is the stand-in.
 const ALL_TAGS = '__all__';
 
-const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
+const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
   // Filter for blog posts only
   const allPosts = data.allMarkdownRemark.nodes.filter(
     post => post.parent && post.parent.sourceInstanceName === 'blog'
@@ -23,6 +26,12 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
 
   // State for search, filtering, and sorting
   const [searchTerm, setSearchTerm] = useState('');
+  // Phone only: whether the search panel is folded out. Desktop ignores it.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
@@ -101,7 +110,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
 
   return (
     <>
-      <SEO title="blog" />
+      <SEO title="blog" pathname={location?.pathname} />
       <div className="blog-page">
         {/* The two pickers and the reset, loose chips sticky to the top of
             the window's scroll — the same row the CV carries. */}
@@ -134,12 +143,25 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
           >
             clear filters
           </button>
+
+          <SearchToggle
+            open={searchOpen}
+            onToggle={() => setSearchOpen(open => !open)}
+            controls="blog-search"
+          />
         </div>
 
         {/* Somewhere to type rather than a piece of chrome, so it keeps its
-            own panel below the row. */}
-        <div className="ui-search-panel blog-search-panel">
+            own panel below the row. On a phone the panel is folded away
+            behind the chip above until asked for. */}
+        <div
+          id="blog-search"
+          className={`ui-search-panel blog-search-panel${
+            searchOpen ? ' is-open' : ''
+          }`}
+        >
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="search posts..."
             aria-label="Search posts"

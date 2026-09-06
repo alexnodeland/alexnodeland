@@ -1,5 +1,8 @@
 import React from 'react';
-import { ActivityPanel, Dropdown, SEO } from '../components';
+import ActivityPanel from '../components/ui/ActivityPanel';
+import Dropdown from '../components/ui/Dropdown';
+import SearchToggle from '../components/ui/SearchToggle';
+import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
 import { projectsConfig, getLanguageColor } from '../config';
 import type { GitHubProject, ProjectCategory } from '../config';
@@ -107,10 +110,20 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
   );
 };
 
-const ProjectsPage: React.FC = () => {
+// `location` is what Gatsby hands every page; optional here so the page can
+// still be rendered bare (tests do).
+const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
+  location,
+}) => {
   const [category, setCategory] = React.useState<ProjectCategory | null>(null);
   const [sort, setSort] = React.useState<ProjectSort>('curated');
   const [searchTerm, setSearchTerm] = React.useState('');
+  // Phone only: whether the search panel is folded out. Desktop ignores it.
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
 
   // The page scrolls inside the fixed window (.layout), not the document, so
   // the browser's own fragment navigation has nothing to scroll. Resolve the
@@ -195,6 +208,7 @@ const ProjectsPage: React.FC = () => {
       <SEO
         title="projects"
         description="open source projects, experiments, and tools by alex nodeland"
+        pathname={location?.pathname}
       />
       <div className="projects-page">
         {/* The two pickers and the reset, loose chips sticky to the top of
@@ -230,12 +244,25 @@ const ProjectsPage: React.FC = () => {
           >
             clear filters
           </button>
+
+          <SearchToggle
+            open={searchOpen}
+            onToggle={() => setSearchOpen(open => !open)}
+            controls="projects-search"
+          />
         </div>
 
         {/* Somewhere to type rather than a piece of chrome, so it keeps its
-            own panel below the row. */}
-        <div className="ui-search-panel projects-search-panel">
+            own panel below the row. On a phone the panel is folded away
+            behind the chip above until asked for. */}
+        <div
+          id="projects-search"
+          className={`ui-search-panel projects-search-panel${
+            searchOpen ? ' is-open' : ''
+          }`}
+        >
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="search projects..."
             aria-label="Search projects"

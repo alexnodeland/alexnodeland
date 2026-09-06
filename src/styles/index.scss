@@ -69,17 +69,14 @@
   p {
     margin-bottom: var(--space-4);
     line-height: 1.7;
-    // Justified text needs enough characters per line to distribute the slack;
-    // below that the word gaps blow out into rivers. Wide viewports keep the
-    // clean column edge (with hyphenation to tighten it further), narrow ones
-    // fall back to ragged right.
-    text-align: justify;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+    // Ragged right at every width. The column is only wide enough to justify
+    // cleanly when no sidebar is open; with the settings panel and the chat
+    // both out it drops to a dozen words a line and justified text turns to
+    // rivers, and a paragraph that reads differently depending on which
+    // panels are open is worse than one clean edge.
+    text-align: left;
 
     @media (max-width: 768px) {
-      text-align: left;
-      hyphens: manual;
       -webkit-hyphens: manual;
       text-wrap: pretty;
     }

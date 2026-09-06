@@ -1,6 +1,6 @@
 # 🛠️ Development Guide
 
-This guide covers everything you need to know about developing and contributing to the Alex Nodeland website.
+How the site is built, where things live, and what to run before you push.
 
 ## 📋 Table of Contents
 
@@ -15,260 +15,213 @@ This guide covers everything you need to know about developing and contributing 
 
 ### Prerequisites
 
-- **Node.js**: Version 18 or higher
-- **npm**: Version 8 or higher (comes with Node.js)
-- **Git**: For version control
+- **Node.js** 18 or newer (the deploy workflow uses 20)
+- **npm** 8 or newer
+- **Git**
+- **just** (optional) — the `justfile` wraps every npm script below
+- **LaTeX** (optional) — only `npm run build:cv` needs it; the CV PDFs are
+  typeset at build time and the dev server does without them
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/alexnodeland/alexnodeland.git
 cd alexnodeland
-
-# Install dependencies
 npm install
 
-# Start development server
+# Builds the chat worker and the retrieval index, then starts Gatsby
 npm run develop
 ```
 
-The development server will start at `http://localhost:8000`.
+The development server runs at `http://localhost:8000`. The first `develop`
+downloads the sentence-embedding model used to index the site for the chat,
+so it takes a minute longer than later ones.
 
 ## 📁 Project Structure
 
 ```text
 src/
-├── components/          # Reusable React components
-│   ├── layout.tsx      # Main layout wrapper
-│   ├── layout.scss     # Layout styles
-│   ├── seo.tsx         # SEO component
-│   └── mdx/            # MDX-specific components
-│       ├── ExperienceItem.tsx
-│       ├── EducationItem.tsx
-│       ├── CTASection.tsx
-│       └── MDXProvider.tsx
-├── pages/              # Gatsby pages (MDX format)
-│   ├── index.mdx       # Homepage
-│   ├── cv.mdx          # CV/Resume page
-│   └── 404.tsx         # 404 error page
-├── styles/             # Stylesheets
-│   ├── global.scss     # Global CSS variables & reset
-│   ├── index.scss      # Homepage styles
-│   └── cv.scss         # CV page styles
-└── images/             # Static assets
+├── components/
+│   ├── layout.tsx            # The shell: nav capsule, hero region, window, footer
+│   ├── heroes.tsx            # One hero per path; the shell resolves its own
+│   ├── seo.tsx               # <head> tags, canonical URL, JSON-LD
+│   ├── NotFoundScene.tsx     # The 404's canvas scene
+│   ├── animated-backgrounds/ # The six simulations, their configs, the settings panel
+│   ├── chat/                 # In-browser chat: worker, context, modal, welcome screen
+│   ├── cv/                   # CV sections, control bar, search, exports
+│   ├── expertise-icons/      # The homepage grid's icons
+│   └── ui/                   # Dropdown, chips, activity heatmap, entry icons
+├── config/                   # Every piece of site content that is not a post
+│   ├── site.ts               # Name, description, contact, social, navigation
+│   ├── homepage.ts           # About paragraphs, consulting copy, expertise grid
+│   ├── cv.ts                 # The full CV; the one-page resume is derived from it
+│   ├── projects.ts           # Project cards, grouped by section
+│   ├── chat.ts               # Chat model, welcome message, sample prompts
+│   └── retrieval.mjs         # Chunking and ranking parameters for the chat index
+├── content/blog/             # Posts and press, one markdown file each
+├── lib/
+│   ├── chat/                 # Prompt assembly and retrieval, shared with the worker
+│   ├── hooks/                # useScrollSpy
+│   ├── notFound.ts           # The flag the 404 raises so the shell wears its hero
+│   └── utils/                # Chat helpers, CV export (docx, markdown)
+├── pages/                    # index, blog, projects, cv, 404
+├── templates/blog-post.tsx   # Renders one post
+├── styles/                   # SCSS: variables, mixins, one file per page and feature
+└── types/                    # Shared TypeScript types
+
+scripts/                      # Build steps: chat index, worker, CV PDFs, activity, evals
+static/                       # Served as-is: CNAME, robots.txt, images
+docs/                         # These guides
+e2e/                          # Playwright specs
 ```
+
+The shell wraps every page (`wrapPageElement` in `gatsby-browser.js` and
+`gatsby-ssr.tsx`), so it mounts once and only the page inside the window
+swaps on navigation. The animated backgrounds, the chat, and the settings
+panel are mounted at the root (`wrapRootElement`) for the same reason.
 
 ## 🔄 Development Workflow
 
-### 1. Content Updates
+### 1. Content
 
-**Homepage Content:**
+Everything that is not a blog post is a typed config object:
 
 ```bash
-# Edit the homepage
-vim src/pages/index.mdx
+# Homepage: about, consulting, expertise grid
+vim src/config/homepage.ts
+
+# CV: experience, education, skills. The one-page resume is derived
+# from the same data — see docs/cv-management.md.
+vim src/config/cv.ts
+
+# Project cards
+vim src/config/projects.ts
+
+# Name, description, social links, navigation
+vim src/config/site.ts
 ```
 
-**CV Content:**
+Blog posts and press are markdown in `src/content/blog/`, named
+`YYMMDD_slug.md`, with `title`, `date`, `description`, and `category`
+frontmatter. A new file is a new page; the blog list, the RSS feed, the
+sitemap, and the chat index all pick it up at build time.
+
+See [homepage-management.md](./homepage-management.md),
+[cv-management.md](./cv-management.md), and
+[chat-management.md](./chat-management.md) for the details of each.
+
+### 2. Styling
 
 ```bash
-# Edit the CV page
-vim src/pages/cv.mdx
+# Design tokens: colours, spacing, type scale, layout insets
+vim src/styles/variables.scss
+
+# Shared mixins (outline blocks, control rows, frosted chips)
+vim src/styles/mixins.scss
+
+# One file per page or feature
+vim src/styles/index.scss      # homepage
+vim src/styles/layout.scss     # the shell
+vim src/styles/controls.scss   # dropdowns, chips, search panels
 ```
 
-### 2. Styling Changes
+The site is dark only. The simulations composite onto one constant
+near-black stage so the six read as a set; there is no light theme.
 
-**Global Styles:**
+### 3. Backgrounds
 
-```bash
-# Edit global styles and CSS variables
-vim src/styles/global.scss
-```
+Each simulation lives in
+`src/components/animated-backgrounds/backgrounds/<name>/` with a `config.ts`
+(name, description, settings schema, defaults) and a component. Components
+are lazy-loaded through their configs so three.js stays out of the page
+bundles. A background takes `settings` and `frozen` (set under
+`prefers-reduced-motion`: draw one frame and hold).
 
-**Page-Specific Styles:**
-
-```bash
-# Edit homepage styles
-vim src/styles/index.scss
-
-# Edit CV page styles
-vim src/styles/cv.scss
-```
-
-### 3. Component Development
-
-**Layout Components:**
+### 4. Running it
 
 ```bash
-# Edit main layout
-vim src/components/layout.tsx
-vim src/components/layout.scss
-```
-
-**MDX Components:**
-
-```bash
-# Edit MDX-specific components
-vim src/components/mdx/ExperienceItem.tsx
-```
-
-### 4. Testing Changes
-
-```bash
-# Start development server
-npm run develop
-
-# Build for production
-npm run build
-
-# Serve production build
-npm run serve
+npm run develop        # dev server with the chat worker and index built first
+npm run build          # full production build, including activity and CV PDFs
+npx gatsby build       # production build without the LaTeX and GitHub steps
+npm run serve          # serve the production build
+npm run clean          # clear the Gatsby cache
 ```
 
 ## 🎨 Code Style
 
-### TypeScript
+Prettier and ESLint run on staged files through Husky. To run them by hand:
 
-- Use strict TypeScript configuration
-- Define interfaces for all props
-- Use functional components with hooks
-- Prefer `const` over `let`
-
-```typescript
-interface ComponentProps {
-  title: string;
-  description?: string;
-}
-
-const MyComponent: React.FC<ComponentProps> = ({ title, description }) => {
-  return <div>{title}</div>;
-};
+```bash
+npm run type-check     # tsc --noEmit
+npm run lint           # eslint src e2e
+npm run format         # prettier --write over src
+npm run code-quality   # all three
 ```
 
-### SCSS
+Conventions the codebase follows:
 
-- Use CSS custom properties for theming
-- Follow BEM methodology for class names
-- Use nested selectors sparingly
-- Group related styles together
-
-```scss
-.component {
-  // Use CSS variables
-  color: var(--text-primary);
-  background: var(--bg-primary);
-  
-  // BEM modifiers
-  &--large {
-    font-size: 1.5rem;
-  }
-  
-  // Nested elements
-  &__title {
-    font-weight: 600;
-  }
-}
-```
-
-### MDX
-
-- Use frontmatter for metadata
-- Keep JSX minimal and readable
-- Use components for repeated patterns
-
-```mdx
----
-title: "Page Title"
-description: "Page description"
----
-
-import Layout from '../components/layout'
-import SEO from '../components/seo'
-
-<Layout>
-  <SEO title="Page Title" />
-  <div className="page">
-    <h1>Hello World</h1>
-  </div>
-</Layout>
-```
+- Functional components with hooks; props typed with an interface.
+- Site copy is lowercase, except the CV.
+- Comments explain why, not what — most of the longer ones record a decision
+  and the alternative that was rejected.
+- Content is data: a page reads its copy from `src/config`, never inline.
+- Pages import components by path (`../components/seo`), not from the
+  `components` barrel, which re-exports the chat and the CV exporter and
+  would drag both into every page bundle.
 
 ## 🧪 Testing
 
-### Manual Testing
-
-1. **Responsive Design**: Test on different screen sizes
-2. **Performance**: Check Lighthouse scores
-3. **Accessibility**: Use screen readers and keyboard navigation
-4. **Cross-browser**: Test in Chrome, Firefox, Safari, Edge
-
-### Build Testing
-
 ```bash
-# Clean build
-npm run clean
-npm run build
-
-# Test production build
-npm run serve
+npm test                   # jest: unit and integration
+npm run test:coverage      # jest with coverage (what CI runs)
+npm run test:e2e           # playwright, against a dev server it starts itself
+npm run test:all           # everything
 ```
+
+Unit tests live in `src/__tests__/unit/`, mirroring `src/`. Page tests mock
+the SEO component and any heavy sibling by its module path. Playwright specs
+are in `e2e/` and run against Chromium; CI runs them on every push.
+
+The chat has its own evaluation battery — `npm run eval:chat` — described in
+[chat-management.md](./chat-management.md). It downloads the model and is
+not part of `npm test`.
 
 ## 🐛 Troubleshooting
 
-### Common Issues
-
-**Development Server Won't Start:**
+**Dev server won't start, or shows stale pages**
 
 ```bash
-# Clear cache and restart
 npm run clean
 npm run develop
 ```
 
-**Build Failures:**
+**Type errors on `npm run type-check` but not in the editor**
 
-```bash
-# Check for TypeScript errors
-npx tsc --noEmit
+The tests are inside `src` and are type-checked too. A page component that
+takes `location` keeps it optional for that reason.
 
-# Check for SCSS errors
-npx sass src/styles/global.scss --no-source-map
-```
+**`build:index` fails to download the embedding model**
 
-**MDX Issues:**
+The index is built with `@huggingface/transformers` and needs network access
+on the first run. Once cached under `.cache/` it runs offline.
 
-- Ensure proper imports
-- Check component availability in MDXProvider
-- Verify frontmatter syntax
+**The CV download links 404 in development**
 
-### Performance Issues
+The PDFs are built by `npm run build:cv`, which needs LaTeX. The dev server
+does not build them; the DOCX and markdown downloads work without it.
 
-**Large Bundle Size:**
+**A background does nothing under reduced motion**
 
-- Check for unused imports
-- Optimize images
-- Use dynamic imports for heavy components
-
-**Slow Builds:**
-
-- Clear Gatsby cache: `npm run clean`
-- Check for circular dependencies
-- Optimize SCSS compilation
+That is the design: it draws one frame and holds. Turn the OS setting off to
+see it move.
 
 ## 📚 Resources
 
 - [Gatsby Documentation](https://www.gatsbyjs.com/docs/)
-- [MDX Documentation](https://mdxjs.com/)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 - [SCSS Documentation](https://sass-lang.com/documentation)
+- [Playwright](https://playwright.dev/docs/intro)
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-For more details, see our [Contributing Guide](./contributing.md).
+See the [Contributing Guide](./contributing.md).

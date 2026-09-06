@@ -4,6 +4,7 @@ import { SettingsPanelProvider } from '../../../components/SettingsPanelContext'
 import { ChatProvider } from '../../../components/chat';
 import Layout from '../../../components/layout';
 import { getAllSocialLinks } from '../../../config';
+import { markNotFound } from '../../../lib/notFound';
 
 // Mock the config. The hero registry reads homepageConfig and projectsConfig,
 // so this mock has to carry them too — Layout resolves its own hero now.
@@ -733,5 +734,84 @@ describe('Layout Component', () => {
     // The function should be called at least once (React StrictMode may cause double calls)
     expect(getAllSocialLinks).toHaveBeenCalledWith();
     expect(getAllSocialLinks).toHaveBeenCalled();
+  });
+});
+
+describe('the 404 hero', () => {
+  const mockChildren = <div>Test Content</div>;
+
+  afterEach(() => {
+    act(() => markNotFound(false));
+  });
+
+  it('wears the 404 crumb hero while the not-found flag is up', () => {
+    render(<TestWrapper pathname="/not-a-page">{mockChildren}</TestWrapper>);
+    const region = document.querySelector('.site-hero') as HTMLElement;
+    expect(region).toBeEmptyDOMElement();
+
+    act(() => markNotFound(true));
+    expect(region.querySelector('.not-found-header')).not.toBeNull();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'alex → 404'
+    );
+    expect(
+      screen.getByText('nothing here. the page came apart.')
+    ).toBeInTheDocument();
+
+    act(() => markNotFound(false));
+    expect(region).toBeEmptyDOMElement();
+  });
+});
+
+describe('scrolling the window from the field', () => {
+  const mockChildren = <div>Test Content</div>;
+
+  it('forwards a wheel turned outside the window to the window', () => {
+    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+    const panel = document.querySelector('.layout') as HTMLElement;
+    panel.scrollTop = 0;
+
+    act(() => {
+      document.body.dispatchEvent(
+        new WheelEvent('wheel', { deltaY: 120, bubbles: true })
+      );
+    });
+    expect(panel.scrollTop).toBe(120);
+  });
+
+  it('leaves a wheel turned inside the window to the browser', () => {
+    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+    const panel = document.querySelector('.layout') as HTMLElement;
+    panel.scrollTop = 0;
+
+    act(() => {
+      screen
+        .getByText('Test Content')
+        .dispatchEvent(new WheelEvent('wheel', { deltaY: 120, bubbles: true }));
+    });
+    expect(panel.scrollTop).toBe(0);
+  });
+
+  it('scrolls the window on PageDown when nothing has focus', () => {
+    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+    const panel = document.querySelector('.layout') as HTMLElement;
+    panel.scrollTop = 0;
+    Object.defineProperty(panel, 'clientHeight', {
+      value: 1000,
+      configurable: true,
+    });
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'PageDown', bubbles: true })
+      );
+    });
+    expect(panel.scrollTop).toBe(850);
+  });
+
+  it('is focusable, so a click inside hands it the keyboard', () => {
+    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+    expect(document.querySelector('.layout')).toHaveAttribute('tabindex', '-1');
   });
 });

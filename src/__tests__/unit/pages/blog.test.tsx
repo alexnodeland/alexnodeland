@@ -4,18 +4,11 @@ import React from 'react';
 import BlogPage from '../../../pages/blog';
 
 // Mock components barrel to avoid animated backgrounds
-jest.mock('../../../components', () => ({
-  // No Layout here: the shell wraps the page (wrapPageElement) rather than the
-  // page rendering it, and the hero it wears is resolved from the path — both
-  // are covered by the Layout tests. A page renders only its own content now.
-  SEO: ({ title }: { title?: string }) => (
+jest.mock('../../../components/seo', () => ({
+  __esModule: true,
+  default: ({ title }: { title?: string }) => (
     <div data-testid="seo" data-title={title} />
   ),
-  // The real dropdown — the controls under test are the shared component, so
-  // mocking it here would test nothing.
-  Dropdown: jest.requireActual('../../../components/ui/Dropdown').default,
-  // The glyph that opens every post's title row.
-  PostIcon: jest.requireActual('../../../components/ui/EntryIcons').PostIcon,
 }));
 
 // Mock SCSS

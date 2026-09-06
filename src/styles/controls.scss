@@ -248,6 +248,42 @@
   }
 }
 
+// --- Search behind a chip, on a phone ---------------------------------------
+// The search panel is the tallest thing in a list page's chrome, and on a
+// phone it was the whole first screen: two pickers, a reset, and a box to
+// type in before a single card. Below the phone breakpoint the panel is
+// folded away and the row grows one more chip — a glyph, no label, so the
+// row's three existing labels keep the width they were measured for — that
+// unfolds it. A desktop never draws the chip and never folds the panel.
+.ui-search-toggle {
+  display: none;
+  padding-inline: 0.55rem;
+
+  svg {
+    display: block;
+  }
+
+  &.is-active {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+}
+
+@media (max-width: 768px) {
+  .ui-search-toggle {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  .ui-search-panel {
+    display: none;
+
+    &.is-open {
+      display: block;
+    }
+  }
+}
+
 // --- The chips on a phone ---------------------------------------------------
 // A chip is 32px of housing under a pointer, which is a comfortable target for
 // a cursor and a mean one for a thumb. On touch widths the padding opens up

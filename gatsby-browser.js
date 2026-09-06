@@ -4,7 +4,10 @@ import React from 'react';
 import { BackgroundProvider } from './src/components/BackgroundProvider';
 import { SettingsPanelProvider } from './src/components/SettingsPanelContext';
 import { BackgroundManager } from './src/components/animated-backgrounds';
-import { ChatProvider } from './src/components/chat';
+// Straight from the context module: the chat barrel re-exports the modal,
+// and the modal carries the markdown renderer and the syntax highlighter —
+// none of which the shell needs until the panel is actually opened.
+import { ChatProvider } from './src/components/chat/ChatContext';
 import Layout from './src/components/layout';
 
 // The shell — nav capsule, hero region, window frame, chat — wraps the page

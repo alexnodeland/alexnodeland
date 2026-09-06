@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
-import {
-  CertificateIcon,
-  CVControlBar,
-  CVSearch,
-  EducationSection,
-  ExperienceSection,
-  SEO,
-  SkillsSection,
-} from '../components';
+import CVControlBar from '../components/cv/CVControlBar';
+import EducationSection from '../components/cv/CVEducationSection';
+import ExperienceSection from '../components/cv/CVExperienceSection';
+import CVSearch from '../components/cv/CVSearch';
+import SkillsSection from '../components/cv/CVSkillsSection';
+import SEO from '../components/seo';
+import { CertificateIcon } from '../components/ui/EntryIcons';
 import { cvData, resumeData } from '../config';
 import '../styles/cv.scss';
 
 type CVView = 'full' | 'resume';
 
-const CVPage: React.FC = () => {
+const CVPage: React.FC<{ location?: { pathname?: string } }> = ({
+  location,
+}) => {
   const [view, setView] = useState<CVView>('full');
+  // Phone only: whether the search panel is folded out. Desktop ignores it.
+  const [searchOpen, setSearchOpen] = useState(false);
   const data = view === 'resume' ? resumeData : cvData;
 
   // One card open at a time. Opening a card closes whichever other card is
@@ -49,11 +51,21 @@ const CVPage: React.FC = () => {
 
   return (
     <>
-      <SEO title="cv" description="Complete resume and CV for Alex Nodeland" />
+      <SEO
+        title="cv"
+        description="Complete resume and CV for Alex Nodeland"
+        pathname={location?.pathname}
+      />
       <div className="cv" ref={cvRef}>
-        <CVControlBar resumeData={data} view={view} onViewChange={setView} />
+        <CVControlBar
+          resumeData={data}
+          view={view}
+          onViewChange={setView}
+          searchOpen={searchOpen}
+          onToggleSearch={() => setSearchOpen(open => !open)}
+        />
 
-        <CVSearch resumeData={data} />
+        <CVSearch resumeData={data} open={searchOpen} />
 
         <div className="cv-overview-contact">
           <div className="overview-section">

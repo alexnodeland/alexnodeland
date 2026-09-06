@@ -57,7 +57,7 @@ export const fovForViewport = (width: number, height: number): number => {
 
 const PDESolverBackground: React.FC<
   AnimatedBackgroundProps<PDESolverSettings>
-> = ({ className, settings }) => {
+> = ({ className, settings, frozen }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -72,6 +72,15 @@ const PDESolverBackground: React.FC<
   // render that created it.
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+
+  // Draw one frame and hold — see AnimatedBackgroundProps.frozen. The loop
+  // reads the ref each frame; the effect restarts it when the hold is lifted.
+  const frozenRef = useRef(Boolean(frozen));
+  frozenRef.current = Boolean(frozen);
+  const resumeRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!frozen) resumeRef.current?.();
+  }, [frozen]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -162,10 +171,18 @@ const PDESolverBackground: React.FC<
       }
 
       renderer.render(scene, camera);
+      if (frozenRef.current) {
+        animationFrameRef.current = null;
+        return;
+      }
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
     animate();
+    resumeRef.current = () => {
+      if (animationFrameRef.current === null)
+        animationFrameRef.current = requestAnimationFrame(animate);
+    };
 
     // Handle window resize, at most once per frame — a phone's URL bar fires
     // resize repeatedly over a single flick, and each raw call reallocates the
@@ -191,6 +208,7 @@ const PDESolverBackground: React.FC<
 
     // Cleanup
     return () => {
+      resumeRef.current = null;
       window.removeEventListener('resize', handleResize);
       if (resizeFrame !== null) {
         cancelAnimationFrame(resizeFrame);

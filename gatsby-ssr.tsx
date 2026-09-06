@@ -2,7 +2,7 @@ import React from 'react';
 import { BackgroundProvider } from './src/components/BackgroundProvider';
 import { SettingsPanelProvider } from './src/components/SettingsPanelContext';
 import { BackgroundManager } from './src/components/animated-backgrounds';
-import { ChatProvider } from './src/components/chat';
+import { ChatProvider } from './src/components/chat/ChatContext';
 import Layout from './src/components/layout';
 
 // Mirrors gatsby-browser: the shell wraps the page instead of the page

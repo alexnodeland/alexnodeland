@@ -419,6 +419,12 @@
   overflow: auto; // Allow scrolling within the panel
   border: 1px solid var(--window-border);
 
+  // Focusable (tabindex=-1) so a click inside gives it the keyboard; the
+  // focus itself is not something to draw a ring around a whole window for.
+  &:focus {
+    outline: none;
+  }
+
   // The window shows no scrollbar of its own — a bar riding the frame reads as
   // chrome bolted onto the panel and breaks the device-screen metaphor. That
   // is now true of every scrollable on the site and is stated once, in

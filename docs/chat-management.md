@@ -35,12 +35,13 @@ links to the pages the answer came from. The pieces:
   was on-topic. Retrieval has to run anyway and its scores already answer
   that question, so the classifier passes are gone: off-topic questions are
   now refused in ~0.1s without the model being invoked at all.
-- **WebGPU with WASM fallback** — the worker feature-detects WebGPU
-  (`navigator.gpu.requestAdapter()`). If available it loads the model on
-  `device: 'webgpu'` with the model's GPU `dtype`; otherwise (or if WebGPU
-  fails at load/generate time) it falls back to `device: 'wasm'` using the
-  model's `dtypeWasm`. That fallback is **untested as a working experience** —
-  see [The WASM fallback](#the-wasm-fallback) for what it actually does. All
+- **WebGPU required** — the worker feature-detects WebGPU
+  (`navigator.gpu.requestAdapter()`) and loads the model on
+  `device: 'webgpu'` with the model's GPU `dtype`. Without WebGPU the welcome
+  screen says so and disables the download: the `device: 'wasm'` fallback is
+  still wired in the worker, but this checkpoint cannot run on it — see
+  [The WASM fallback](#the-wasm-fallback) — and a 760MB download that ends in
+  a missing kernel is worse than a sentence up front. All
   models decode greedily — grounded extraction has a right answer sitting in
   the context, and sampling can only wander from it.
 - **One model**, `lfm-1.2b` (LFM2.5-1.2B-Instruct), defined in

@@ -21,6 +21,82 @@ const config: import('gatsby').GatsbyConfig = {
     `gatsby-plugin-react-helmet`,
     `gatsby-transformer-remark`,
     {
+      resolve: `gatsby-plugin-sitemap`,
+      options: {
+        // Everything the site wants found; the 404 and Gatsby's dev page are
+        // the only things that are not pages.
+        excludes: [`/404`, `/404.html`, `/dev-404-page`],
+      },
+    },
+    {
+      resolve: `gatsby-plugin-feed`,
+      options: {
+        query: `
+          {
+            site {
+              siteMetadata {
+                title
+                description
+                siteUrl
+              }
+            }
+          }
+        `,
+        feeds: [
+          {
+            output: `/rss.xml`,
+            title: `alex nodeland`,
+            query: `
+              {
+                allMarkdownRemark(sort: { frontmatter: { date: DESC } }) {
+                  nodes {
+                    html
+                    fields {
+                      slug
+                    }
+                    frontmatter {
+                      title
+                      date
+                      description
+                    }
+                  }
+                }
+              }
+            `,
+            serialize: ({
+              query: { site, allMarkdownRemark },
+            }: {
+              query: {
+                site: { siteMetadata: { siteUrl: string } };
+                allMarkdownRemark: {
+                  nodes: Array<{
+                    html: string;
+                    fields: { slug: string };
+                    frontmatter: {
+                      title: string;
+                      date: string;
+                      description?: string;
+                    };
+                  }>;
+                };
+              };
+            }) =>
+              allMarkdownRemark.nodes.map(node => {
+                const url = `${site.siteMetadata.siteUrl}/blog${node.fields.slug}`;
+                return {
+                  title: node.frontmatter.title,
+                  description: node.frontmatter.description,
+                  date: node.frontmatter.date,
+                  url,
+                  guid: url,
+                  custom_elements: [{ 'content:encoded': node.html }],
+                };
+              }),
+          },
+        ],
+      },
+    },
+    {
       resolve: `gatsby-source-filesystem`,
       options: {
         name: `images`,
