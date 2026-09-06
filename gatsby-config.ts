@@ -123,10 +123,16 @@ const config: import('gatsby').GatsbyConfig = {
         name: `Alex Nodeland`,
         short_name: `Alex Nodeland`,
         start_url: `/`,
-        background_color: `#ffffff`,
-        theme_color: `#333333`,
+        // --bg-primary: the site is near-black everywhere, so the splash and
+        // the browser chrome should be too.
+        background_color: `#0a0a0a`,
+        theme_color: `#0a0a0a`,
         display: `minimal-ui`,
-        icon: `src/images/icon.png`,
+        // The brand mark, as a vector. The plugin cuts every PNG size from it
+        // (favicon-32x32, the apple-touch-icons, the manifest set) and copies
+        // the SVG itself out as /favicon.svg, then links all of them from the
+        // head — so this is the one place the favicon is declared.
+        icon: `src/images/favicon.svg`,
         icon_options: {
           purpose: `any maskable`,
         },

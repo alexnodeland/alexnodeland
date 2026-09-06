@@ -48,8 +48,9 @@ const SEO: React.FC<SEOProps> = ({
   const fullTitle =
     title === siteConfig.siteName ? title : `${title} | ${siteConfig.siteName}`;
 
-  // Icon paths must respect the deploy pathPrefix.
-  const iconHref = withPrefix('/images/icon.png');
+  // No icon links here: gatsby-plugin-manifest owns the favicon and the
+  // apple-touch-icons (see gatsby-config), and a second `rel="icon"` from
+  // this component used to override its set with the portrait avatar.
 
   // Social crawlers require ABSOLUTE image URLs. Pass through anything already
   // absolute; otherwise resolve against the site URL (with pathPrefix applied).
@@ -72,8 +73,6 @@ const SEO: React.FC<SEOProps> = ({
       ) : (
         <link rel="canonical" href={pageUrl} />
       )}
-      <link rel="icon" href={iconHref} />
-      <link rel="apple-touch-icon" href={iconHref} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={absoluteImage} />

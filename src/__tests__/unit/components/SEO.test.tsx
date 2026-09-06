@@ -108,16 +108,13 @@ describe('SEO Component', () => {
     expect(twitterDescription).toHaveAttribute('content', 'Test description');
   });
 
-  it('should render link tags for icons', () => {
+  it('should leave the icon links to gatsby-plugin-manifest', () => {
     render(<SEO />);
 
-    const iconLink = document.querySelector('link[rel="icon"]');
-    const touchIconLink = document.querySelector(
-      'link[rel="apple-touch-icon"]'
-    );
-
-    expect(iconLink).toHaveAttribute('href', '/images/icon.png');
-    expect(touchIconLink).toHaveAttribute('href', '/images/icon.png');
+    // The manifest plugin injects the favicon and apple-touch-icon links; a
+    // second rel="icon" from here would override its set.
+    expect(document.querySelector('link[rel="icon"]')).toBeNull();
+    expect(document.querySelector('link[rel="apple-touch-icon"]')).toBeNull();
   });
 
   it('should handle all custom props together', () => {

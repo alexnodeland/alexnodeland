@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64">
+  <!-- The site's mark: a lowercase JetBrains Mono "a", as the headings are
+       set, in the brand green on the near-black the floating chrome uses.
+       The letter is an outline rather than text so the icon needs no font.
+       One source: the manifest plugin cuts every PNG size from this file. -->
+  <rect width="64" height="64" rx="14" fill="#0e1014"/>
+  <path fill="#00ff88" d="M29.55 49.67Q24.28 49.67 21.21 46.72Q18.14 43.78 18.14 39.01Q18.14 34.23 21.34 31.32Q24.53 28.40 29.74 28.40L39.72 28.40L39.72 25.80Q39.72 19.54 32.77 19.54Q29.67 19.54 27.78 20.68Q25.89 21.83 25.77 23.88L19.69 23.88Q20.00 19.72 23.48 17.03Q26.95 14.33 32.77 14.33Q39.04 14.33 42.45 17.31Q45.86 20.28 45.86 25.68L45.86 49.05L39.84 49.05L39.84 42.79L39.72 42.79Q39.28 45.95 36.59 47.81Q33.89 49.67 29.55 49.67ZM31.16 44.52Q35.07 44.52 37.39 42.63Q39.72 40.74 39.72 37.46L39.72 32.93L30.29 32.93Q27.63 32.93 25.99 34.51Q24.34 36.09 24.34 38.70Q24.34 41.36 26.14 42.94Q27.94 44.52 31.16 44.52Z"/>
+</svg>
