@@ -151,23 +151,32 @@ $mobile-breakpoint: 768px;
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+// The chat sheet's close button, moved out onto the field: the same
+// 0.5rem-padded box around the same 20px glyph, the same corner radius, and
+// the same distance from the corner (the chat header's 1.5rem padding). It
+// used to be a labelled pill at its own inset, so the two ways of putting a
+// panel away looked like two different controls. What differs is the
+// housing — there is no header behind it, so it takes the frosted surface
+// the explore bar wears — and the ink, which has to hold over a bright
+// simulation rather than over the sheet's scrim.
 .mobile-explore-exit {
   @include explore-surface;
 
   position: absolute;
-  top: max(1rem, env(safe-area-inset-top));
-  right: 1rem;
+  top: max(1.5rem, env(safe-area-inset-top));
+  right: 1.5rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-lg);
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.85);
-  font-family: inherit;
-  font-size: 0.7rem;
-  text-transform: lowercase;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+  }
 
   &:active {
     transform: scale(0.97);
