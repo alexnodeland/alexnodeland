@@ -7,8 +7,8 @@ category: 'Projects'
 
 crewai in a browser, so that building a multi-agent system does not have to start with a python file.
 
-it is a streamlit app for defining agents, tasks and crews, wiring them together, and running them with the output streaming back as it happens. nothing it does is impossible from a script — the point is that it removes the hour of boilerplate between understanding what a multi-agent system is and having one in front of you.
+it is a streamlit app for defining agents, tasks and crews, wiring them together, and running them with the output streaming back as it happens. you can do all of it from a script. what the app removes is the hour of boilerplate between understanding what a multi-agent system is and having one running.
 
-the interesting design constraint is that a crew is a graph of agents with dependencies, and most people's first instinct is to build it as a list. the ui exists mostly to make the graph visible before you run it.
+a crew is a graph of agents with dependencies, and most people's first instinct is to build it as a list. the ui mostly exists to make the graph visible before you run it.
 
 [view on github](https://github.com/alexnodeland/crewlit)

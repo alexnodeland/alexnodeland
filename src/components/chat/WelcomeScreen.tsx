@@ -79,8 +79,7 @@ const WelcomeScreen: React.FC = () => {
             >
               <strong>⚠️ Worker initialization failed</strong>
               <br />
-              Chat is available in basic mode. Try refreshing the page to
-              restore full functionality.
+              Chat is running in basic mode. Try refreshing the page.
             </div>
           )}
 

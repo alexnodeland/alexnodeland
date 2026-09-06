@@ -154,8 +154,8 @@ const BlogPage: React.FC<BlogPageProps> = ({ data }) => {
             <div className="no-posts">
               <p>
                 {allPosts.length === 0
-                  ? 'no blog posts yet. check back soon!'
-                  : 'no posts match your current filters. try adjusting your search or category selection.'}
+                  ? 'nothing here yet.'
+                  : 'no posts match. clear the search or pick another category.'}
               </p>
             </div>
           ) : (

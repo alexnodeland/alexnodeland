@@ -9,10 +9,10 @@ the stony brook press came to talk to me about synthesizers that listen back. i 
 
 two of them made the article. a bass synthesizer that tracks the pitch of whatever it hears and calculates the harmonically correct lower note in real time, so it stays in key and in time without being configured. and a convolution reverb, which takes an impulse response of a room and lets you play as though you were standing in it — carnegie hall, or the basement venue down the road, from a recording of the space.
 
-i had been building audio hardware at pigtronix on long island for a few years by then, so the pedals were not hypothetical. what was new was putting a learning system in the loop: something that proposes a sound, watches which ones you keep, and gets better at proposing.
+i had been building audio hardware at pigtronix on long island for a few years by then, so the pedals were real hardware. the new part was putting a learning system in the loop: something that proposes a sound, watches which ones you keep, and gets better at proposing.
 
 this was the motiff technologies era — my first company, run out of an undergraduate degree with pigtronix advising.
 
-the line i gave the reporter still holds up. music is data processing — it is just data processing where the error metric is whether it sounds good, which is the hard part.
+i told the reporter that music is data processing, just with an error metric of whether it sounds good. i still think that is right.
 
 [read the full article](https://sbpress.com/2015/11/the-future-of-sound/)
