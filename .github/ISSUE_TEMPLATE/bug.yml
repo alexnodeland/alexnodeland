@@ -1,0 +1,40 @@
+name: something is broken on the site
+description: a page, a background, or the chat is not doing what it should
+labels: [bug]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: page
+      description: the address where it happened
+      placeholder: https://alexnodeland.com/projects
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: what happened
+      description: what you did, what you saw, and what you expected instead
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: browser and device
+      placeholder: safari 18 on an iphone 15, chrome 130 on a mac
+    validations:
+      required: true
+  - type: dropdown
+    id: background
+    attributes:
+      label: background on screen
+      description: the name in the pill in the corner, if it seems related
+      options:
+        - not related
+        - not sure
+        - cellular automaton
+        - simple waves
+        - job scheduling
+        - dual fm oscillator
+        - shortest path
+        - pde solver

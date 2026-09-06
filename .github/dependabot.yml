@@ -1,0 +1,34 @@
+# Weekly dependency updates, grouped so routine bumps arrive as one PR
+# rather than one per package. Majors stay separate: they are the ones
+# that need reading.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/New_York
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/New_York
+    groups:
+      actions:
+        patterns:
+          - '*'
+    labels:
+      - dependencies
