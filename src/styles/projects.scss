@@ -96,63 +96,44 @@
   gap: var(--space-5);
 }
 
-// Project Card — the blog preview's grammar in a grid cell: icon and title,
-// body, then one meta band at the foot. It does not move under the pointer;
-// its hairline eases brighter and eases back (see `card-highlight` in
-// mixins.scss).
+// Project Card — the blog preview's grammar in a grid cell: the kind mark in
+// the corner, the name, the body, then one meta band at the foot. It does not
+// move under the pointer; its hairline eases brighter and eases back (see
+// `card-highlight` in mixins.scss).
 .project-card {
   @include outline-block;
   @include card-highlight;
+  // The kind mark in the corner (.entry-kind, cards.scss) is pinned to this
+  // box, at the padding's inset.
+  position: relative;
+  --card-pad: var(--space-5);
   border-radius: var(--radius-lg);
   text-decoration: none;
   display: block;
 
   @include reading-emphasis {
     @include card-highlight-on;
-
-    // The card is a link, so the thing that says so takes the link colour.
-    .project-link-indicator {
-      color: var(--ink-primary);
-    }
   }
 }
 
 .project-card-content {
   // The blog preview's padding, so a card reads the same on either page.
-  padding: var(--space-5);
+  padding: var(--card-pad);
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
+// The title row: the name alone, now that its glyph is in the corner — and
+// kept clear of the mark, which sits on its first line.
 .project-header {
-  display: flex;
-  // Top-aligned rather than centred: a repo name that wraps would otherwise
-  // leave its glyph floating halfway down the block.
-  align-items: flex-start;
-  gap: var(--space-2);
+  @include entry-kind-clearance;
   margin-bottom: var(--space-3);
 }
 
-.project-icon {
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  // Centred on the title's first line, not on the whole title.
-  margin-top: 0.15rem;
-
-  // One glyph size across the three list pages (the blog and cv marks are
-  // drawn on a 24 viewBox, this one on 16 — the box is what has to agree).
-  svg {
-    width: 18px;
-    height: 18px;
-  }
-}
-
-// The card title, at the blog preview's size and set in the same row grammar.
-// It used to truncate to one line with an ellipsis; a repo name is the one
-// thing on the card that has to be readable, so it wraps instead.
+// The card title, at the blog preview's size. It used to truncate to one line
+// with an ellipsis; a repo name is the one thing on the card that has to be
+// readable, so it wraps instead.
 .project-name {
   font-size: var(--text-h4);
   color: var(--text-primary);
@@ -162,7 +143,6 @@
     monospace;
   text-transform: lowercase;
   letter-spacing: -0.01em;
-  flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -205,13 +185,13 @@
 }
 
 // The meta band, the same shape the blog card carries: quiet facts on the
-// left, the way in parked at the far end, one hairline above it.
+// left, the way out parked at the far end, one hairline above it. One row at
+// every width — a language, a star count and a glyph never need more.
 .project-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  flex-wrap: wrap;
   margin-top: var(--space-4);
   padding-top: var(--space-3);
   // Interior divider inside an outlined card — white-alpha, since the
@@ -249,17 +229,21 @@
   margin-left: 0.25rem;
 }
 
+// The way out: the octocat, in the link colour. The card is a link to the
+// repo, and this is the one thing on it that says so — the counterpart of the
+// arrow at the foot of a blog preview. The words it replaced ("view on
+// github") are still there for a screen reader.
 .project-link-indicator {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  text-transform: lowercase;
+  flex-shrink: 0;
+  color: var(--ink-primary);
   transition: color var(--transition-fast);
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 // GitHub CTA — one line of navigation, not a hero moment: a question and a
@@ -302,10 +286,11 @@
   }
 }
 
-// Activity panel — the github year at the foot of the page, in the same card
-// grammar as everything above it: an outline, not a slab. The numbers are
-// baked into the bundle at build time (scripts/build-activity.mjs), so the
-// panel costs the visitor nothing and carries no credentials.
+// Activity panel — the github year at the head of the page, ahead of the
+// control row and the catalogue, in the same card grammar as everything below
+// it: an outline, not a slab. The numbers are baked into the bundle at build
+// time (scripts/build-activity.mjs), so the panel costs the visitor nothing
+// and carries no credentials.
 .activity-panel {
   @include outline-block;
   // No surface of its own. The window underneath has already laid the site's
@@ -502,8 +487,9 @@
     gap: var(--space-4);
   }
 
-  .project-card-content {
-    padding: var(--space-4);
+  // The corner mark follows the padding in (it is pinned at --card-pad).
+  .project-card {
+    --card-pad: var(--space-4);
   }
 
   .activity-panel {
@@ -512,16 +498,6 @@
 }
 
 @media (max-width: 480px) {
-  .project-header {
-    flex-wrap: wrap;
-  }
-
-  .project-footer {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: flex-start;
-  }
-
   .activity-metric-value {
     font-size: 1.1rem;
   }

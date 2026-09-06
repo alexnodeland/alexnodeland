@@ -75,8 +75,8 @@
 
 // The reference card for the whole site: an outline, generous padding, and a
 // clear uncluttered band for its meta. The projects and cv entries are built
-// to the same grammar (icon + title row, body, meta band) so the three list
-// pages read as one system.
+// to the same grammar (kind mark in the corner, title row, body, meta band)
+// so the three list pages read as one system.
 //
 // The heavy left rail it used to carry is gone. It was the one edge on the
 // site drawn at a different weight from the other three, and it was marking a
@@ -85,7 +85,11 @@
 .post-preview {
   @include outline-block;
   @include card-highlight;
-  padding: var(--space-5);
+  // The kind mark in the corner (.entry-kind, cards.scss) is pinned to this
+  // box, at the padding's inset.
+  position: relative;
+  --card-pad: var(--space-5);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
 
   @include reading-emphasis {
@@ -93,42 +97,24 @@
   }
 }
 
-// The title row: the entry's glyph beside its name, the same row the project
-// cards open with. Scoped to the preview — an article's own title block is a
+// The title row. The glyph that used to open it is in the corner now, so the
+// row is the name alone — kept clear of the mark, which sits on its first
+// line. Scoped to the preview: an article's own title block is a
 // `.post-header` too, and it is a card rather than a row.
 .post-preview .post-header {
-  display: flex;
-  // Top-aligned rather than centred: a title that wraps to two lines would
-  // otherwise leave its glyph floating halfway down the block.
-  align-items: flex-start;
-  gap: var(--space-2);
+  @include entry-kind-clearance;
   margin-bottom: var(--space-3);
 
   // The row owns the space under the title here.
   .post-title {
     margin: 0;
-    flex: 1;
     min-width: 0;
   }
 }
 
-.post-icon {
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  // Centred on the title's first line, not on the whole title.
-  margin-top: 0.15rem;
-
-  svg {
-    width: 18px;
-    height: 18px;
-  }
-}
-
-// Date, tag, and — on a preview — the way in. An article's own header carries
-// the same row above its title; only the preview turns it into a band at the
-// foot of the card, which is where the projects and cv cards keep theirs.
+// Date and tag above an article's own title; on a preview, the date and the
+// way in, as a band at the foot of the card, which is where the projects and
+// cv cards keep theirs.
 .post-meta {
   display: flex;
   align-items: center;
@@ -140,6 +126,8 @@
 }
 
 .post-preview .post-meta {
+  justify-content: space-between;
+  flex-wrap: nowrap;
   margin-top: var(--space-4);
   margin-bottom: 0;
   padding-top: var(--space-3);
@@ -148,7 +136,9 @@
 
 // The site's one chip: an outline with a hairline. Categories, tags and skills
 // all use it — none of them are a status, so none of them get a hue, and none
-// of them get a fill either now that they sit on the window's scrim.
+// of them get a fill either now that they sit on the window's scrim. An
+// article's own header still wears its tag; the previews no longer do (the
+// filter row above the list has already said which tag is showing).
 .post-category {
   @include outline-block;
   color: var(--text-secondary);
@@ -202,22 +192,28 @@
 }
 
 // The way in, parked at the far end of the meta band — the same place the
-// project card keeps its "view on github".
+// project card keeps its octocat. An arrow pointing up and out, in the link
+// colour: the card is a link, and this is the one thing on it that says so.
 .read-more {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  // A larger box than the glyph, so there is something to tap.
+  margin: -0.25rem -0.25rem -0.25rem 0;
+  padding: 0.25rem;
   color: var(--ink-primary);
   text-decoration: none;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  text-transform: lowercase;
+  border-radius: var(--radius-sm);
   @include control-transition(var(--transition-fast));
 
-  .post-meta & {
-    margin-left: auto;
+  svg {
+    width: 18px;
+    height: 18px;
+    transition: transform var(--transition-fast);
   }
 
-  &:hover {
-    text-decoration: underline;
+  &:hover svg {
+    transform: translate(1px, -1px);
   }
 }
 
@@ -432,18 +428,15 @@
   // is gone with them: it belongs to .main, which narrows it here for the
   // whole site at once.
 
+  // The corner mark follows the padding in (it is pinned at --card-pad). The
+  // meta band stays one row: a date at one end and an arrow at the other need
+  // no more width than a phone has.
   .post-preview {
-    padding: var(--space-4);
+    --card-pad: var(--space-4);
   }
 
   .post-title {
     overflow-wrap: anywhere;
-  }
-
-  .post-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-2);
   }
 
   // An article's own title block was a full phone screen on its own — date,

@@ -2,10 +2,11 @@
 @import 'mixins';
 
 // ── The page's own content ───────────────────────────────────────────────────
-// What is left inside the window: the address that was asked for, one line,
-// the ways back, and a hint about the field. The window is about to drift off
-// the field, so this is short on purpose — the hero (title and crumb) and the
-// number forming behind everything are what hold the screen.
+// What is left inside the window: the address that was asked for, and one
+// line. The window is about to drift off the field, so this is short on
+// purpose — the hero (title and crumb) and the number forming behind
+// everything are what hold the screen, and the ways back are the shell's own:
+// the crumb leads home, the capsule lists the sections.
 .not-found {
   padding: var(--space-6) 0;
   max-width: 600px;
@@ -14,7 +15,7 @@
     font-size: var(--text-h4);
     color: var(--text-secondary);
     line-height: 1.6;
-    margin-bottom: var(--space-5);
+    margin-bottom: 0;
   }
 }
 
@@ -36,74 +37,19 @@
   }
 }
 
-// The ways back: the front page as the one real action, the sections as
-// quiet text links beside it.
-.not-found-ways {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-5);
-}
-
-// Navigation, not a conversion action — the neutral treatment.
-.back-home {
-  display: inline-block;
-  padding: 0.875rem 2rem;
-  background: var(--bg-floating);
-  border: 1px solid var(--border-floating);
-  color: var(--text-primary);
-  text-decoration: none;
-  border-radius: var(--radius-lg);
-  @include control-transition(var(--transition-normal));
-  box-shadow: var(--shadow-md);
-
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.45);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-  }
-}
-
-.not-found-way {
-  color: var(--text-secondary);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast);
-
-  &:hover {
-    color: var(--text-primary);
-    border-bottom-color: var(--border-floating);
-  }
-}
-
-// A line about the field, set small, with the shell's own kbd treatment.
-// It is about a keyboard shortcut, so it only appears where there is one.
-.not-found-hint {
-  font-size: var(--text-small) !important;
-  color: var(--text-muted) !important;
-  margin-bottom: 0 !important;
-
-  kbd {
-    background: var(--bg-floating);
-    border: 1px solid var(--border-floating);
-    border-radius: var(--radius-sm);
-    padding: 0.125rem 0.3rem;
-    font-size: 0.625rem;
-    font-family: inherit;
-    color: var(--text-primary);
-    line-height: 1.2;
-  }
-}
-
 // ── The chrome coming apart ──────────────────────────────────────────────────
 // Keyed off the root while the 404 is up (src/pages/404.tsx sets it, and the
 // two --nf-* distances that make each visit's slide its own). The window
-// sinks and thins out but stays clickable; the pills on the rail sink after
-// it; the capsule of page links stays where it is, since it is the way out,
-// and only floats; the hero holds still and, now and then, glitches.
+// sinks and thins out but stays clickable; the capsule of page links stays
+// where it is, since it is the way out, and only floats; the hero holds still
+// and, now and then, glitches.
+//
+// The rail at the foot of the field — the backgrounds launcher, the chat
+// pill, the shortcuts hint — is not touched. It used to sink after the
+// window, each pill on its own delay, which left the two corner buttons at
+// different heights for most of the animation and a step lower than every
+// other page puts them for the rest of it. Those are the site's controls, not
+// the page's chrome; they sit where they always sit.
 //
 // Nothing here rotates. The window is a scrolling panel with a backdrop blur,
 // and a rotated one has to be resampled every frame of its own animation and
@@ -119,18 +65,6 @@ html[data-not-found] {
 
   .nav {
     animation: nf-float 11s ease-in-out infinite alternate;
-  }
-
-  .background-controls {
-    animation: nf-sink 10s ease-in 1.4s forwards;
-  }
-
-  .chat-icon-container {
-    animation: nf-sink 10s ease-in 2s forwards;
-  }
-
-  .shortcuts-hint {
-    animation: nf-sink 8s ease-in 1s forwards;
   }
 
   .site-hero .hero-crumb-rest {
@@ -159,13 +93,6 @@ html[data-not-found] {
   to {
     translate: -4px 7px;
     rotate: 0.8deg;
-  }
-}
-
-@keyframes nf-sink {
-  to {
-    translate: 0 48px;
-    opacity: 0.4;
   }
 }
 
@@ -215,11 +142,6 @@ html[data-not-found] {
     padding: var(--space-5) 0;
   }
 
-  // No arrow keys to press.
-  .not-found-hint {
-    display: none;
-  }
-
   // A phone has nowhere for the window to go; it thins out where it stands.
   html[data-not-found] .stage .layout {
     animation-name: nf-window-thin;
@@ -240,9 +162,6 @@ html[data-not-found] {
   html[data-not-found] {
     .stage .layout,
     .nav,
-    .background-controls,
-    .chat-icon-container,
-    .shortcuts-hint,
     .site-hero .hero-crumb-rest,
     .site-hero p {
       animation: none;

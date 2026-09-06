@@ -7,6 +7,8 @@
 // Shared control chrome (the dropdown), imported once here so the CV row and
 // the blog row cannot drift into two copies of the same trigger.
 @import 'controls';
+// Shared card furniture (the kind mark in the corner), for the same reason.
+@import 'cards';
 
 * {
   box-sizing: border-box;

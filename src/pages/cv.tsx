@@ -5,7 +5,7 @@ import ExperienceSection from '../components/cv/CVExperienceSection';
 import CVSearch from '../components/cv/CVSearch';
 import SkillsSection from '../components/cv/CVSkillsSection';
 import SEO from '../components/seo';
-import { CertificateIcon } from '../components/ui/EntryIcons';
+import { CertificateIcon, EntryKind } from '../components/ui/EntryIcons';
 import { cvData, resumeData } from '../config';
 import '../styles/cv.scss';
 
@@ -134,25 +134,25 @@ const CVPage: React.FC<{ location?: { pathname?: string } }> = ({
                   and hid everything else — issuer, date, credential — inside a
                   hover tooltip that clipped the last entry in the row. Every
                   certification now states itself, in the same card grammar the
-                  experience and education entries use. */}
+                  experience and education entries use: the kind mark in the
+                  corner, the name, and one meta band at the foot with the
+                  issuer at one end and the date at the other. */}
               <div className="certifications-grid">
                 {data.certifications.map((cert, index) => (
                   <article key={index} className="cv-card certification-card">
+                    <EntryKind>
+                      <CertificateIcon />
+                    </EntryKind>
                     <div className="cert-header">
-                      <span className="cv-entry-icon">
-                        <CertificateIcon />
-                      </span>
                       <h3 className="cert-name">{cert.name}</h3>
                     </div>
-                    <p className="cert-issuer">{cert.issuer}</p>
                     <div className="cert-meta">
+                      <span className="cert-issuer">{cert.issuer}</span>
                       <span className="cert-date">{cert.date}</span>
-                      {cert.credentialId && (
-                        <span className="cert-credential">
-                          id: {cert.credentialId}
-                        </span>
-                      )}
                     </div>
+                    {cert.credentialId && (
+                      <p className="cert-credential">id: {cert.credentialId}</p>
+                    )}
                   </article>
                 ))}
               </div>

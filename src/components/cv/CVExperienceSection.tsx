@@ -1,6 +1,6 @@
 import React from 'react';
 import { ExperienceItem } from '../../types';
-import { BriefcaseIcon } from '../ui/EntryIcons';
+import { BriefcaseIcon, EntryKind } from '../ui/EntryIcons';
 
 interface CVExperienceSectionProps {
   experiences: ExperienceItem[];
@@ -22,11 +22,12 @@ const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
       {experiences.map((exp, index) => (
         <details key={index} className="cv-card cv-collapse">
           <summary className="cv-collapse-summary">
+            {/* The kind mark in the card's corner, then the title row. */}
+            <EntryKind>
+              <BriefcaseIcon />
+            </EntryKind>
             <div className="experience-header">
               <div className="cv-entry-title">
-                <span className="cv-entry-icon">
-                  <BriefcaseIcon />
-                </span>
                 <h3>
                   {exp.title}, {exp.company}
                 </h3>

@@ -1,0 +1,36 @@
+// Shared card furniture — what every list entry on the site carries whatever
+// page it is on. Imported once by global.scss, like the control chrome, so the
+// blog, the projects and the cv cannot drift into three copies of it.
+//
+// The cards themselves stay in the page stylesheets (the blog's .post-preview,
+// the projects' .project-card, the cv's .cv-card): which facts they show and
+// in what order is each page's own. Only the pieces they share live here.
+
+@import 'variables';
+@import 'mixins';
+
+// The kind mark: the glyph that says what sort of thing the card is (see
+// EntryIcons.tsx). It used to open the title row, which put a picture in
+// front of every name on the site and pushed the name over by a glyph's
+// width; it sits in the card's top-right corner now, on the title's first
+// line, where none of the five card types had anything.
+//
+// Pinned rather than flowed, so the title row does not have to know about it
+// — but the rows do keep clear of it (see `entry-kind-clearance`). The card
+// is the positioning context: every card on the site is `position: relative`
+// already, and the inset is the card's own padding, so the mark sits exactly
+// on the content column's corner rather than floating inside the frame.
+.entry-kind {
+  position: absolute;
+  top: calc(var(--card-pad, var(--space-5)) + 0.15rem);
+  right: var(--card-pad, var(--space-5));
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  pointer-events: none;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}

@@ -183,14 +183,19 @@ section[id] {
 }
 
 // Shared card style for experience, education, and certifications — the blog
-// preview's grammar applied to a cv entry: an outline, the same padding, an
-// icon-and-title row, and one meta band. Nothing lifts and nothing scales; the
-// hairline eases brighter under the pointer and eases back when it leaves
-// (see `card-highlight` in mixins.scss).
+// preview's grammar applied to a cv entry: an outline, the same padding, the
+// kind mark in the corner, a title row, and one meta band. Nothing lifts and
+// nothing scales; the hairline eases brighter under the pointer and eases back
+// when it leaves (see `card-highlight` in mixins.scss).
 .cv-card {
   @include outline-block;
   @include card-highlight;
-  padding: var(--space-5);
+  // The kind mark in the corner (.entry-kind, cards.scss) is pinned to this
+  // box, at the padding's inset — on a collapsible card the summary carries
+  // that padding, but the inset is the same number.
+  position: relative;
+  --card-pad: var(--space-5);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
 
   @include reading-emphasis {
@@ -215,39 +220,20 @@ section[id] {
   }
 }
 
-// The glyph and the name, as one block — so the duration chip beside them can
-// wrap under the pair on a phone rather than pushing the glyph onto a line of
-// its own.
+// The name, as its own block — so the duration chip beside it can wrap under
+// it on a phone rather than sharing a cramped line.
 .cv-entry-title {
   display: flex;
-  // Top-aligned: a role title that wraps would otherwise leave its glyph
-  // floating halfway down the block.
   align-items: flex-start;
-  gap: var(--space-2);
   flex: 1;
   min-width: 200px;
 }
 
-// The glyph that opens an entry's title row — the counterpart to the repo mark
-// on a project card. Quiet, and the same box on all three pages.
-.cv-entry-icon {
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-
-  svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  // Centred on the title's first line, not on the whole title.
-  .cv-entry-title & {
-    margin-top: 0.15rem;
-  }
-}
-
+// The title row: the name at one end, the duration chip and the chevron at
+// the other, and the whole row kept clear of the kind mark in the corner,
+// which sits on the name's first line beyond the chevron.
 .experience-header {
+  @include entry-kind-clearance;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -297,7 +283,7 @@ section[id] {
 // The whole summary is the toggle — it fills the collapsed card edge to edge —
 // so it has to look like it, rather than leaving the chevron as the only cue.
 .cv-collapse-summary {
-  padding: var(--space-5);
+  padding: var(--card-pad);
   cursor: pointer;
   display: block;
   // The card no longer clips its children (the travelling light rides its
@@ -462,22 +448,14 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   display: flex;
   flex-direction: column;
 
+  // The title row: the name alone, kept clear of the kind mark in the corner.
   .cert-header {
-    display: flex;
-    // The name is the one title on the site that regularly wraps, so the glyph
-    // sits on its first line rather than halfway down the block.
-    align-items: flex-start;
-    gap: var(--space-2);
+    @include entry-kind-clearance;
     margin-bottom: var(--space-3);
-
-    .cv-entry-icon {
-      margin-top: 0.2rem;
-    }
   }
 
   .cert-name {
     margin: 0;
-    flex: 1;
     min-width: 0;
     color: var(--text-primary);
     font-size: var(--text-h4);
@@ -489,17 +467,14 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     overflow-wrap: anywhere;
   }
 
-  .cert-issuer {
-    color: var(--text-secondary);
-    font-size: var(--text-body);
-    margin: 0;
-  }
-
-  // The meta band, the same one the other three cards carry, parked at the
-  // foot of the card the way the project card's footer is.
+  // The meta band, the same one the other cards carry, parked at the foot of
+  // the card the way the project card's footer is: the issuer at one end,
+  // the date at the other. The issuer used to have a line of its own above
+  // the band, which left the date sitting alone on it.
   .cert-meta {
     display: flex;
-    align-items: center;
+    align-items: baseline;
+    justify-content: space-between;
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-3);
     margin-top: auto;
@@ -509,7 +484,19 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     color: var(--text-secondary);
   }
 
+  .cert-issuer {
+    min-width: 0;
+  }
+
+  .cert-date {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  // A credential id, where there is one, under the band in the value face.
   .cert-credential {
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-small);
     color: var(--text-muted);
     font-family:
       'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -640,8 +627,10 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 }
 
 // Education specific styles (using cv-card base). Same title row as an
-// experience entry — icon, name, the duration chip at the far end.
+// experience entry — the name, the duration chip at the far end, the kind
+// mark in the corner beyond it.
 .education-header {
+  @include entry-kind-clearance;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -712,23 +701,10 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// Skills styles for direct display
+// Skills styles for direct display. The "technical skills" subtitle that sat
+// between the section title and the chips is gone — one group, one heading.
 .skill-category-direct {
   margin-bottom: var(--space-4);
-
-  // On the background alongside the chips rather than on a card, so it takes
-  // the same treatment as the section titles above it.
-  .skill-subtitle {
-    font-size: 1.2rem;
-    margin-bottom: var(--space-3);
-    color: white;
-    @include over-background;
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.01em;
-  }
 }
 
 .skill-tags {
