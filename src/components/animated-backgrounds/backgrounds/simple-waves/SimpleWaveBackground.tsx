@@ -7,6 +7,7 @@ import {
 } from '../../core/glyph';
 import {
   NotFoundSequence,
+  RESHAPE_SETTLE_MS,
   viewportReshaped,
 } from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
@@ -17,9 +18,18 @@ import { SimpleWaveSettings } from './config';
 // placed inside the number, each radiating a circular wave, summed. Near the
 // sources the waves reinforce and the number reads; away from them their
 // tails interfere into fringes and fade. The count is a uniform array in the
-// shader, so it is fixed.
+// shader, so it is fixed. Each source's wave is sin(k·d − ωt), which is
+// sin(k·d)·cos(ωt) − cos(k·d)·sin(ωt): the whole field is two fixed pictures
+// — the sines and the cosines, summed over the sources with their falloffs
+// — turned against each other by the clock. So the two pictures are drawn
+// once, by the GPU, into a texture this wide, and the fragment shader
+// samples it rather than summing every source at every pixel every frame.
+// The wavelength is this many times the wave frequency setting's reciprocal:
+// shorter than a stroke, so the rings fill the digits.
 const SOURCE_COUNT = 128;
 const GLYPH_COLS = 160;
+const FIELD_WIDTH = 512;
+const RINGS_PER_FREQUENCY = 6;
 // How long the plane waves take to give way to the sources. Shorter than
 // the default: the cycle gives each background twelve seconds on the 404,
 // and the number should be up for most of them.
@@ -107,6 +117,88 @@ const SimpleWaveBackground: React.FC<
     };
     placeSources();
     const sequence = new NotFoundSequence({ formSeconds: FORM_SECONDS });
+    const sourceVectors = Array.from(
+      { length: SOURCE_COUNT },
+      (_, i) => new THREE.Vector2(sources[i * 2], sources[i * 2 + 1])
+    );
+    const syncSourceVectors = () =>
+      sourceVectors.forEach((v, i) =>
+        v.set(sources[i * 2], sources[i * 2 + 1])
+      );
+
+    // The baked field. Drawn again when the sources move or the wavelength
+    // setting changes, and only while the sequence is up.
+    const fieldHeight = () =>
+      Math.max(
+        32,
+        Math.round((FIELD_WIDTH * glyphSize.height) / glyphSize.width)
+      );
+    const field = new THREE.WebGLRenderTarget(FIELD_WIDTH, fieldHeight(), {
+      depthBuffer: false,
+      stencilBuffer: false,
+    });
+    field.texture.minFilter = THREE.LinearFilter;
+    field.texture.magFilter = THREE.LinearFilter;
+    const bakeScene = new THREE.Scene();
+    const bakeCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const bakeMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uSources: { value: sourceVectors },
+        uSourceCount: { value: sourceCount },
+        uK: { value: 0 },
+        uAspect: { value: glyphSize.width / glyphSize.height },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        const int SOURCE_COUNT = ${SOURCE_COUNT};
+        uniform vec2 uSources[SOURCE_COUNT];
+        uniform int uSourceCount;
+        uniform float uK;
+        uniform float uAspect;
+        varying vec2 vUv;
+
+        void main() {
+          // The same coordinates the wave shader works in: x across by the
+          // aspect, y −1 → 1 up.
+          vec2 p = vec2((vUv.x * 2.0 - 1.0) * uAspect, vUv.y * 2.0 - 1.0);
+          float sines = 0.0;
+          float cosines = 0.0;
+          float presence = 0.0;
+          for (int i = 0; i < SOURCE_COUNT; i++) {
+            if (i >= uSourceCount) break;
+            float d = length(p - uSources[i]);
+            float fall = exp(-d * 20.0);
+            sines += sin(d * uK) * fall;
+            cosines += cos(d * uK) * fall;
+            presence += fall;
+          }
+          // Normalised where sources crowd, so a thick stroke is no brighter
+          // than a thin one; each in −1 → 1, stored 0 → 1.
+          float norm = max(1.0, presence);
+          gl_FragColor = vec4(sines / norm * 0.5 + 0.5, cosines / norm * 0.5 + 0.5, 0.0, 1.0);
+        }
+      `,
+    });
+    const bakeGeometry = new THREE.PlaneGeometry(2, 2);
+    bakeScene.add(new THREE.Mesh(bakeGeometry, bakeMaterial));
+    let bakedK = NaN;
+    let fieldStale = true;
+    const bake = (k: number) => {
+      bakeMaterial.uniforms.uK.value = k;
+      bakeMaterial.uniforms.uSourceCount.value = sourceCount;
+      bakeMaterial.uniforms.uAspect.value = glyphSize.width / glyphSize.height;
+      renderer.setRenderTarget(field);
+      renderer.render(bakeScene, bakeCamera);
+      renderer.setRenderTarget(null);
+      bakedK = k;
+      fieldStale = false;
+    };
 
     // Fragment shader for simple sine waves
     const fragmentShader = `
@@ -120,8 +212,7 @@ const SimpleWaveBackground: React.FC<
       uniform vec3 uColorSecondary;
       uniform vec3 uColorAccent;
       uniform vec3 uColorBackground;
-      uniform vec2 uSources[SOURCE_COUNT];
-      uniform int uSourceCount;
+      uniform sampler2D uField;
       uniform float uNotFound;
 
       varying vec2 vUv;
@@ -138,27 +229,18 @@ const SimpleWaveBackground: React.FC<
         float combined = wave1 + wave2 + wave3;
 
         // The 404 sequence: the three plane waves give way to point sources
-        // arranged as the number, each radiating a circular wave that falls
-        // off with distance, all in phase. The wavelength is shorter than a
-        // stroke, so what fills the number is the rings travelling out of
-        // its sources and interfering with one another — the ripple-tank
-        // picture — and what surrounds it is their tails, interfering into
-        // fainter rings that fade with distance. Normalised where sources
-        // crowd, so a thick stroke is no brighter than a thin one. Both
-        // fields exist while the fade runs — it is the same superposition,
-        // reweighted.
+        // arranged as the number, all in phase, radiating circular waves at
+        // a wavelength shorter than a stroke. What fills the number is the
+        // rings travelling out of its sources and interfering with one
+        // another — the ripple-tank picture — and what surrounds it is
+        // their tails, interfering into fainter rings that fade with
+        // distance. The field is read from the baked texture (see the bake
+        // pass) and turned by the clock. Both fields exist while the fade
+        // runs — it is the same superposition, reweighted.
         if (uNotFound > 0.0) {
-          float radial = 0.0;
-          float presence = 0.0;
-          float k = uWaveFrequency * 6.0;
-          for (int i = 0; i < SOURCE_COUNT; i++) {
-            if (i >= uSourceCount) break;
-            float d = length(uv - uSources[i]);
-            float fall = exp(-d * 20.0);
-            radial += sin(d * k - time * 4.0) * fall;
-            presence += fall;
-          }
-          float sourced = radial / max(1.0, presence) * 1.6 * uWaveAmplitude;
+          vec2 baked = texture2D(uField, vUv).rg * 2.0 - 1.0;
+          float radial = baked.x * cos(time * 4.0) - baked.y * sin(time * 4.0);
+          float sourced = radial * 1.6 * uWaveAmplitude;
           combined = mix(combined, sourced, uNotFound);
         }
 
@@ -204,13 +286,7 @@ const SimpleWaveBackground: React.FC<
         uColorBackground: {
           value: new THREE.Vector3(...settings.colors.background),
         },
-        uSources: {
-          value: Array.from(
-            { length: SOURCE_COUNT },
-            (_, i) => new THREE.Vector2(sources[i * 2], sources[i * 2 + 1])
-          ),
-        },
-        uSourceCount: { value: sourceCount },
+        uField: { value: field.texture },
         uNotFound: { value: 0 },
       },
       vertexShader,
@@ -247,6 +323,11 @@ const SimpleWaveBackground: React.FC<
         ? sequence.settle(on)
         : sequence.advance(Math.min(deltaSec, 0.1), on);
 
+      // The field is drawn once per shape and wavelength, the first time
+      // it is needed.
+      const k = live.waveFrequency * RINGS_PER_FREQUENCY;
+      if (progress > 0 && (fieldStale || k !== bakedK)) bake(k);
+
       const u = material.uniforms;
       u.uTime.value = phase;
       u.uNotFound.value = progress;
@@ -275,6 +356,7 @@ const SimpleWaveBackground: React.FC<
     // in and out fires resize repeatedly over a single flick, and each raw
     // call reallocates the drawing buffer mid-scroll.
     let resizeFrame: number | null = null;
+    let reshapeTimer = 0;
     const applyResize = () => {
       resizeFrame = null;
       if (renderer && material.uniforms.uResolution) {
@@ -286,14 +368,17 @@ const SimpleWaveBackground: React.FC<
       }
       // The sources are set to the viewport's shape. A URL bar sliding away
       // is not a new shape, and placing them again for it would make the
-      // number jump.
+      // number jump; a real one has them placed again once it has settled.
       const size = { width: window.innerWidth, height: window.innerHeight };
       if (viewportReshaped(glyphSize, size)) {
-        glyphSize = size;
-        placeSources();
-        const vectors = material.uniforms.uSources.value as THREE.Vector2[];
-        vectors.forEach((v, i) => v.set(sources[i * 2], sources[i * 2 + 1]));
-        material.uniforms.uSourceCount.value = sourceCount;
+        window.clearTimeout(reshapeTimer);
+        reshapeTimer = window.setTimeout(() => {
+          glyphSize = size;
+          placeSources();
+          syncSourceVectors();
+          field.setSize(FIELD_WIDTH, fieldHeight());
+          fieldStale = true;
+        }, RESHAPE_SETTLE_MS);
       }
     };
     const handleResize = () => {
@@ -315,12 +400,16 @@ const SimpleWaveBackground: React.FC<
       if (resizeFrame !== null) {
         cancelAnimationFrame(resizeFrame);
       }
+      window.clearTimeout(reshapeTimer);
 
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
       }
 
       // Clean up Three.js resources
+      field.dispose();
+      bakeGeometry.dispose();
+      bakeMaterial.dispose();
       geometry.dispose();
       material.dispose();
       renderer.dispose();

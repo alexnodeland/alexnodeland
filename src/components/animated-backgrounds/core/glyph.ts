@@ -349,6 +349,12 @@ export const glyphGraph = (
     y: 1 - (p.y / rows) * 2,
   }));
   const n = points.length;
+  // Neighbours are judged in cells, which are square on screen; camera
+  // units are not, since −1 → 1 spans the width one way and the height the
+  // other, and on a tall grid a link down a column would read as far
+  // shorter than the same link along a row.
+  const cellDistance = (i: number, j: number) =>
+    Math.hypot(spots[i].x - spots[j].x, spots[i].y - spots[j].y);
   const distance = (i: number, j: number) =>
     Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y);
 
@@ -371,12 +377,12 @@ export const glyphGraph = (
   };
 
   // Along the strokes.
-  const reach = spacing * (2 / cols) * 3.2;
+  const reach = spacing * 3.2;
   for (let i = 0; i < n; i++) {
     const near: Array<{ j: number; d: number }> = [];
     for (let j = 0; j < n; j++) {
       if (j === i) continue;
-      const d = distance(i, j);
+      const d = cellDistance(i, j);
       if (d <= reach) near.push({ j, d });
     }
     near.sort((u, v) => u.d - v.d);
@@ -389,7 +395,7 @@ export const glyphGraph = (
     for (let i = 0; i < n; i++) {
       for (let j = i + 1; j < n; j++) {
         if (find(i) === find(j)) continue;
-        const d = distance(i, j);
+        const d = cellDistance(i, j);
         if (!best || d < best.d) best = { i, j, d };
       }
     }

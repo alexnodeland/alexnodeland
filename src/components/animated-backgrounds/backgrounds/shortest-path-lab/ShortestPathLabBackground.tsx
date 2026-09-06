@@ -7,9 +7,10 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { glyphGraphFor } from '../../core/glyph';
-import { Morph, morphProgress, writeLine } from '../../core/lines';
+import { advanceMorph, beginMorph, Morph, writeLine } from '../../core/lines';
 import {
   NotFoundSequence,
+  RESHAPE_SETTLE_MS,
   viewportReshaped,
 } from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
@@ -471,17 +472,6 @@ const ShortestPathLabBackground: React.FC<
       const live = settingsRef.current;
       const previous = nodes;
       const count = built.nodes.length;
-      const from = new Float32Array(count * 2);
-      const to = new Float32Array(count * 2);
-      for (let i = 0; i < count; i++) {
-        const origin = previous.length
-          ? previous[i % previous.length].position
-          : built.nodes[i].position;
-        from[i * 2] = origin.x;
-        from[i * 2 + 1] = origin.y;
-        to[i * 2] = built.nodes[i].position.x;
-        to[i * 2 + 1] = built.nodes[i].position.y;
-      }
 
       // Geometries are per-line and must go; the three materials are shared
       // and get re-attached to the rebuilt lines below, so disposing them
@@ -497,15 +487,7 @@ const ShortestPathLabBackground: React.FC<
       startNode = Math.min(count - 1, Math.max(0, start));
       goalNode = Math.min(count - 1, Math.max(0, goal));
 
-      if (morphMs > 0) {
-        for (let i = 0; i < count; i++) {
-          nodes[i].position.x = from[i * 2];
-          nodes[i].position.y = from[i * 2 + 1];
-        }
-        morph = { from, to, start: now, duration: morphMs };
-      } else {
-        morph = null;
-      }
+      morph = beginMorph(previous, nodes, now, morphMs);
 
       for (const e of edges) {
         const line = buildEdgeLine(e);
@@ -603,17 +585,12 @@ const ShortestPathLabBackground: React.FC<
     };
 
     /** Carries nodes in flight along, and their edges with them. */
-    const advanceMorph = (now: number) => {
+    const carryMorph = (now: number) => {
       if (!morph) return;
-      const eased = morphProgress(morph, now);
-      const { from, to } = morph;
+      const arrived = advanceMorph(morph, nodes, now);
       for (let i = 0; i < nodes.length; i++) {
-        const x = from[i * 2] + (to[i * 2] - from[i * 2]) * eased;
-        const y = from[i * 2 + 1] + (to[i * 2 + 1] - from[i * 2 + 1]) * eased;
-        nodes[i].position.x = x;
-        nodes[i].position.y = y;
-        nodePositions[i * 3] = x;
-        nodePositions[i * 3 + 1] = y;
+        nodePositions[i * 3] = nodes[i].position.x;
+        nodePositions[i * 3 + 1] = nodes[i].position.y;
       }
       (
         nodeGeometry.getAttribute('position') as THREE.BufferAttribute
@@ -624,7 +601,7 @@ const ShortestPathLabBackground: React.FC<
         const b = nodes[e.target].position;
         writeLine(line, a.x, a.y, b.x, b.y);
       }
-      if (eased >= 1) {
+      if (arrived) {
         morph = null;
         // The dashes are measured along the line, which has just moved.
         for (const line of edgeLines) line.computeLineDistances();
@@ -655,7 +632,7 @@ const ShortestPathLabBackground: React.FC<
 
       step(timeMs);
       if (pendingRegenerate && timeMs >= regenerateAt) regenerate(timeMs);
-      advanceMorph(timeMs);
+      carryMorph(timeMs);
 
       // Update edges using standardized colors
       for (const line of edgeLines) {
@@ -843,6 +820,7 @@ const ShortestPathLabBackground: React.FC<
     // repeatedly over a single flick, and each raw call reallocates the
     // drawing buffer (and the bloom pass's render targets) mid-scroll.
     let resizeFrame: number | null = null;
+    let reshapeTimer = 0;
     const applyResize = () => {
       resizeFrame = null;
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -853,14 +831,18 @@ const ShortestPathLabBackground: React.FC<
         composer.setSize(window.innerWidth, window.innerHeight);
       }
       // The number is laid out for the viewport's shape. A URL bar sliding
-      // away is not a new shape; a real one gets the number laid out again.
+      // away is not a new shape; a real one gets the number laid out again
+      // once the resize has settled, not on every frame of a drag.
       const size = { width: window.innerWidth, height: window.innerHeight };
       if (viewportReshaped(glyphSize, size)) {
-        glyphSize = size;
-        if (glyphMode && !pendingRegenerate) {
-          pendingRegenerate = true;
-          regenerateAt = performance.now();
-        }
+        window.clearTimeout(reshapeTimer);
+        reshapeTimer = window.setTimeout(() => {
+          glyphSize = size;
+          if (glyphMode && !pendingRegenerate) {
+            pendingRegenerate = true;
+            regenerateAt = performance.now();
+          }
+        }, RESHAPE_SETTLE_MS);
       }
     };
     const handleResize = () => {
@@ -875,6 +857,7 @@ const ShortestPathLabBackground: React.FC<
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', handleResize);
       if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+      window.clearTimeout(reshapeTimer);
       edgeLines.forEach(l => l.geometry.dispose());
       baseEdgeMaterial.dispose();
       exploreEdgeMaterial.dispose();

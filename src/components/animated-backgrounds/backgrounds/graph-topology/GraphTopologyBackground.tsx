@@ -4,8 +4,11 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { glyphGraphFor } from '../../core/glyph';
-import { Morph, morphProgress, writeLine } from '../../core/lines';
-import { viewportReshaped } from '../../core/notFoundSequence';
+import { advanceMorph, beginMorph, Morph, writeLine } from '../../core/lines';
+import {
+  RESHAPE_SETTLE_MS,
+  viewportReshaped,
+} from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { GraphTopologySettings } from './config';
@@ -467,32 +470,12 @@ const GraphTopologyBackground: React.FC<
       morphMs: number
     ) => {
       const previous = nodes;
-      const count = built.nodes.length;
-      const from = new Float32Array(count * 2);
-      const to = new Float32Array(count * 2);
-      for (let i = 0; i < count; i++) {
-        const origin = previous.length
-          ? previous[i % previous.length].position
-          : built.nodes[i].position;
-        from[i * 2] = origin.x;
-        from[i * 2 + 1] = origin.y;
-        to[i * 2] = built.nodes[i].position.x;
-        to[i * 2 + 1] = built.nodes[i].position.y;
-      }
       disposeLines();
       nodes = built.nodes;
       edges = built.edges;
       isNumber = number;
       pinned = nodes.every(n => n.fixed);
-      if (morphMs > 0) {
-        for (let i = 0; i < count; i++) {
-          nodes[i].position.x = from[i * 2];
-          nodes[i].position.y = from[i * 2 + 1];
-        }
-        morph = { from, to, start: now, duration: morphMs };
-      } else {
-        morph = null;
-      }
+      morph = beginMorph(previous, nodes, now, morphMs);
       buildLines();
       nodeGeometry.setDrawRange(0, nodes.length);
       initSearch();
@@ -523,16 +506,8 @@ const GraphTopologyBackground: React.FC<
     };
 
     /** Carries nodes in flight along. */
-    const advanceMorph = (now: number) => {
-      if (!morph) return;
-      const t = morphProgress(morph, now);
-      const { from, to } = morph;
-      for (let i = 0; i < nodes.length; i++) {
-        nodes[i].position.x = from[i * 2] + (to[i * 2] - from[i * 2]) * t;
-        nodes[i].position.y =
-          from[i * 2 + 1] + (to[i * 2 + 1] - from[i * 2 + 1]) * t;
-      }
-      if (t >= 1) morph = null;
+    const carryMorph = (now: number) => {
+      if (morph && advanceMorph(morph, nodes, now)) morph = null;
     };
 
     function stepLayout(dt: number) {
@@ -851,7 +826,7 @@ const GraphTopologyBackground: React.FC<
       const edgeThickness = live.edgeThickness || 2.0;
       const dt = Math.min(0.05, liveSimulationSpeed() * 0.016);
       syncNetwork(timeMs);
-      advanceMorph(timeMs);
+      carryMorph(timeMs);
       stepLayout(dt);
       mcmcStep(timeMs);
 
@@ -950,6 +925,14 @@ const GraphTopologyBackground: React.FC<
         edgeLineMaterial.linewidth = linewidth * edgeThickness;
       }
 
+      // How strongly each node is linked into the current set, for visual
+      // emphasis: one pass over the edges, since ids are indices.
+      const connectivity = new Float32Array(nodes.length);
+      for (const e of edges) {
+        if (currentSet.has(e.target)) connectivity[e.source] += e.weight;
+        if (currentSet.has(e.source)) connectivity[e.target] += e.weight;
+      }
+
       // Update node positions and colors
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
@@ -959,18 +942,7 @@ const GraphTopologyBackground: React.FC<
 
         const inCurrent = currentSet.has(n.id);
         const inBest = bestSet.has(n.id);
-
-        // Calculate node connectivity for visual emphasis
-        let nodeConnectivity = 0;
-        for (const e of edges) {
-          if (
-            (e.source === n.id && currentSet.has(e.target)) ||
-            (e.target === n.id && currentSet.has(e.source))
-          ) {
-            nodeConnectivity += e.weight;
-          }
-        }
-        const normalizedConnectivity = Math.min(1, nodeConnectivity / 500);
+        const normalizedConnectivity = Math.min(1, connectivity[i] / 500);
 
         let r: number, g: number, b: number;
         let brightness: number;
@@ -1055,20 +1027,25 @@ const GraphTopologyBackground: React.FC<
     // repeatedly over a single flick, and each raw call reallocates the
     // drawing buffer mid-scroll.
     let resizeFrame: number | null = null;
+    let reshapeTimer = 0;
     const applyResize = () => {
       resizeFrame = null;
       renderer.setSize(window.innerWidth, window.innerHeight);
       // Line2 widths are screen-space, so the materials need the viewport size.
       lineResolution.set(window.innerWidth, window.innerHeight);
       // The number is laid out for the viewport's shape. A URL bar sliding
-      // away is not a new shape; a real one gets the number laid out again.
+      // away is not a new shape; a real one gets the number laid out again
+      // once the resize has settled, not on every frame of a drag.
       const size = { width: window.innerWidth, height: window.innerHeight };
       if (viewportReshaped(glyphSize, size)) {
-        glyphSize = size;
-        if (isNumber && !frozenRef.current) {
-          const built = numberNetwork(size.width, size.height, rng);
-          if (built) rebuild(built, true, performance.now(), MORPH_AGAIN_MS);
-        }
+        window.clearTimeout(reshapeTimer);
+        reshapeTimer = window.setTimeout(() => {
+          glyphSize = size;
+          if (isNumber && !frozenRef.current) {
+            const built = numberNetwork(size.width, size.height, rng);
+            if (built) rebuild(built, true, performance.now(), MORPH_AGAIN_MS);
+          }
+        }, RESHAPE_SETTLE_MS);
       }
     };
     const handleResize = () => {
@@ -1083,6 +1060,7 @@ const GraphTopologyBackground: React.FC<
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', handleResize);
       if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+      window.clearTimeout(reshapeTimer);
       // Cleanup
       disposeLines();
       nodeGeometry.dispose();

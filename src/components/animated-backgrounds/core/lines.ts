@@ -52,3 +52,56 @@ export const morphProgress = (morph: Morph, now: number): number => {
   const t = Math.min(1, (now - morph.start) / morph.duration);
   return 1 - Math.pow(1 - t, 3);
 };
+
+export interface Positioned {
+  position: { x: number; y: number };
+}
+
+/**
+ * Sets `next`'s nodes off from where `previous`'s were — each from the old
+ * node at its index, wrapping, so a bigger graph grows out of a smaller one
+ * — and returns the morph that will carry them to their places. With no
+ * duration the nodes are simply left where they are, and there is no morph.
+ */
+export const beginMorph = (
+  previous: Positioned[],
+  next: Positioned[],
+  now: number,
+  duration: number
+): Morph | null => {
+  if (duration <= 0) return null;
+  const count = next.length;
+  const from = new Float32Array(count * 2);
+  const to = new Float32Array(count * 2);
+  for (let i = 0; i < count; i++) {
+    const origin = previous.length
+      ? previous[i % previous.length].position
+      : next[i].position;
+    from[i * 2] = origin.x;
+    from[i * 2 + 1] = origin.y;
+    to[i * 2] = next[i].position.x;
+    to[i * 2 + 1] = next[i].position.y;
+    next[i].position.x = origin.x;
+    next[i].position.y = origin.y;
+  }
+  return { from, to, start: now, duration };
+};
+
+/**
+ * Carries `nodes` along a morph at `now`, writing their positions. True once
+ * they have arrived.
+ */
+export const advanceMorph = (
+  morph: Morph,
+  nodes: Positioned[],
+  now: number
+): boolean => {
+  const t = morphProgress(morph, now);
+  const { from, to } = morph;
+  for (let i = 0; i < nodes.length; i++) {
+    nodes[i].position.x = from[i * 2] + (to[i * 2] - from[i * 2]) * t;
+    nodes[i].position.y =
+      from[i * 2 + 1] + (to[i * 2 + 1] - from[i * 2 + 1]) * t;
+  }
+  return t >= 1;
+};

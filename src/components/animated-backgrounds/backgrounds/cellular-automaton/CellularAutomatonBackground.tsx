@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { rasterizeGlyph } from '../../core/glyph';
+import { NotFoundSequence } from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { makeRuleTables, population, stepLife } from './automaton';
@@ -13,8 +14,9 @@ const MAX_CELLS = 40000;
 const STALL_GENERATIONS = 24;
 
 // The 404 sequence: the number's cells are switched on over this many
-// seconds, in a random order, and held; the fewest columns the number can be
-// read across, which a phone at the default cell size falls short of, so the
+// seconds, in a random order, and held — and let go of again, in the same
+// order, on the shared release; the fewest columns the number can be read
+// across, which a phone at the default cell size falls short of, so the
 // grid is refined for it there.
 const WRITE_SECONDS = 4;
 const MIN_GLYPH_COLS = 48;
@@ -100,13 +102,14 @@ const CellularAutomatonBackground: React.FC<
     // and kills against a wall without rest, so the digits boil at their
     // rims and throw off what they throw off. The cells are switched on one
     // by one over a few seconds, in the order `writeOrder` gives, the way a
-    // pattern is put down on a grid; let go, the clamp lifts and the rule
-    // takes the number apart on its own terms.
+    // pattern is put down on a grid; let go, the clamp lifts the same way
+    // and the rule takes the number apart on its own terms. How far along
+    // the writing is comes off the shared sequence clock.
     let mask: Uint8Array = new Uint8Array(0);
     let held: Uint8Array = new Uint8Array(0);
     let writeOrder: Uint32Array = new Uint32Array(0);
     let written = 0;
-    let writeClock = 0;
+    const sequence = new NotFoundSequence({ formSeconds: WRITE_SECONDS });
 
     /** Fills the grid with random soup at the configured density. Held cells stay. */
     const seed = () => {
@@ -256,23 +259,14 @@ const CellularAutomatonBackground: React.FC<
     };
 
     /**
-     * Advances the writing of the number by `dt` seconds while the flag is
-     * up, and lifts it all at once when the flag drops. What is written is
-     * held from the next generation on.
+     * Advances the writing of the number by `dt` seconds toward the flag:
+     * cells go down while it is up and are let go of, last down first,
+     * once it drops. What is written is held from the next generation on.
      */
     const writeNumber = (dt: number, on: boolean) => {
-      if (!on) {
-        if (written) {
-          written = 0;
-          writeClock = 0;
-          held.fill(0);
-        }
-        return;
-      }
-      writeClock = Math.min(WRITE_SECONDS, writeClock + dt);
-      const target = frozenRef.current
-        ? writeOrder.length
-        : Math.round((writeClock / WRITE_SECONDS) * writeOrder.length);
+      if (frozenRef.current) sequence.settle(on);
+      else sequence.advance(dt, on);
+      const target = Math.round(sequence.raw * writeOrder.length);
       for (; written < target; written++) {
         const i = writeOrder[written];
         held[i] = 1;
@@ -283,6 +277,7 @@ const CellularAutomatonBackground: React.FC<
         current[i] = 1;
         previous[i] = 1;
       }
+      for (; written > target; written--) held[writeOrder[written - 1]] = 0;
     };
 
     /** Copies simulation state into the texture the shader samples. */
@@ -459,9 +454,15 @@ const CellularAutomatonBackground: React.FC<
       // not the one to hold: every cell on the grid is the same age, and the
       // soup still fills the digits' counters. What a still shows is the
       // grid some generations on — the number aged into its own colour, the
-      // rule having worked the soup around it.
-      if (frozenRef.current && written > 0 && !wasWriting) {
-        for (let i = 0; i < STILL_GENERATIONS; i++) step();
+      // rule having worked the soup around it. Let go, a still would keep
+      // the number's cells for good, so it goes back to fresh soup, which is
+      // what a still shows everywhere else.
+      if (frozenRef.current && written > 0 !== wasWriting) {
+        if (written > 0) {
+          for (let i = 0; i < STILL_GENERATIONS; i++) step();
+        } else {
+          seed();
+        }
       }
       // The number arriving, or leaving, is worth a frame of its own.
       if (written > 0 !== wasWriting || written < writeOrder.length) {

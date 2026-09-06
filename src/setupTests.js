@@ -280,8 +280,14 @@ jest.mock('three', () => ({
     render: jest.fn(),
     domElement: createCanvasElement(),
     setPixelRatio: jest.fn(),
+    setRenderTarget: jest.fn(),
     dispose: jest.fn(),
     forceContextLoss: jest.fn(),
+  })),
+  WebGLRenderTarget: jest.fn(() => ({
+    texture: {},
+    setSize: jest.fn(),
+    dispose: jest.fn(),
   })),
   Color: jest.fn(() => ({ setRGB: jest.fn() })),
   Vector3: jest.fn(() => ({ set: jest.fn(), toArray: jest.fn() })),
@@ -395,36 +401,6 @@ jest.mock('three/examples/jsm/lines/Line2.js', () => ({
     computeLineDistances: jest.fn(),
   })),
 }));
-// The batched form: many segments in one geometry, written in place through
-// the interleaved buffers the real one exposes as `attributes`.
-jest.mock('three/examples/jsm/lines/LineSegmentsGeometry.js', () => ({
-  LineSegmentsGeometry: jest.fn(() => {
-    const attributes = {};
-    const interleaved = array => ({ array, needsUpdate: false });
-    return {
-      attributes,
-      instanceCount: 0,
-      setPositions: jest.fn(array => {
-        attributes.instanceStart = { data: interleaved(array) };
-        attributes.instanceEnd = attributes.instanceStart;
-      }),
-      setColors: jest.fn(array => {
-        attributes.instanceColorStart = { data: interleaved(array) };
-        attributes.instanceColorEnd = attributes.instanceColorStart;
-      }),
-      dispose: jest.fn(),
-    };
-  }),
-}));
-jest.mock('three/examples/jsm/lines/LineSegments2.js', () => ({
-  LineSegments2: jest.fn((geometry, material) => ({
-    geometry,
-    material,
-    visible: true,
-    computeLineDistances: jest.fn(),
-  })),
-}));
-
 // Mock console methods to reduce noise in tests
 global.console = {
   ...console,

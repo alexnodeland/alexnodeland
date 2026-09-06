@@ -8,7 +8,10 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { glyphCoverage, rasterizeGlyph } from '../../core/glyph';
-import { viewportReshaped } from '../../core/notFoundSequence';
+import {
+  RESHAPE_SETTLE_MS,
+  viewportReshaped,
+} from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { PDESolverSettings } from './config';
@@ -35,11 +38,14 @@ const BASE_STEPS_PER_SECOND = 300;
 const MAX_STEPS_PER_FRAME = 40;
 
 // The 404 sequence: the number is the initial condition. It is applied again
-// once the solution has stopped resembling it — spread to this fraction of
-// its starting height, which the heat equation does to everything, or
+// once the solution has stopped resembling it — its relief spread to this
+// fraction of the number's, which the heat equation does to everything, or
 // dispersed until its correlation with the number falls below this, which is
 // what the wave equation does to it — and never within this many seconds of
-// the last time. And how quickly the plate comes back upright to show it.
+// the last time. Both are judged about the field's mean: under Neumann or
+// periodic boundaries heat conserves the mean, so a flat plate at the
+// number's average height is the flat it goes to. And how quickly the plate
+// comes back upright to show it.
 const REAPPLY_BELOW = 0.2;
 const REAPPLY_CORRELATION = 0.3;
 const REAPPLY_INTERVAL_SECONDS = 4;
@@ -171,17 +177,29 @@ const PDESolverBackground: React.FC<
     let numberApplied = false;
     let appliedHeight = 0;
     let sinceApplied = 0;
+    let numberMean = 0;
     let numberNorm = 0;
 
-    /** How much the solution still looks like the number: −1 → 1. */
-    const resemblance = (u: Float32Array) => {
+    /**
+     * How the solution stands against the number, both taken about their
+     * means: the tallest relief left, and the correlation, −1 → 1.
+     */
+    const measure = (u: Float32Array) => {
+      let mean = 0;
+      for (let i = 0; i < u.length; i++) mean += u[i];
+      mean /= u.length;
       let dot = 0;
       let norm = 0;
+      let peak = 0;
       for (let i = 0; i < u.length; i++) {
-        dot += u[i] * numberField[i];
-        norm += u[i] * u[i];
+        const v = u[i] - mean;
+        dot += v * (numberField[i] - numberMean);
+        norm += v * v;
+        const a = v < 0 ? -v : v;
+        if (a > peak) peak = a;
       }
-      return dot / Math.max(1e-9, Math.sqrt(norm) * numberNorm);
+      const correlation = dot / Math.max(1e-9, Math.sqrt(norm) * numberNorm);
+      return { peak, correlation };
     };
 
     /** Sets the number as the initial condition and restarts the clock. */
@@ -195,13 +213,19 @@ const PDESolverBackground: React.FC<
       s.time = 0;
       s.step = 0;
       numberApplied = true;
-      appliedHeight = Math.max(1e-6, settings.initialAmplitude);
       sinceApplied = 0;
+      let mean = 0;
+      for (let i = 0; i < numberField.length; i++) mean += numberField[i];
+      numberMean = mean / numberField.length;
       let norm = 0;
+      let peak = 0;
       for (let i = 0; i < numberField.length; i++) {
-        norm += numberField[i] * numberField[i];
+        const v = numberField[i] - numberMean;
+        norm += v * v;
+        if (Math.abs(v) > peak) peak = Math.abs(v);
       }
       numberNorm = Math.max(1e-9, Math.sqrt(norm));
+      appliedHeight = Math.max(1e-6, peak);
     };
 
     // Create geometry and mesh
@@ -238,7 +262,10 @@ const PDESolverBackground: React.FC<
       // has stopped resembling it — flattened by the heat equation, or rung
       // apart by the wave equation — the initial condition is applied
       // again. When the flag drops the field simply carries on from where it
-      // is: what the number became is what is there.
+      // is: what the number became is what is there. A still is the one
+      // exception: frozen, the number would sit on the plate for good, so a
+      // still goes back to the configured initial condition, which is what
+      // it shows everywhere else.
       const on = notFoundRef.current;
       if (on && stateRef.current) {
         if (!numberApplied) {
@@ -246,22 +273,23 @@ const PDESolverBackground: React.FC<
         } else {
           sinceApplied += deltaTime;
           if (sinceApplied >= REAPPLY_INTERVAL_SECONDS) {
-            let peak = 0;
-            const u = stateRef.current.u;
-            for (let i = 0; i < u.length; i++) {
-              const v = u[i] < 0 ? -u[i] : u[i];
-              if (v > peak) peak = v;
-            }
+            const { peak, correlation } = measure(stateRef.current.u);
             if (
               peak < appliedHeight * REAPPLY_BELOW ||
-              resemblance(u) < REAPPLY_CORRELATION
+              correlation < REAPPLY_CORRELATION
             ) {
               applyNumber();
             }
           }
         }
-      } else if (!on) {
+      } else if (!on && numberApplied) {
         numberApplied = false;
+        if (frozenRef.current && configRef.current) {
+          stateRef.current = createInitialState(
+            configRef.current,
+            live.equationType
+          );
+        }
       }
 
       if (stateRef.current && configRef.current) {
@@ -320,6 +348,7 @@ const PDESolverBackground: React.FC<
     // resize repeatedly over a single flick, and each raw call reallocates the
     // drawing buffer mid-scroll.
     let resizeFrame: number | null = null;
+    let reshapeTimer = 0;
     const applyResize = () => {
       resizeFrame = null;
       if (cameraRef.current && rendererRef.current) {
@@ -329,10 +358,15 @@ const PDESolverBackground: React.FC<
         cameraRef.current.updateProjectionMatrix();
         rendererRef.current.setSize(innerWidth, innerHeight);
       }
+      // The number is set to the visible plate; set again once a real
+      // resize has settled, not on every frame of a drag.
       const size = { width: window.innerWidth, height: window.innerHeight };
       if (viewportReshaped(glyphSize, size)) {
-        glyphSize = size;
-        buildNumber();
+        window.clearTimeout(reshapeTimer);
+        reshapeTimer = window.setTimeout(() => {
+          glyphSize = size;
+          buildNumber();
+        }, RESHAPE_SETTLE_MS);
       }
     };
     const handleResize = () => {
@@ -350,6 +384,7 @@ const PDESolverBackground: React.FC<
       if (resizeFrame !== null) {
         cancelAnimationFrame(resizeFrame);
       }
+      window.clearTimeout(reshapeTimer);
 
       if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);

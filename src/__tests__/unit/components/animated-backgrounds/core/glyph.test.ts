@@ -151,13 +151,12 @@ describe('glyph graph', () => {
       }
     }
     expect(reached.size).toBe(points.length);
-    // The gap is crossed by a bridge, and only bridges are long.
-    const bridges = edges.filter(e => e.bridge);
-    expect(bridges.length).toBeGreaterThanOrEqual(1);
-    const longest = Math.max(
-      ...edges.filter(e => !e.bridge).map(e => e.length)
-    );
-    expect(Math.max(...bridges.map(e => e.length))).toBeGreaterThan(longest);
+    // The gap between the blobs is crossed only by bridges: no stroke link
+    // reaches across it, and at least one bridge does.
+    const crosses = (e: (typeof edges)[number]) =>
+      Math.sign(points[e.a].x) !== Math.sign(points[e.b].x);
+    expect(edges.filter(e => !e.bridge && crosses(e))).toHaveLength(0);
+    expect(edges.filter(e => e.bridge && crosses(e)).length).toBeGreaterThan(0);
   });
 
   it('gives up on a field with nothing in it', () => {

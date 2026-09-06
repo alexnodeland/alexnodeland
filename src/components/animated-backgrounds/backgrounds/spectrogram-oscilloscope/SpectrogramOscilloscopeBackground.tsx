@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { glyphTexture, rasterizeGlyph } from '../../core/glyph';
 import {
   NotFoundSequence,
+  RESHAPE_SETTLE_MS,
   viewportReshaped,
 } from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
@@ -25,7 +26,8 @@ const PARTIALS = 48;
 const PHRASE_SECONDS = 7;
 const PHRASE_REST = 0.35;
 const GLYPH_COLS = 256;
-// How long the fader takes to bring the voice up.
+// How long the fader takes to bring the voice up; it comes down on the
+// shared release.
 const FADER_SECONDS = 1.5;
 // A signal time no phrase has reached: the voice is off.
 const VOICE_OFF = 1e30;
@@ -368,7 +370,10 @@ const SpectrogramOscilloscopeBackground: React.FC<
       return glyphTexture(rasterizeGlyph(GLYPH_COLS, rows));
     };
     let glyph = buildGlyph();
-    const sequence = new NotFoundSequence();
+    // The fader on the voice: up in a moment, since the phrase starts the
+    // moment the flag goes up and should be heard from its first row; down
+    // on the sequence's own release.
+    const sequence = new NotFoundSequence({ formSeconds: FADER_SECONDS });
     // The signal time at which the phrase started; the voice is silent
     // before it.
     let voiceStart = VOICE_OFF;
@@ -1021,20 +1026,13 @@ const SpectrogramOscilloscopeBackground: React.FC<
       lastTime = time;
       phase += deltaSec * live.globalTimeMultiplier;
 
-      // The 404 sequence: the fader on the voice — up in a moment, since
-      // the phrase starts the moment the flag goes up and should be heard
-      // from its first row; down on the sequence's own release — and, for
-      // a still, the phrase started one phrase ago, so the whole number is
-      // on the panel in the one frame there is.
+      // The 404 sequence: the fader on the voice, and, for a still, the
+      // phrase started one phrase ago, so the whole number is on the panel
+      // in the one frame there is.
       const on = notFoundRef.current;
-      const released = frozenRef.current
+      const progress = frozenRef.current
         ? sequence.settle(on)
         : sequence.advance(Math.min(deltaSec, 0.1), on);
-      const progress = on
-        ? frozenRef.current
-          ? 1
-          : Math.min(1, sequence.seconds / FADER_SECONDS)
-        : released;
       // The phrase is PHRASE_SECONDS of wall time; signal time runs at the
       // master speed, so in the shader's units it is that many times the
       // speed.
@@ -1084,6 +1082,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
     // resize repeatedly over a single flick, and each raw call reallocates the
     // drawing buffer mid-scroll.
     let resizeFrame: number | null = null;
+    let reshapeTimer = 0;
     const applyResize = () => {
       resizeFrame = null;
       if (renderer && material.uniforms.uResolution) {
@@ -1095,13 +1094,17 @@ const SpectrogramOscilloscopeBackground: React.FC<
         );
       }
       // The number is set to the panel's shape. A URL bar sliding away is
-      // not a new shape, and rebuilding for it would make the number jump.
+      // not a new shape, and rebuilding for it would make the number jump;
+      // a real one is rebuilt for once it has settled.
       const size = { width: window.innerWidth, height: window.innerHeight };
       if (viewportReshaped(glyphSize, size)) {
-        glyphSize = size;
-        glyph.dispose();
-        glyph = buildGlyph();
-        material.uniforms.uGlyph.value = glyph;
+        window.clearTimeout(reshapeTimer);
+        reshapeTimer = window.setTimeout(() => {
+          glyphSize = size;
+          glyph.dispose();
+          glyph = buildGlyph();
+          material.uniforms.uGlyph.value = glyph;
+        }, RESHAPE_SETTLE_MS);
       }
     };
     const handleResize = () => {
@@ -1126,6 +1129,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
       if (resizeFrame !== null) {
         cancelAnimationFrame(resizeFrame);
       }
+      window.clearTimeout(reshapeTimer);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);

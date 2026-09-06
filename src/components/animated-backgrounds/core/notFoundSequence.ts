@@ -68,6 +68,13 @@ export class NotFoundSequence {
 }
 
 /**
+ * How long a resize has to have stopped before the number is laid out for
+ * the new shape. A window being dragged resizes on every frame, and a
+ * number rebuilt on every frame is a number that never arrives.
+ */
+export const RESHAPE_SETTLE_MS = 250;
+
+/**
  * A resize worth rebuilding the number for. A phone's URL bar sliding in and
  * out changes the height by a tenth or so, many times over one flick; that is
  * not a new viewport, and rebuilding for it is exactly what makes a sequence
