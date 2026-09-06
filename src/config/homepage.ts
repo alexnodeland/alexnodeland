@@ -50,7 +50,7 @@ export const homepageConfig: HomepageConfig = {
   },
   about: {
     paragraphs: [
-      'i build ai systems. most of my time goes to the unglamorous parts: agent orchestration, evaluation loops, and the data model everything else depends on. currently senior ai engineer at perch insights.',
+      'i build ai systems, mostly the infrastructure: agent orchestration, evaluation loops, and the data model everything else depends on. currently senior ai engineer at perch insights.',
       'before that i co-founded archanan in singapore and ran it as ceo for four years. we built cloud emulators of supercomputers so people could develop at scale without waiting for time on the real machine. i also led engineering at musiio, a music-ml company that soundcloud later acquired. before any of that i worked on wavelet bases for audio compression at stony brook, and wrote firmware for guitar pedals.',
       'i write rust on weekends, mostly audio synthesis and probabilistic programming. the backgrounds on this site are simulations running in your browser, not video. the gear icon opens their controls.',
     ],

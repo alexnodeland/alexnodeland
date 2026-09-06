@@ -26,7 +26,7 @@ a grid of cells, a rule, and a state buffer stepped one generation at a time. ea
 
 the shader only draws; the rule runs on a real buffer. newborn cells take the newborn colour and shift toward the established colour the longer they survive, and links are drawn between live neighbours — the same eight-cell neighbourhood the rule is evaluated over.
 
-random soup under conway settles into still lifes and period-two oscillators within a couple of hundred generations, which for a background is death. `perturbation rate` flips a small fraction of cells each step to keep things moving. set it to zero and it will stall on its own, which is the honest behaviour and worth seeing once.
+random soup under conway settles into still lifes and period-two oscillators within a couple of hundred generations, which is too static for a background. `perturbation rate` flips a small fraction of cells each step to keep things moving. set it to zero to watch it stall.
 
 ---
 
@@ -58,7 +58,7 @@ set `number of clusters` to 2 and `requested subgraph size` to something close t
 
 a working synthesizer. two oscillators, one modulating the other's phase. that is all fm synthesis is, and it is how a dx7 could make a bell out of two sine waves when a subtractive synth needed a filter bank. the signal then runs through filter, delay, distortion and reverb.
 
-top display is an oscilloscope: amplitude against time. bottom is a spectrogram: frequency low-to-high, scrolling left-to-right, brightness as intensity. every bin is a hann-windowed discrete fourier transform of the same samples the oscilloscope is drawing, so the sidebands, the harmonic series of a square wave, and the sum and difference tones from the ring modulator are all measured rather than drawn. watching one signal in both domains at once is a good way to build intuition for what fm does to a spectrum.
+top display is an oscilloscope: amplitude against time. bottom is a spectrogram: frequency low-to-high, scrolling left-to-right, brightness as intensity. every bin is a hann-windowed discrete fourier transform of the same samples the oscilloscope is drawing, so the sidebands, the harmonic series of a square wave, and the sum and difference tones from the ring modulator are all measured rather than drawn. seeing one signal in both domains at once shows what fm does to a spectrum.
 
 push `vco 1 fm amount` up slowly and watch the sidebands appear in pairs either side of the carrier, spaced at the modulator frequency.
 
