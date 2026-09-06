@@ -7,6 +7,11 @@
 
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { glyphCoverage, rasterizeGlyph } from '../../core/glyph';
+import {
+  NotFoundSequence,
+  viewportReshaped,
+} from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { PDESolverSettings } from './config';
@@ -26,6 +31,12 @@ export const BASE_FOV_DEGREES = 50;
 // backgrounded tab cannot come back and run thousands of steps at once.
 const BASE_STEPS_PER_SECOND = 300;
 const MAX_STEPS_PER_FRAME = 40;
+
+// The 404 sequence: how hard the field is pulled toward the number once the
+// sequence has fully formed, per second, and how quickly the plate comes
+// back upright to show it.
+const NOT_FOUND_PULL = 4.5;
+const NOT_FOUND_RIGHTING = 1.5;
 
 /**
  * Vertical FOV for a given viewport.
@@ -57,7 +68,7 @@ export const fovForViewport = (width: number, height: number): number => {
 
 const PDESolverBackground: React.FC<
   AnimatedBackgroundProps<PDESolverSettings>
-> = ({ className, settings, frozen }) => {
+> = ({ className, settings, frozen, notFound }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -81,6 +92,15 @@ const PDESolverBackground: React.FC<
   useEffect(() => {
     if (!frozen) resumeRef.current?.();
   }, [frozen]);
+
+  // The 404 sequence — see AnimatedBackgroundProps.notFound. Read off a ref
+  // each frame like the settings; the effect nudges a frozen loop so it draws
+  // the new state once.
+  const notFoundRef = useRef(Boolean(notFound));
+  notFoundRef.current = Boolean(notFound);
+  useEffect(() => {
+    resumeRef.current?.();
+  }, [notFound]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -115,6 +135,30 @@ const PDESolverBackground: React.FC<
     const state = createInitialState(config, settings.equationType);
     stateRef.current = state;
 
+    // The 404 sequence: the number as a target height field, at the height
+    // the initial disturbance had. The plate is square and its rows run top
+    // to bottom the way the glyph's do, so the two line up as they are; the
+    // edge is softened over a cell or so, which is what keeps the relief's
+    // lighting from going to stair-steps. In portrait the plate is zoomed
+    // until its inscribed circle reaches the screen's corners (see
+    // fovForViewport), so only the middle of it is on screen and the number
+    // is set to that width; it is set again when the viewport changes shape.
+    const target = new Float32Array(config.gridSizeX * config.gridSizeY);
+    let glyphSize = { width: window.innerWidth, height: window.innerHeight };
+    const buildTarget = () => {
+      const { width, height } = glyphSize;
+      const visible = width >= height ? 1 : width / Math.hypot(width, height);
+      const glyph = rasterizeGlyph(config.gridSizeX, config.gridSizeY, {
+        maxWidth: 0.8 * visible,
+        maxHeight: 0.62,
+      });
+      for (let i = 0; i < target.length; i++) {
+        target[i] = settings.initialAmplitude * glyphCoverage(glyph, i, 2);
+      }
+    };
+    buildTarget();
+    const sequence = new NotFoundSequence();
+
     // Create geometry and mesh
     const { geometry, material } = createVisualizationMesh(state, settings);
     const mesh = new THREE.Mesh(geometry, material);
@@ -144,6 +188,15 @@ const PDESolverBackground: React.FC<
 
       const live = settingsRef.current;
 
+      // A frozen frame tells the whole story at once; a live one advances
+      // it. The step is clamped so a tab coming back from the background
+      // plays one long frame rather than the whole time it was away.
+      const on = notFoundRef.current;
+      const step = Math.min(deltaTime, 0.1);
+      const progress = frozenRef.current
+        ? sequence.settle(on)
+        : sequence.advance(step, on);
+
       if (stateRef.current && configRef.current) {
         // Solver steps are whole, so bank the fractional part rather than
         // rounding it away — that is what makes speeds below 1 slow the
@@ -160,13 +213,46 @@ const PDESolverBackground: React.FC<
           stepPDESolver(stateRef.current, configRef.current, live.equationType);
         }
 
+        // The 404 sequence: the field is pulled toward the number, harder
+        // the further along the sequence is. The wave equation's previous
+        // step is pulled with it, so the pull sets the surface rather than
+        // kicking it — what rings is the solver working the number's edge,
+        // which is the point. Let go, the number disperses as waves.
+        if (progress > 0) {
+          const { u, uPrev } = stateRef.current;
+          const pull = frozenRef.current
+            ? 1
+            : 1 - Math.exp(-step * NOT_FOUND_PULL * progress);
+          for (let i = 0; i < u.length; i++) {
+            u[i] += (target[i] - u[i]) * pull;
+          }
+          if (uPrev) {
+            for (let i = 0; i < uPrev.length; i++) {
+              uPrev[i] += (target[i] - uPrev[i]) * pull;
+            }
+          }
+        }
+
         // Update mesh geometry
         updateMeshGeometry(meshRef.current!, stateRef.current, live);
 
-        // Auto-rotate camera
-        if (live.autoRotate && meshRef.current) {
-          meshRef.current.rotation.z +=
-            live.rotationSpeed * 0.001 * deltaTime * 60;
+        // Auto-rotate camera. The number has to be read, so the spin eases
+        // out and the plate comes back to the nearest upright as the
+        // sequence forms, and picks the spin back up when it is released.
+        if (meshRef.current) {
+          const mesh = meshRef.current;
+          if (live.autoRotate) {
+            mesh.rotation.z +=
+              live.rotationSpeed * 0.001 * deltaTime * 60 * (1 - progress);
+          }
+          if (progress > 0) {
+            const turn = Math.PI * 2;
+            const upright = Math.round(mesh.rotation.z / turn) * turn;
+            const righting = frozenRef.current
+              ? 1
+              : 1 - Math.exp(-step * NOT_FOUND_RIGHTING * progress);
+            mesh.rotation.z += (upright - mesh.rotation.z) * righting;
+          }
         }
       }
 
@@ -196,6 +282,11 @@ const PDESolverBackground: React.FC<
         cameraRef.current.fov = fovForViewport(innerWidth, innerHeight);
         cameraRef.current.updateProjectionMatrix();
         rendererRef.current.setSize(innerWidth, innerHeight);
+      }
+      const size = { width: window.innerWidth, height: window.innerHeight };
+      if (viewportReshaped(glyphSize, size)) {
+        glyphSize = size;
+        buildTarget();
       }
     };
     const handleResize = () => {

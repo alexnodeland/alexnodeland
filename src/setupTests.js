@@ -291,6 +291,7 @@ jest.mock('three', () => ({
     return {
       setAttribute: jest.fn((name, attr) => attributes.set(name, attr)),
       getAttribute: jest.fn(name => attributes.get(name)),
+      setDrawRange: jest.fn(),
       dispose: jest.fn(),
     };
   }),
@@ -342,7 +343,13 @@ jest.mock('three', () => ({
   ShaderMaterial: jest.fn(config => ({ ...config, dispose: jest.fn() })),
   PlaneGeometry: jest.fn(() => ({ dispose: jest.fn() })),
   SphereGeometry: jest.fn(() => ({ dispose: jest.fn() })),
-  DataTexture: jest.fn(() => ({ needsUpdate: false, dispose: jest.fn() })),
+  // Carries its image the way the real one does, so a texture packed by hand
+  // (the 404 glyph) can be read back.
+  DataTexture: jest.fn((data, width, height) => ({
+    image: { data, width, height },
+    needsUpdate: false,
+    dispose: jest.fn(),
+  })),
   AdditiveBlending: 1,
 }));
 
@@ -385,6 +392,35 @@ jest.mock('three/examples/jsm/lines/Line2.js', () => ({
     geometry,
     material,
     userData: {},
+    computeLineDistances: jest.fn(),
+  })),
+}));
+// The batched form: many segments in one geometry, written in place through
+// the interleaved buffers the real one exposes as `attributes`.
+jest.mock('three/examples/jsm/lines/LineSegmentsGeometry.js', () => ({
+  LineSegmentsGeometry: jest.fn(() => {
+    const attributes = {};
+    const interleaved = array => ({ array, needsUpdate: false });
+    return {
+      attributes,
+      instanceCount: 0,
+      setPositions: jest.fn(array => {
+        attributes.instanceStart = { data: interleaved(array) };
+        attributes.instanceEnd = attributes.instanceStart;
+      }),
+      setColors: jest.fn(array => {
+        attributes.instanceColorStart = { data: interleaved(array) };
+        attributes.instanceColorEnd = attributes.instanceColorStart;
+      }),
+      dispose: jest.fn(),
+    };
+  }),
+}));
+jest.mock('three/examples/jsm/lines/LineSegments2.js', () => ({
+  LineSegments2: jest.fn((geometry, material) => ({
+    geometry,
+    material,
+    visible: true,
     computeLineDistances: jest.fn(),
   })),
 }));

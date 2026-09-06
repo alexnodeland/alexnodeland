@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { siteConfig } from '../../config';
+import { useNotFound } from '../../lib/notFound';
 import { useBackground } from '../BackgroundProvider';
 import { useSettingsPanel } from '../SettingsPanelContext';
 import BackgroundControls from './BackgroundControls';
@@ -16,11 +17,21 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
   const { isContentHidden, setContentHidden } = useSettingsPanel();
   const isMobile = useIsMobileViewport();
 
+  // The 404 page is a sequence the background plays — it comes apart into
+  // the number over several seconds and then holds. Whichever background was
+  // on screen when the reader hit the missing page is the one that plays it:
+  // arriving from inside the site that is the one they were looking at, and
+  // on a cold load it is the one the visit drew. The cycle holds while the
+  // page is up, because advancing would fade the field to black and start a
+  // different background's sequence from nothing every twelve seconds. The
+  // arrow keys still switch, and the next background plays its own.
+  const notFound = useNotFound();
+
   // Mobile reaches the backgrounds by hiding the page content (see
   // MobileInteractivity), which is a deliberate "let me look at / tune this
   // one" gesture — auto-advancing out from under it would fight the user.
   // Desktop's H key is a passive lean-back view, so it keeps cycling.
-  const cyclePaused = isMobile && isContentHidden;
+  const cyclePaused = (isMobile && isContentHidden) || notFound;
   const {
     state,
     switchToNextBackground,
@@ -263,6 +274,7 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
           className={className}
           settings={currentSettings}
           frozen={prefersReducedMotion}
+          notFound={notFound}
           onAudioControlsReady={publishAudioControls}
         />
       </React.Suspense>

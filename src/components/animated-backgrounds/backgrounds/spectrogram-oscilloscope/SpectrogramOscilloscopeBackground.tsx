@@ -1,8 +1,18 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { GLYPH_GLSL, glyphTexture, rasterizeGlyph } from '../../core/glyph';
+import {
+  NotFoundSequence,
+  viewportReshaped,
+} from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { SpectrogramOscilloscopeSettings } from './config';
+
+// The oscilloscope takes the top of the screen and the spectrogram the rest;
+// the number lives in the spectrogram, so it is set to that panel's shape.
+const SCOPE_HEIGHT = 0.3;
+const GLYPH_COLS = 256;
 
 interface SpectrogramOscilloscopeBackgroundProps
   extends AnimatedBackgroundProps<SpectrogramOscilloscopeSettings> {
@@ -74,7 +84,7 @@ const COLOR_UNIFORMS: Record<
 
 const SpectrogramOscilloscopeBackground: React.FC<
   SpectrogramOscilloscopeBackgroundProps
-> = ({ className, settings, frozen, onAudioControlsReady }) => {
+> = ({ className, settings, frozen, notFound, onAudioControlsReady }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -94,6 +104,15 @@ const SpectrogramOscilloscopeBackground: React.FC<
   useEffect(() => {
     if (!frozen) resumeRef.current?.();
   }, [frozen]);
+
+  // The 404 sequence — see AnimatedBackgroundProps.notFound. Read off a ref
+  // each frame like the settings; the effect nudges a frozen loop so it draws
+  // the new state once.
+  const notFoundRef = useRef(Boolean(notFound));
+  notFoundRef.current = Boolean(notFound);
+  useEffect(() => {
+    resumeRef.current?.();
+  }, [notFound]);
 
   // Web Audio API references
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -320,9 +339,25 @@ const SpectrogramOscilloscopeBackground: React.FC<
       }
     `;
 
+    // The number, for the 404 sequence, at the spectrogram panel's aspect.
+    // Rebuilt only when the viewport changes shape.
+    let glyphSize = { width: window.innerWidth, height: window.innerHeight };
+    const buildGlyph = () => {
+      const rows = Math.max(
+        32,
+        Math.round(
+          (GLYPH_COLS * glyphSize.height * (1 - SCOPE_HEIGHT)) / glyphSize.width
+        )
+      );
+      return glyphTexture(rasterizeGlyph(GLYPH_COLS, rows));
+    };
+    let glyph = buildGlyph();
+    const sequence = new NotFoundSequence();
+
     // Fragment shader for spectrogram and oscilloscope visualization
     const fragmentShader = `
       const float TWO_PI = 6.283185307179586;
+      const float SCOPE_HEIGHT = ${SCOPE_HEIGHT.toFixed(2)};
       // FM amount sliders run 0-1; scale them into a usable modulation index.
       const float FM_INDEX_SCALE = 8.0;
       // Upper bound for the analysis loop. Each step evaluates the full
@@ -402,6 +437,8 @@ const SpectrogramOscilloscopeBackground: React.FC<
       uniform float uMaxLogFreq;
 
       varying vec2 vUv;
+
+      ${GLYPH_GLSL}
 
       // Generate waveform based on type
       float generateWaveform(float phase, float waveformType) {
@@ -650,7 +687,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
         vec3 finalColor = vec3(0.0);
 
         // Layout: oscilloscope on top 30%, spectrogram below
-        float scopeHeight = 0.3;
+        float scopeHeight = SCOPE_HEIGHT;
         float scopeEnd = 1.0 - scopeHeight;
 
         if (uv.y > scopeEnd) {
@@ -661,6 +698,10 @@ const SpectrogramOscilloscopeBackground: React.FC<
           float timeOffset = uv.x * 4.0; // Show 4 periods
           float displayTime = uTime + timeOffset;
           float signal = generateSignal(displayTime);
+
+          // The 404 sequence: the signal dies back to a flat line. What was
+          // in it is in the spectrogram below.
+          signal *= 1.0 - 0.92 * uNotFound;
 
           // Map signal to scope Y position
           float waveY = signal * 0.4 + 0.5;
@@ -721,6 +762,24 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
           // Apply fade with distance (older = dimmer)
           float ageFade = 1.0 - spectrogramY * 0.7;
+
+          // The 404 sequence: the number is in the signal. It went into it
+          // the moment the page came up, so it scrolls down the history the
+          // way everything played does — newest rows first — and the rest
+          // of the spectrum dies back around it. The signal's own structure
+          // shows through it as texture rather than a flat fill.
+          if (uNotFound > 0.0) {
+            vec2 guv = vec2(uv.x, uv.y / scopeEnd);
+            float cover = glyphCover(guv);
+            float edge = uNotFound * 1.12 - 0.06;
+            float reveal = 1.0 - smoothstep(edge - 0.1, edge + 0.02, spectrogramY);
+            float burn = cover * reveal;
+            float grain = 0.06 * sin(uv.x * 90.0 + analysisTime * 3.0);
+            magnitude = magnitude * (1.0 - 0.85 * reveal)
+              + burn * (0.44 + 0.5 * magnitude + grain);
+            ageFade = mix(ageFade, 1.0 - spectrogramY * 0.25, burn);
+          }
+
           magnitude *= ageFade;
 
           // Color based on magnitude
@@ -843,6 +902,8 @@ const SpectrogramOscilloscopeBackground: React.FC<
         uUseLogScale: { value: settings.useLogScale },
         uMinLogFreq: { value: settings.minLogFreq },
         uMaxLogFreq: { value: settings.maxLogFreq },
+        uGlyph: { value: glyph },
+        uNotFound: { value: 0 },
       },
       vertexShader,
       fragmentShader,
@@ -905,8 +966,17 @@ const SpectrogramOscilloscopeBackground: React.FC<
       lastTime = time;
       phase += deltaSec * live.globalTimeMultiplier;
 
+      // A frozen frame tells the whole story at once; a live one advances it.
+      // The step is clamped so a tab coming back from the background plays
+      // one long frame rather than the whole time it was away.
+      const on = notFoundRef.current;
+      const progress = frozenRef.current
+        ? sequence.settle(on)
+        : sequence.advance(Math.min(deltaSec, 0.1), on);
+
       const u = material.uniforms;
       u.uTime.value = phase;
+      u.uNotFound.value = progress;
 
       for (const [name, key] of Object.entries(SCALAR_UNIFORMS)) {
         if (u[name]) u[name].value = live[key];
@@ -951,6 +1021,15 @@ const SpectrogramOscilloscopeBackground: React.FC<
           renderer.domElement.height
         );
       }
+      // The number is set to the panel's shape. A URL bar sliding away is
+      // not a new shape, and rebuilding for it would make the number jump.
+      const size = { width: window.innerWidth, height: window.innerHeight };
+      if (viewportReshaped(glyphSize, size)) {
+        glyphSize = size;
+        glyph.dispose();
+        glyph = buildGlyph();
+        material.uniforms.uGlyph.value = glyph;
+      }
     };
     const handleResize = () => {
       if (resizeFrame === null) {
@@ -983,6 +1062,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
       }
 
       // Clean up Three.js resources
+      glyph.dispose();
       geometry.dispose();
       material.dispose();
       renderer.dispose();

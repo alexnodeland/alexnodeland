@@ -45,8 +45,8 @@ src/
 │   ├── layout.tsx            # The shell: nav capsule, hero region, window, footer
 │   ├── heroes.tsx            # One hero per path; the shell resolves its own
 │   ├── seo.tsx               # <head> tags, canonical URL, JSON-LD
-│   ├── NotFoundScene.tsx     # The 404's canvas scene
 │   ├── animated-backgrounds/ # The six simulations, their configs, the settings panel
+│   │   └── core/glyph.ts     # The "404" as a field; every simulation's 404 sequence reads it
 │   ├── chat/                 # In-browser chat: worker, context, modal, welcome screen
 │   ├── cv/                   # CV sections, control bar, search, exports
 │   ├── expertise-icons/      # The homepage grid's icons
@@ -134,8 +134,13 @@ Each simulation lives in
 `src/components/animated-backgrounds/backgrounds/<name>/` with a `config.ts`
 (name, description, settings schema, defaults) and a component. Components
 are lazy-loaded through their configs so three.js stays out of the page
-bundles. A background takes `settings` and `frozen` (set under
-`prefers-reduced-motion`: draw one frame and hold).
+bundles. A background takes `settings`, `frozen` (set under
+`prefers-reduced-motion`: draw one frame and hold) and `notFound` (set while
+the 404 page is up: play the background's 404 sequence, in which it comes
+apart into the number over about seven seconds and holds there). Every
+background has a sequence, built on the shared glyph field in `core/glyph.ts`
+and the clock in `core/notFoundSequence.ts`, so the one on screen when a
+reader hits a missing page is the one that plays.
 
 ### 4. Running it
 

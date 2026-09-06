@@ -1,12 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { GLYPH_GLSL, glyphTexture, rasterizeGlyph } from '../../core/glyph';
+import {
+  NotFoundSequence,
+  viewportReshaped,
+} from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { SimpleWaveSettings } from './config';
 
+// The number is sampled, not drawn, so this only has to be fine enough for a
+// soft edge at the size the waves are.
+const GLYPH_COLS = 256;
+
 const SimpleWaveBackground: React.FC<
   AnimatedBackgroundProps<SimpleWaveSettings>
-> = ({ className, settings, frozen }) => {
+> = ({ className, settings, frozen, notFound }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -25,6 +34,15 @@ const SimpleWaveBackground: React.FC<
   useEffect(() => {
     if (!frozen) resumeRef.current?.();
   }, [frozen]);
+
+  // The 404 sequence — see AnimatedBackgroundProps.notFound. Read off a ref
+  // each frame like the settings; the effect nudges a frozen loop so it draws
+  // the new state once.
+  const notFoundRef = useRef(Boolean(notFound));
+  notFoundRef.current = Boolean(notFound);
+  useEffect(() => {
+    resumeRef.current?.();
+  }, [notFound]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -53,6 +71,19 @@ const SimpleWaveBackground: React.FC<
       }
     `;
 
+    // The number, for the 404 sequence. Rebuilt when the viewport changes
+    // shape, since it is set to the viewport's aspect.
+    let glyphSize = { width: window.innerWidth, height: window.innerHeight };
+    const buildGlyph = () => {
+      const rows = Math.max(
+        32,
+        Math.round((GLYPH_COLS * glyphSize.height) / glyphSize.width)
+      );
+      return glyphTexture(rasterizeGlyph(GLYPH_COLS, rows));
+    };
+    let glyph = buildGlyph();
+    const sequence = new NotFoundSequence();
+
     // Fragment shader for simple sine waves
     const fragmentShader = `
       uniform float uTime;
@@ -66,6 +97,8 @@ const SimpleWaveBackground: React.FC<
 
       varying vec2 vUv;
 
+      ${GLYPH_GLSL}
+
       void main() {
         vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / uResolution.y;
         float time = uTime;
@@ -76,6 +109,21 @@ const SimpleWaveBackground: React.FC<
         float wave3 = sin((uv.x + uv.y) * uWaveFrequency * 0.6 + time * 0.8) * uWaveAmplitude * 0.5;
 
         float combined = wave1 + wave2 + wave3;
+
+        // The 404 sequence: the number pulls the field. Inside it the three
+        // components are driven to reinforce, so it reads at full amplitude;
+        // outside they cancel, down to a residue of the wave and to rings
+        // spreading out from the number's edge.
+        if (uNotFound > 0.0) {
+          float cover = glyphCover(vUv);
+          float d = glyphDist(vUv);
+          float rings = 0.5 + 0.5 * sin(d * 0.9 - time * 2.2);
+          float halo = exp(-max(d, 0.0) / 6.0);
+          float outside = combined * 0.12
+            + 0.55 * halo * rings * (0.4 + 0.6 * abs(combined));
+          float inside = 0.9 + 0.3 * combined;
+          combined = mix(combined, mix(outside, inside, cover), uNotFound);
+        }
 
         // Color gradient based on wave values using standardized colors
         vec3 color;
@@ -119,6 +167,8 @@ const SimpleWaveBackground: React.FC<
         uColorBackground: {
           value: new THREE.Vector3(...settings.colors.background),
         },
+        uGlyph: { value: glyph },
+        uNotFound: { value: 0 },
       },
       vertexShader,
       fragmentShader,
@@ -146,8 +196,17 @@ const SimpleWaveBackground: React.FC<
       lastTime = time;
       phase += deltaSec * live.globalTimeMultiplier;
 
+      // A frozen frame tells the whole story at once; a live one advances it.
+      // The step is clamped so a tab coming back from the background plays
+      // one long frame rather than the whole time it was away.
+      const on = notFoundRef.current;
+      const progress = frozenRef.current
+        ? sequence.settle(on)
+        : sequence.advance(Math.min(deltaSec, 0.1), on);
+
       const u = material.uniforms;
       u.uTime.value = phase;
+      u.uNotFound.value = progress;
       u.uWaveFrequency.value = live.waveFrequency;
       u.uWaveAmplitude.value = live.waveAmplitude;
       u.uColorPrimary.value.set(...live.colors.primary);
@@ -182,6 +241,15 @@ const SimpleWaveBackground: React.FC<
           window.innerHeight
         );
       }
+      // The number is set to the viewport's shape. A URL bar sliding away is
+      // not a new shape, and rebuilding for it would make the number jump.
+      const size = { width: window.innerWidth, height: window.innerHeight };
+      if (viewportReshaped(glyphSize, size)) {
+        glyphSize = size;
+        glyph.dispose();
+        glyph = buildGlyph();
+        material.uniforms.uGlyph.value = glyph;
+      }
     };
     const handleResize = () => {
       if (resizeFrame === null) {
@@ -208,6 +276,7 @@ const SimpleWaveBackground: React.FC<
       }
 
       // Clean up Three.js resources
+      glyph.dispose();
       geometry.dispose();
       material.dispose();
       renderer.dispose();

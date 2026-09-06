@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { rasterizeGlyph } from '../../core/glyph';
+import { NotFoundSequence } from '../../core/notFoundSequence';
 import { getRenderPixelRatio } from '../../core/renderScale';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { makeRuleTables, population, stepLife } from './automaton';
@@ -10,6 +12,15 @@ const MAX_CELLS = 40000;
 
 // Generations of unchanged population before the grid is treated as stalled.
 const STALL_GENERATIONS = 24;
+
+// The fewest columns the number can be drawn across and still be read. A
+// phone at the default cell size has under twenty, so the 404 sequence
+// refines the grid until it has at least this many.
+const MIN_GLYPH_COLS = 48;
+
+// Generations the reduced-motion still is run for before it is drawn: enough
+// for the soup outside the number to die back and the number to fill.
+const SETTLE_GENERATIONS = 30;
 
 /**
  * Renders a Life-like cellular automaton.
@@ -25,7 +36,7 @@ const STALL_GENERATIONS = 24;
  */
 const CellularAutomatonBackground: React.FC<
   AnimatedBackgroundProps<CellularAutomatonSettings>
-> = ({ className, settings, frozen }) => {
+> = ({ className, settings, frozen, notFound }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
 
@@ -50,6 +61,15 @@ const CellularAutomatonBackground: React.FC<
     if (!frozen) resumeRef.current?.();
   }, [frozen]);
 
+  // The 404 sequence — see AnimatedBackgroundProps.notFound. Read off a ref
+  // each generation; the effect nudges a frozen loop so it draws the new
+  // state once.
+  const notFoundRef = useRef(Boolean(notFound));
+  notFoundRef.current = Boolean(notFound);
+  useEffect(() => {
+    resumeRef.current?.();
+  }, [notFound]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -72,6 +92,13 @@ const CellularAutomatonBackground: React.FC<
     let texture: THREE.DataTexture | null = null;
     let pixels = new Uint8Array(0);
 
+    // The 404 sequence: the number as a mask on this grid, and how far along
+    // the picture is in coming apart into it. The mask is rasterised with
+    // the grid, so it is always the grid's own shape.
+    let mask: Uint8Array = new Uint8Array(0);
+    const sequence = new NotFoundSequence();
+    let progress = 0;
+
     /** Fills the grid with random soup at the configured density. */
     const seed = () => {
       for (let i = 0; i < current.length; i++) {
@@ -83,7 +110,11 @@ const CellularAutomatonBackground: React.FC<
 
     /** Grid dimensions the current viewport calls for, within the cell budget. */
     const gridForViewport = () => {
-      const px = Math.max(4, cellSize);
+      // While the number is on the grid it needs columns enough to be read.
+      const finest = notFoundRef.current
+        ? window.innerWidth / MIN_GLYPH_COLS
+        : Infinity;
+      const px = Math.max(4, Math.min(cellSize, finest));
       let c = Math.max(8, Math.ceil(window.innerWidth / px));
       let r = Math.max(8, Math.ceil(window.innerHeight / px));
 
@@ -142,6 +173,17 @@ const CellularAutomatonBackground: React.FC<
         seed();
       }
 
+      // The state texture's first row is drawn at the bottom of the screen,
+      // and the glyph's first row is its top.
+      const glyph = rasterizeGlyph(cols, rows, { maxHeight: 0.72 }).mask;
+      mask = new Uint8Array(size);
+      for (let y = 0; y < rows; y++) {
+        mask.set(
+          glyph.subarray((rows - 1 - y) * cols, (rows - y) * cols),
+          y * cols
+        );
+      }
+
       texture?.dispose();
       texture = new THREE.DataTexture(
         pixels,
@@ -175,6 +217,38 @@ const CellularAutomatonBackground: React.FC<
         if (Math.random() < exact - flips) flips += 1;
         for (let i = 0; i < flips; i++) {
           next[Math.floor(Math.random() * next.length)] = 1;
+        }
+      }
+
+      // The 404 sequence, as a bias on the rule. Outside the number life
+      // fails, more surely the further along the sequence is; inside it,
+      // deaths are suppressed and births encouraged, until at the end the
+      // number stands solid — a block Conway's count would otherwise churn.
+      // What keeps it alive at rest: a flicker inside, sparks outside, and
+      // the rule itself still working the edge.
+      const p = progress;
+      if (p > 0) {
+        const birth = 0.04 + 0.42 * p;
+        const die = 0.05 + 0.5 * p;
+        const spark = 0.0012 * (1 - p) + 0.0002;
+        for (let i = 0; i < next.length; i++) {
+          if (mask[i]) {
+            if (next[i]) {
+              if (p >= 1 && Math.random() < 0.012) next[i] = 0;
+            } else if (current[i] && Math.random() < p) {
+              next[i] = 1;
+            } else if (Math.random() < birth) {
+              next[i] = 1;
+            }
+          } else if (next[i]) {
+            // A birth outside the number is the rule working its edge and
+            // filling its counters; those are refused outright by the end,
+            // or the digits blur into a block.
+            const born = !current[i];
+            if (Math.random() < (born ? Math.max(die, p) : die)) next[i] = 0;
+          } else if (Math.random() < spark) {
+            next[i] = 1;
+          }
         }
       }
 
@@ -327,12 +401,49 @@ const CellularAutomatonBackground: React.FC<
     const stepIntervalMs =
       1000 / Math.max(0.1, generationsPerSecond * globalTimeMultiplier);
     let lastStep = performance.now();
+    let lastFrame = 0;
     let lastPopulation = -1;
     let stalledFor = 0;
     let frameId: number | null = null;
 
+    /**
+     * Rebuilds the grid when the viewport — or the 404 sequence, which asks
+     * for a finer grid on a narrow screen — calls for a different shape.
+     * Everything the two grids share carries over.
+     */
+    const syncGrid = () => {
+      const target = gridForViewport();
+      if (target.cols === cols && target.rows === rows) return;
+      const rebuilt = buildGrid(true);
+      uploadState();
+      material.uniforms.uState.value = rebuilt;
+      material.uniforms.uGrid.value.set(cols, rows);
+    };
+
+    // The reduced-motion still: the end of the sequence, reached at once.
+    const settle = () => {
+      progress = sequence.settle(true);
+      for (let i = 0; i < SETTLE_GENERATIONS; i++) step();
+      uploadState();
+    };
+
     const animate = (now: number) => {
       const elapsed = now - lastStep;
+      const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.1) : 0;
+      lastFrame = now;
+
+      const on = notFoundRef.current;
+      if (frozenRef.current) {
+        if (on && sequence.raw < 1) {
+          syncGrid();
+          settle();
+        } else if (!on) {
+          progress = sequence.settle(false);
+        }
+      } else {
+        progress = sequence.advance(dt, on);
+        syncGrid();
+      }
 
       if (elapsed >= stepIntervalMs) {
         step();
@@ -341,10 +452,14 @@ const CellularAutomatonBackground: React.FC<
 
         // A grid whose population stops changing has converged on still lifes
         // and short oscillators; reseed rather than sit on a frozen frame.
+        // Not while the number is on it — standing still is the point then.
         const live = population(current);
         stalledFor = live === lastPopulation ? stalledFor + 1 : 0;
         lastPopulation = live;
-        if (stalledFor >= STALL_GENERATIONS || live === 0) {
+        if (
+          !sequence.active &&
+          (stalledFor >= STALL_GENERATIONS || live === 0)
+        ) {
           seed();
           uploadState();
           stalledFor = 0;
@@ -380,13 +495,7 @@ const CellularAutomatonBackground: React.FC<
 
       // Most of those resizes are a few pixels of browser chrome and leave the
       // grid the same shape, in which case there is nothing to rebuild at all.
-      const target = gridForViewport();
-      if (target.cols === cols && target.rows === rows) return;
-
-      const rebuilt = buildGrid(true);
-      uploadState();
-      material.uniforms.uState.value = rebuilt;
-      material.uniforms.uGrid.value.set(cols, rows);
+      syncGrid();
     };
 
     const handleResize = () => {

@@ -5,22 +5,14 @@ import NotFoundPage from '../../../pages/404';
 
 // No Layout mock: the shell wraps the page (wrapPageElement) rather than the
 // page rendering it, so a 404 is just its own content — plus the flag it
-// raises so the shell wears the 404 hero, and the scene it puts behind it.
+// raises so the shell wears the 404 hero and the background plays its
+// sequence. Nothing is drawn over the field by the page itself.
 
 jest.mock('../../../components/seo', () => ({
   __esModule: true,
   default: ({ title }: { title?: string }) => (
     <div data-testid="seo" data-title={title} />
   ),
-}));
-
-// The scene is a canvas animation; what the page owes it is a variant.
-jest.mock('../../../components/NotFoundScene', () => ({
-  __esModule: true,
-  default: ({ variant }: { variant: string }) => (
-    <div data-testid="not-found-scene" data-variant={variant} />
-  ),
-  pickNotFoundVariant: () => 'decay',
 }));
 
 jest.mock('../../../styles/404.scss', () => ({}));
@@ -37,6 +29,20 @@ describe('404 Page', () => {
     expect(backLink).toHaveClass('back-home');
   });
 
+  it('offers the site sections as ways back', () => {
+    render(<NotFoundPage />);
+    expect(screen.getByText('blog')).toHaveAttribute('href', '/blog');
+    expect(screen.getByText('projects')).toHaveAttribute('href', '/projects');
+    expect(screen.getByText('cv')).toHaveAttribute('href', '/cv');
+  });
+
+  it('shows the address that was typed, once mounted', () => {
+    window.history.pushState({}, '', '/no/such/page');
+    render(<NotFoundPage />);
+    expect(screen.getByText('/no/such/page')).toBeInTheDocument();
+    window.history.pushState({}, '', '/');
+  });
+
   it('raises the not-found flag while mounted and lowers it after', () => {
     const { unmount } = render(<NotFoundPage />);
     expect(isNotFound()).toBe(true);
@@ -44,18 +50,20 @@ describe('404 Page', () => {
     expect(isNotFound()).toBe(false);
   });
 
-  it('marks the document and puts a scene behind the page', () => {
+  it('marks the document for the chrome to come apart, and unmarks it', () => {
     const { unmount } = render(<NotFoundPage />);
-    expect(document.documentElement.dataset.notFound).toBe('decay');
-    expect(document.documentElement.style.getPropertyValue('--nf-dy')).toMatch(
-      /px$/
-    );
-    expect(screen.getByTestId('not-found-scene')).toHaveAttribute(
-      'data-variant',
-      'decay'
-    );
+    const root = document.documentElement;
+    expect(root.hasAttribute('data-not-found')).toBe(true);
+    expect(root.style.getPropertyValue('--nf-dy')).toMatch(/px$/);
+    expect(root.style.getPropertyValue('--nf-dx')).toMatch(/px$/);
     unmount();
-    expect(document.documentElement.dataset.notFound).toBeUndefined();
-    expect(document.documentElement.style.getPropertyValue('--nf-dy')).toBe('');
+    expect(root.hasAttribute('data-not-found')).toBe(false);
+    expect(root.style.getPropertyValue('--nf-dy')).toBe('');
+  });
+
+  it('draws nothing of its own over the field', () => {
+    const { container } = render(<NotFoundPage />);
+    expect(container.querySelector('canvas')).toBeNull();
+    expect(document.body.querySelector('canvas')).toBeNull();
   });
 });
