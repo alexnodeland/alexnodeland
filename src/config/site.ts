@@ -84,7 +84,9 @@ export const siteConfig: SiteConfig = {
     defaultTitle: 'alex nodeland',
     defaultDescription:
       'ai engineer and mathematician. agent systems, distributed infrastructure, and audio dsp. previously ceo of a supercomputing startup.',
-    defaultImage: '/images/icon.png',
+    // The social card (1200×630): the name and the path over a Life field,
+    // in the site's own frame. Crawlers want an absolute URL; SEO resolves it.
+    defaultImage: '/images/social-card.png',
   },
 
   // Navigation

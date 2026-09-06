@@ -11,7 +11,7 @@ jest.mock('../../../config', () => ({
       defaultTitle: 'alex nodeland',
       defaultDescription:
         'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.',
-      defaultImage: '/images/icon.png',
+      defaultImage: '/images/social-card.png',
     },
   },
 }));
@@ -31,6 +31,18 @@ describe('SEO Component', () => {
     expect(metaDescription).toHaveAttribute(
       'content',
       'Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.'
+    );
+
+    // The social card, made absolute for the crawlers.
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    const twitterImage = document.querySelector('meta[name="twitter:image"]');
+    expect(ogImage).toHaveAttribute(
+      'content',
+      'https://alexnodeland.com/images/social-card.png'
+    );
+    expect(twitterImage).toHaveAttribute(
+      'content',
+      'https://alexnodeland.com/images/social-card.png'
     );
   });
 
@@ -108,16 +120,13 @@ describe('SEO Component', () => {
     expect(twitterDescription).toHaveAttribute('content', 'Test description');
   });
 
-  it('should render link tags for icons', () => {
+  it('should leave the icon links to gatsby-plugin-manifest', () => {
     render(<SEO />);
 
-    const iconLink = document.querySelector('link[rel="icon"]');
-    const touchIconLink = document.querySelector(
-      'link[rel="apple-touch-icon"]'
-    );
-
-    expect(iconLink).toHaveAttribute('href', '/images/icon.png');
-    expect(touchIconLink).toHaveAttribute('href', '/images/icon.png');
+    // The manifest plugin injects the favicon and apple-touch-icon links; a
+    // second rel="icon" from here would override its set.
+    expect(document.querySelector('link[rel="icon"]')).toBeNull();
+    expect(document.querySelector('link[rel="apple-touch-icon"]')).toBeNull();
   });
 
   it('should handle all custom props together', () => {

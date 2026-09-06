@@ -1,3 +1,5 @@
+![alex nodeland · math → audio dsp → distributed systems → ai](.github/banner.png)
+
 simple parts, explicit rules, emergent wholes ✨
 
 ---
@@ -13,3 +15,5 @@ i work mostly in python and write rust on weekends. into probabilistic programmi
 learning cantonese 🀄, watching birds 🐦, constructing sounds 🎹
 
 [alexnodeland.com](https://alexnodeland.com) · [alex@ournature.studio](mailto:alex@ournature.studio)
+
+the code here is [mit licensed](LICENSE). the writing, the cv, and the images are mine and are not.

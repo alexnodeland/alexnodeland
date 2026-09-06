@@ -5,7 +5,7 @@ description: "Six simulations render the backgrounds on this site — Conway's L
 category: 'Projects'
 ---
 
-the backgrounds on this site are simulations, not video loops. every one is computed per frame in your browser. the gear icon in the corner opens a panel with the parameters for whichever is on screen, and they cycle every twelve seconds unless you turn that off.
+the backgrounds on this site are simulations, not video loops. every one is computed per frame in your browser. the landscape icon in the corner opens a panel with the parameters for whichever is on screen, and they cycle every twelve seconds unless you turn that off.
 
 six of them, in cycle order:
 

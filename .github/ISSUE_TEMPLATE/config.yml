@@ -1,0 +1,6 @@
+# Only the form below: a blank issue on a personal site is usually an email.
+blank_issues_enabled: false
+contact_links:
+  - name: something else
+    url: mailto:alex@ournature.studio
+    about: questions, consulting, or anything that is not a bug on the site
