@@ -36,6 +36,7 @@ export const formatMessagesToMarkdown = (
     .join('\n\n---\n\n');
 };
 
+// The same dialog grammar as the clear confirmation (`.dialog` in chat.scss).
 const ExportChatDialog: React.FC<ExportChatDialogProps> = ({
   isOpen,
   onCancel,
@@ -91,26 +92,26 @@ const ExportChatDialog: React.FC<ExportChatDialogProps> = ({
   };
 
   return (
-    <div className="export-chat-overlay" onClick={handleCancel}>
+    <div className="dialog-overlay export-chat-overlay" onClick={handleCancel}>
       <div
-        className="export-chat-dialog"
+        className="dialog export-chat-dialog"
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="export-dialog-title"
       >
-        <div className="export-chat-header">
+        <div className="dialog-header export-chat-header">
           <h3 id="export-dialog-title">export chat</h3>
         </div>
 
-        <div className="export-chat-content">
+        <div className="dialog-body export-chat-content">
           <p className="export-message">
             export <strong>{messages.length}</strong> message
             {messages.length !== 1 ? 's' : ''} as markdown
           </p>
 
           {hasThinking && (
-            <label className="thinking-toggle-checkbox">
+            <label className="dialog-checkbox thinking-toggle-checkbox">
               <input
                 type="checkbox"
                 checked={includeThinking}
@@ -122,8 +123,9 @@ const ExportChatDialog: React.FC<ExportChatDialogProps> = ({
           )}
         </div>
 
-        <div className="export-chat-actions">
+        <div className="dialog-actions export-chat-actions">
           <button
+            type="button"
             className="export-cancel-button"
             onClick={handleCancel}
             disabled={isExporting}
@@ -131,19 +133,19 @@ const ExportChatDialog: React.FC<ExportChatDialogProps> = ({
             cancel
           </button>
           <button
+            type="button"
             className="export-copy-button"
             onClick={handleCopyToClipboard}
             disabled={isExporting || messages.length === 0}
           >
             <svg
-              width="14"
-              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              aria-hidden="true"
             >
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -151,19 +153,19 @@ const ExportChatDialog: React.FC<ExportChatDialogProps> = ({
             copy
           </button>
           <button
+            type="button"
             className="export-download-button"
             onClick={handleDownloadFile}
             disabled={isExporting || messages.length === 0}
           >
             <svg
-              width="14"
-              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              aria-hidden="true"
             >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7,10 12,15 17,10" />

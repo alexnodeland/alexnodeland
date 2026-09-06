@@ -6,36 +6,28 @@ interface SamplePromptsProps {
   isVisible: boolean;
 }
 
-const getSamplePrompts = () => {
-  const icons = ['🧠', '💡', '🚀', '⚡', '🔧'];
-  return chatConfig.interface.samplePrompts.map((text, index) => ({
-    id: `prompt-${index}`,
-    text,
-    icon: icons[index % icons.length],
-  }));
-};
-
+// Three things to ask, floating above the input until the first message is
+// sent. Each is the site's secondary button holding the prompt's own words —
+// a prompt is text, so nothing decorates it.
 const SamplePrompts: React.FC<SamplePromptsProps> = ({
   onPromptSelect,
   isVisible,
 }) => {
   if (!isVisible) return null;
 
-  const samplePrompts = getSamplePrompts();
-
   return (
     <div className="sample-prompts">
       <div className="sample-prompts-title">try asking:</div>
       <div className="sample-prompts-grid">
-        {samplePrompts.map(prompt => (
+        {chatConfig.interface.samplePrompts.map((text, index) => (
           <button
-            key={prompt.id}
+            key={`prompt-${index}`}
+            type="button"
             className="sample-prompt-pill"
-            onClick={() => onPromptSelect(prompt.text)}
-            aria-label={`Use sample prompt: ${prompt.text}`}
+            onClick={() => onPromptSelect(text)}
+            aria-label={`Use sample prompt: ${text}`}
           >
-            <span className="prompt-icon">{prompt.icon}</span>
-            <span className="prompt-text">{prompt.text}</span>
+            <span className="prompt-text">{text}</span>
           </button>
         ))}
       </div>

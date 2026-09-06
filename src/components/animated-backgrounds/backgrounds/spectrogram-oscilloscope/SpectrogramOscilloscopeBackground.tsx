@@ -1213,41 +1213,13 @@ const SpectrogramOscilloscopeBackground: React.FC<
           opacity: settings.opacity,
         }}
       />
+      {/* Bottom-centre of the field, above the `?` hint's line: the corners
+          belong to the two pills. Styled with the rest of the backgrounds'
+          chrome (.audio-indicator in animated-backgrounds.scss). */}
       {isPlaying && (
-        <div
-          style={{
-            // Bottom-center: the corners belong to the background pill (left)
-            // and the chat stack (right); dropping this at a corner buried
-            // their keyboard hints.
-            position: 'fixed',
-            bottom: '2rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '0.5rem 0.9rem',
-            background: 'rgba(10, 12, 16, 0.85)',
-            border: '1px solid rgba(255, 255, 255, 0.16)',
-            borderRadius: '0.5rem',
-            color: '#00ff88',
-            fontFamily: 'monospace',
-            fontSize: '12px',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            backdropFilter: 'blur(10px)',
-            pointerEvents: 'none',
-          }}
-        >
-          <span
-            style={{
-              display: 'inline-block',
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: '#00ff88',
-            }}
-          />
-          <span>♪ audio playing</span>
+        <div className="audio-indicator" role="status">
+          <span className="audio-indicator-dot" aria-hidden="true" />
+          <span>audio playing</span>
         </div>
       )}
     </>

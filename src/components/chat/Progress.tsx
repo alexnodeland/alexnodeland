@@ -63,7 +63,7 @@ const Progress: React.FC<ProgressProps> = ({
               className="chat-progress-cancel"
               onClick={onCancel}
               aria-label="Cancel download"
-              title="Cancel download"
+              title="cancel download"
             >
               <svg
                 width="16"

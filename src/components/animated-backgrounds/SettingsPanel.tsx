@@ -4,6 +4,7 @@ import {
   BackgroundSettings,
   SettingsSchema,
 } from '../../types/animated-backgrounds';
+import CloseIcon from '../ui/CloseIcon';
 import { useIsMobileViewport } from './core/useIsMobileViewport';
 
 interface SettingsPanelProps {
@@ -449,22 +450,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               className="close-button"
               aria-label="Close settings"
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M18 6L6 18M6 6L18 18"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <CloseIcon />
             </button>
           </div>
           {(!isMobile || descriptionOpen) && (
@@ -536,7 +522,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     onStopAudio?.();
                   }}
                   aria-label="Hold to play sound"
-                  title="Click and hold to play sound"
+                  title="click and hold to play sound"
                 >
                   <kbd>P</kbd> play sound
                 </button>
@@ -581,15 +567,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </div>
         </>
       ) : (
-        <div
-          className="settings-content"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            height: '100%',
-          }}
-        >
+        <div className="settings-content settings-sections">
           {/* Custom categories (top, fixed) */}
           <div className="settings-section settings-section-custom">
             <div className="section-header">
@@ -600,7 +578,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   aria-label={
                     customAnyOpen ? 'Collapse all custom' : 'Expand all custom'
                   }
-                  title={customAnyOpen ? 'Collapse all' : 'Expand all'}
+                  title={customAnyOpen ? 'collapse all' : 'expand all'}
                 >
                   {customAnyOpen ? '▾' : '▸'}
                 </button>
@@ -631,10 +609,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </div>
 
           {/* Standard categories (bottom-justified) */}
-          <div
-            className="settings-section settings-section-standard"
-            style={{ marginTop: 'auto' }}
-          >
+          <div className="settings-section settings-section-standard">
             <div className="section-header">
               <div className="section-left">
                 <button
@@ -645,7 +620,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       ? 'Collapse all standard'
                       : 'Expand all standard'
                   }
-                  title={standardAnyOpen ? 'Collapse all' : 'Expand all'}
+                  title={standardAnyOpen ? 'collapse all' : 'expand all'}
                 >
                   {standardAnyOpen ? '▾' : '▸'}
                 </button>
@@ -678,18 +653,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       )}
 
       <div className="settings-panel-footer">
+        {/* The one action. The shortcuts that used to be printed under it
+            live behind `?` with the rest. */}
         <button
+          type="button"
           onClick={onResetSettings}
           className="reset-button"
           disabled={!onResetSettings}
         >
           reset to defaults
         </button>
-
-        <div className="sidebar-keyboard-hints">
-          <kbd>←</kbd>
-          <kbd>→</kbd> switch • <kbd>S</kbd> settings • <kbd>H</kbd> hide
-        </div>
       </div>
     </div>
   );

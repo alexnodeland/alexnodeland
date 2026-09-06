@@ -1,12 +1,14 @@
-// SCSS Mixins for consistent styling patterns
+// SCSS mixins — the shared patterns. This file emits no CSS of its own, so
+// every stylesheet can `@use` it freely; the tokens it reaches for are the
+// custom properties global.scss emits once from variables.scss.
 
 // The properties a control is allowed to ease, spelled out. `transition: all`
 // used to be the house habit, and it quietly promised to animate anything that
 // ever changed — including layout properties like width and padding, which
 // cannot be animated off the main thread. Every state change on this site is
-// some mix of ink, surface, hairline, elevation and a small transform, so that
-// is the whole list; a control that needs to ease anything else declares it
-// itself.
+// some mix of ink, surface, hairline and elevation, so that is the whole list;
+// a control that needs to ease anything else declares it itself. Transform is
+// deliberately not here: nothing lifts or scales under the pointer any more.
 @mixin control-transition($duration: var(--transition-fast)) {
   transition:
     color $duration,
@@ -14,96 +16,135 @@
     border-color $duration,
     box-shadow $duration,
     opacity $duration,
-    filter $duration,
-    transform $duration;
+    filter $duration;
+}
+
+// How a control answers the pointer, and how it says it is the current one:
+// brighter ink, a brighter hairline, a wash. The same three moves everywhere,
+// so a chip, a nav segment, a menu row and a card all read as one kit.
+@mixin control-hover {
+  color: var(--text-primary);
+  border-color: var(--hairline-lit);
+  background-color: var(--wash-hover);
+}
+
+@mixin control-active {
+  color: var(--text-primary);
+  border-color: var(--hairline-lit);
+  background-color: var(--wash-active);
+}
+
+// A control that draws its own focus: the same brighten-and-wash it shows the
+// pointer, in place of the global ring — which is neutral too, but sits
+// outside a box that already has a hairline to light. `:focus-visible`, never
+// `:focus`, so a mouse click does not leave a ring behind.
+@mixin control-focus {
+  &:focus-visible {
+    outline: none;
+    @include control-hover;
+  }
 }
 
 @mixin button-base {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-sm);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
   text-decoration: none;
-  font-size: 0.875rem;
-  @include control-transition(var(--transition-normal));
-  border: 2px solid transparent;
-  cursor: pointer;
-  position: relative;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  line-height: var(--leading-chrome);
   text-transform: lowercase;
   letter-spacing: -0.01em;
+  cursor: pointer;
+  @include control-transition(var(--transition-fast));
 }
 
-// The one filled button in the system. Pink is kept here on purpose: this is
+// The one filled button in the system. Green is kept here on purpose: this is
 // the consulting call to action, and under the semantic-colour rule a
 // conversion path is meaning, not decoration. It is the only place on the site
-// that still fills with an accent, which is what makes it read as the accent.
-//
-// The conversion action takes the site's one action colour — the last pink
-// left with it. Hover stays in the family: brighter green,
-// which made the button look like a different control on the way to being
-// clicked — and the coloured halo is gone; elevation comes from the shadow
-// scale like everything else.
-// The gloss that used to sweep across both button faces on hover — a white
-// gradient sliding from one edge to the other — is gone from here and from
-// every card on the site. It was decoration doing an impression of feedback:
-// the button already brightens, and a highlight that travels reads as
-// something happening to the page rather than as a control answering the
-// pointer.
+// that fills with the accent, which is what makes it read as the accent. It
+// answers the pointer by brightening — it does not lift, like nothing else.
 @mixin button-primary {
   @include button-base;
   background: var(--primary-color);
   color: var(--on-fill);
   border-color: var(--primary-color);
-  box-shadow: var(--shadow-sm);
-  position: relative;
 
   &:hover {
     filter: brightness(1.15);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-  }
-
-  &:active {
-    transform: translateY(0);
   }
 }
 
-// Everything that is not a conversion action. Neutral by construction: a
-// white hairline on the page surface, white type, and a hover that only
-// brightens both. No border colour, no glow — those were carrying no meaning.
+// Everything that is not a conversion action: an outline in the site's
+// hairline, white type, and the hover every other control has. This is the
+// secondary CTA, the welcome screen's download, the retry when the model
+// fails to load, the settings reset, the export dialog's buttons — the same
+// control in different moments.
 @mixin button-secondary {
   @include button-base;
-  background: var(--bg-primary);
+  background: transparent;
   color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: var(--shadow-sm);
-  position: relative;
+  border-color: var(--hairline);
 
-  &:hover {
-    background: var(--bg-hover);
-    border-color: rgba(255, 255, 255, 0.45);
-    color: var(--text-primary);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+  &:hover:not(:disabled) {
+    @include control-hover;
   }
 
-  &:active {
-    transform: translateY(0);
+  @include control-focus;
+
+  &:disabled {
+    cursor: not-allowed;
+    color: var(--text-muted);
+    border-color: var(--hairline-interior);
+  }
+}
+
+// A small square control holding a 16px glyph: the close on every panel, the
+// thinking toggle, the export and clear buttons in the chat header. One box,
+// 34px, so putting any panel away is one gesture.
+@mixin icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: var(--space-2);
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  @include control-transition(var(--transition-fast));
+
+  svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    @include control-hover;
+  }
+
+  @include control-focus;
+
+  &:disabled {
+    cursor: not-allowed;
+    color: var(--text-muted);
+    border-color: var(--hairline-interior);
   }
 }
 
 // Text that sits directly on the animated background rather than on a page
-// surface — the nav, the footer, page titles above the cards.
+// surface — the nav, the footer, page titles above the window.
 //
-// The backgrounds do not follow the theme: the same six run in both, from a
-// near-black graph to a saturated yellow PDE field. So this cannot be solved
-// with a colour, and the text carries its own halo instead — a tight, nearly
-// opaque layer that holds an edge against a bright cell, plus a wider soft one
-// that fills the gaps between cells.
+// The backgrounds run from a near-black graph to a saturated yellow PDE field,
+// so this cannot be solved with a colour, and the text carries its own halo
+// instead — a tight, nearly opaque layer that holds an edge against a bright
+// cell, plus a wider soft one that fills the gaps between cells.
 @mixin over-background {
   text-shadow:
     0 1px 2px rgba(0, 0, 0, 0.9),
@@ -112,26 +153,18 @@
 
 // Every content block inside the window — card, panel, chip, control — is an
 // outline rather than a fill. The window is a translucent scrim with a
-// simulation running through it, and a solid --bg-card panel laid over that
-// reads as a lid on the animation: the page stops being a window and becomes a
-// stack of dark slabs.
-//
-// The hairline is --border-floating (white-alpha) and not --border-color, which
-// is near-black and disappears entirely against the scrim. Anything drawn in
-// --border-color that still has to be seen over the scrim — an interior
-// divider, a rail, a chevron ring — has to move to white-alpha for the same
-// reason.
+// simulation running through it, and a solid panel laid over that reads as a
+// lid on the animation: the page stops being a window and becomes a stack of
+// dark slabs. The hairline is white-alpha, never near-black, which disappears
+// entirely against the scrim.
 @mixin outline-block {
   background: transparent;
-  border: 1px solid var(--border-floating);
+  border: 1px solid var(--hairline);
 }
 
-// The emphasis a card takes on when it is the one being read. It used to have
-// two routes in — the pointer, and the scroll position arriving at it — and
-// the second one is gone from the three list pages: a list that lights itself
-// up as you scroll past is reacting to something the reader did not ask for.
-// Pointer only, and gated on a real one: on touch `:hover` latches after a tap
-// and leaves a card lit for the rest of the session.
+// The emphasis a card takes on when it is the one being read. Pointer only,
+// and gated on a real one: on touch `:hover` latches after a tap and leaves a
+// card lit for the rest of the session.
 @mixin reading-emphasis {
   @media (hover: hover) and (pointer: fine) {
     &:hover {
@@ -147,10 +180,7 @@
 //
 // The transition is on the card itself rather than inside the hover block, so
 // it runs in both directions: the highlight grows in under the pointer and
-// eases back out when the pointer leaves, instead of snapping off. A
-// travelling light briefly lived here instead — an animated gradient masked to
-// the hairline — and it read as a glitch: a sweep is an event, and a card
-// being pointed at is a state.
+// eases back out when the pointer leaves, instead of snapping off.
 @mixin card-highlight {
   transition:
     border-color var(--transition-normal),
@@ -162,33 +192,14 @@
 // the same. The wash is barely there on purpose: the hairline is the signal,
 // and the surface behind it is a live simulation, not a slab.
 @mixin card-highlight-on {
-  border-color: rgba(255, 255, 255, 0.45);
+  border-color: var(--hairline-lit);
   background-color: rgba(255, 255, 255, 0.03);
 }
 
-// A card under the pointer brightens its own hairline and lifts. It does not
-// change hue: the card is not a link and not a state, so there is nothing for
-// a colour to say here.
-@mixin card-hover {
-  @include control-transition(var(--transition-normal));
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--border-active);
-  }
-}
-
-// `retro-glow` (an animated green halo behind page titles) and `retro-border`
-// (a rainbow hairline across the top of a card) both used to live here. They
-// were pure decoration under the semantic-colour rule, and the titles they lit
-// now carry `over-background` instead — the halo is the legibility device, and
-// it does not need a colour to do that job.
-
 // A machined housing: the window's material (scrim, blur, hairline) with a 1px
 // inner top highlight, so it reads as a solid object catching light rather than
-// a painted rectangle. Used by the nav capsule, the chat pill and the
-// background toolbar.
+// a painted rectangle. Used by the nav capsule, the chat pill, the background
+// toolbar and the phone's launcher.
 //
 // The corner is the window's corner. These were fully-round until the kit was
 // looked at as a whole: a round pill next to a chamfered panel reads as two
@@ -203,6 +214,17 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+// The material of the window and its two floating peers: scrim, blur,
+// hairline, the panel shadow.
+@mixin window-material {
+  background: var(--window-scrim);
+  backdrop-filter: blur(var(--window-blur));
+  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+  border: 1px solid var(--window-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
 }
 
 // A sticky row of loose controls at the top of the window's own scroll. There
@@ -221,7 +243,7 @@
   // others.
   flex-wrap: nowrap;
   gap: var(--space-2);
-  padding: 0.4rem 0;
+  padding: var(--space-2) 0;
   pointer-events: none;
 
   > * {
@@ -230,13 +252,12 @@
   }
 
   // Stuck, the row's own top padding is the entire gap between the chips and
-  // the window's frame, and 0.4rem leaves them all but touching it — on a
-  // phone, where the row is the first thing under the border and the frame is
-  // a hard bright line, that reads as a printing error rather than as a row
-  // parked at the top. More room above than below sets it off the edge; the
+  // the window's frame — on a phone, where the row is the first thing under
+  // the border and the frame is a hard bright line, a half-step left them all
+  // but touching it. More room above than below sets it off the edge; the
   // bottom stays where it is, so nothing below the row moves.
   @media (max-width: 768px) {
-    padding-top: 0.85rem;
+    padding-top: var(--space-4);
   }
 
   @media (max-width: 480px) {
@@ -245,37 +266,22 @@
 }
 
 // A loose floating control on the window's own surface. It carries no scrim of
-// its own: the window underneath it has already laid the site's one scrim down,
-// and a second coat on top of that (0.38 over 0.38, ~0.62, over the window's
-// own 0.38) made the control rows the one piece of chrome on the site darker
-// than everything around them — dark slabs parked on the window, against a nav
-// capsule and a chat pill wearing a single coat of the same token. So the chip
-// is the surface it sits on plus a hairline, and the blur does alone what the
-// second coat was there for: it is well past the window's own, so a heading
-// scrolling under a sticky chip smears into a wash instead of reading through
-// the label, and the chip stays exactly the colour of the window, the capsule
-// and the pill.
+// its own: the window underneath it has already laid the site's one scrim
+// down, and a second coat made the control rows the one piece of chrome on the
+// site darker than everything around them. So the chip is the surface it sits
+// on plus a hairline, and the blur does alone what the second coat was there
+// for: it is well past the window's own, so a heading scrolling under a sticky
+// chip smears into a wash instead of reading through the label.
 @mixin frosted-chip {
   background: transparent;
-  backdrop-filter: blur(calc(var(--window-blur) * 4));
-  -webkit-backdrop-filter: blur(calc(var(--window-blur) * 4)); // Safari ≤17
-
-  // Half the radius on a phone. The chips sit over content that is moving —
-  // the one case a backdrop filter has to re-resolve every frame — and they
-  // share those frames with the veil above them and the window's own blur. A
-  // 10px smear still destroys a heading sliding under the chip; what it stops
-  // doing is asking a phone GPU for the desktop radius on every scroll frame.
-  @media (max-width: 768px) {
-    backdrop-filter: blur(calc(var(--window-blur) * 2));
-    -webkit-backdrop-filter: blur(calc(var(--window-blur) * 2));
-  }
-  border: 1px solid var(--border-floating);
+  backdrop-filter: blur(var(--blur-chip));
+  -webkit-backdrop-filter: blur(var(--blur-chip)); // Safari ≤17
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  // The capsules' size, so the row of chips and the rail read as one kit.
+  font-size: var(--text-control);
   line-height: 1.2;
   text-transform: lowercase;
   letter-spacing: -0.01em;
@@ -284,9 +290,9 @@
   @include control-transition(var(--transition-fast));
 
   // Without a backdrop filter there is nothing at all between the label and
-  // whatever passes under it, so the old scrim comes back on those engines
-  // alone — a chip a shade darker than its surroundings is worth more there
-  // than a chip you cannot read.
+  // whatever passes under it, so the scrim comes back on those engines alone —
+  // a chip a shade darker than its surroundings is worth more there than a
+  // chip you cannot read.
   @supports not (
     (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
   ) {
@@ -294,61 +300,54 @@
   }
 }
 
-// The panel a chip opens. The chip is the window's own surface, but a menu is
-// an overlay with a list of words in it, and it hangs over whatever the page
-// happens to be showing — so this is the one that keeps the doubled scrim (the
-// same coat the shortcuts panel takes, and for the same reason). The chip marks
-// itself open with a white wash at the same moment, so the two still read as
-// one object opening rather than as a stray dark box.
-// The panel action: an outline in the panel's own hairline, lowercase mono,
-// lifting a pixel on hover. The welcome screen's download, the retry when
-// the model fails to load, and the error boundary's retry are all this one
-// control — the same action, in different moments — so they share it.
-@mixin outline-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: transparent;
-  color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.8125rem;
-  font-family: inherit;
-  text-transform: lowercase;
-  cursor: pointer;
-  @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
-
-  &:hover:not(:disabled) {
-    background: var(--bg-accent);
-    border-color: rgba(255, 255, 255, 0.45);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-lg);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: var(--shadow-md);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
+// The panel a chip opens, and any panel that hangs over the page — a menu, the
+// shortcuts, a dialog. The chip is the window's own surface, but an overlay
+// with a list of words in it hangs over whatever the page happens to be
+// showing, so this one doubles the scrim and the blur.
 @mixin floating-panel {
-  position: absolute;
-  top: calc(100% + 0.4rem);
-  z-index: 20;
   background-color: var(--window-scrim);
   background-image: linear-gradient(var(--window-scrim), var(--window-scrim));
-  backdrop-filter: blur(calc(var(--window-blur) * 2));
-  -webkit-backdrop-filter: blur(calc(var(--window-blur) * 2)); // Safari ≤17
-  border: 1px solid var(--border-floating);
+  backdrop-filter: blur(var(--blur-panel));
+  -webkit-backdrop-filter: blur(var(--blur-panel)); // Safari ≤17
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  transform-origin: top center;
-  animation: dropdown-in 120ms ease-out;
+}
+
+// A key cap. No surface under it on the field, so it carries its own.
+@mixin key-cap {
+  display: inline-block;
+  padding: 0.125rem 0.3rem;
+  background: var(--bg-floating);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-2xs);
+  line-height: 1.2;
+  text-shadow: none;
+}
+
+// An empty state — a search that matched nothing, a list with nothing in it.
+// Quiet prose in the flow of the page, left-aligned like the content it
+// stands in for: one treatment on the blog, the projects and the CV search.
+@mixin empty-state {
+  margin: var(--space-6) 0;
+  padding: 0;
+  color: var(--text-secondary);
+  font-style: normal;
+  text-align: left;
+}
+
+// A link in running text: green, and underlined under the pointer at one
+// offset everywhere.
+@mixin text-link {
+  color: var(--ink-primary);
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    text-decoration: underline;
+  }
 }

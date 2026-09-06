@@ -49,7 +49,7 @@ const MessageStats: React.FC<MessageStatsProps> = ({ stats }) => {
         title={
           stats.systemKvHit
             ? `${cachePct}% of the ${stats.promptTokens}-token prompt was already computed — only the rest had to be read`
-            : `Cache miss — all ${stats.promptTokens} prompt tokens had to be read from scratch`
+            : `cache miss — all ${stats.promptTokens} prompt tokens had to be read from scratch`
         }
       >
         {stats.systemKvHit ? `${cachePct}% cached` : 'no cache'}

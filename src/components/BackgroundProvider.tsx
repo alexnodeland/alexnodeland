@@ -14,6 +14,7 @@ import {
 } from '../types/animated-backgrounds';
 import { backgroundRegistry, getBackgroundById } from './animated-backgrounds';
 import { useSettingsPanel } from './SettingsPanelContext';
+import { PANEL_TRANSITION_MS } from '../config/motion';
 
 interface BackgroundContextType {
   // Current state
@@ -332,7 +333,7 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
       setTimeout(() => {
         setSettingsPanelOpen(false);
         setClosingSettingsPanel(false);
-      }, 300);
+      }, PANEL_TRANSITION_MS);
     } else if (!isSettingsPanelOpen && !isClosingSettingsPanel) {
       // Open immediately
       setSettingsPanelOpen(true);
@@ -350,7 +351,7 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
       setTimeout(() => {
         setSettingsPanelOpen(false);
         setClosingSettingsPanel(false);
-      }, 300);
+      }, PANEL_TRANSITION_MS);
     }
   }, [isSettingsPanelOpen, setSettingsPanelOpen, setClosingSettingsPanel]);
 

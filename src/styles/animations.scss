@@ -1,66 +1,18 @@
-// Animation keyframes and utilities
+// Every keyframe on the site, declared once. Keyframe names are global, and
+// the same name declared twice with two bodies used to be resolved by
+// whichever stylesheet the bundler emitted last — so a full-screen overlay
+// slid on one page and faded on another. One file, one body per name.
+//
+// Direction is a rule: what arrives rises, what leaves rises, one distance.
+// Panels are the exception, because a panel comes from its own edge.
 
-// Every page title that glows sits directly on the animated background, so the
-// legibility halo has to ride along inside the keyframes: an animated
-// text-shadow replaces the static one outright, which is why the dark halos
-// written next to these rules never actually rendered.
-@keyframes glow {
-  from {
-    text-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.9),
-      0 0 12px rgba(0, 0, 0, 0.6),
-      0 0 20px rgba(0, 255, 136, 0.3);
-  }
-  to {
-    text-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.9),
-      0 0 12px rgba(0, 0, 0, 0.6),
-      0 0 30px rgba(0, 255, 136, 0.6),
-      0 0 40px rgba(0, 255, 136, 0.3);
-  }
-}
-
-@keyframes bounce {
-  0%,
-  20%,
-  50%,
-  80%,
-  100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-5px);
-  }
-  60% {
-    transform: translateY(-3px);
-  }
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.1);
-  }
-}
-
-@keyframes fadeIn {
+// Something appearing in place — a menu, a popover, a disclosure's content,
+// a dialog, a notice. The travel is small enough to read as the thing
+// arriving rather than as an animation.
+@keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -68,10 +20,11 @@
   }
 }
 
-@keyframes slideInFromRightWithFade {
+// A floating pill arriving on the field on first mount, from its own side.
+@keyframes pill-in-left {
   from {
     opacity: 0;
-    transform: translateX(20px);
+    transform: translateX(-2rem);
   }
   to {
     opacity: 1;
@@ -79,25 +32,122 @@
   }
 }
 
-// Animation utility classes
-.animate-glow {
-  animation: glow 2s ease-in-out infinite alternate;
+@keyframes pill-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.animate-bounce {
-  animation: bounce 1s infinite;
+// The sidebars, from their own edge and back to it.
+@keyframes panel-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.animate-pulse {
-  animation: pulse 2s ease-in-out infinite;
+@keyframes panel-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
 }
 
-.animate-rotate {
-  animation: rotate 2s linear infinite;
+@keyframes panel-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-// `shimmer` — a white gradient travelling across a surface forever — used to
-// be declared here as a keyframe and a utility class. Nothing on the site
-// asked for it, and the one place the trick did ship (the button faces, the
-// card hairlines) has been taken out: a highlight that moves on its own reads
-// as a glitch rather than as feedback.
+@keyframes panel-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+// The phone's sheets, up from the bottom edge and back down.
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+// A sheet's frosted glass arriving after its slide: a full-width backdrop
+// filter over a canvas that repaints every frame has to be re-resolved on
+// every frame of the move, so the sheet travels as tint alone and the blur
+// fades in once it has parked. `none` interpolates from blur(0).
+@keyframes sheet-blur-in {
+  from {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  to {
+    backdrop-filter: blur(var(--window-blur));
+    -webkit-backdrop-filter: blur(var(--window-blur));
+  }
+}
+
+// The two status loops in the chat: the reply is coming, the model is
+// thinking. Status, not decoration, so they stay under reduced motion.
+@keyframes loading-dots {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+@keyframes thinking-dots {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -2,7 +2,6 @@ import React from 'react';
 import SEO from '../components/seo';
 import { getCTAButtonURL, getPersonSchema, homepageConfig } from '../config';
 import { expertiseIcons } from '../components/expertise-icons';
-import { useScrollSpy } from '../lib/hooks';
 import '../styles/index.scss';
 
 // The cover — the h1 and the subtitle links — is not here: the shell mounts
@@ -14,10 +13,10 @@ import '../styles/index.scss';
 const IndexPage: React.FC<{ location?: { pathname?: string } }> = ({
   location,
 }) => {
-  // The grid used to sit lit up wherever a tap left it, on cards that go
-  // nowhere when clicked. Reading position drives the highlight instead.
-  const { containerRef: expertiseRef, isActive: isExpertiseActive } =
-    useScrollSpy<HTMLDivElement>('.expertise-item');
+  // The expertise grid is static (see .expertise-item in index.scss): no
+  // hover, no reading-line highlight. A scroll spy used to run here for a
+  // highlight the stylesheet had already dropped — six layout reads on every
+  // scroll frame, on the page with the hero collapse — so it is gone too.
 
   return (
     <>
@@ -38,19 +37,14 @@ const IndexPage: React.FC<{ location?: { pathname?: string } }> = ({
 
         <section className="expertise">
           <h2>{homepageConfig.expertise.title}</h2>
-          <div className="expertise-grid" ref={expertiseRef}>
+          <div className="expertise-grid">
             {homepageConfig.expertise.items.map((item, index) => {
               // Drawn as a set, in config order. The icon is decorative — the
               // title sits directly beneath it and does the labelling — so the
               // svg is hidden from assistive tech rather than repeating it.
               const Icon = expertiseIcons[index];
               return (
-                <div
-                  key={index}
-                  className={`expertise-item${
-                    isExpertiseActive(index) ? ' is-active' : ''
-                  }`}
-                >
+                <div key={index} className="expertise-item">
                   <span className="expertise-icon">{Icon && <Icon />}</span>
                   <div className="expertise-title">{item.title}</div>
                   <div className="expertise-description">

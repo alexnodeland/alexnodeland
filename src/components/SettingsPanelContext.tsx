@@ -5,8 +5,10 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
+import { PANEL_TRANSITION_MS } from '../config/motion';
 
 interface SettingsPanelContextType {
   isSettingsPanelOpen: boolean;
@@ -19,6 +21,15 @@ interface SettingsPanelContextType {
   setChatPanelOpen: (isOpen: boolean) => void;
   setClosingChatPanel: (isClosing: boolean) => void;
   setContentHidden: (isHidden: boolean) => void;
+  /**
+   * Close the chat with its slide: the panel is marked closing for the length
+   * of the transition, then unmounted. The one implementation of that
+   * choreography — the pill, the panel's own close and the keyboard shortcut
+   * all call this.
+   */
+  closeChatPanel: () => void;
+  /** Open the chat, or close it with its slide if it is open. */
+  toggleChatPanel: () => void;
 }
 
 const SettingsPanelContext = createContext<
@@ -109,6 +120,35 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
     setIsContentHidden(isHidden);
   }, []);
 
+  // The chat's close, once. The flags are read through a ref so the callback
+  // stays stable while still seeing the current state; the timer is cleared
+  // on unmount so a close in flight cannot write to a provider that is gone.
+  const chatStateRef = useRef({ open: false, closing: false });
+  chatStateRef.current = {
+    open: isChatPanelOpen,
+    closing: isClosingChatPanel,
+  };
+  const closeTimerRef = useRef(0);
+  useEffect(() => () => window.clearTimeout(closeTimerRef.current), []);
+
+  const closeChatPanel = useCallback(() => {
+    const { open, closing } = chatStateRef.current;
+    if (!open || closing) return;
+    setIsClosingChatPanel(true);
+    window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsChatPanelOpen(false);
+      setIsClosingChatPanel(false);
+    }, PANEL_TRANSITION_MS);
+  }, []);
+
+  const toggleChatPanel = useCallback(() => {
+    const { open, closing } = chatStateRef.current;
+    if (closing) return;
+    if (open) closeChatPanel();
+    else setIsChatPanelOpen(true);
+  }, [closeChatPanel]);
+
   const value = useMemo(
     () => ({
       isSettingsPanelOpen,
@@ -121,6 +161,8 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
       setChatPanelOpen,
       setClosingChatPanel,
       setContentHidden,
+      closeChatPanel,
+      toggleChatPanel,
     }),
     [
       isSettingsPanelOpen,
@@ -133,6 +175,8 @@ export const SettingsPanelProvider: React.FC<SettingsPanelProviderProps> = ({
       setChatPanelOpen,
       setClosingChatPanel,
       setContentHidden,
+      closeChatPanel,
+      toggleChatPanel,
     ]
   );
 

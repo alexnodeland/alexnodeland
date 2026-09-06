@@ -3,12 +3,13 @@ import { ExpertiseIcon, IconStyle, iconFrameProps } from './iconBase';
 
 // Activation sweeps left to right: input nodes, their edges, the hidden layer,
 // its edges, the outputs — one 5s curve per group, each starting 450ms after
-// the one feeding it. Every group rests at the same opacity it starts and ends
-// the keyframe on, so the loop closes on itself with nothing to pop.
+// the one feeding it, on the set's symmetric sine-like ease. Every group rests
+// at the same opacity it starts and ends the keyframe on, so the loop closes
+// on itself with nothing to pop.
 const css = `
 .icn-ai-fire {
   opacity: 0.6;
-  animation: icn-ai-pulse 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: icn-ai-pulse 5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 .icn-ai-edges-1 { animation-delay: 0.45s; }
 .icn-ai-nodes-2 { animation-delay: 0.9s; }

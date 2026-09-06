@@ -1,7 +1,9 @@
 import { Link } from 'gatsby';
 import React from 'react';
 import { getAllSocialLinks, siteConfig } from '../config';
+import { EASE_IN, EASE_OUT } from '../config/motion';
 import { useNotFound } from '../lib/notFound';
+import { prefersReducedMotion, scrollBehavior } from '../lib/utils/motion';
 import '../styles/layout.scss';
 import { useSettingsPanel } from './SettingsPanelContext';
 import ChatIcon from './chat/ChatIcon';
@@ -31,13 +33,22 @@ interface LayoutProps {
 // the top of the frame, not halfway down the page.
 const HERO_COLLAPSE_RANGE = 160;
 
-// What the title is scaled to at full collapse, and the space left between it
-// and the tagline once the two share a row. Both are duplicated in the
-// stylesheet (the 0.45 the h1's scale() counts down by is 1 - TITLE_SCALE);
-// they live here too because the fit calculation below needs numbers, and CSS
-// cannot measure text.
-const TITLE_SCALE = 0.55;
+// The hero's box has two states (see `.is-collapsed` in layout.scss), and
+// the flip between them is the one part of the collapse that touches layout —
+// so it waits until the scroll has been still for this long, and then goes
+// once. Flipping mid-gesture would resize the scroll container under the
+// finger, which is the stutter this replaces. The thresholds are a pair so a
+// scroll that hovers near the middle cannot flap.
+const COLLAPSE_SETTLE_MS = 200;
+const COLLAPSE_ON = 0.55;
+const COLLAPSE_OFF = 0.45;
+
+// The space left between the shrunken title and the tagline once the two
+// share a row. The title's collapsed scale is the stylesheet's
+// (`--collapsed-title-scale` on the hero, per breakpoint) and is read from it
+// below, so the number lives in one place.
 const COLLAPSED_GAP = 24;
+const DEFAULT_TITLE_SCALE = 0.55;
 
 // The navigation transition, in milliseconds.
 //
@@ -63,26 +74,17 @@ const CONTENT_IN_MS = 240;
 const BRAND_FLIP_MS = 380;
 
 // How far anything travels on the way in or out. One distance for the whole
-// transition, and one direction: everything moves up through the frame.
+// transition, and one direction: everything moves up through the frame. The
+// curves are the stylesheet's own (see src/config/motion.ts): what arrives
+// eases out, what leaves eases in on the reflected curve, so the two halves
+// of a swap are one gesture.
 const RISE_PX = 10;
-
-const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
-// EASE_OUT reflected. What leaves accelerates away exactly as hard as what
-// arrives decelerates in, so the two halves of a swap are one gesture instead
-// of two easing families meeting in the middle.
-const EASE_IN = 'cubic-bezier(0.7, 0, 0.84, 0)';
 
 // The incoming pieces all share these keyframes; only their timing differs.
 const RISE_IN = [
   { opacity: 0, transform: `translateY(${RISE_PX}px)` },
   { opacity: 1, transform: 'none' },
 ];
-
-const prefersReducedMotion = () => {
-  if (typeof window === 'undefined') return false;
-  if (typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-};
 
 const canAnimate = (el: Element | null | undefined): el is HTMLElement =>
   Boolean(el) && typeof (el as HTMLElement).animate === 'function';
@@ -179,6 +181,8 @@ interface HeroGhost {
   id: number;
   path: string;
   collapsible: boolean;
+  // Whether the region had handed its height back when the reader left.
+  collapsed: boolean;
   style: React.CSSProperties;
 }
 
@@ -275,6 +279,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         id: ghostId,
         path: shownPath,
         collapsible: shouldCollapse,
+        collapsed: region.classList.contains('is-collapsed'),
         style: {
           top: box.top - stageBox.top,
           left: box.left - stageBox.left,
@@ -500,13 +505,33 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     const readTarget = () =>
       Math.min(Math.max(panel.scrollTop / HERO_COLLAPSE_RANGE, 0), 1);
 
+    // Three decimals: the title travels a few hundred pixels across the
+    // range, so a hundredth was a 3px step and a slow drag moved it in
+    // visible increments. Nothing that reads the value lays out any more, so
+    // a finer write costs a composite and no more.
     const write = (value: number) => {
-      // Two decimals is finer than a pixel of travel and keeps the style
-      // write (and the layout it triggers) off frames that moved less.
-      const rounded = Math.round(value * 100) / 100;
+      const rounded = Math.round(value * 1000) / 1000;
       if (rounded === last) return;
       last = rounded;
       region.style.setProperty('--hero-collapse', String(rounded));
+    };
+
+    // The box flip. Decided from the scroll's own position (not the eased
+    // value, which can still be moving after the wheel has stopped), applied
+    // once the scroll has gone quiet, with a dead band between the two
+    // thresholds so it cannot flap.
+    let collapsed = false;
+    let settleTimer = 0;
+    const settle = () => {
+      settleTimer = 0;
+      const want = collapsed ? target > COLLAPSE_OFF : target >= COLLAPSE_ON;
+      if (want === collapsed) return;
+      collapsed = want;
+      region.classList.toggle('is-collapsed', want);
+    };
+    const scheduleSettle = () => {
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(settle, COLLAPSE_SETTLE_MS);
     };
 
     const tick = (now: number) => {
@@ -539,6 +564,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         lastTime = performance.now();
         frame = window.requestAnimationFrame(tick);
       }
+      scheduleSettle();
     };
 
     // Wherever the effect lands it lands at once: mount is not motion.
@@ -547,23 +573,37 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
     // How the transition hands the link back: drop any ease in flight, forget
     // the last written value — both describe a page that is gone — and
-    // republish from the real scroll.
+    // republish from the real scroll. The box goes back to rest in the same
+    // breath, without its ease: the region is about to be measured for the
+    // navigation's own height animation, and a padding still in flight would
+    // hand that measurement a number from the middle of a transition.
     syncCollapseRef.current = () => {
       if (frame) {
         window.cancelAnimationFrame(frame);
         frame = 0;
       }
+      window.clearTimeout(settleTimer);
+      settleTimer = 0;
       dirty = false;
       last = -1;
       current = target = readTarget();
       write(current);
+      if (collapsed) {
+        collapsed = false;
+        region.style.transition = 'none';
+        region.classList.remove('is-collapsed');
+        void region.offsetHeight;
+        region.style.removeProperty('transition');
+      }
     };
     panel.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       panel.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
+      window.clearTimeout(settleTimer);
       syncCollapseRef.current = null;
       region.style.removeProperty('--hero-collapse');
+      region.classList.remove('is-collapsed');
     };
   }, [shouldCollapse]);
 
@@ -660,10 +700,9 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       )
         return;
       const page = panel.clientHeight * 0.85;
-      const smooth = prefersReducedMotion() ? 'auto' : 'smooth';
       const scrollTo = (top: number) => {
         if (typeof panel.scrollTo === 'function')
-          panel.scrollTo({ top, behavior: smooth });
+          panel.scrollTo({ top, behavior: scrollBehavior() });
         else panel.scrollTop = top;
       };
       let by: number;
@@ -771,6 +810,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     // invalidate the hero's subtree once per animation frame.
     let lastKey = '';
     const measure = () => {
+      // The distances describe the resting hero. Collapsed, the tagline's box
+      // is clipped on a phone and the column carries a negative margin, and a
+      // reading taken then (the observer fires on every frame of the flip)
+      // would publish the wrong numbers for the next time the hero opens.
+      if (el.classList.contains('is-collapsed')) return;
       const h1 = el.querySelector('h1');
       const sub = el.querySelector('p');
       // The registry owns the element the two sit in, so that — not the hero
@@ -781,23 +825,40 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
       const width = container.clientWidth;
       const subWidth = sub.offsetWidth;
+      // scrollHeight, not offsetHeight: on a phone the tagline is clipped by
+      // a max-height while the box is closing or opening, and the observer
+      // fires on every frame of that. The content's own height is the number
+      // the clip has to be able to open back to.
+      const subHeight = sub.scrollHeight || sub.offsetHeight;
       const titleShift = (width - h1.offsetWidth) / 2;
       const subShift = (width - subWidth) / 2;
-      const rowLift = (h1.offsetHeight + sub.offsetHeight) / 2;
+      const rowLift = (h1.offsetHeight + subHeight) / 2;
       // Whether the tagline actually fits beside the shrunken title. Most of
       // them do, and this is 1; the projects tagline is nearly the full column
       // wide, so it scales down — pinned to its right edge — by exactly the
-      // amount it overruns rather than colliding with the title.
-      const room = width - h1.offsetWidth * TITLE_SCALE - COLLAPSED_GAP;
+      // amount it overruns rather than colliding with the title. The title's
+      // collapsed scale is the stylesheet's own number for this width.
+      const titleScale =
+        (typeof window.getComputedStyle === 'function' &&
+          parseFloat(
+            window
+              .getComputedStyle(el)
+              .getPropertyValue('--collapsed-title-scale')
+          )) ||
+        DEFAULT_TITLE_SCALE;
+      const room = width - h1.offsetWidth * titleScale - COLLAPSED_GAP;
       const scale = subWidth > 0 ? Math.min(1, room / subWidth) : 1;
 
-      const key = `${titleShift}|${subShift}|${rowLift}|${scale}`;
+      const key = `${titleShift}|${subShift}|${rowLift}|${scale}|${subHeight}|${titleScale}`;
       if (key === lastKey) return;
       lastKey = key;
       el.style.setProperty('--title-shift', `${titleShift}px`);
       el.style.setProperty('--sub-shift', `${subShift}px`);
       el.style.setProperty('--row-lift', `${rowLift}px`);
       el.style.setProperty('--sub-scale', String(scale));
+      // The phone clips the tagline away when the box collapses; this is the
+      // height the clip closes from, so the ease covers the real distance.
+      el.style.setProperty('--tagline-height', `${subHeight}px`);
     };
 
     measure();
@@ -869,7 +930,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                 key={ghost.id}
                 className={`site-hero hero-ghost${
                   ghost.collapsible ? ' is-collapsible' : ''
-                }`}
+                }${ghost.collapsed ? ' is-collapsed' : ''}`}
                 ref={ghostRef}
                 style={ghost.style}
                 aria-hidden="true"

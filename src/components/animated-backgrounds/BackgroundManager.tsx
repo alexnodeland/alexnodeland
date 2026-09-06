@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { siteConfig } from '../../config';
 import { useNotFound } from '../../lib/notFound';
+import { isShortcutKey } from '../../lib/utils/keys';
 import { useBackground } from '../BackgroundProvider';
 import { useSettingsPanel } from '../SettingsPanelContext';
 import BackgroundControls from './BackgroundControls';
@@ -51,20 +52,14 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     setContentHidden(!isContentHidden);
   }, [isContentHidden, setContentHidden]);
 
-  // Keyboard event handler
+  // Keyboard event handler. Single, unmodified keys only, typed into nothing
+  // — ⌘S is the browser's save and Ctrl+H its history, and a select in the
+  // settings panel owns its own arrow keys. Anything already taken by
+  // something closer to the user (the shortcuts list closing on Escape, say)
+  // is left alone too.
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      // Only handle key events if not focused on an input element
-      if (
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
-
-      // Already taken by something closer to the user — the shortcuts list
-      // closing on Escape, say.
-      if (event.defaultPrevented) return;
+      if (!isShortcutKey(event)) return;
 
       switch (event.code) {
         case 'Escape':

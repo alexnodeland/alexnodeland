@@ -1,5 +1,4 @@
-@import 'variables';
-@import 'mixins';
+@use 'mixins' as *;
 
 // ── The page's own content ───────────────────────────────────────────────────
 // What is left inside the window: the address that was asked for, and one
@@ -8,13 +7,13 @@
 // everything are what hold the screen, and the ways back are the shell's own:
 // the crumb leads home, the capsule lists the sections.
 .not-found {
-  padding: var(--space-6) 0;
+  padding: var(--space-7) 0;
   max-width: 600px;
 
   p {
     font-size: var(--text-h4);
     color: var(--text-secondary);
-    line-height: 1.6;
+    line-height: var(--leading-prose);
     margin-bottom: 0;
   }
 }
@@ -22,17 +21,17 @@
 // The address, as it was typed: the one thing on the page that is the
 // visitor's, so it reads as a value rather than as prose.
 .not-found-address {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 
   code {
     display: inline-block;
     max-width: 100%;
     overflow-wrap: anywhere;
-    padding: 0.2rem 0.55rem;
+    padding: var(--space-1) var(--space-2);
     font-size: var(--text-small);
     color: var(--text-muted);
-    background: var(--bg-accent);
-    border: 1px solid var(--border-floating);
+    background: var(--wash-field);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-sm);
   }
 }
@@ -45,11 +44,8 @@
 // and, now and then, glitches.
 //
 // The rail at the foot of the field — the backgrounds launcher, the chat
-// pill, the shortcuts hint — is not touched. It used to sink after the
-// window, each pill on its own delay, which left the two corner buttons at
-// different heights for most of the animation and a step lower than every
-// other page puts them for the rest of it. Those are the site's controls, not
-// the page's chrome; they sit where they always sit.
+// pill, the shortcuts hint — is not touched. Those are the site's controls,
+// not the page's chrome; they sit where they always sit.
 //
 // Nothing here rotates. The window is a scrolling panel with a backdrop blur,
 // and a rotated one has to be resampled every frame of its own animation and
@@ -60,7 +56,7 @@
 html[data-not-found] {
   .stage .layout {
     will-change: translate, scale, opacity;
-    animation: nf-window-adrift 12s cubic-bezier(0.22, 1, 0.36, 1) 0.8s forwards;
+    animation: nf-window-adrift 12s var(--ease-out) 0.8s forwards;
   }
 
   .nav {
@@ -139,7 +135,7 @@ html[data-not-found] {
 
 @media (max-width: 768px) {
   .not-found {
-    padding: var(--space-5) 0;
+    padding: var(--space-6) 0;
   }
 
   // A phone has nowhere for the window to go; it thins out where it stands.

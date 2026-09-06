@@ -1,7 +1,4 @@
-// Import variables and mixins
-@import 'variables';
-@import 'mixins';
-@import 'animations';
+@use 'mixins' as *;
 
 // The outline treatment the blocks on this page use lives in mixins.scss as
 // `outline-block` — it started here and is now the rule for every page.
@@ -21,17 +18,13 @@
   padding: 0;
   position: relative;
 
+  // Sits on the field with the simulation running behind it, so it takes the
+  // halo. It used to take an animated green glow instead, which was
+  // decoration doing a legibility job badly.
   h1 {
-    margin-bottom: var(--space-5);
-    position: relative;
-    // Sits on the window scrim with the simulation running behind it, so it
-    // takes the halo. It used to take an animated green glow instead, which
-    // was decoration doing a legibility job badly.
     @include over-background;
   }
 }
-
-// Animations are now in animations.scss
 
 // No max-width: the subtitle gets the full content column, so it holds one
 // line like the taglines on the other three pages.
@@ -39,9 +32,9 @@
   font-size: var(--text-lead);
   color: var(--text-secondary);
   @include over-background;
-  line-height: 1.6;
-  // Zero rather than `0 auto`: the hero centres its children with flexbox now,
-  // and the collapse rides on this element's margin-top.
+  line-height: var(--leading-chrome);
+  // Zero rather than `0 auto`: the hero centres its children with flexbox,
+  // and the collapse rides on this element's transform.
   margin: 0;
   font-style: italic;
 }
@@ -49,26 +42,18 @@
 // The subtitle segments are real links — each one lands on its section of the
 // projects page — so they take the link green like every other action.
 .hero-subtitle-link {
-  color: var(--ink-primary);
-  transition: color var(--transition-fast);
-
-  &:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.25em;
-  }
+  @include text-link;
 }
-
-// Animations are now in animations.scss
 
 // Plain prose on the scrim — the owner pulled the outline off this one and
 // consulting below; the boxes now belong to the expertise cards alone.
 .about {
-  margin-bottom: var(--space-7);
+  margin-bottom: var(--space-8);
   position: relative;
 
   p {
-    margin-bottom: var(--space-4);
-    line-height: 1.7;
+    margin-bottom: var(--space-5);
+    line-height: var(--leading-prose);
     // Ragged right at every width. The column is only wide enough to justify
     // cleanly when no sidebar is open; with the settings panel and the chat
     // both out it drops to a dozen words a line and justified text turns to
@@ -88,16 +73,16 @@
 // semantic-colour rule is spent entirely on the buttons — that is the
 // conversion path, and it is the only thing here that needs to be found.
 .consulting {
-  margin-bottom: var(--space-7);
+  margin-bottom: var(--space-8);
   position: relative;
 
   h2 {
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-5);
   }
 
   p {
-    margin-bottom: var(--space-5);
-    line-height: 1.6;
+    margin-bottom: var(--space-6);
+    line-height: var(--leading-prose);
     color: var(--text-secondary);
   }
 }
@@ -106,7 +91,7 @@
 // a centred pair of buttons reads as a destination rather than as more prose.
 .cta-buttons {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-4);
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -122,11 +107,12 @@
 }
 
 .expertise {
-  margin-bottom: var(--space-7);
+  margin-bottom: var(--space-8);
 
-  // Sits on the animated background, not in a card.
+  // A section title inside the window, like the CV's and the projects page's:
+  // the halo, since the simulation runs behind the scrim it sits on.
   h2 {
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-6);
     @include over-background;
   }
 }
@@ -134,15 +120,14 @@
 .expertise-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
-// A static schematic panel — the owner stripped the hover lift, the reading
-// emphasis and the wipe hairline: the cards state what the work is, and the
-// icons carry the only motion.
+// A static schematic panel — no hover, no reading emphasis, no wipe: the cards
+// state what the work is, and the icons carry the only motion.
 .expertise-item {
   @include outline-block;
-  padding: var(--space-5) var(--space-4);
+  padding: var(--space-6) var(--space-5);
   border-radius: var(--radius-lg);
   text-align: center;
   position: relative;
@@ -151,10 +136,9 @@
   // The icons are inline svg drawn as a set: one stroke weight, colour taken
   // from the surrounding text colour rather than baked in.
   .expertise-icon {
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-4);
     display: block;
     color: var(--text-primary);
-    opacity: 0.8;
 
     svg {
       width: 64px;
@@ -168,9 +152,6 @@
     font-size: var(--text-h4);
     margin-bottom: var(--space-2);
     color: var(--text-primary);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
     text-transform: lowercase;
     letter-spacing: -0.01em;
   }
@@ -178,15 +159,16 @@
   .expertise-description {
     font-size: var(--text-small);
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: var(--leading-chrome);
     font-style: italic;
   }
 }
 
 @media (max-width: 768px) {
   .about,
-  .consulting {
-    margin-bottom: var(--space-6);
+  .consulting,
+  .expertise {
+    margin-bottom: var(--space-7);
   }
 
   .cta-buttons {
@@ -198,31 +180,20 @@
   .cta-button {
     width: 100%;
     max-width: 280px;
-    padding: 0.875rem 1.5rem;
-    font-size: 0.9rem;
-  }
-
-  .expertise {
-    margin-bottom: var(--space-6);
   }
 
   .expertise-grid {
     grid-template-columns: 1fr;
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
 
   .expertise-item {
-    padding: var(--space-4) var(--space-3);
+    padding: var(--space-5) var(--space-4);
   }
 }
 
 @media (max-width: 480px) {
   .expertise-item {
-    padding: var(--space-3);
-  }
-
-  .cta-button {
-    padding: 0.75rem 1rem;
-    font-size: 0.85rem;
+    padding: var(--space-4);
   }
 }

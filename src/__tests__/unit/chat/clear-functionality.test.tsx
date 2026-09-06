@@ -217,7 +217,7 @@ describe('Clear Functionality', () => {
 
       const clearButton = screen.getByLabelText('Clear chat history');
       expect(clearButton).toBeInTheDocument();
-      expect(clearButton).toHaveAttribute('title', 'Clear all chat messages');
+      expect(clearButton).toHaveAttribute('title', 'clear all chat messages');
     });
 
     it('should not show clear button when there are no messages', () => {
@@ -429,9 +429,11 @@ describe('Clear Functionality', () => {
       const clearButton = screen.getByLabelText('Clear chat history');
       const svg = clearButton.querySelector('svg');
 
+      // The box sizes the glyph (see `icon-button` in mixins.scss); the svg
+      // carries only its drawing.
       expect(svg).toBeInTheDocument();
-      expect(svg).toHaveAttribute('width', '18');
-      expect(svg).toHaveAttribute('height', '18');
+      expect(svg).toHaveAttribute('viewBox', '0 0 24 24');
+      expect(svg).toHaveAttribute('aria-hidden', 'true');
     });
   });
 });

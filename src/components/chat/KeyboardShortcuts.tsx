@@ -1,46 +1,25 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { isShortcutKey } from '../../lib/utils/keys';
 import { useSettingsPanel } from '../SettingsPanelContext';
 
+// `C` opens and closes the chat. Unmodified only — ⌘C is a copy, and it used
+// to open the chat on every one.
 const KeyboardShortcuts: React.FC = () => {
-  const { isChatPanelOpen, setChatPanelOpen, setClosingChatPanel } =
-    useSettingsPanel();
-
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      // Only handle key events if not focused on an input element
-      if (
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
-
-      switch (event.code) {
-        case 'KeyC':
-          event.preventDefault();
-          if (isChatPanelOpen) {
-            // Close the chat panel with animation
-            setClosingChatPanel(true);
-            setTimeout(() => {
-              setChatPanelOpen(false);
-              setClosingChatPanel(false);
-            }, 300);
-          } else {
-            // Open the chat panel
-            setChatPanelOpen(true);
-          }
-          break;
-      }
-    },
-    [isChatPanelOpen, setChatPanelOpen, setClosingChatPanel]
-  );
+  const { toggleChatPanel } = useSettingsPanel();
 
   useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isShortcutKey(event)) return;
+      if (event.code !== 'KeyC') return;
+      event.preventDefault();
+      toggleChatPanel();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleKeyDown]);
+  }, [toggleChatPanel]);
 
   return null; // This component doesn't render anything
 };

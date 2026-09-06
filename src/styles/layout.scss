@@ -1,5 +1,4 @@
-@import 'variables';
-@import 'mixins';
+@use 'mixins' as *;
 
 // The stage — one fixed column holding the two things that make up a page: the
 // page hero and the content window. It carries the window's horizontal
@@ -17,7 +16,7 @@
   bottom: var(--window-inset-bottom);
   left: var(--window-side);
   right: var(--window-side);
-  z-index: 1000;
+  z-index: var(--z-stage);
   display: flex;
   flex-direction: column;
   // The stage spans the field between the pills and the top of the screen, and
@@ -28,30 +27,22 @@
   // desktop, the dim on a phone. `all` here also armed top/bottom and every
   // inherited property, and made each state flip a full style diff.
   transition:
-    left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    right 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    left var(--transition-slow),
+    right var(--transition-slow),
+    opacity var(--transition-slow);
 
   > * {
     pointer-events: auto;
   }
 
-  // Shifted state when settings panel is open - resize and reposition
+  // A sidebar open on one side moves the block over by the panel's width and
+  // the two insets either side of it; both open squeezes it between them.
   &.settings-panel-open {
-    left: calc(28rem + 2 * var(--window-inset));
-    // Keep right unchanged unless chat panel is also open
+    left: calc(var(--panel-width) + 2 * var(--window-inset));
   }
 
-  // Shifted state when chat panel is open - resize and reposition from right
   &.chat-panel-open {
-    right: calc(28rem + 2 * var(--window-inset));
-    // Keep left unchanged unless settings panel is also open
-  }
-
-  // Both panels open - squeezed between both
-  &.settings-panel-open.chat-panel-open {
-    left: calc(28rem + 2 * var(--window-inset));
-    right: calc(28rem + 2 * var(--window-inset));
+    right: calc(var(--panel-width) + 2 * var(--window-inset));
   }
 
   // During closing animations, animate straight back to the resolved side
@@ -62,17 +53,6 @@
   }
 
   &.chat-panel-closing {
-    right: var(--window-side);
-  }
-
-  // Handle mixed states - one opening, one closing
-  &.settings-panel-closing.chat-panel-open {
-    left: var(--window-side);
-    right: calc(28rem + 2 * var(--window-inset));
-  }
-
-  &.settings-panel-open.chat-panel-closing {
-    left: calc(28rem + 2 * var(--window-inset));
     right: var(--window-side);
   }
 }
@@ -97,11 +77,10 @@
   // a centred title straight under it — and at full collapse the tagline parks
   // on the column's right edge, which is exactly where the capsule lives.
   // Starting below the whole band is what makes every width safe without the
-  // hero having to measure the capsule. It is still ~48px higher than the old
-  // nav row left it. Horizontal padding is --gutter, the same token .main
-  // takes, so the title lines up with the cards below it.
+  // hero having to measure the capsule. Horizontal padding is --gutter, the
+  // same token .main takes, so the title lines up with the cards below it.
   padding: calc(var(--rail-clearance) + var(--space-2)) var(--gutter)
-    var(--space-5);
+    var(--space-6);
 
   // The region is on every page, empty on the ones with no hero (blog posts,
   // 404) — it is the element whose height the navigation transition eases, so
@@ -113,9 +92,10 @@
 }
 
 // The hero that is leaving. It is a second .site-hero — same padding, same
-// collapse choreography, pinned to the value it was wearing — parked at the
-// box the live one occupied and taken out from under its replacement, so the
-// two are on screen together and a navigation never shows an empty hero.
+// collapse choreography, pinned to the value and the box state it was wearing
+// — parked at the box the live one occupied and taken out from under its
+// replacement, so the two are on screen together and a navigation never shows
+// an empty hero.
 //
 // Its geometry is written inline by Layout from the measured box, so the
 // centring the live region does by `margin: 0 auto` inside a max-width has to
@@ -140,14 +120,8 @@
 // The way home lives in the title: "alex → blog". The crumb is a real link,
 // so it takes the link green; the arrow is punctuation and stays quiet.
 .hero-crumb {
-  color: var(--ink-primary);
+  @include text-link;
   display: inline-block; // Transformable: the brand FLIP animates this box
-  transition: color var(--transition-fast);
-
-  &:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-  }
 }
 
 // Everything after the crumb, as one box. On a navigation this is what fades
@@ -162,27 +136,35 @@
 }
 
 // Scroll-linked collapse. Layout publishes --hero-collapse (0 → 1) on the
-// hero region from the window's scrollTop; everything here reads off that one
-// number, so the hero compresses in step with the scroll rather than snapping
-// between two states. The window is `flex: 1`, so every pixel the hero gives
-// up goes straight to the content.
+// hero region from the window's scrollTop, and everything that moves with the
+// scroll reads off that one number — by transform and opacity alone, so a
+// scroll frame costs a composite and nothing else.
 //
-// Nothing in this block carries a transition, deliberately. Six 120ms tails
-// used to ease these properties between wheel notches, and every scroll frame
-// re-targeted all six — two of them (padding, margin) animate in layout, so
-// the layout engine ran for 120ms past every notch, resizing the blurred
-// window under it the whole way. The wheel smoothing lives in Layout now: the
-// one published number is eased there, and everything below tracks it exactly.
+// The hero's *box* does not follow the scroll. It used to: the paddings, the
+// title's margin and the tagline's max-height were all functions of the same
+// number, so every frame that moved laid the stage out again and resized the
+// window — which is the scroll container being scrolled — under the finger.
+// On a phone that is the textbook touch stutter, and because the window's top
+// edge rose as its content scrolled, the page moved at 1.7× the finger's
+// speed on top of it. The box has two states now, resting and `.is-collapsed`,
+// and Layout flips between them once the scroll has come to rest, in one
+// eased step on the stage's own curve. While the finger is down nothing in
+// this block touches layout.
 .site-hero.is-collapsible {
-  // The collapse reclaims space but never lets the window's frame touch the
-  // hero text, and never lets the collapsed row ride the screen edge: both
-  // paddings bottom out at a floor instead of zero.
-  padding-top: calc(
-    var(--rail-clearance) + var(--space-2) * (1 - var(--hero-collapse))
-  );
-  padding-bottom: calc(
-    var(--space-3) + var(--space-3) * (1 - var(--hero-collapse))
-  );
+  // How far the title shrinks at full collapse. Layout reads this for the
+  // fit calculation too, so it lives here and nowhere else. Just over half on
+  // a desktop, where the tagline has to fit beside it; half on a phone, which
+  // lands it on the rail's own scale; the narrowest phones take it further so
+  // the homepage's full name still clears the nav capsule with real air.
+  --collapsed-title-scale: 0.55;
+
+  // The resting box, stated outright — it is the base .site-hero padding, but
+  // the collapsed state below needs a definite value to ease from.
+  padding-top: calc(var(--rail-clearance) + var(--space-2));
+  padding-bottom: var(--space-6);
+  transition:
+    padding-top var(--transition-slow),
+    padding-bottom var(--transition-slow);
 
   // Every hero is a title and a tagline stacked and centred. The column of
   // content-width boxes is what lets the split below move each one outward by
@@ -192,45 +174,72 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
+    transition: margin-bottom var(--transition-slow);
   }
 
-  // The title stays — it is the page's name — but gives back the gap under it.
   h1 {
-    margin-bottom: calc(var(--space-3) * (1 - var(--hero-collapse)));
+    margin-bottom: var(--space-4);
+    transition: margin-bottom var(--transition-slow);
+    // On its own layer for the life of the page: the title scales and travels
+    // on every scroll frame, and a shadowed text run that is not promoted is
+    // re-rasterised for each step rather than composited.
+    will-change: transform;
+    transform-origin: left center;
+    transform: translateX(
+        calc(-1 * var(--hero-collapse) * var(--title-shift, 0px))
+      )
+      scale(calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse)));
   }
 
-  // The tagline is the last thing in the hero; the room under it is the hero's
-  // own padding, not a paragraph margin. Left in, the global `p` bottom margin
-  // is space the collapse can never reclaim.
+  // The tagline is the last thing in the hero; the room under it is the
+  // hero's own padding, not a paragraph margin.
   p {
     margin-bottom: 0;
+    will-change: transform, opacity;
+  }
+
+  // The collapsed box. The hero gives back the breath above the title and the
+  // gap under it; both paddings bottom out at a floor rather than zero, so
+  // the window's frame never touches the hero text and the collapsed row
+  // never rides the screen edge.
+  &.is-collapsed {
+    padding-top: var(--rail-clearance);
+    padding-bottom: var(--space-4);
+
+    h1 {
+      margin-bottom: 0;
+    }
   }
 
   // The split. At rest the two are stacked and centred; on scroll the title
   // slides to the left edge and shrinks while the tagline slides to the right
   // edge and rises onto the title's row, so at full collapse they sit as one
-  // line floating above the window. The pixel distances are measured by Layout
-  // — they depend on rendered text widths — and everything here does is scale
-  // them by the same --hero-collapse the region publishes.
+  // line floating above the window. The pixel distances are measured by
+  // Layout — they depend on rendered text widths — and everything here does
+  // is scale them by the same --hero-collapse the region publishes.
   @media (min-width: 769px) {
-    h1 {
-      transform: translateX(
-          calc(-1 * var(--hero-collapse) * var(--title-shift, 0px))
-        )
-        scale(calc(1 - 0.45 * var(--hero-collapse)));
-      transform-origin: left center;
-    }
-
     p {
       // The tagline travels rather than fading, so it keeps its ink the whole
       // way. --sub-scale is 1 wherever it already fits beside the shrunken
       // title, and below 1 on the one page where it does not; the right-edge
       // origin keeps it parked against the column's right side either way.
+      // The rise onto the title's row is a translate here, not a margin: the
+      // tagline's layout box never moves, only its picture does.
       opacity: 1;
-      margin-top: calc(-1 * var(--hero-collapse) * var(--row-lift, 0px));
-      transform: translateX(calc(var(--hero-collapse) * var(--sub-shift, 0px)))
+      transform: translate(
+          calc(var(--hero-collapse) * var(--sub-shift, 0px)),
+          calc(-1 * var(--hero-collapse) * var(--row-lift, 0px))
+        )
         scale(calc(1 - (1 - var(--sub-scale, 1)) * var(--hero-collapse)));
       transform-origin: right center;
+    }
+
+    // Collapsed, the tagline has risen onto the title's row, so its own row
+    // is handed back — through a negative margin on the column, not on the
+    // tagline. Its box has to stay where it was: the transform above already
+    // moved the picture, and a box that moved too would move it twice.
+    &.is-collapsed > * {
+      margin-bottom: calc(-1 * var(--row-lift, 0px));
     }
   }
 
@@ -241,21 +250,21 @@
   // the page picker on the right. The crumb's tail ("→ blog") fades out with
   // the tagline; the green brand is the whole collapsed header.
   @media (max-width: 768px) {
-    // How far the title shrinks at full collapse. Half its size lands it on
-    // the rail's own scale; the narrowest phones take it further so the
-    // homepage's full name still clears the nav capsule with real air (at
-    // 320px and 0.5 the two met with a single pixel between them).
     --collapsed-title-scale: 0.5;
 
     @media (max-width: 360px) {
       --collapsed-title-scale: 0.44;
     }
 
-    // No easing between scroll samples on a phone — Layout's publisher writes
-    // the finger's own position straight through here (touch is a continuous
-    // stream; there is no wheel notch to smooth over), and nothing in this
-    // file carries a transition for the collapse anywhere. Tracking the finger
-    // exactly is both the cheaper frame and the more responsive one.
+    // The resting box at this width (the base .site-hero's phone padding).
+    padding-top: calc(var(--rail-clearance) + var(--space-2));
+    padding-bottom: var(--space-4);
+
+    // Layout's publisher writes the finger's own position straight through
+    // here (touch is a continuous stream; there is no wheel notch to smooth
+    // over), and nothing in this block eases the per-frame properties.
+    // Tracking the finger exactly is both the cheaper frame and the more
+    // responsive one.
 
     h1 {
       // Right-to-left: scale first (about the left edge, so --title-shift
@@ -276,14 +285,6 @@
         scale(
           calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse))
         );
-      transform-origin: left center;
-      // The title leaves its band entirely, so the whole line-height is
-      // handed back through the margin and the window rises to just under
-      // the rail.
-      margin-bottom: calc(
-        var(--space-3) * (1 - var(--hero-collapse)) - 1.15em *
-          var(--hero-collapse)
-      );
     }
 
     // The tail goes with the tagline; the anchor keeps its ink the whole way.
@@ -291,29 +292,72 @@
       opacity: calc(1 - var(--hero-collapse));
     }
 
+    // The tagline fades and drifts up as the finger moves, and is clipped
+    // away once the box collapses. The clip's resting height is the
+    // tagline's own, published by Layout, so the ease runs over the real
+    // distance rather than idling through empty headroom first.
     p {
       opacity: calc(1 - var(--hero-collapse));
-      max-height: calc(6rem * (1 - var(--hero-collapse)));
+      max-height: var(--tagline-height, 6rem);
       overflow: hidden;
       transform: translateY(calc(-0.5rem * var(--hero-collapse)));
+      transition: max-height var(--transition-slow);
+    }
+
+    // Collapsed, the title has left its band entirely, so the whole
+    // line-height is handed back through the margin and the window rises to
+    // just under the rail; the tagline's box closes with it.
+    &.is-collapsed {
+      padding-top: var(--rail-clearance);
+      padding-bottom: 0;
+
+      h1 {
+        margin-bottom: -1.15em;
+      }
+
+      p {
+        max-height: 0;
+      }
     }
   }
 
-  // A `prefers-reduced-motion` block used to strip the collapse transitions
-  // here. There are none left to strip — Layout's publisher is where the wheel
-  // easing lives now, and it checks the same preference itself: reduced motion
-  // tracks the scroll exactly and never continues moving on its own.
+  @media (max-width: 480px) {
+    padding-top: calc(var(--rail-clearance) + var(--space-1));
+    padding-bottom: var(--space-2);
+
+    &.is-collapsed {
+      padding-top: var(--rail-clearance);
+      padding-bottom: 0;
+    }
+  }
+
+  // Less motion: the box still has its two states; it simply changes between
+  // them in place. The per-frame properties carry no easing to strip — the
+  // wheel smoothing lives in Layout's publisher, which checks the same
+  // preference itself and tracks the scroll exactly under it.
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    > *,
+    h1,
+    p {
+      transition: none;
+    }
+  }
 }
 
 // A steep tapered blur riding the window's visible top edge. Content scrolling
-// out of the window dissolves through it instead of sliding under floating
-// controls at full strength. Sticky with zero height, so it costs no layout;
-// the ::before is the actual veil, masked from solid to nothing over ~70px.
+// out of the window dissolves through it instead of sliding under the sticky
+// control chips at full strength. Sticky with zero height, so it costs no
+// layout; the ::before is the actual veil, masked from solid to nothing.
+//
+// Its band and the row it protects are a tuned pair: the row is ~51px on a
+// desktop and ~67px on a phone (see --sticky-row-clearance), and the veil's
+// solid zone has to reach past it so content dissolves before it arrives.
 .window-veil {
   position: sticky;
   top: 0;
   height: 0;
-  z-index: 5; // Under the cv control row (10), over the content
+  z-index: 5; // Under the control row (10), over the content
   pointer-events: none;
 
   &::before {
@@ -329,9 +373,8 @@
     transition: opacity 80ms linear;
     // Fully invisible is fully off. An opacity-0 backdrop filter is still a
     // live filter surface — over a canvas that repaints every frame, the
-    // compositor kept resolving an 18px blur nobody could see. The shell
-    // marks the veil itself `veil-live` the moment there is any scroll to
-    // veil.
+    // compositor kept resolving the blur nobody could see. The shell marks
+    // the veil itself `veil-live` the moment there is any scroll to veil.
     visibility: hidden;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px); // Safari 17 and earlier
@@ -357,20 +400,18 @@
     );
 
     // The chip row is taller on a phone (the thumb padding in controls.scss),
-    // and at 88px the veil's solid zone ran out while the chips were still
-    // overhead — full-strength text surfaced directly beneath them. The band
-    // reaches past the row, so content dissolves before it ever reaches the
-    // chips.
-    //
-    // The tint is the light half of that job. It ran near-opaque, which over a
-    // bright field stopped reading as a veil and started reading as a black
-    // bar laid across the top of the page — a shape with its own edges,
-    // louder than the collision it was hiding. The blur is what actually
-    // destroys the text (18px, and the chips add their own on top); the tint
-    // only has to keep the smear from competing, and it does that at a third
-    // of the weight while letting the field show through.
+    // so the band reaches further. The tint is lighter: near-opaque, over a
+    // bright field it stopped reading as a veil and started reading as a
+    // black bar laid across the top of the page. The blur is what destroys
+    // the text (the chips add their own on top); the tint only has to keep
+    // the smear from competing. And the radius is halved for the same reason
+    // the chips' was: the band re-resolves on every scroll frame over a
+    // canvas that repaints every frame, and it shares those frames with the
+    // hero collapse.
     @media (max-width: 768px) {
       height: 140px;
+      backdrop-filter: blur(9px);
+      -webkit-backdrop-filter: blur(9px);
       background: linear-gradient(
         to bottom,
         rgba(7, 8, 10, 0.62) 0%,
@@ -401,57 +442,38 @@
   visibility: visible;
 }
 
-// The content window — the scrolling panel the page lives in. It no longer
-// positions itself: the stage owns the geometry, and this fills whatever the
-// header and hero leave. The page never scrolls; content scrolls in here.
+// The content window — the scrolling panel the page lives in. It does not
+// position itself: the stage owns the geometry, and this fills whatever the
+// hero leaves. The page never scrolls; content scrolls in here.
 .layout {
+  @include window-material;
   flex: 1;
   min-height: 0; // Let the flex child actually shrink so `overflow` can work
   display: flex;
   flex-direction: column;
-  background: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-  border-radius: var(--radius-lg);
-  // Grounds the panel on the field; the field is animated and often bright,
-  // so this reads as depth rather than as a visible shadow shape.
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
-  overflow: auto; // Allow scrolling within the panel
-  border: 1px solid var(--window-border);
+  overflow: auto;
 
-  // Focusable (tabindex=-1) so a click inside gives it the keyboard; the
-  // focus itself is not something to draw a ring around a whole window for.
+  // Focusable (tabindex=-1) so a click inside gives it the keyboard. It is
+  // never in the tab order — the links inside it are — so the ring the
+  // keyboard would draw around a whole window has nothing to answer.
   &:focus {
     outline: none;
   }
-
-  // The window shows no scrollbar of its own — a bar riding the frame reads as
-  // chrome bolted onto the panel and breaks the device-screen metaphor. That
-  // is now true of every scrollable on the site and is stated once, in
-  // global.scss; this note is what it used to say here.
 }
 
-// Responsive design for panel sliding behavior
+// On a phone the panels take the full width, so the stage dims instead of
+// moving over. It keeps the window's own side offset here rather than
+// snapping to the viewport edge: --window-side floors to the inset at these
+// widths, so this is where it already sits, and the dim is the only change.
 @media (max-width: 768px) {
-  // On mobile, dim content when any panel is open (panels take full width).
-  // The stage keeps the window's own side offset here rather than snapping to
-  // the viewport edge: --window-side floors to the inset at these widths, so
-  // this is where it already sits, and the dim is the only change.
   .stage.settings-panel-open,
   .stage.settings-panel-closing,
   .stage.chat-panel-open,
-  .stage.chat-panel-closing,
-  .stage.settings-panel-open.chat-panel-open {
+  .stage.chat-panel-closing {
     left: var(--window-side);
     right: var(--window-side);
-    width: auto;
-    transform: translateX(0);
-    opacity: 0.3; // Dim instead of resize
+    opacity: 0.3;
   }
-
-  // The capsule's own phone offset is set below, after the base .nav rule —
-  // put here it would lose to the base declaration, which is the trap this
-  // file keeps falling into (see the note on .chat-sidebar in chat.scss).
 
   // The capsule dims with the rest of the page rather than dodging: at this
   // width the panels are full-bleed and there is nowhere to dodge to.
@@ -464,20 +486,22 @@
   }
 }
 
-// Animations are now in animations.scss
-
 // The page links, as a floating control on the field rather than a bar inside
 // the stage. It is the top of a right-hand rail whose bottom is the chat pill:
-// same housing, same footprint, same viewport offset, so their right edges
-// land on the same x at every width. That is why it takes --rail-inset and not
-// --window-side — the window's side offset opens up on wide displays and the
-// two would drift apart.
+// same housing, same viewport offset, so their right edges land on the same x
+// at every width. That is why it takes --rail-inset and not --window-side —
+// the window's side offset opens up on wide displays and the two would drift
+// apart.
+//
+// The capsule does not dodge. It used to slide inward by the sidebar's width
+// whenever the chat opened, which put the one fixed landmark on the field in
+// motion every time a panel came and went. The rail is the still thing the
+// page moves against; it stays where it is.
 .nav {
   position: fixed;
   top: var(--rail-inset-top);
   right: var(--rail-inset-right);
-  // Above the window (1000) and below the sidebars (1002).
-  z-index: 1001;
+  z-index: var(--z-rail);
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -485,22 +509,14 @@
   // Right for the phone offset change, opacity for the phone dim — the two
   // things the capsule's panel states actually touch.
   transition:
-    right 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-
-  // The capsule does not dodge. It used to slide inward by the sidebar's width
-  // whenever the chat opened, which put the one fixed landmark on the field in
-  // motion every time a panel came and went — and the panel's own top edge
-  // starts below it anyway (the sidebars hang from --window-top, under the
-  // rail), so there was nothing to dodge. The rail is the still thing the
-  // page moves against; it stays where it is.
+    right var(--transition-slow),
+    opacity var(--transition-slow);
 }
 
 // One machined capsule housing the page links — a single control with
 // segments, not a row of loose boxes (capsule-housing lives in mixins.scss).
-// Its box matches the chat pill's height; width is natural — the rail aligns
-// the same arithmetic (see --rail-height in variables.scss) so the two read as
-// one column of controls rather than two similar objects.
+// Its box matches the chat pill's height; width is natural — a centred title
+// would run under a matched footprint on a narrow desktop.
 .nav-menu {
   display: flex;
   gap: 0.125rem;
@@ -513,48 +529,36 @@
 
 // A segment inside the housing: quiet text that washes on hover, and the
 // current page carries a filled segment — the capsule doubles as a "you are
-// here" indicator, which the old row of identical pills never said.
+// here" indicator. No halo: the housing is the legibility device, as it is
+// for the two pills.
 .nav-link {
   text-decoration: none;
   color: var(--text-secondary);
-  @include over-background;
-  font-size: 0.875rem; // Matches the chat and background pills
+  font-family: var(--font-mono);
+  font-size: var(--text-control); // Matches the chat and background pills
   // Explicit, because it is load-bearing: this plus the paddings below and the
   // housing's own is what makes the capsule exactly as tall as the chat pill,
   // whose height comes from its 20px icon.
   line-height: 1.25rem;
   white-space: nowrap;
-  padding: 0.5rem 0.9rem;
+  padding: var(--space-2) 0.9rem;
   // A nested corner inside the housing's, not a pill — the whole kit carries
-  // the window's chamfer now.
+  // the window's chamfer.
   border-radius: var(--radius-md);
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
   text-transform: lowercase;
   letter-spacing: -0.01em;
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
 
   &:hover {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.07);
+    background-color: var(--wash-hover);
   }
 
   &.active {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.11);
-  }
-}
-
-// Between roughly 900 and 1100px the hero column is wide enough that a
-// centred title would reach under a 280px capsule. The capsule sheds its
-// matched footprint there — alignment with the chat pill matters less than a
-// title running into it — and takes its natural width instead.
-@media (max-width: 1024px) {
-  .nav-menu {
-    min-width: auto;
+    background-color: var(--wash-active);
   }
 }
 
@@ -562,79 +566,56 @@
   flex: 1;
   max-width: var(--content-max-width);
   margin: 0 auto;
-  // The page title lives above the window now, so the old header-clearance
-  // padding is gone and this is plain vertical rhythm. The sides are --gutter:
-  // this is the only horizontal padding between the window frame and the
-  // content, and the page containers inside it add none of their own.
-  padding: var(--space-5) var(--gutter) var(--space-6);
+  // The sides are --gutter: this is the only horizontal padding between the
+  // window frame and the content, and the page containers inside it add none
+  // of their own. The bottom is the same on every page — the page containers
+  // add none of their own either.
+  padding: var(--space-6) var(--gutter) var(--space-7);
   width: 100%;
   position: relative;
 }
 
 .footer {
-  background: transparent; // Match layout tint exactly
+  background: transparent;
   margin-top: auto;
   position: relative;
-}
-
-// Add twinkle animation for playful elements
-@keyframes twinkle {
-  0%,
-  100% {
-    opacity: 0.7;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.2);
-  }
 }
 
 .footer-content {
   max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 1.5rem 2rem;
+  padding: var(--space-5) var(--gutter);
   text-align: center;
 }
 
 .footer-links {
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
+// The marks are `currentColor` strokes, so the whole hover treatment is the
+// ink brightening — the same answer every other control on the site gives.
+// Focus takes the global ring.
 .footer-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 2.75rem;
   height: 2.75rem;
-  background: transparent; // Remove tinted background
-  // Rests at the same quiet ink every other control on the site rests at, and
-  // brightens on hover — the marks are `currentColor` strokes, so the whole
-  // hover treatment is this one line.
   color: var(--text-secondary);
   text-decoration: none;
   border-radius: var(--radius-md);
-  @include control-transition(var(--transition-normal));
-  position: relative;
-  overflow: hidden;
-
-  // Remove default focus outline
-  &:focus {
-    outline: none;
-  }
+  transition: color var(--transition-fast);
 
   // One monoline set drawn inline rather than five vendor logos pulled in as
   // data-URI backgrounds: those were a mix of outline (the envelope) and solid
-  // (the brand marks) and read as unrelated stickers. Stroked in currentColor,
-  // they inherit the link's ink and its hover for free.
+  // (the brand marks) and read as unrelated stickers.
   .icon {
     display: inline-flex;
     width: 1.25rem;
     height: 1.25rem;
-    @include control-transition(var(--transition-normal));
 
     svg {
       width: 100%;
@@ -643,27 +624,15 @@
   }
 
   &:hover {
-    transform: scale(1.05);
-
-    .icon {
-      transform: scale(1.1);
-    }
-  }
-
-  &:active {
-    transform: scale(0.95);
+    color: var(--text-primary);
   }
 }
 
 .footer-copyright {
   color: var(--text-muted);
   @include over-background;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   margin: 0;
-  font-weight: 400;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
   text-transform: lowercase;
 }
 
@@ -703,31 +672,11 @@
 
   .site-hero {
     padding: calc(var(--rail-clearance) + var(--space-2)) var(--gutter)
-      var(--space-3);
-  }
-
-  .site-hero.is-collapsible {
-    padding-top: calc(
-      var(--rail-clearance) + var(--space-2) * (1 - var(--hero-collapse))
-    );
-    padding-bottom: calc(var(--space-3) * (1 - var(--hero-collapse)));
+      var(--space-4);
   }
 
   .main {
-    padding: var(--space-4) var(--gutter) var(--space-5);
-  }
-
-  .footer-content {
-    padding: 2rem var(--gutter);
-  }
-
-  .footer-links {
-    gap: 1rem;
-  }
-
-  .footer-link {
-    width: 2.75rem;
-    height: 2.75rem;
+    padding: var(--space-5) var(--gutter) var(--space-6);
   }
 }
 
@@ -744,19 +693,8 @@
       var(--space-2);
   }
 
-  .site-hero.is-collapsible {
-    padding-top: calc(
-      var(--rail-clearance) + var(--space-1) * (1 - var(--hero-collapse))
-    );
-    padding-bottom: calc(var(--space-2) * (1 - var(--hero-collapse)));
-  }
-
   .main {
-    padding: var(--space-3) var(--gutter) var(--space-4);
-  }
-
-  .footer-content {
-    padding: 1.5rem var(--gutter);
+    padding: var(--space-4) var(--gutter) var(--space-5);
   }
 
   .footer-link {

@@ -125,14 +125,30 @@ test.describe('structural performance guards', () => {
       .toBe('visible');
   });
 
-  test('the hero collapse eases nothing through CSS', async ({ page }) => {
+  test('the hero collapse eases nothing that the scroll drives', async ({
+    page,
+  }) => {
     await page.goto('/');
     await settle(page);
 
-    const durations = await page.evaluate(() => {
+    const eased = await page.evaluate(() => {
+      // The properties an element actually eases: its transition-property
+      // list, minus every entry whose paired duration is zero. An element with
+      // no transition declared at all reports the initial `all 0s`, which
+      // eases nothing and must not read as a failure.
       const read = (selector: string) => {
         const el = document.querySelector(selector);
-        return el ? getComputedStyle(el).transitionDuration : null;
+        if (!el) return null;
+        const style = getComputedStyle(el);
+        const properties = style.transitionProperty
+          .split(',')
+          .map(property => property.trim());
+        const durations = style.transitionDuration
+          .split(',')
+          .map(duration => parseFloat(duration));
+        return properties.filter(
+          (_, index) => durations[index % durations.length] > 0
+        );
       };
       return {
         hero: read('.site-hero.is-collapsible'),
@@ -141,18 +157,74 @@ test.describe('structural performance guards', () => {
       };
     });
 
-    // The scroll link re-targets on every frame, so a transition here — the
-    // old 120ms tails eased padding and margin, which animate in layout —
-    // keeps the layout engine running long past every wheel notch. The wheel
-    // smoothing lives in the Layout component's publisher now; these elements
-    // must track the published value exactly.
-    for (const value of Object.values(durations)) {
-      expect(value).not.toBeNull();
-      const zero = value!
-        .split(',')
-        .every(duration => parseFloat(duration) === 0);
-      expect(zero).toBe(true);
+    // The scroll link re-targets transform and opacity on every frame, and a
+    // transition on either would keep them trailing the published value past
+    // every wheel notch. The box flip that hands the hero's height back is
+    // eased — once, when the scroll has settled — but only ever on layout
+    // properties the scroll does not touch. `all` would catch both.
+    for (const properties of Object.values(eased)) {
+      expect(properties).not.toBeNull();
+      expect(properties).not.toContain('all');
+      expect(properties).not.toContain('transform');
+      expect(properties).not.toContain('opacity');
     }
+  });
+
+  test('the hero collapse leaves the window alone while the scroll moves', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await settle(page);
+
+    // The window is the scroll container. Resizing it on the frames that
+    // scroll it is what stuttered on touch, so the hero's box must hold still
+    // while the scroll is live and give its height back only once the scroll
+    // has rested.
+    const readings = await page.evaluate(async () => {
+      const layout = document.querySelector('.layout') as HTMLElement;
+      const hero = document.querySelector('.site-hero') as HTMLElement;
+      const frame = () =>
+        new Promise<void>(resolve =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        );
+      const before = hero.getBoundingClientRect().height;
+      const moving: { height: number; collapsed: boolean }[] = [];
+      for (const top of [20, 60, 100, 140]) {
+        layout.scrollTop = top;
+        await frame();
+        moving.push({
+          height: hero.getBoundingClientRect().height,
+          collapsed: hero.classList.contains('is-collapsed'),
+        });
+      }
+      return { before, moving };
+    });
+
+    // The settle that flips the box waits for the scroll to rest, and on a
+    // slow runner two animation frames can be longer than that wait. So the
+    // assertion is on the frames the scroll was still live — the box must not
+    // have moved on any of them — and a reading taken after the flip is the
+    // flip doing its job, not a stutter.
+    const live = readings.moving.filter(reading => !reading.collapsed);
+    expect(live.length).toBeGreaterThan(0);
+    for (const reading of live) {
+      expect(Math.abs(reading.height - readings.before)).toBeLessThan(1);
+    }
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() =>
+            document
+              .querySelector('.site-hero')!
+              .classList.contains('is-collapsed')
+          ),
+        {
+          message: 'the box should collapse once the scroll rests',
+          timeout: 20_000,
+        }
+      )
+      .toBe(true);
   });
 
   test('the scroll-linked properties land on their readers, not their containers', async ({

@@ -28,8 +28,8 @@ const ThinkingToggle: React.FC<ThinkingToggleProps> = ({ className = '' }) => {
   };
 
   const tooltipText = isThinkingEnabled
-    ? 'Disable thinking'
-    : 'Enable thinking';
+    ? 'disable thinking'
+    : 'enable thinking';
 
   return (
     <div className={`thinking-toggle-container ${className}`}>

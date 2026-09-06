@@ -1,38 +1,24 @@
-@import 'variables';
-@import 'mixins';
+@use 'mixins' as *;
 
 // A plain flow child of .main: the content column and the gutter belong to
 // .main and --gutter, so the overview card's left edge is the same x as the
 // hero title and the brand pill above it.
 .cv {
-  line-height: 1.7;
-  position: relative;
-}
-
-// Enable smooth scrolling for anchor links
-html {
-  scroll-behavior: smooth;
-}
-
-// Ensure sections are targetable
-section[id] {
+  line-height: var(--leading-prose);
   position: relative;
 }
 
 // The page hero, on the field above the window — see .site-hero in
-// layout.scss, which owns its column and its padding.
+// layout.scss, which owns its column and its padding. No hand-set sizes at
+// any width: the type scale is fluid, and the CV's hero is sized exactly as
+// the blog's and the projects page's are.
 .cv-page-header {
   margin-bottom: 0;
   padding: 0;
   position: relative;
 
   h1 {
-    margin-bottom: var(--space-3);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.02em;
+    margin-bottom: var(--space-4);
     @include over-background;
   }
 
@@ -40,7 +26,7 @@ section[id] {
     color: var(--text-secondary);
     @include over-background;
     font-size: var(--text-lead);
-    line-height: 1.6;
+    line-height: var(--leading-chrome);
     font-style: italic;
   }
 }
@@ -48,137 +34,95 @@ section[id] {
 // CV Overview and Contact Combined
 .cv-overview-contact {
   @include outline-block;
-  padding: var(--space-5);
+  padding: var(--space-6);
   border-radius: var(--radius-lg);
-  margin-bottom: var(--space-5);
+  // The same step the sections below keep between each other.
+  margin-bottom: var(--space-7);
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: var(--space-5);
+  gap: var(--space-6);
   align-items: start;
   position: relative;
 
-  .overview-section {
-    h3 {
-      font-size: var(--text-h4);
-      margin-bottom: var(--space-3);
-      color: var(--text-primary);
-      font-family:
-        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-        monospace;
-      text-transform: lowercase;
-      letter-spacing: -0.01em;
-    }
-
-    p {
-      margin: 0;
-      font-size: 1rem;
-      line-height: 1.7;
-      color: var(--text-secondary);
-      font-style: italic;
-    }
+  h3 {
+    font-size: var(--text-h4);
+    margin-bottom: var(--space-4);
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
   }
 
-  .contact-section {
-    h3 {
-      font-size: var(--text-h4);
-      margin-bottom: var(--space-3);
-      color: var(--text-primary);
-      font-family:
-        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-        monospace;
+  // A description, so it takes the descriptions' italic — and the house case:
+  // it was the one paragraph on the site still set in sentence case.
+  .overview-section p {
+    margin: 0;
+    font-size: var(--text-body);
+    line-height: var(--leading-prose);
+    color: var(--text-secondary);
+    font-style: italic;
+    text-transform: lowercase;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .contact-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+
+    .contact-label {
+      font-size: var(--text-small);
+      color: var(--text-muted);
       text-transform: lowercase;
-      letter-spacing: -0.01em;
     }
 
-    .contact-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
+    .contact-value {
+      font-size: var(--text-body);
+      color: var(--text-primary);
+      text-decoration: none;
     }
 
-    .contact-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+    // The ones that are links say so under the pointer, the way every link
+    // does.
+    a.contact-value {
+      transition: color var(--transition-fast);
 
-      .contact-label {
-        font-size: 0.9rem;
-        color: var(--text-muted);
-        font-family:
-          'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-          monospace;
-        text-transform: lowercase;
-      }
-
-      .contact-value {
-        font-size: 1rem;
-        color: var(--text-primary);
-        text-decoration: none;
-        transition: color var(--transition-fast);
-
-        &:hover {
-          color: var(--ink-primary);
-        }
+      &:hover {
+        color: var(--ink-primary);
       }
     }
   }
 }
 
+// The sections, one below the other at the page's section rhythm. The page
+// adds nothing below the last: the window's own bottom padding is where every
+// page ends.
 #resume-content {
-  margin-bottom: var(--space-5);
+  margin-bottom: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-7);
 }
 
-// Ensure anchor jumps clear the sticky section nav (the page header is on the
-// field above the window now and never covers a target).
+// Anchor jumps land clear of the sticky control chips at every width.
 #cv-experience,
 #cv-education,
 #cv-skills,
 #cv-certifications {
-  scroll-margin-top: 80px; // Sticky nav + padding
+  scroll-margin-top: var(--sticky-row-clearance);
 }
 
-// Left-aligned like every other header on the site, and without the pink rule
-// underneath — the space below it does that job.
-.cv-header {
-  margin-bottom: var(--space-6);
-  padding-bottom: var(--space-5);
-  position: relative;
-
-  h1 {
-    margin-bottom: var(--space-3);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.02em;
-  }
-}
-
-.cv-contact {
-  p {
-    margin: var(--space-2) 0;
-    color: var(--text-secondary);
-  }
-}
-
-// Section titles sit on the animated background, not on a card — so they are
-// white with a halo, pinned rather than following --text-primary, which tracks
-// the page surface and not the stage behind it. The pink rule that used to run
-// under them is gone with the rest of the decoration.
+// Section titles sit inside the window with the simulation running behind
+// the scrim, so they carry the halo like the projects page's.
 .cv-section-title {
-  color: white;
+  color: var(--text-primary);
   @include over-background;
   font-size: var(--text-h3);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
   display: inline-block;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  text-transform: lowercase;
-  letter-spacing: -0.02em;
   position: relative;
 }
 
@@ -190,7 +134,7 @@ section[id] {
 .cv-card {
   @include outline-block;
   @include card-highlight;
-  padding: var(--space-5);
+  padding: var(--space-6);
   border-radius: var(--radius-lg);
 
   @include reading-emphasis {
@@ -199,14 +143,13 @@ section[id] {
 }
 
 // The entries in a section are cards in a list, and cards in a list have air
-// between them. They used to be stacked flush, which read as one long ruled
-// table rather than as a set of things.
+// between them — the same air the blog's list and the projects grid keep.
 .experience-section,
 .education-section,
 .certifications-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
 
   // The heading is not one of the cards, so it keeps its own space and does
   // not take the list's gap on top of it.
@@ -215,8 +158,8 @@ section[id] {
   }
 }
 
-// The name, as its own block — so the duration chip beside it can wrap under
-// it on a phone rather than sharing a cramped line.
+// The name, as its own block — so the duration beside it can wrap under it
+// on a phone rather than sharing a cramped line.
 .cv-entry-title {
   display: flex;
   align-items: flex-start;
@@ -224,10 +167,10 @@ section[id] {
   min-width: 200px;
 }
 
-// The title row: the name at one end, the duration chip and the chevron at
-// the other. The briefcase that used to open it is gone — every card in the
-// section is a role, and the heading has said so.
-.experience-header {
+// The title row: the name at one end, the duration and the chevron at the
+// other. The same row on an experience and an education entry.
+.experience-header,
+.education-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -239,10 +182,6 @@ section[id] {
     min-width: 0;
     color: var(--text-primary);
     font-size: var(--text-h4);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
     letter-spacing: -0.01em;
   }
 }
@@ -253,7 +192,7 @@ section[id] {
   padding: 0;
   // When single-open repositions a card, it lands clear of the floating
   // control chips and the veil rather than sliding underneath them.
-  scroll-margin-top: 76px;
+  scroll-margin-top: var(--sticky-row-clearance);
 
   summary {
     list-style: none;
@@ -264,12 +203,8 @@ section[id] {
   }
 }
 
-// The left rail these cards used to carry — a 3px accent edge that got wider
-// and brighter as the scroll arrived at an entry — is gone, along with the
-// blog's copy of it. It was the one edge on the site drawn at a weight the
-// other three did not share. Open is a state, and it says so the same way a
-// pointer does: the hairline brightens, all the way round, and stays that way
-// until the card is closed.
+// Open is a state, and it says so the same way a pointer does: the hairline
+// brightens, all the way round, and stays that way until the card is closed.
 .cv-collapse[open] {
   @include card-highlight-on;
 }
@@ -277,32 +212,27 @@ section[id] {
 // The whole summary is the toggle — it fills the collapsed card edge to edge —
 // so it has to look like it, rather than leaving the chevron as the only cue.
 .cv-collapse-summary {
-  padding: var(--space-5);
+  padding: var(--space-6);
   cursor: pointer;
   display: block;
-  // The card no longer clips its children (the travelling light rides its
-  // outer edge), so the wash carries the card's own corner.
+  // The card does not clip its children, so the wash carries the card's own
+  // corner.
   border-radius: var(--radius-lg);
-  transition: background var(--transition-fast);
 
+  // The keyboard's ring, drawn inside the card's own edge rather than
+  // outside it, where the card's overflow would clip it into a stray rule.
   &:focus-visible {
     outline-offset: -4px;
   }
 
-  // The summary's own hover wash is gone: the card underneath it already eases
-  // to a brighter hairline and a faint wash under the pointer (see
-  // `card-highlight`), and two washes stacked on the same pixels made the
-  // collapsed card jump a step brighter than an open one.
-
   .summary-right {
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3);
   }
 
   // The same caret the dropdown triggers carry, and nothing around it: the
-  // circle it used to sit in was one more outlined control on a row that
-  // already had one, and the summary is the toggle, not the chevron.
+  // summary is the toggle, not the chevron.
   .cv-collapse-chevron {
     display: inline-flex;
     align-items: center;
@@ -310,9 +240,11 @@ section[id] {
     flex-shrink: 0;
     width: 1rem;
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--text-small);
     line-height: 1;
-    @include control-transition(var(--transition-normal));
+    transition:
+      color var(--transition-fast),
+      transform var(--transition-fast);
   }
 }
 
@@ -321,37 +253,34 @@ section[id] {
   color: var(--text-primary);
 }
 
-// Collapsed institution line — the body of an education card, under its title
-// row and above its meta band.
-.education-institution-collapsed {
-  color: var(--text-secondary);
-  margin-top: var(--space-3);
-  margin-bottom: 0;
-  font-size: var(--text-body);
-}
-
 details[open] .cv-collapse-summary .cv-collapse-chevron {
   transform: rotate(180deg);
 }
 
-// The entry's meta band — the cv's answer to the blog card's date/tag row and
-// the project card's language line. It sits under the title with the same
-// hairline above it as they carry.
-.cv-summary-skills {
+// Collapsed institution line — the body of an education card, under its title
+// row and above its meta band.
+.education-institution-collapsed {
+  color: var(--text-secondary);
   margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 0;
+  font-size: var(--text-body);
+}
+
+// The entry's meta band — the cv's answer to the blog card's date row and the
+// project card's language line. It sits under the title with the same
+// hairline above it as they carry, at the same distances.
+.cv-summary-skills {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline-interior);
   font-size: var(--text-small);
   color: var(--text-secondary);
   display: block;
-  line-height: 1.5;
+  line-height: var(--leading-chrome);
 
   .cv-summary-label {
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
     text-transform: lowercase;
-    margin-right: 0.5rem;
+    margin-right: var(--space-2);
     color: var(--text-muted);
   }
 
@@ -364,26 +293,51 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 // so it reads as a divider rather than a seam, and with the same buffer above
 // and below the rule as the summary keeps under its own last line.
 .cv-collapse-details {
-  margin: 0 var(--space-5);
-  padding: var(--space-4) 0 var(--space-5);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 0 var(--space-6);
+  padding: var(--space-5) 0 var(--space-6);
+  border-top: 1px solid var(--hairline-interior);
 }
 
 // The date range, as quiet text — the same treatment the blog card gives its
-// date and the project card its language. It used to be an outlined chip,
-// which put a box beside the chevron's box on every title row.
-.experience-duration {
+// date and the project card its language.
+.experience-duration,
+.education-duration {
   color: var(--text-secondary);
   white-space: nowrap;
   font-size: var(--text-small);
 }
 
-.experience-bullets {
+// The body of an open entry.
+.experience-location,
+.education-location {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.experience-location {
+  margin-bottom: var(--space-4);
+}
+
+.education-gpa {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+// Descriptions take the descriptions' italic.
+.experience-description,
+.education-description {
+  margin-bottom: var(--space-4);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.experience-achievements,
+.education-achievements {
   margin: 0;
-  padding-left: 1.5rem;
+  padding-left: var(--space-5);
 
   li {
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--space-3);
     position: relative;
 
     // Bullets, not links. Green here was the link colour pointing at nothing.
@@ -393,40 +347,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// Education entries are `cv-card`s and take its rail unchanged — they used to
-// repaint it green, which marked them as different from the experience cards
-// without saying how.
-.education-item {
-  h3 {
-    margin-bottom: var(--space-2);
-  }
-
-  p {
-    margin-bottom: 0.75rem;
-
-    strong {
-      color: var(--text-primary);
-    }
-  }
-
-  ul {
-    margin: 0.75rem 0 0 1.5rem;
-
-    li {
-      margin-bottom: var(--space-2);
-    }
-  }
-}
-
 // Certifications as small cards, in the same grammar as every other entry on
-// the site. They used to be chips whose full name only existed inside a
-// hover tooltip — so the name was truncated by a regex, the last chip in the
-// row was clipped by the popover's own stacking, and nothing was readable
-// without a pointer. A certification is an entry in a list; it gets a card.
+// the site: the name, and one meta band at the foot with the issuer at one
+// end and the date at the other.
 .certifications-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-6);
 }
 
 .certification-card {
@@ -437,7 +364,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   // The title row: the name alone.
   .cert-header {
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-4);
   }
 
   .cert-name {
@@ -445,27 +372,21 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     min-width: 0;
     color: var(--text-primary);
     font-size: var(--text-h4);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
     letter-spacing: -0.01em;
     overflow-wrap: anywhere;
   }
 
-  // The meta band, the same one the other cards carry, parked at the foot of
-  // the card the way the project card's footer is: the issuer at one end,
-  // the date at the other. The issuer used to have a line of its own above
-  // the band, which left the date sitting alone on it.
+  // The meta band every other card carries, at the same distance above its
+  // hairline.
   .cert-meta {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--space-2) var(--space-4);
     margin-top: auto;
     padding-top: var(--space-4);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--hairline-interior);
     font-size: var(--text-small);
     color: var(--text-secondary);
   }
@@ -484,208 +405,14 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     margin: var(--space-2) 0 0;
     font-size: var(--text-small);
     color: var(--text-muted);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
     overflow-wrap: anywhere;
   }
 }
 
-@media (max-width: 768px) {
-  .cv-header h1 {
-    font-size: 2rem;
-  }
-
-  .experience-header {
-    flex-direction: column;
-    align-items: flex-start;
-
-    h3 {
-      margin-bottom: var(--space-2);
-    }
-  }
-
-  .experience-duration {
-    white-space: normal;
-  }
-
-  .cv-section h2 {
-    font-size: 1.5rem;
-  }
-
-  .cv-section h3 {
-    font-size: 1.2rem;
-  }
-
-  .experience-item,
-  .education-item {
-    padding: 1rem;
-  }
-}
-
-// Resume Header Component. Left-aligned with the rest of the document, and
-// without the five-stop rainbow hairline across its top — the card edge is
-// already the boundary that bar was drawing a second time.
-.resume-header {
-  margin-bottom: var(--space-5);
-  padding: var(--space-5);
-  @include outline-block;
-  border-radius: var(--radius-lg);
-  position: relative;
-
-  h1 {
-    font-size: var(--text-h2);
-    margin-bottom: var(--space-2);
-  }
-
-  .resume-title {
-    font-size: var(--text-h4);
-    color: var(--text-secondary);
-    margin-bottom: var(--space-4);
-  }
-
-  .resume-contact {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--space-2);
-    margin-bottom: var(--space-4);
-
-    .contact-item {
-      font-size: var(--text-small);
-
-      // A link, so it keeps the site's link colour.
-      a {
-        color: var(--ink-primary);
-        text-decoration: none;
-
-        &:hover {
-          text-decoration: underline;
-        }
-      }
-    }
-  }
-
-  .resume-summary {
-    max-width: 800px;
-
-    p {
-      font-size: var(--text-body);
-      line-height: 1.6;
-      color: var(--text-secondary);
-    }
-  }
-}
-
-// Experience specific styles (using cv-card base)
-.experience-location {
-  color: var(--text-secondary);
-  font-style: italic;
-  margin-bottom: var(--space-3);
-}
-
-.experience-description {
-  margin-bottom: var(--space-3);
-  color: var(--text-secondary);
-  font-style: italic;
-}
-
-.experience-achievements {
-  margin: 0;
-  padding-left: 1.5rem;
-
-  li {
-    margin-bottom: 0.75rem;
-    position: relative;
-
-    // Bullets, not links. Green here was the link colour pointing at nothing.
-    &::marker {
-      color: var(--text-muted);
-    }
-  }
-}
-
-.experience-skills {
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-// Education specific styles (using cv-card base). Same title row as an
-// experience entry — the name, the duration chip at the far end.
-.education-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-
-  h3 {
-    margin: 0;
-    min-width: 0;
-    color: var(--text-primary);
-    font-size: var(--text-h4);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.01em;
-  }
-}
-
-.education-duration {
-  color: var(--text-secondary);
-  white-space: nowrap;
-  font-size: var(--text-small);
-}
-
-.education-institution {
-  color: var(--text-secondary);
-  margin-bottom: var(--space-2);
-}
-
-.education-location {
-  color: var(--text-secondary);
-  margin-bottom: var(--space-2);
-}
-
-.education-gpa {
-  color: var(--text-secondary);
-  margin-bottom: var(--space-3);
-}
-
-.education-description {
-  margin-bottom: var(--space-3);
-  color: var(--text-secondary);
-  font-style: italic;
-}
-
-.education-coursework {
-  margin-bottom: var(--space-3);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.education-achievements {
-  margin: 0;
-  padding-left: 1.5rem;
-
-  li {
-    margin-bottom: var(--space-2);
-    position: relative;
-
-    // Bullets, not links. Green here was the link colour pointing at nothing.
-    &::marker {
-      color: var(--text-muted);
-    }
-  }
-}
-
-// Skills styles for direct display. The "technical skills" subtitle that sat
-// between the section title and the chips is gone — one group, one heading.
+// Skills: one group, one heading, and the site's small chip. A label the
+// pointer cannot do anything with does not answer the pointer.
 .skill-category-direct {
-  margin-bottom: var(--space-4);
+  margin-bottom: 0;
 }
 
 .skill-tags {
@@ -694,36 +421,23 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   gap: var(--space-2);
 }
 
-// One chip, not three. The technical / soft / language variants each had their
-// own gradient, but the group they belong to is already stated by the heading
-// directly above them, so the colour was restating a heading in a code the
-// reader has no key for. And one size: the site's small chip (the one the
-// control rows and the tag lists used), not a larger cousin of it.
 .skill-tag {
-  padding: 0.25rem 0.75rem;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   @include outline-block;
   color: var(--text-secondary);
-  @include control-transition(var(--transition-normal));
   cursor: default;
-
-  // A label the pointer cannot do anything with does not jump when the
-  // pointer crosses it. It brightens, which is all it ever had to say.
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.45);
-    color: var(--text-primary);
-  }
 }
 
-// The CV's one row of chrome: pick a length, take it away. No bar groups the
-// two — they float as loose controls, each carrying its own frosting, so they
-// still read while content scrolls underneath. Geometry and material are the
-// shared ones; see `sticky-control-row` in mixins.scss and .ui-dropdown in
-// controls.scss.
+// The CV's one row of chrome: pick a length, take it away, and on a phone the
+// chip that unfolds the search. No bar groups them — they float as loose
+// controls, each carrying its own frosting, so they still read while content
+// scrolls underneath. Geometry and material are the shared ones; see
+// `sticky-control-row` in mixins.scss and .ui-dropdown in controls.scss.
 .cv-control-bar {
   @include sticky-control-row;
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-6);
 }
 
 // Only the results list is the CV's own — the panel and its field come from
@@ -733,16 +447,16 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   // In flow rather than floating — it pushes the page down instead of
   // overlaying it — so it is an outline like everything else.
   .search-results {
-    margin-top: var(--space-3);
+    margin-top: var(--space-4);
     background: transparent;
-    border: 1px solid var(--border-floating);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-md);
-    max-height: 300px;
+    max-height: 20rem;
     overflow-y: auto;
 
     .search-result-item {
-      padding: 1rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: var(--space-4);
+      border-bottom: 1px solid var(--hairline-interior);
       cursor: pointer;
       @include control-transition(var(--transition-fast));
 
@@ -750,93 +464,65 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
         border-bottom: none;
       }
 
+      // A row under the pointer or under the keyboard: the wash, like a menu
+      // option.
       &:hover,
       &:focus-visible {
         outline: none;
-        background: rgba(255, 255, 255, 0.06);
-        border-left: 3px solid rgba(255, 255, 255, 0.3);
+        background-color: var(--wash-hover);
       }
 
       .result-type {
-        font-size: 0.8rem;
+        font-size: var(--text-xs);
         color: var(--text-muted);
-        font-family:
-          'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-          monospace;
         text-transform: lowercase;
-        margin-bottom: 0.25rem;
+        margin-bottom: var(--space-1);
       }
 
       .result-title {
-        font-size: 1rem;
+        font-size: var(--text-body);
         color: var(--text-primary);
-        margin-bottom: 0.25rem;
+        margin-bottom: var(--space-1);
       }
 
       .result-company,
       .result-institution {
-        font-size: 0.9rem;
+        font-size: var(--text-small);
         color: var(--text-secondary);
-        margin-bottom: 0.25rem;
+        margin-bottom: var(--space-1);
       }
 
       .result-description {
-        font-size: 0.85rem;
+        font-size: var(--text-small);
         color: var(--text-muted);
-        line-height: 1.4;
+        line-height: var(--leading-chrome);
       }
     }
 
     .no-results {
-      padding: 1rem;
-      text-align: center;
-      color: var(--text-muted);
-      font-style: italic;
+      @include empty-state;
+      margin: 0;
+      padding: var(--space-4);
     }
   }
 }
 
 @media (max-width: 768px) {
-  // Adjust scroll margins for mobile
-  #cv-experience,
-  #cv-education,
-  #cv-skills,
-  #cv-certifications {
-    scroll-margin-top: 60px; // Smaller offset on mobile
-  }
-
-  .cv-page-header {
-    h1 {
-      font-size: 2rem;
-    }
-
-    p {
-      font-size: 1rem;
-    }
-  }
-
   .cv-overview-contact {
-    padding: 1.5rem;
-    margin-bottom: var(--space-4);
+    padding: var(--space-5);
     grid-template-columns: 1fr;
-    gap: 1.5rem;
-
-    .overview-section p {
-      font-size: 0.95rem;
-    }
+    gap: var(--space-5);
   }
 
-  // No padding of its own: it used to inset the resume cards by a further 1rem
-  // on mobile, which put them at a different x from the overview card above.
+  // The same step down the blog and project cards take on a phone.
+  .cv-card,
+  .cv-collapse-summary {
+    padding: var(--space-5);
+  }
 
-  .resume-header {
-    h1 {
-      font-size: 2rem;
-    }
-
-    .resume-contact {
-      grid-template-columns: 1fr;
-    }
+  .cv-collapse-details {
+    margin: 0 var(--space-5);
+    padding: var(--space-4) 0 var(--space-5);
   }
 
   .experience-header,
@@ -854,103 +540,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     white-space: normal;
   }
 
-  .skills-grid {
-    grid-template-columns: 1fr;
-  }
-
   // One column of certification cards on a phone, like every other list here.
   .certifications-grid {
     grid-template-columns: 1fr;
-  }
-}
-
-// Extra small devices (phones in portrait)
-@media (max-width: 480px) {
-  // Adjust scroll margins for small mobile
-  #cv-experience,
-  #cv-education,
-  #cv-skills,
-  #cv-certifications {
-    scroll-margin-top: 50px; // Even smaller offset on small mobile
-  }
-}
-
-// A second `@keyframes glow` used to live here — a green text-shadow with no
-// dark halo under it, redefining the name `animations.scss` already owns.
-// Keyframes are global regardless of which file declares them, so whichever
-// stylesheet the bundler emitted last decided what every title on the site
-// did. The titles that used it are on the spacing/halo treatment now, and the
-// duplicate is gone with them.
-
-// LaTeX Preview Component
-.latex-preview {
-  margin-top: var(--space-3);
-
-  // A disclosure toggle for the source of the document above it. Neutral: it
-  // reveals, it does not convert, and it certainly does not become cyan on the
-  // way to being clicked.
-  .preview-button {
-    background: transparent;
-    color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    @include control-transition(var(--transition-normal));
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.45);
-      transform: translateY(-1px);
-    }
-  }
-
-  .latex-source-container {
-    margin-top: var(--space-3);
-    background: transparent;
-    border: 1px solid var(--border-floating);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-  }
-
-  .latex-source-header {
-    background: transparent;
-    padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-
-    h4 {
-      margin: 0 0 0.5rem 0;
-      color: var(--text-primary);
-      font-size: 1.1rem;
-    }
-
-    p {
-      margin: 0;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
-  }
-
-  // The source listing keeps the same 4% wash the blog's code blocks take. It
-  // used to be a hand-set #1e1e1e editor surface, which over the window read
-  // as the one genuinely opaque slab left on the page.
-  .latex-source {
-    background: rgba(255, 255, 255, 0.04);
-    color: #d4d4d4;
-    padding: 1rem;
-    margin: 0;
-    overflow-x: auto;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 0.8rem;
-    line-height: 1.4;
-    max-height: 400px;
-    overflow-y: auto;
-
-    code {
-      background: none;
-      padding: 0;
-      color: inherit;
-      font-size: inherit;
-    }
   }
 }
