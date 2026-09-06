@@ -138,7 +138,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'principled',
       description:
-        'specification-driven development on human work platforms, powered by claude code.',
+        'claude code plugins for specification-first development: write the spec, then build to it.',
       language: 'Shell',
       tags: ['featured', 'tool', 'claude-code', 'spec-driven'],
       url: 'https://github.com/alexnodeland/principled',
@@ -148,7 +148,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'curator',
       description:
-        'a local embedded index over any markdown vault, served to agents over mcp.',
+        'a local search index over any markdown vault, served to agents over mcp, plus a digest of new notes ranked against your current interests.',
       language: 'Rust',
       tags: ['tool', 'mcp', 'local-first'],
       url: 'https://github.com/alexnodeland/curator',

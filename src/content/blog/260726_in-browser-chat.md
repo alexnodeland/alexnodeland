@@ -5,15 +5,15 @@ description: 'A 1.2B model runs in your browser and answers questions from this 
 category: 'Projects'
 ---
 
-there is a chat box on this site. when you open it, your browser downloads a 760MB language model and runs it on your GPU. nothing is sent anywhere — there is no server to send it to. it answers questions about me from the pages you are already reading.
+there is a chat box on this site. when you open it, your browser downloads a 760mb language model and runs it on your gpu. nothing is sent anywhere — there is no server to send it to. it answers questions about me from the pages you are already reading.
 
 this is a note on how it works and what it took to make it fast. most of what i assumed going in turned out to be wrong.
 
 ## the shape of it
 
-the first version put my entire CV, about 4,500 tokens, in front of every question. it also ran two throwaway yes/no generations before each answer, to decide whether the question was on-topic at all. three model calls per question, and it knew nothing about the blog or the projects page.
+the first version put my entire cv, about 4,500 tokens, in front of every question. it also ran two throwaway yes/no generations before each answer, to decide whether the question was on-topic at all. three model calls per question, and it knew nothing about the blog or the projects page.
 
-now the site is chunked into 95 passages at build time and embedded into a 111KB file that ships with the page. your browser embeds only your question — one forward pass over about fifteen tokens, roughly two milliseconds — and searches that index. this post is in there too, which is a slightly strange thing to write.
+now the site is chunked into 95 passages at build time and embedded into a 111kb file that ships with the page. your browser embeds only your question — one forward pass over about fifteen tokens, roughly two milliseconds — and searches that index. this post is in there too, which is a slightly strange thing to write.
 
 the search is hybrid, and it needs to be. this corpus is one person's life, so everything in it is semantically adjacent to everything else; a 384-dimension vector cannot reliably separate "musiio" from "influize". exact term matching carries the proper nouns, embeddings carry the paraphrases ("where did he go to school"), and reciprocal rank fusion combines them without needing the two score scales to be comparable, which they are not.
 
@@ -25,7 +25,7 @@ what reaches the model is a short instruction block, the passages that came back
 
 |                    |                     |
 | ------------------ | ------------------- |
-| download, once     | 760MB, cached after |
+| download, once     | 760mb, cached after |
 | cold load          | ~21s                |
 | search             | ~26ms               |
 | reading the prompt | ~830ms              |
@@ -56,7 +56,7 @@ i also measured two rearrangements that looked better on paper and were not. kee
 
 **smaller is not faster.** i tried a model with half the parameters expecting roughly half the latency. it was two to four times _slower_, because it wrote several hundred words where the larger one writes forty. decoding cost is per token, so verbosity swamps the parameter count.
 
-**the fast one makes things up.** a 230M model loads in nine seconds instead of twenty-one and answers in under a second. asked whether i knew a language that appears nowhere in my skills list — with that list sitting in its context — it said yes. asked whether i had worked at a company i have never worked at, it said yes to that too. i tried to fix it with worked examples, including one showing it declining exactly that kind of question, two hundred tokens above where it was asked. it kept agreeing. that is not a prompt problem. models that small accept the premise of whatever you ask them.
+**the fast one makes things up.** a 230m model loads in nine seconds instead of twenty-one and answers in under a second. asked whether i knew a language that appears nowhere in my skills list — with that list sitting in its context — it said yes. asked whether i had worked at a company i have never worked at, it said yes to that too. i tried to fix it with worked examples, including one showing it declining exactly that kind of question, two hundred tokens above where it was asked. it kept agreeing. that is not a prompt problem. models that small accept the premise of whatever you ask them.
 
 the examples also made the larger model worse. one of them mentioned musiio, and that was enough for it to start bringing up musiio in unrelated answers.
 
@@ -70,7 +70,7 @@ there is a graded battery of 68 questions covering grounded lookups, multi-passa
 
 the earlier version had twelve cases and the model passed all twelve. that felt good and told me nothing. a saturated test can only tell you something broke, not that something improved, so it cannot help you choose between two versions.
 
-expanding it immediately found a failure class the small set never touched. asked where i got my MBA — i don't have one — the model reported a doctorate i never finished. asked how old i am, it worked it out from my job dates and offered "early thirties." asked why i left a company, it invented a motive and hedged it with "probably."
+expanding it immediately found a failure class the small set never touched. asked where i got my mba — i don't have one — the model reported a doctorate i never finished. asked how old i am, it worked it out from my job dates and offered "early thirties." asked why i left a company, it invented a motive and hedged it with "probably."
 
 it currently sits at 55/68, and the gap is the to-do list: dates it gets wrong, gibberish it answers instead of refusing, and a couple of roleplay prompts that still talk it out of its job.
 
