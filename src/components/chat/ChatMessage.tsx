@@ -1,18 +1,11 @@
 import React, { useCallback, useState } from 'react';
+import { formatTime } from '../../lib/utils/dates';
 import { ChatMessage as ChatMessageType } from '../../types/chat';
 import { useChat } from './ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
 import MessageSources from './MessageSources';
 import MessageStats from './MessageStats';
 import ThinkingBlock from './ThinkingBlock';
-
-const formatTime = (date: Date) => {
-  return date.toLocaleTimeString([], {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-};
 
 const getAvatar = (role: 'user' | 'assistant' | 'system') => {
   if (role === 'user') {
@@ -155,10 +148,11 @@ const MessageItem = React.memo<MessageItemProps>(
             </span>
             {displayContent && (
               <button
-                className="copy-button"
+                type="button"
+                className={`copy-button${copied ? ' is-copied' : ''}`}
                 onClick={copyToClipboard}
-                aria-label={copied ? 'Copied!' : 'Copy message'}
-                title={copied ? 'Copied!' : 'Copy message'}
+                aria-label={copied ? 'Copied' : 'Copy message'}
+                title={copied ? 'copied' : 'copy message'}
               >
                 {copied ? (
                   <svg

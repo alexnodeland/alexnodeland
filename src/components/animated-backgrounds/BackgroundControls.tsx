@@ -101,37 +101,39 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
       {/* Background controls - shown when sidebar is hidden or closing */}
       {(!showSettingsPanel || closingSettingsPanel) && (
         <div className={backgroundControlsClasses}>
-          {/* Main toolbar */}
-          <div
+          {/* The toolbar is one button — the whole pill — like the chat pill
+              in the opposite corner: reachable from the keyboard, focusable,
+              and named. */}
+          <button
+            type="button"
             className="background-toolbar"
             onClick={onToggleSettings}
-            title="Click to open settings (S)"
+            aria-label="Open the background settings"
+            title="background settings (s)"
           >
-            <div className="toolbar-header">
-              {/* Same grammar as the chat pill: a monoline glyph then the
-                  label — here a picture frame, since the pill is about the
-                  backgrounds. The same glyph is the whole button on mobile
-                  (see MobileInteractivity). */}
-              <svg
-                className="toolbar-glyph"
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.6}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M4 17V7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
-                <path d="M4 14.5 8.5 10l3.5 3.5L15 11l5 4.5" />
-              </svg>
-              <div className="background-name">
-                {currentBackgroundName?.toLowerCase?.() || ''}
-              </div>
-            </div>
-          </div>
+            {/* Same grammar as the chat pill: a monoline glyph then the
+                label — here a picture frame, since the pill is about the
+                backgrounds. The same glyph is the whole button on mobile
+                (see MobileInteractivity). */}
+            <svg
+              className="toolbar-glyph"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 17V7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
+              <path d="M4 14.5 8.5 10l3.5 3.5L15 11l5 4.5" />
+            </svg>
+            <span className="background-name">
+              {currentBackgroundName?.toLowerCase?.() || ''}
+            </span>
+          </button>
         </div>
       )}
     </>

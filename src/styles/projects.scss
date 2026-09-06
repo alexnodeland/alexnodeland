@@ -1,30 +1,27 @@
-@import 'variables';
-@import 'mixins';
+@use 'mixins' as *;
 
-// A plain flow child of .main: no column and no side padding of its own, so
-// the first card's left edge is the same x as the hero title above it.
+// A plain flow child of .main: no column, no side padding and no bottom
+// padding of its own, so the first card's left edge is the same x as the hero
+// title above it and the page ends where every page ends.
 .projects-page {
-  padding-bottom: var(--space-6);
   position: relative;
 }
 
-// The projects row of chrome: category on the left, sort beside it, reset at
-// the far end. No bar groups them — they float as loose chips, each carrying
-// its own frosting, so they still read while cards scroll underneath.
-// Geometry and material are the shared ones; see `sticky-control-row` in
-// mixins.scss and .ui-dropdown / .ui-chip-button / .ui-search-panel in
-// controls.scss.
+// The projects row of chrome: category on the left, sort beside it, the way to
+// the search box at the far end. No bar groups them — they float as loose
+// chips, each carrying its own frosting, so they still read while cards scroll
+// underneath. Geometry and material are the shared ones; see
+// `sticky-control-row` in mixins.scss and .ui-dropdown / .ui-chip-button /
+// .ui-search-panel in controls.scss.
 .projects-control-bar {
   @include sticky-control-row;
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-6);
 }
 
 // A search that empties the page still has to say so, rather than leaving the
 // controls floating over nothing.
 .projects-empty {
-  color: var(--text-secondary);
-  font-style: italic;
-  margin: var(--space-5) 0;
+  @include empty-state;
 }
 
 // The page hero, rendered on the field above the window (see .site-hero in
@@ -35,12 +32,7 @@
   position: relative;
 
   h1 {
-    margin-bottom: var(--space-3);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.02em;
+    margin-bottom: var(--space-4);
     @include over-background;
   }
 
@@ -50,41 +42,29 @@
     color: var(--text-secondary);
     @include over-background;
     font-size: var(--text-lead);
-    line-height: 1.6;
+    line-height: var(--leading-chrome);
     font-style: italic;
   }
 }
 
-// Section Titles
+// A section of the catalogue. The sections step at the same rhythm the CV's
+// do, and an anchor target lands clear of the sticky control chips.
 .projects-section {
-  margin-bottom: var(--space-6);
-  // Anchor targets land inside the window's inner scroll, and the row of
-  // filter chips is stuck to the top of that scroll — about 45px of it — so a
-  // section arriving from a hero link used to park its heading underneath the
-  // chips. This is the row plus a breath, the same clearance the cv gives its
-  // accordion cards.
-  scroll-margin-top: 76px;
+  margin-bottom: var(--space-7);
+  scroll-margin-top: var(--sticky-row-clearance);
 }
 
-// On the animated background rather than on a card, like the CV's section
-// titles — white with a halo, pinned rather than following --text-primary,
-// which tracks the page surface and not the stage behind it. The cyan rule
-// underneath is gone with the rest of the decoration.
+// A section title inside the window, like the CV's — white with a halo, since
+// the simulation runs behind the scrim it sits on.
 //
 // Scoped to the page. `section-title` is a common enough name that the
-// settings sidebar had one too, and this rule's 24px bottom margin was landing
-// on it — which is what pushed the "custom settings" and "standard settings"
-// labels up against the top of their rows.
+// settings sidebar had one too, and this rule's bottom margin was landing on
+// it.
 .projects-page .section-title {
   font-size: var(--text-h3);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
   display: inline-block;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  text-transform: lowercase;
-  letter-spacing: -0.02em;
-  color: white;
+  color: var(--text-primary);
   @include over-background;
 }
 
@@ -93,7 +73,7 @@
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 // Project Card — the blog preview's grammar in a grid cell: the name, the
@@ -114,58 +94,46 @@
 
 .project-card-content {
   // The blog preview's padding, so a card reads the same on either page.
-  padding: var(--space-5);
+  padding: var(--space-6);
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-// The title row: the name alone. The repo glyph that used to open it is
-// gone — every card on the page is a repo, and the octocat at the foot
-// already says where it leads.
+// The title row: the name alone. Every card on the page is a repo, and the
+// octocat at the foot already says where it leads.
 .project-header {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
-// The card title, at the blog preview's size. It used to truncate to one line
-// with an ellipsis; a repo name is the one thing on the card that has to be
-// readable, so it wraps instead.
+// The card title, at the blog preview's size. A repo name is the one thing on
+// the card that has to be readable, so it wraps rather than truncating.
 .project-name {
   font-size: var(--text-h4);
   color: var(--text-primary);
   margin: 0;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  text-transform: lowercase;
   letter-spacing: -0.01em;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-// Nothing on these cards is clipped. This was a three-line -webkit-box clamp,
-// which cut the last sentence off most of the descriptions on the page; the
-// grid rows size to their tallest card, so letting the text run costs nothing
-// but a little height.
+// Nothing on these cards is clipped: the grid rows size to their tallest card,
+// so letting the text run costs nothing but a little height.
 .project-description {
   font-size: var(--text-body);
   color: var(--text-secondary);
-  line-height: 1.6;
-  margin: 0 0 var(--space-4);
+  line-height: var(--leading-prose);
+  margin: 0 0 var(--space-5);
   flex: 1;
 }
 
 // The tags, as one line directly above the meta foot — the same quiet band
-// a cv card lists its key skills in. They used to be a row of outlined chips,
-// which made the projects page the one place a list of words wore boxes.
+// a cv card lists its key skills in.
 .project-tags {
   margin: 0 0 var(--space-2);
   font-size: var(--text-small);
-  line-height: 1.5;
+  line-height: var(--leading-chrome);
   color: var(--text-muted);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
   text-transform: lowercase;
   word-break: break-word;
 }
@@ -177,20 +145,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-2) var(--space-3);
-  margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  // Interior divider inside an outlined card — white-alpha, since the
-  // near-black --border-color it used is invisible over the scrim.
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline-interior);
 }
 
 .project-language {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
+// The one representational colour on the page: the language's own, as GitHub
+// paints it.
 .language-dot {
   width: 12px;
   height: 12px;
@@ -199,20 +167,14 @@
 }
 
 .language-name {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   color: var(--text-secondary);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
 }
 
 .project-stars {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   color: var(--text-muted);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  margin-left: 0.25rem;
+  margin-left: var(--space-1);
 }
 
 // The way out: the octocat, in the link colour. The card is a link to the
@@ -224,7 +186,6 @@
   align-items: center;
   flex-shrink: 0;
   color: var(--ink-primary);
-  transition: color var(--transition-fast);
 
   svg {
     width: 18px;
@@ -233,22 +194,15 @@
 }
 
 // Activity panel — the github year at the foot of the page, after the
-// catalogue, in the same card grammar as everything above it: an outline,
-// not a slab. The numbers are baked into the bundle at build
-// time (scripts/build-activity.mjs), so the panel costs the visitor nothing
-// and carries no credentials. The link out to the rest of github lives in
-// its foot: it used to be a line of its own at the bottom of the page, a
-// long way from the github-shaped thing it belongs to.
+// catalogue, in the same card grammar as everything above it: an outline, not
+// a slab. The numbers are baked into the bundle at build time
+// (scripts/build-activity.mjs), so the panel costs the visitor nothing and
+// carries no credentials. The link out to the rest of github lives in its
+// foot, next to the github-shaped thing it belongs to.
 .activity-panel {
   @include outline-block;
-  // No surface of its own. The window underneath has already laid the site's
-  // one scrim down, and a second coat on top of it is the doubling that came
-  // off the control chips — a card darker than everything around it. The
-  // ramp's stability is handled where it belongs, on the cells: every step
-  // including "no contributions" is opaque, so no square transmits the field
-  // behind it and the scale cannot invert over a bright background.
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
+  padding: var(--space-6);
   // No gap of its own: the last section's bottom margin is the space above
   // it, the same space the sections keep between each other.
   margin: 0;
@@ -259,27 +213,20 @@
   align-items: baseline;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-3);
-  margin-bottom: var(--space-4);
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .activity-title {
   font-size: var(--text-h4);
   color: var(--text-primary);
   margin: 0;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  text-transform: lowercase;
   letter-spacing: -0.01em;
 }
 
 .activity-total {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   color: var(--text-secondary);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
 }
 
 // The grid keeps its geometry and scrolls sideways on narrow screens rather
@@ -300,38 +247,33 @@
   }
 }
 
+// Set in the svg's own coordinate space (a 740-unit-wide drawing), so this
+// is not a type-scale size; it is the label's size relative to an 11-unit
+// cell.
 .activity-axis-label {
   fill: var(--text-muted);
   font-size: 9px;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
+  font-family: var(--font-mono);
 }
 
 // The hovered square answers with a hairline, the way cards answer the
 // pointer elsewhere; gated on a real pointer so touch doesn't latch it.
 @media (hover: hover) and (pointer: fine) {
   .activity-cell:hover {
-    stroke: rgba(255, 255, 255, 0.5);
+    stroke: var(--hairline-lit);
     stroke-width: 1;
   }
 }
 
-// The dropdowns' glass, positioned by hand over the hovered square.
+// The floating-panel material, positioned by hand over the hovered square.
 .activity-tooltip {
+  @include floating-panel;
   position: absolute;
   transform: translate(-50%, calc(-100% - 6px));
-  background-color: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari ≤17
-  border: 1px solid var(--border-floating);
   border-radius: var(--radius-sm);
-  padding: 0.3rem 0.55rem;
-  font-size: 0.72rem;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
   color: var(--text-primary);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
   white-space: nowrap;
   pointer-events: none;
   z-index: 2;
@@ -347,39 +289,35 @@
 .activity-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--hairline-interior);
 }
 
 .activity-metric {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--space-1);
   min-width: 0;
 
   & + & {
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    padding-left: var(--space-3);
+    border-left: 1px solid var(--hairline-interior);
+    padding-left: var(--space-4);
   }
 }
 
+// A display number at the h3 size, in the site's one weight: prominence from
+// size, like every heading.
 .activity-metric-value {
-  font-size: 1.35rem;
-  font-weight: 600;
+  font-size: var(--text-h3);
   color: var(--text-primary);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .activity-metric-label {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
   text-transform: lowercase;
 }
 
@@ -388,8 +326,8 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-3);
-  margin-top: var(--space-4);
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-5);
 }
 
 // The legend and the way out, together at the far end of the foot.
@@ -397,20 +335,16 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--space-2) var(--space-5);
 }
 
 // The link out, in the link colour with the octocat the project cards use.
 .activity-link {
+  @include text-link;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
-  color: var(--ink-primary);
-  text-decoration: none;
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
   text-transform: lowercase;
 
   svg {
@@ -418,40 +352,30 @@
     height: 14px;
     flex-shrink: 0;
   }
-
-  &:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.25em;
-  }
 }
 
 .activity-updated {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
 }
 
 .activity-legend {
   display: flex;
   align-items: center;
-  gap: 3px;
-  font-size: 0.72rem;
+  gap: 3px; // The cells' own 3-unit gutter
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
 
   span:first-child {
-    margin-right: 0.25rem;
+    margin-right: var(--space-1);
   }
 
   span:last-child {
-    margin-left: 0.25rem;
+    margin-left: var(--space-1);
   }
 }
 
+// A swatch is a cell: the same corner the svg draws its squares with (rx=2).
 .activity-legend-swatch {
   width: 10px;
   height: 10px;
@@ -459,23 +383,18 @@
   display: inline-block;
 }
 
-// Responsive Design
 @media (max-width: 768px) {
-  .projects-page {
-    padding-bottom: var(--space-5);
-  }
-
   .projects-grid {
     grid-template-columns: 1fr;
-    gap: var(--space-4);
+    gap: var(--space-5);
   }
 
   .project-card-content {
-    padding: var(--space-4);
+    padding: var(--space-5);
   }
 
   .activity-panel {
-    padding: var(--space-4);
+    padding: var(--space-5);
   }
 
   // On a phone the year's grid is 740px wide behind a sideways scroll that
@@ -497,6 +416,6 @@
 
 @media (max-width: 480px) {
   .activity-metric-value {
-    font-size: 1.1rem;
+    font-size: var(--text-h4);
   }
 }

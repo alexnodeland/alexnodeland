@@ -6,6 +6,7 @@ import CVSearch from '../components/cv/CVSearch';
 import SkillsSection from '../components/cv/CVSkillsSection';
 import SEO from '../components/seo';
 import { cvData, resumeData } from '../config';
+import { scrollBehavior } from '../lib/utils/motion';
 import '../styles/cv.scss';
 
 type CVView = 'full' | 'resume';
@@ -35,13 +36,7 @@ const CVPage: React.FC<{ location?: { pathname?: string } }> = ({
           if (other !== opened) other.open = false;
         });
       window.requestAnimationFrame(() => {
-        const reduce = window.matchMedia(
-          '(prefers-reduced-motion: reduce)'
-        ).matches;
-        opened.scrollIntoView({
-          behavior: reduce ? 'auto' : 'smooth',
-          block: 'nearest',
-        });
+        opened.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
       });
     };
     root.addEventListener('toggle', onToggle, true);

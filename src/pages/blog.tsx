@@ -5,6 +5,7 @@ import { ArrowOutIcon } from '../components/ui/EntryIcons';
 import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
+import { formatDate } from '../lib/utils/dates';
 import { BlogPageProps } from '../types';
 import '../styles/blog.scss';
 
@@ -196,14 +197,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
                   {/* The date at one end, the way in at the other. */}
                   <div className="post-meta">
                     <time dateTime={post.frontmatter.date}>
-                      {new Date(post.frontmatter.date).toLocaleDateString(
-                        'en-US',
-                        {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        }
-                      )}
+                      {formatDate(post.frontmatter.date)}
                     </time>
                     <Link
                       to={`/blog${post.fields.slug}`}

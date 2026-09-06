@@ -1,5 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { DURATION_SLOW_MS } from '../../config/motion';
+import { scrollBehavior } from '../../lib/utils/motion';
 import { useSettingsPanel } from '../SettingsPanelContext';
+import CloseIcon from '../ui/CloseIcon';
 import Dropdown from '../ui/Dropdown';
 import { useChat } from './ChatContext';
 import ChatErrorBoundary from './ChatErrorBoundary';
@@ -14,12 +17,8 @@ import WelcomeScreen from './WelcomeScreen';
 
 const ChatModal: React.FC = () => {
   // Use settings panel context for panel state management
-  const {
-    isChatPanelOpen,
-    isClosingChatPanel,
-    setChatPanelOpen,
-    setClosingChatPanel,
-  } = useSettingsPanel();
+  const { isChatPanelOpen, isClosingChatPanel, closeChatPanel } =
+    useSettingsPanel();
 
   // Use chat context for chat functionality
   const {
@@ -52,17 +51,6 @@ const ChatModal: React.FC = () => {
   // (see the shell), so its first render is the one that should animate.
   const wasOpenRef = useRef(false);
 
-  // Close chat panel with animation
-  const closeChatPanel = useCallback(() => {
-    setClosingChatPanel(true);
-
-    // After animation completes, fully close
-    setTimeout(() => {
-      setChatPanelOpen(false);
-      setClosingChatPanel(false);
-    }, 300);
-  }, [setChatPanelOpen, setClosingChatPanel]);
-
   const handlePromptSelect = (prompt: string) => {
     setPromptValue(prompt);
     // Clear the prompt value after a brief moment to allow ChatInput to pick it up
@@ -74,7 +62,7 @@ const ChatModal: React.FC = () => {
     if (isChatPanelOpen && !wasOpenRef.current) {
       // Panel just opened - trigger animation
       setJustOpened(true);
-      const timer = setTimeout(() => setJustOpened(false), 300);
+      const timer = setTimeout(() => setJustOpened(false), DURATION_SLOW_MS);
       wasOpenRef.current = true;
       return () => clearTimeout(timer);
     } else if (!isChatPanelOpen) {
@@ -88,7 +76,7 @@ const ChatModal: React.FC = () => {
       messagesEndRef.current &&
       typeof messagesEndRef.current.scrollIntoView === 'function'
     ) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: scrollBehavior() });
     }
   };
 
@@ -128,7 +116,7 @@ const ChatModal: React.FC = () => {
   return (
     <div className={modalClasses}>
       <div className="chat-header">
-        <h3 className="chat-title">Chat</h3>
+        <h3 className="chat-title">chat</h3>
         <div className="chat-header-controls">
           <ThinkingToggle key="thinking-toggle" />
           {/* A picker with one option is a control that does nothing. */}
@@ -149,17 +137,16 @@ const ChatModal: React.FC = () => {
               onClick={() => setShowExportDialog(true)}
               disabled={isGenerating}
               aria-label="Export chat as markdown"
-              title="Export chat as markdown"
+              title="export chat as markdown"
             >
               <svg
-                width="16"
-                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14,2 14,8 20,8" />
@@ -188,16 +175,15 @@ const ChatModal: React.FC = () => {
               }
               title={
                 isGenerating
-                  ? 'Cannot clear chat while generating response'
-                  : 'Clear all chat messages'
+                  ? 'cannot clear chat while generating a response'
+                  : 'clear all chat messages'
               }
             >
               <svg
-                width="18"
-                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <path
                   d="M3 6H5H21M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20V6H19ZM10 11V17M14 11V17"
@@ -214,21 +200,7 @@ const ChatModal: React.FC = () => {
             onClick={closeChatPanel}
             aria-label="Close chat"
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M18 6L6 18M6 6L18 18"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <CloseIcon />
           </button>
         </div>
       </div>
@@ -263,7 +235,7 @@ const ChatModal: React.FC = () => {
       {/* Non-breaking loading UI (visible only if modelState is loading) */}
       {modelState?.status === 'loading' && (
         <div className="chat-input-container" aria-live="polite">
-          <div style={{ width: '100%' }}>
+          <div className="chat-progress-stack">
             {modelState.loadingMessage && (
               <div className="loading-message">{modelState.loadingMessage}</div>
             )}
@@ -285,7 +257,7 @@ const ChatModal: React.FC = () => {
               })
             ) : (
               <Progress
-                text="Initializing model loading..."
+                text="initializing model loading..."
                 percentage={0}
                 onCancel={cancelModelLoading}
               />
@@ -315,13 +287,6 @@ const ChatModal: React.FC = () => {
                 className="chat-tps-indicator"
                 aria-hidden="true"
                 title="generation speed"
-                style={{
-                  fontSize: '0.7rem',
-                  opacity: 0.55,
-                  textAlign: 'right',
-                  padding: '0 0.75rem',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
               >
                 {tokensPerSecond.toFixed(1)} tok/s
               </div>
@@ -348,13 +313,6 @@ const ChatModal: React.FC = () => {
           </div>
         </>
       )}
-
-      {/* Persistent keyboard shortcuts footer */}
-      <div className="chat-sidebar-footer">
-        <div className="chat-keyboard-hints">
-          <kbd>C</kbd> chat • <kbd>Enter</kbd> send
-        </div>
-      </div>
 
       <ExportChatDialog
         isOpen={showExportDialog}

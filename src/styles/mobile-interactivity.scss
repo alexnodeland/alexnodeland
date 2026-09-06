@@ -2,11 +2,10 @@
 // Everything in here is mobile-only — desktop drives the backgrounds from the
 // keyboard and its own control cluster.
 //
-// This one is imported by its component rather than through global.scss, so it
-// is its own compilation unit and has to pull the shared layers in itself —
-// the same two lines layout.scss and shortcuts.scss carry.
-@import 'variables';
-@import 'mixins';
+// Imported by its component rather than through global.scss, so it is its own
+// compilation unit; it reaches the tokens through `var()` and needs only the
+// mixins.
+@use 'mixins' as *;
 
 $mobile-breakpoint: 768px;
 
@@ -30,15 +29,15 @@ $mobile-breakpoint: 768px;
     // panel is the alignment grid, so the button shares its side token (the
     // chat launcher mirrors this on the right).
     left: var(--window-side);
-    z-index: 1000;
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    animation: slideInFromLeftWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)
-      forwards;
+    z-index: var(--z-stage);
+    animation: pill-in-left var(--transition-slow) forwards;
   }
 }
 
 // Icon-only, like the chat launcher across the row: a rounded square on the
-// site's one corner radius, with the picture glyph saying what it opens.
+// site's one corner radius, with the picture glyph saying what it opens. The
+// same machined housing every floating control on the field wears, so the two
+// corners cannot drift apart.
 .mobile-interactivity-btn {
   display: inline-flex;
   align-items: center;
@@ -46,16 +45,10 @@ $mobile-breakpoint: 768px;
   width: 3rem; // Matches the chat launcher's box
   height: 3rem;
   padding: 0;
-  // The same machined housing every floating control on the field wears — the
-  // nav capsule, the chat launcher across the row. It used to reach for
-  // --bg-floating instead, which is a flat opaque near-black: over a dark
-  // field the two corners passed for each other, but over a bright one this
-  // one read as a black tile punched into the page while its twin stayed
-  // glass. One mixin, so they cannot drift again.
   @include capsule-housing;
   color: var(--text-secondary); // The chat launcher's ink, for the same reason
   cursor: pointer;
-  @include control-transition(var(--transition-normal));
+  @include control-transition(var(--transition-fast));
   -webkit-tap-highlight-color: transparent;
 
   // The glyph is the whole label, so it takes the text colour rather than the
@@ -66,8 +59,8 @@ $mobile-breakpoint: 768px;
   }
 
   &:active {
-    transform: scale(0.97);
-    border-color: rgba(255, 255, 255, 0.45);
+    color: var(--text-primary);
+    border-color: var(--hairline-lit);
   }
 }
 
@@ -75,23 +68,22 @@ $mobile-breakpoint: 768px;
 // Explore + immersive states
 // ---------------------------------------------------------------------------
 
+// Explore mode is the full-bleed background with a little chrome in front of
+// it. The loudest thing on the screen is meant to be the simulation itself, so
+// the chrome is the site's own neutral kit on the floating-panel material —
+// the scrim doubled, since there is no window under it to lay the first coat.
 .mobile-explore {
   display: none;
 
-  // Explore mode is a dark scrim over the full-bleed background — the loudest
-  // thing on the screen is meant to be the simulation itself, so the chrome in
-  // front of it is white and its emphasis is opacity, not hue. This used to be
-  // a bright green that competed with the field it was framing.
-  --explore-accent: #ffffff;
-
   @media (max-width: $mobile-breakpoint) {
     display: block;
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
   }
 }
 
 // Full-bleed tap target that sits over the background canvas and toggles the
-// chrome. Deliberately invisible — the background is the content here.
+// chrome. Deliberately invisible — the background is the content here — and
+// it draws no ring: the whole screen is the control, and it is reached by
+// touch.
 .mobile-explore-surface {
   position: fixed;
   inset: 0;
@@ -112,15 +104,15 @@ $mobile-breakpoint: 768px;
 .mobile-explore-chrome {
   position: fixed;
   inset: 0;
-  z-index: 1001;
+  z-index: var(--z-rail);
   pointer-events: none; // Only the individual controls take taps.
   transition:
-    opacity 0.28s ease,
-    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity var(--transition-slow),
+    transform var(--transition-slow);
 
   .mobile-explore.chrome-hidden & {
     opacity: 0;
-    transform: translateY(0.5rem);
+    transform: translateY(var(--space-2));
     pointer-events: none;
   }
 
@@ -138,89 +130,40 @@ $mobile-breakpoint: 768px;
   }
 }
 
-// Shared surface treatment. The backgrounds run the full gamut from near-black
-// to saturated yellow, so this has to hold legible contrast against all of
-// them while still reading as glass rather than a solid panel.
-@mixin explore-surface {
-  background: rgba(8, 10, 14, 0.55);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 8px 28px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-// The chat sheet's close button, moved out onto the field: the same
-// 0.5rem-padded box around the same 20px glyph, the same corner radius, and
-// the same distance from the corner (the chat header's 1.5rem padding). It
-// used to be a labelled pill at its own inset, so the two ways of putting a
-// panel away looked like two different controls. What differs is the
-// housing — there is no header behind it, so it takes the frosted surface
-// the explore bar wears — and the ink, which has to hold over a bright
-// simulation rather than over the sheet's scrim.
+// The way out of explore mode: the same close as every panel's, on the
+// floating-panel material since there is no header to sit in, at the chat
+// sheet's own corner offset so leaving explore is the same gesture as putting
+// the chat away.
 .mobile-explore-exit {
-  @include explore-surface;
-
-  position: absolute;
-  top: max(1.5rem, env(safe-area-inset-top));
-  right: 1.5rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
+  @include icon-button;
+  @include floating-panel;
   border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.85);
-  cursor: pointer;
+  position: absolute;
+  top: max(var(--space-5), env(safe-area-inset-top));
+  right: var(--space-5);
   -webkit-tap-highlight-color: transparent;
 
-  // The chat header draws its 20px glyphs at 16px; the box lands on the same
-  // 34px only if this one does too.
-  svg {
-    display: block;
-    width: 16px;
-    height: 16px;
-  }
-
   &:active {
-    transform: scale(0.97);
-    color: #fff;
+    @include control-active;
   }
 }
 
 .mobile-explore-bar {
-  @include explore-surface;
-
+  @include floating-panel;
   // Background names run from "simple sine waves" to "pde solver: heat & wave
   // equations", so the bar is a fixed full-width rail rather than a pill that
   // resizes under you every time the background changes.
   position: absolute;
-  left: 1rem;
-  right: 1rem;
-  bottom: max(1.25rem, calc(env(safe-area-inset-bottom) + 0.75rem));
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: max(
+    var(--space-5),
+    calc(env(safe-area-inset-bottom) + var(--space-3))
+  );
   display: flex;
   align-items: stretch;
-  gap: 0.25rem;
-  padding: 0.3rem;
-  border-radius: var(--radius-lg);
-
-  // A hairline along the top edge, fading out at both ends so the rail reads
-  // as a lit surface rather than a boxed one. It used to run pink → green →
-  // blue, echoing a rainbow rule in the site header that no longer exists.
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0.75rem;
-    right: 0.75rem;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.45) 50%,
-      transparent 100%
-    );
-  }
+  gap: var(--space-1);
+  padding: var(--space-1);
 }
 
 .mobile-explore-step {
@@ -232,19 +175,19 @@ $mobile-breakpoint: 768px;
   justify-content: center;
   padding: 0;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-secondary);
   font-family: inherit;
-  font-size: 1.4rem;
+  font-size: var(--text-h3);
   line-height: 1;
   cursor: pointer;
   @include control-transition(var(--transition-fast));
   -webkit-tap-highlight-color: transparent;
 
   &:active {
-    color: var(--explore-accent);
-    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    background-color: var(--wash-active);
   }
 }
 
@@ -256,54 +199,52 @@ $mobile-breakpoint: 768px;
   align-items: center;
   justify-content: center;
   gap: 0.1rem;
-  padding: 0.4rem 0.6rem;
+  padding: var(--space-2) var(--space-3);
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
   font-family: inherit;
+  @include control-transition(var(--transition-fast));
   -webkit-tap-highlight-color: transparent;
 
   &:active {
-    background: rgba(255, 255, 255, 0.08);
+    background-color: var(--wash-active);
   }
 
   .mobile-explore-title {
     max-width: 100%;
-    color: var(--explore-accent);
-    font-size: 0.8rem;
+    color: var(--text-primary);
+    font-size: var(--text-small);
     letter-spacing: -0.01em;
+    text-transform: lowercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   }
 
   .mobile-explore-sub {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.6rem;
-    font-weight: 400;
+    color: var(--text-muted);
+    font-size: var(--text-2xs);
+    text-transform: lowercase;
     white-space: nowrap;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   }
 }
 
 .mobile-explore-hint {
+  @include floating-panel;
   position: absolute;
   left: 50%;
   bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 5rem));
   transform: translateX(-50%);
-  padding: 0.35rem 0.7rem;
-  border-radius: var(--radius-lg);
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.65rem;
+  padding: var(--space-1) var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-2xs);
+  text-transform: lowercase;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.4s ease;
+  transition: opacity var(--transition-slow);
 
   &.visible {
     opacity: 1;
@@ -315,18 +256,16 @@ $mobile-breakpoint: 768px;
 // ---------------------------------------------------------------------------
 
 @media (max-width: $mobile-breakpoint) {
-  // The desktop control cluster and its keyboard affordances are replaced by
-  // the explore bar above.
-  .background-controls,
-  .keyboard-shortcuts-toggle,
-  .shortcuts-hint,
-  .sidebar-keyboard-hints {
+  // The desktop control cluster is replaced by the explore bar above. This
+  // stylesheet is its own compilation unit and may land before the one that
+  // draws the cluster, so the override has to win on weight rather than order.
+  .background-controls {
     display: none !important;
   }
 
   // Chat is part of the page, not the background; it would only clutter the
   // full-bleed view.
   body.mobile-explore-active .chat-icon-container {
-    display: none !important;
+    display: none;
   }
 }

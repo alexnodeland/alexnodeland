@@ -1,30 +1,13 @@
 import React from 'react';
 import { useSettingsPanel } from '../SettingsPanelContext';
 
+// The chat pill, bottom-right on the field. It is hidden while the panel is
+// open (the panel has its own close) and shown again during the panel's
+// closing slide, like the background toolbar on the other side.
 const ChatIcon: React.FC = () => {
-  const {
-    isChatPanelOpen,
-    isClosingChatPanel,
-    setChatPanelOpen,
-    setClosingChatPanel,
-  } = useSettingsPanel();
+  const { isChatPanelOpen, isClosingChatPanel, toggleChatPanel } =
+    useSettingsPanel();
 
-  // Chat is always available - even if worker fails, we show the interface
-  const isChatAvailable = true;
-
-  const handleClick = () => {
-    if (isChatPanelOpen && !isClosingChatPanel) {
-      setClosingChatPanel(true);
-      setTimeout(() => {
-        setChatPanelOpen(false);
-        setClosingChatPanel(false);
-      }, 300); // Match animation duration
-    } else if (!isChatPanelOpen && !isClosingChatPanel) {
-      setChatPanelOpen(true);
-    }
-  };
-
-  // Don't render the icon when chat is open (but show during closing animation like background controls)
   if (isChatPanelOpen && !isClosingChatPanel) {
     return null;
   }
@@ -32,14 +15,10 @@ const ChatIcon: React.FC = () => {
   return (
     <div className="chat-icon-container">
       <button
+        type="button"
         className="chat-icon"
-        onClick={handleClick}
+        onClick={toggleChatPanel}
         aria-label="Open chat"
-        disabled={!isChatAvailable}
-        style={{
-          opacity: isChatAvailable ? 1 : 0.5,
-          pointerEvents: isChatAvailable ? 'auto' : 'none',
-        }}
       >
         <div className="chat-icon-inner">
           <svg
@@ -47,6 +26,7 @@ const ChatIcon: React.FC = () => {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
+            aria-hidden="true"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path

@@ -1,4 +1,8 @@
-// Animated backgrounds styles using design system variables
+// The animated backgrounds' chrome: the stage they draw on, the toolbar pill
+// in the bottom-left corner, the settings sidebar it opens, and the audio
+// indicator one of them shows. The simulations themselves position their own
+// canvases.
+@use 'mixins' as *;
 
 // The simulations render into a canvas that sits at 90% opacity, so whatever is
 // behind it shows through and becomes part of the picture. That ground is
@@ -15,87 +19,104 @@
   background: var(--bg-stage);
 }
 
-// Background controls container (bottom-left)
+// Background controls container (bottom-left). The rail's own offsets — this
+// is the left end of the same row of floating controls the chat pill closes on
+// the right. No panel-state repositioning: the sidebars are floating panels
+// that stop at --window-inset-bottom, so the pill row lives entirely below
+// them and never needs to dodge.
 .background-controls {
   position: fixed;
-  // The rail's own offsets — this is the left end of the same row of floating
-  // controls the chat pill closes on the right.
   bottom: var(--rail-inset-bottom);
   left: var(--rail-inset-left);
-  z-index: 1000;
+  z-index: var(--z-stage);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  @include control-transition(0.3s cubic-bezier(0.16, 1, 0.3, 1));
+  gap: var(--space-4);
+  animation: pill-in-left var(--transition-slow) forwards;
+}
 
-  // Slide in from left with fade when appearing
-  animation: slideInFromLeftWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+// The toolbar: one button, the whole pill. The same machined housing as the
+// nav capsule and the chat pill — one language for every floating control on
+// the field — fixed to the page selector's footprint like the chat pill. Ink
+// rests quiet like the other capsules and brightens under the pointer; it
+// does not lift.
+.background-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  width: var(--rail-width);
+  height: var(--rail-height);
+  box-sizing: border-box;
+  position: relative;
+  @include capsule-housing;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-control);
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  @include control-transition(var(--transition-fast));
 
-  // No panel-state repositioning: the sidebars are floating panels that stop
-  // at --window-inset-bottom, so the pill row at 2rem lives entirely below
-  // them and never needs to dodge.
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--hairline-lit);
+  }
 
-  // Combined toolbar - now clickable to open settings
-  .background-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 1rem;
-    // Fixed to the page selector's footprint, like the chat pill.
-    width: var(--rail-width);
-    height: var(--rail-height);
-    box-sizing: border-box;
-    position: relative; // anchor tooltips and nav buttons to toolbar
-    // The same machined housing as the nav capsule and the chat pill — one
-    // language for every floating control on the field. Ink rests quiet like
-    // the other capsules (the cog inherits it) and brightens on hover.
-    @include capsule-housing;
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    @include control-transition(var(--transition-normal));
-    cursor: pointer; // Indicate clickable
+  &:focus-visible {
+    outline: none;
+    color: var(--text-primary);
+    border-color: var(--hairline-lit);
+  }
 
-    &:hover {
-      border-color: rgba(255, 255, 255, 0.45);
-      transform: translateY(-1px); // Subtle lift effect
-    }
+  .toolbar-glyph {
+    flex-shrink: 0;
+  }
 
-    &:active {
-      transform: translateY(0);
-    }
+  // The name of whatever is currently running. It is a label, not a link —
+  // green here made the one word on the toolbar look clickable while the
+  // whole toolbar was in fact the button.
+  .background-name {
+    color: inherit;
+    text-align: center;
+  }
+}
 
-    .toolbar-header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+// The oscillator's "audio playing" indicator: a pill on the field like the
+// others, bottom-centre, sitting above the `?` hint's line rather than on it.
+// The dot is the site's live green — a sound coming out of the speakers is a
+// state worth a colour.
+.audio-indicator {
+  position: fixed;
+  bottom: calc(var(--rail-inset-bottom) + var(--rail-height) + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-stage);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  @include capsule-housing;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: lowercase;
+  pointer-events: none;
 
-      .toolbar-glyph {
-        flex-shrink: 0;
-      }
-    }
-
-    // The name of whatever is currently running. It is a label, not a link —
-    // green here made the one word on the toolbar look clickable while the
-    // whole toolbar was in fact the button.
-    .background-name {
-      color: inherit;
-      font-size: 0.875rem;
-      text-align: center;
-    }
-
-    &:hover {
-      color: var(--text-primary);
-    }
+  .audio-indicator-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary-color);
   }
 }
 
 // Settings sidebar — a floating peer of the content window, not a drawer bolted
-// to the screen edge. It takes the window's own insets, scrim, blur, hairline
-// and shadow, so the two read as two devices sitting on one desk rather than as
-// a page with a tray pulled out of it. Every value here is the same token
-// .layout uses; change them there, not here.
+// to the screen edge. It takes the window's own insets and material, so the
+// two read as two devices sitting on one desk rather than as a page with a
+// tray pulled out of it.
 .settings-sidebar {
   position: fixed;
   // The window's live top edge, published by the shell — the sidebar's height
@@ -104,225 +125,130 @@
   left: var(--window-inset);
   // Rides above the floating pills, exactly as the window does
   bottom: var(--window-inset-bottom);
-  width: 28rem;
-  background: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-  border: 1px solid var(--window-border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  width: var(--panel-width);
+  @include window-material;
   color: var(--text-primary);
-  z-index: 1002; // Above controls
+  z-index: var(--z-panel);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 
   // Opening animation - only when actually opening, not on every mount
   &.opening {
-    animation: slideInFromLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: panel-in-left var(--transition-slow) forwards;
   }
 
-  // Closing animation
   &.closing {
-    animation: slideOutToLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: panel-out-left var(--transition-slow) forwards;
   }
 
+  // The header: the same gutter, divider and title size as the chat's.
   .sidebar-header {
-    background: transparent;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--hairline-interior);
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     flex-direction: column;
+  }
 
-    .background-header {
+  .background-header {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .background-controls-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+
+    .background-name {
+      color: var(--text-primary);
+      font-size: var(--text-h4);
+      letter-spacing: -0.01em;
+    }
+
+    // The same close as the chat panel's (see `icon-button` in mixins.scss).
+    .close-button {
+      @include icon-button;
+    }
+  }
+
+  .background-description {
+    color: var(--text-secondary);
+    font-size: var(--text-small);
+    line-height: var(--leading-chrome);
+    margin-bottom: var(--space-3);
+  }
+
+  .blog-post-link-container {
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  // A link, drawn as one.
+  .blog-post-link {
+    @include text-link;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    text-transform: lowercase;
+
+    svg {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  // The oscillator's hold-to-play control: an outline like every block, and
+  // the site's secondary button inside it.
+  .special-hotkeys {
+    margin-top: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    @include outline-block;
+    border-radius: var(--radius-md);
+
+    .special-hotkeys-title {
+      font-size: var(--text-xs);
+      color: var(--text-primary);
+      margin-bottom: var(--space-2);
+      text-transform: lowercase;
+    }
+
+    .special-hotkey-item {
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .play-sound-button {
+      @include button-secondary;
       width: 100%;
-      margin-bottom: 0;
+      justify-content: flex-start;
+      font-size: var(--text-xs);
+      user-select: none;
 
-      .background-controls-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.75rem;
-
-        .background-name {
-          color: var(--text-primary);
-          font-size: 1rem; // Match chat panel font sizing
-        }
-
-        // The chat panel's close button (see .chat-close-button in
-        // chat.scss): the same bordered box around the same 16px glyph, so
-        // putting either panel away is one control. It used to be a bare
-        // "×" character with no border.
-        .close-button {
-          flex-shrink: 0;
-          background: transparent;
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          color: var(--text-muted);
-          cursor: pointer;
-          padding: 0.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          @include control-transition(var(--transition-normal));
-
-          &:hover {
-            border-color: var(--border-active);
-            color: var(--text-primary);
-            background: var(--bg-hover);
-          }
-
-          &:focus-visible {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px var(--primary-color);
-          }
-
-          svg {
-            display: block;
-            width: 16px;
-            height: 16px;
-          }
-        }
+      kbd {
+        @include key-cap;
+        pointer-events: none;
       }
 
-      .background-description {
-        color: var(--text-secondary);
-        font-size: 0.8125rem; // Match chat panel sizing
-        opacity: 0.9;
-        line-height: 1.4;
-        margin-bottom: 0.75rem;
-      }
+      // Held down — the sound is playing. A real state, marked the way every
+      // current thing is: the wash and the lit hairline, and the key cap
+      // pressed.
+      &:active,
+      &.active {
+        @include control-active;
 
-      // Blog post link styling to match huggingface-link
-      .blog-post-link-container {
-        margin-top: 0.75rem;
-        margin-bottom: 0.75rem;
-      }
-
-      .blog-post-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.375rem;
-        color: var(--ink-primary);
-        text-decoration: none;
-        font-size: 0.75rem;
-        padding: 0.375rem 0.5rem;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border-color);
-        background: var(--bg-primary);
-        @include control-transition(var(--transition-fast));
-
-        &:hover {
-          background: var(--bg-hover);
-          border-color: var(--primary-color);
-          text-decoration: none;
-        }
-
-        svg {
-          flex-shrink: 0;
-          width: 16px;
-          height: 16px;
-        }
-      }
-
-      // Special hotkeys styling when in header. The green wash, green hairline
-      // and green rail were three ways of saying "this bit is special" about a
-      // panel whose every row is a control; the rail alone says it, in the
-      // same neutral the rest of the panel uses.
-      .special-hotkeys {
-        margin-top: 1rem;
-        padding: 0.75rem 1rem;
-        background: var(--bg-accent);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        border-left: 3px solid var(--border-active);
-
-        .special-hotkeys-title {
-          font-size: 0.75rem;
-          color: var(--text-primary);
-          margin-bottom: 0.5rem;
-          font-family: inherit;
-          letter-spacing: 0.5px;
-        }
-
-        .special-hotkey-item {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          font-family: inherit;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-
-          // Same key cap as everywhere else on the site: a surface with a
-          // hairline, not a filled green chiclet.
-          kbd {
-            background: var(--bg-floating);
-            color: var(--text-primary);
-            border: 1px solid var(--border-floating);
-            border-radius: var(--radius-sm);
-            padding: 0.25rem 0.5rem;
-            font-size: 0.6875rem;
-            font-family: inherit;
-            min-width: 1.5rem;
-            text-align: center;
-          }
-
-          .play-sound-button {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: var(--text-secondary);
-            padding: 0.5rem 0.75rem;
-            border-radius: var(--radius-md);
-            font-size: 0.75rem;
-            font-family: inherit;
-            cursor: pointer;
-            @include control-transition(0.15s ease);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            width: 100%;
-            user-select: none;
-
-            kbd {
-              background: var(--bg-floating);
-              color: var(--text-primary);
-              border: 1px solid var(--border-floating);
-              border-radius: var(--radius-sm);
-              padding: 0.25rem 0.5rem;
-              font-size: 0.6875rem;
-              font-family: inherit;
-              min-width: 1.5rem;
-              text-align: center;
-              pointer-events: none;
-            }
-
-            &:hover {
-              background: rgba(255, 255, 255, 0.06);
-              border-color: rgba(255, 255, 255, 0.45);
-              color: var(--text-primary);
-              transform: translateY(-1px);
-            }
-
-            // Held down — the sound is playing. That is a real state, and it
-            // is worth marking, but the marker is the surface lighting up
-            // rather than the whole control turning green.
-            &:active,
-            &.active {
-              background: rgba(255, 255, 255, 0.14);
-              border-color: rgba(255, 255, 255, 0.6);
-              color: var(--text-primary);
-              transform: translateY(0);
-
-              kbd {
-                background: rgba(255, 255, 255, 0.9);
-                color: var(--bg-primary);
-              }
-            }
-          }
+        kbd {
+          background: var(--text-primary);
+          color: var(--on-fill);
         }
       }
     }
@@ -334,8 +260,21 @@
     padding: 0;
   }
 
+  // The desktop's two groups: the background's own categories at the top,
+  // the shared ones parked at the bottom.
+  .settings-sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    height: 100%;
+  }
+
+  .settings-section-standard {
+    margin-top: auto;
+  }
+
   .settings-category {
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--hairline-interior);
 
     &:last-child {
       border-bottom: none;
@@ -343,38 +282,40 @@
 
     .category-header {
       width: 100%;
-      padding: 0.75rem 1rem; // tighter header
+      padding: var(--space-3) var(--space-4);
       background: none;
       border: none;
+      border-left: 2px solid transparent;
       color: var(--text-primary);
       text-align: left;
       cursor: pointer;
       display: flex;
       align-items: center;
-      font-size: 0.8125rem; // slightly smaller
-      @include control-transition(var(--transition-fast));
       font-family: inherit;
+      font-size: var(--text-small);
+      text-transform: lowercase;
+      @include control-transition(var(--transition-fast));
 
       &:hover {
-        background: var(--bg-accent);
+        background-color: var(--wash-hover);
       }
 
-      // Open is a state of a disclosure, marked the same way the CV's section
-      // nav marks the section you are in: brighter type and a brighter rail.
+      &:focus-visible {
+        outline: none;
+        background-color: var(--wash-hover);
+      }
+
+      // Open is a state of a disclosure, marked the same way every current
+      // thing is: the wash and a lit rail.
       &.open {
-        background: var(--bg-accent);
-        color: var(--text-primary);
-        border-left: 2px solid var(--border-active);
+        background-color: var(--wash-active);
+        border-left-color: var(--hairline-lit);
       }
 
       .category-left {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-      }
-
-      .category-title {
-        text-transform: none;
+        gap: var(--space-2);
       }
 
       .category-toggle {
@@ -385,25 +326,25 @@
         justify-content: center;
         color: var(--text-secondary);
         transition:
-          transform var(--transition-normal),
-          color var(--transition-normal);
+          transform var(--transition-fast),
+          color var(--transition-fast);
 
         &:before {
-          content: '▸'; // right-pointing triangle (carrot)
-          font-size: 0.75rem;
+          content: '▸';
+          font-size: var(--text-xs);
           line-height: 1;
         }
       }
 
       &.open .category-toggle {
-        transform: rotate(90deg); // down
+        transform: rotate(90deg);
         color: var(--text-primary);
       }
     }
 
     .category-content {
-      padding: 0.5rem 1rem 1rem 1rem; // add top padding for first element spacing
-      animation: slideDown var(--transition-normal) ease;
+      padding: var(--space-2) var(--space-4) var(--space-4);
+      animation: reveal var(--transition-normal);
     }
   }
 
@@ -411,20 +352,18 @@
     display: grid;
     grid-template-columns: minmax(auto, 12rem) 1fr;
     align-items: center;
-    margin-bottom: 1rem;
-    gap: 1.5rem;
+    margin-bottom: var(--space-4);
+    gap: var(--space-5);
 
     &:last-child {
       margin-bottom: 0;
     }
 
     .setting-label {
-      font-size: 0.75rem;
-      font-weight: 400;
+      font-size: var(--text-xs);
       color: var(--text-secondary);
       cursor: default;
-      font-family: inherit;
-      line-height: 1.3;
+      line-height: var(--leading-tight);
       word-wrap: break-word;
       hyphens: auto;
     }
@@ -437,13 +376,13 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 0.95rem;
-      height: 0.95rem;
-      margin-left: 0.35rem;
-      border-radius: 50%;
-      border: 1px solid var(--border-color);
+      width: 1rem;
+      height: 1rem;
+      margin-left: var(--space-1);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--hairline);
       color: var(--text-secondary);
-      font-size: 0.6rem;
+      font-size: var(--text-2xs);
       line-height: 1;
       cursor: help;
       vertical-align: middle;
@@ -451,29 +390,28 @@
 
       &:hover,
       &:focus-visible {
-        color: var(--text-primary);
-        border-color: rgba(255, 255, 255, 0.45);
         outline: none;
+        color: var(--text-primary);
+        border-color: var(--hairline-lit);
       }
 
+      // The floating-panel material, like every tooltip on the site.
       .setting-tooltip {
+        @include floating-panel;
+        border-radius: var(--radius-sm);
         position: absolute;
-        bottom: calc(100% + 0.4rem);
+        bottom: calc(100% + var(--space-2));
         left: 50%;
         transform: translateX(-50%);
         z-index: 10;
         width: max-content;
         max-width: 15rem;
-        padding: 0.5rem 0.65rem;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border-color);
-        background: var(--bg-card);
+        padding: var(--space-2) var(--space-3);
         color: var(--text-primary);
-        font-size: 0.7rem;
-        line-height: 1.45;
+        font-size: var(--text-xs);
+        line-height: var(--leading-chrome);
         text-transform: none;
         text-align: left;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         opacity: 0;
         visibility: hidden;
         transition: opacity var(--transition-fast);
@@ -484,7 +422,7 @@
       // scrolling list; the class is set on hover/focus by positionTooltip.
       &.flip .setting-tooltip {
         bottom: auto;
-        top: calc(100% + 0.4rem);
+        top: calc(100% + var(--space-2));
       }
 
       &:hover .setting-tooltip,
@@ -497,21 +435,24 @@
     .setting-input {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: var(--space-2);
       justify-self: stretch;
 
       .slider {
         flex: 1;
         height: 2px;
-        background: var(--border-color);
+        background: var(--hairline);
         border-radius: var(--radius-sm);
-        outline: none;
         cursor: pointer;
         appearance: none;
 
+        &:focus-visible {
+          outline: 2px solid var(--focus-ring);
+          outline-offset: var(--space-2);
+        }
+
         // The thumb is the one thing on this rail you can grab, and it says so
-        // by being the brightest thing on it. Green was doing that job with a
-        // hue the rest of the panel reads as "link".
+        // by being the brightest thing on it.
         &::-webkit-slider-thumb {
           appearance: none;
           width: 1rem;
@@ -519,12 +460,6 @@
           background: var(--text-primary);
           border-radius: 50%;
           cursor: pointer;
-          @include control-transition(var(--transition-fast));
-          box-shadow: 0 0 0 2px var(--bg-secondary);
-
-          &:hover {
-            transform: scale(1.2);
-          }
         }
 
         &::-moz-range-thumb {
@@ -532,48 +467,56 @@
           height: 1rem;
           background: var(--text-primary);
           border-radius: 50%;
-          border: 2px solid var(--bg-secondary);
+          border: none;
           cursor: pointer;
-          @include control-transition(var(--transition-fast));
+        }
+      }
 
-          &:hover {
-            transform: scale(1.2);
-          }
+      .number-input,
+      .select-input {
+        padding: var(--space-1) var(--space-2);
+        background: var(--wash-field);
+        border: 1px solid var(--hairline);
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        font-size: var(--text-xs);
+        font-family: inherit;
+
+        &:focus {
+          outline: none;
+          border-color: var(--hairline-lit);
         }
       }
 
       .number-input {
         width: 5rem;
-        padding: 0.375rem 0.5rem;
-        background: var(--bg-accent);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        color: var(--text-primary);
-        font-size: 0.75rem;
-        font-family: inherit;
         text-align: right;
+      }
 
-        &:focus {
-          outline: none;
-          border-color: rgba(255, 255, 255, 0.45);
+      .select-input {
+        min-width: 7rem;
+
+        option {
+          background: var(--bg-floating);
+          color: var(--text-primary);
         }
       }
 
       // The swatch inside this control is the one genuinely representational
       // colour in the panel — it is the actual colour the simulation is about
       // to use, so it stays exactly as the browser paints it. Only the frame
-      // around it goes neutral.
+      // around it is the site's.
       .color-input {
         width: 2.5rem;
         height: 2rem;
-        border: 1px solid var(--border-color);
+        border: 1px solid var(--hairline);
         border-radius: var(--radius-md);
         background: none;
         cursor: pointer;
         overflow: hidden;
 
         &:hover {
-          border-color: rgba(255, 255, 255, 0.45);
+          border-color: var(--hairline-lit);
         }
 
         &::-webkit-color-swatch-wrapper {
@@ -587,107 +530,26 @@
         }
       }
 
-      .select-input {
-        min-width: 7rem;
-        padding: 0.375rem 0.5rem;
-        background: var(--bg-accent);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        color: var(--text-primary);
-        font-size: 0.75rem;
-        font-family: inherit;
-
-        &:focus {
-          outline: none;
-          border-color: rgba(255, 255, 255, 0.45);
-        }
-
-        option {
-          background: var(--bg-secondary);
-          color: var(--text-primary);
-        }
-      }
-
       .setting-value,
       .color-value {
-        font-size: 0.625rem;
+        font-size: var(--text-2xs);
         color: var(--text-muted);
         min-width: 3rem;
         text-align: right;
-        font-family: inherit;
+        font-variant-numeric: tabular-nums;
       }
     }
   }
 
+  // The footer holds the one action: reset. The shortcuts that used to be
+  // printed under it live behind `?` with the rest.
   .settings-panel-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    background: transparent; // Match chat footer transparency
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--hairline-interior);
 
-    .special-hotkeys {
-      margin-bottom: 1rem;
-      padding: 0.75rem;
-      background: var(--bg-accent);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-
-      .special-hotkeys-title {
-        font-size: 0.75rem;
-        color: var(--text-primary);
-        margin-bottom: 0.5rem;
-        font-family: inherit;
-      }
-
-      .special-hotkey-item {
-        font-size: 0.6875rem;
-        color: var(--text-secondary);
-        font-family: inherit;
-
-        kbd {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-sm);
-          padding: 0.125rem 0.25rem;
-          margin-right: 0.5rem;
-          font-size: 0.625rem;
-          font-family: inherit;
-          color: var(--text-primary);
-        }
-      }
-    }
-
-    // Reset is destructive-ish but not a status, and it certainly is not the
-    // conversion path — magenta made it the loudest control in a panel of
-    // sliders.
     .reset-button {
-      @include outline-button;
+      @include button-secondary;
       width: 100%;
-      margin-bottom: 1rem;
-    }
-
-    .sidebar-keyboard-hints {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.25rem;
-      font-size: 0.6875rem;
-      color: var(--text-secondary);
-      opacity: 0.9;
-      font-family: inherit;
-      padding-top: 0.5rem;
-
-      // Key caps were a white wash on a white border; they take the panel's
-      // own surface and border tokens so the cap reads as a cap.
-      kbd {
-        background: var(--bg-accent);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-sm);
-        padding: 0.125rem 0.3rem;
-        font-size: 0.625rem;
-        font-family: inherit;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        color: var(--text-primary);
-      }
     }
   }
 }
@@ -697,33 +559,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  // A quiet group label, not a band: the near-black borders and the tinted
-  // background vanished over the scrim and left odd-looking gaps around an
-  // invisible box. One white-alpha hairline above, and the same space on both
-  // sides of the label — it used to be 0.9rem over 0.35rem, which sat the two
-  // group labels visibly high in their own rows.
-  padding: var(--space-3) 1rem;
+  // A quiet group label, not a band: one hairline above, and the same space
+  // on both sides of the label.
+  padding: var(--space-4);
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--hairline-interior);
   background: transparent;
 }
 
 .settings-sidebar .section-left {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .settings-sidebar .section-title {
-  font-size: 0.8125rem; // match category header text size
+  font-size: var(--text-small);
   color: var(--text-secondary);
-  letter-spacing: 0.5px;
+  letter-spacing: -0.01em;
   text-transform: lowercase;
   // Its own line box, and no margin of its own: this label is a flex item in
   // a row with the expand-all caret, and anything it inherits from the
   // document's heading rhythm knocks the caret off its centreline.
   margin: 0;
-  line-height: 1.4;
+  line-height: var(--leading-chrome);
 }
 
 .settings-sidebar .section-action {
@@ -731,122 +590,32 @@
   border: none;
   color: var(--text-secondary);
   padding: 0;
-  width: 1rem; // match category-toggle width
-  height: 1rem; // match category-toggle height
+  width: 1rem; // match category-toggle
+  height: 1rem;
   border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition:
-    background var(--transition-fast),
+    background-color var(--transition-fast),
     color var(--transition-fast);
-  font-size: 0.75rem; // match category-toggle size
+  font-size: var(--text-xs);
   line-height: 1;
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
+    outline: none;
     color: var(--text-primary);
-    background: var(--bg-accent);
+    background-color: var(--wash-hover);
   }
 }
 
-// Animations
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-0.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideUpIn {
-  from {
-    opacity: 0;
-    transform: translateY(2rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInFromLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInFromLeftWithFade {
-  from {
-    opacity: 0;
-    transform: translateX(-2rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideOutToLeft {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-100%);
-  }
-}
-
-@keyframes slideInFromRight {
-  from {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-// Responsive design - no special handling needed for larger screens since it's already positioned correctly
-
+// Phones get a bottom sheet rather than a full-height sidebar: the point of
+// these controls is watching the background react, so the sheet claims only
+// the lower half of the screen and stays see-through enough to read the
+// animation behind it.
 @media (max-width: 768px) {
-  .background-controls {
-    // The offsets follow --rail-inset, which narrows in the token layer here.
-
-    // On mobile, don't reposition - just dim background controls when any panel is open
-    &.settings-panel-open,
-    &.settings-panel-closing,
-    &.chat-panel-open,
-    &.chat-panel-closing {
-      left: var(--rail-inset-left);
-      right: auto;
-      transform: translateX(0);
-      opacity: 0.3;
-    }
-
-    .background-toolbar {
-      padding: 0.5rem 0.75rem;
-
-      .background-name {
-        font-size: 0.75rem;
-      }
-    }
-  }
-
-  // Phones get a bottom sheet rather than a full-height sidebar: the point of
-  // these controls is watching the background react, so the sheet claims only
-  // the lower half of the screen and stays see-through enough to read the
-  // animation behind it.
   .settings-sidebar {
     top: auto;
     left: 0;
@@ -857,37 +626,26 @@
     max-height: 60dvh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.18);
-    // No background or backdrop-filter override: the sheet keeps the base
-    // rule's frosted glass — the same --window-scrim over blur(--window-blur)
-    // the content window and the desktop sidebar wear — so the whole kit is
-    // one material. (A 16px blur+saturate over its own tint used to live
-    // here; it was both the odd surface out and the most expensive thing a
-    // phone GPU was asked to hold.)
+    border-top: 1px solid var(--hairline);
+    // The sheet keeps the base rule's frosted glass — the same scrim over the
+    // same blur the content window wears — so the whole kit is one material.
     //
     // The glass is worn only at rest: sliding a full-width backdrop filter
     // over a canvas that repaints every frame forces the blur to be
-    // re-resolved per frame of the slide, which is exactly the 300ms the
-    // phone is also compositing the move itself. So the sheet travels as
-    // tint alone and the blur fades in once it has parked — the second
-    // animation below, keyframes further down.
-    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+    // re-resolved per frame of the slide, which is exactly the time the phone
+    // is also compositing the move itself. So the sheet travels as tint alone
+    // and the blur fades in once it has parked — the second animation below,
+    // whose `backwards` fill holds its filter-less first frame through the
+    // delay.
+    box-shadow: var(--shadow-sheet);
     padding-bottom: env(safe-area-inset-bottom);
-
-    // On mobile, ensure it covers the controls
-    z-index: 1003;
-
-    // A sheet comes up from and goes back down to the bottom edge; the
-    // sidebar's horizontal slide reads wrong here. The second animation is
-    // the blur arriving after the slide: `backwards` holds its filter-less
-    // first frame through the delay, so the static blur above never applies
-    // while the sheet is in motion.
+    z-index: var(--z-overlay);
     animation:
-      slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-      sheet-blur-in 220ms ease 0.3s backwards;
+      sheet-in var(--transition-slow),
+      sheet-blur-in var(--transition-normal) var(--duration-slow) backwards;
 
     &.closing {
-      animation: slideDownToSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: sheet-out var(--transition-slow) forwards;
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
     }
@@ -896,13 +654,13 @@
     &::before {
       content: '';
       position: absolute;
-      top: 0.45rem;
+      top: var(--space-2);
       left: 50%;
       transform: translateX(-50%);
       width: 2.25rem;
       height: 3px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.28);
+      border-radius: var(--radius-sm);
+      background: var(--hairline-lit);
     }
 
     // Header, tab strip and footer are fixed furniture; only the control list
@@ -914,7 +672,7 @@
     }
 
     .sidebar-header {
-      padding: 1rem 1rem 0.75rem;
+      padding: var(--space-4) var(--space-4) var(--space-3);
       border-bottom: none;
       max-height: 45vh;
       overflow-y: auto;
@@ -923,24 +681,23 @@
     .settings-content {
       flex: 1 1 auto;
       min-height: 0;
-      padding: 0.25rem 1rem 1rem 1rem;
+      padding: var(--space-1) var(--space-4) var(--space-4);
     }
 
     .settings-panel-footer {
-      padding: 0.75rem 1rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: var(--space-3) var(--space-4);
     }
 
     // The hold-to-play control matters, but at desktop proportions it eats half
     // the sheet before a single setting is visible.
-    .sidebar-header .background-header .special-hotkeys {
-      margin-top: 0.75rem;
+    .special-hotkeys {
+      margin-top: var(--space-3);
       margin-bottom: 0;
-      padding: 0.5rem;
+      padding: var(--space-2);
 
       .special-hotkeys-title {
-        font-size: 0.65rem;
-        margin-bottom: 0.35rem;
+        font-size: var(--text-2xs);
+        margin-bottom: var(--space-1);
       }
     }
 
@@ -948,25 +705,19 @@
     // viewport, so stack them and give the control the full width.
     .setting-row {
       grid-template-columns: 1fr;
-      gap: 0.4rem;
-      margin-bottom: 1.25rem;
-
-      .setting-label {
-        font-size: 0.7rem;
-      }
+      gap: var(--space-2);
+      margin-bottom: var(--space-5);
+      position: relative;
 
       .setting-input {
-        gap: 0.75rem;
+        gap: var(--space-3);
 
         // Touch targets: a 2px rail with a 1rem thumb is unhittable with a
         // finger, so pad the hit area out without fattening the visible rail.
         .slider {
           height: 1.5rem;
           background: transparent;
-          background-image: linear-gradient(
-            var(--border-color),
-            var(--border-color)
-          );
+          background-image: linear-gradient(var(--hairline), var(--hairline));
           background-size: 100% 2px;
           background-position: center;
           background-repeat: no-repeat;
@@ -986,8 +737,8 @@
         .select-input {
           flex: 1;
           min-width: 0;
-          padding: 0.5rem;
-          font-size: 0.8rem;
+          padding: var(--space-2);
+          font-size: var(--text-small);
         }
 
         .color-input {
@@ -995,23 +746,19 @@
           height: 2.25rem;
         }
       }
-    }
 
-    // There is no hover on touch and a tap does not satisfy :focus-visible, so
-    // plain :focus is what actually reveals a control's description here.
-    .setting-row {
-      position: relative;
-
+      // There is no hover on touch and a tap does not satisfy :focus-visible,
+      // so plain :focus is what actually reveals a control's description here
+      // — the one place on the site it is the right pseudo-class.
       .setting-help {
         position: static; // Hand the tooltip's containing block to the row
-        width: 1.15rem;
-        height: 1.15rem;
-        font-size: 0.65rem;
+        width: 1.25rem;
+        height: 1.25rem;
 
         &:focus {
           outline: none;
           color: var(--text-primary);
-          border-color: rgba(255, 255, 255, 0.45);
+          border-color: var(--hairline-lit);
         }
 
         &:focus .setting-tooltip {
@@ -1034,48 +781,35 @@
 
     // The description is long and mostly re-reading; tuck it behind the header
     // "i" so the sheet opens straight onto the controls.
-    .background-header .background-controls-header {
-      gap: 0.5rem;
+    .background-controls-header {
       margin-bottom: 0;
 
       .background-name {
         flex: 1;
         min-width: 0;
-        font-size: 0.9rem;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
     }
 
+    // The same box as the close beside it, so the two sit as one row.
     .description-toggle {
-      flex-shrink: 0;
-      // The close beside it is a 16px glyph in 0.5rem of padding and a
-      // hairline; the same 34px here, so the two sit as one row.
-      width: calc(1rem + 1rem + 2px);
-      height: calc(1rem + 1rem + 2px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: none;
-      border: 1px solid var(--border-color);
-      border-radius: 50%;
-      color: var(--text-secondary);
-      font-family: inherit;
-      font-size: 0.75rem;
+      @include icon-button;
+      width: calc(1rem + var(--space-4) + 2px);
+      height: calc(1rem + var(--space-4) + 2px);
+      font-size: var(--text-small);
       font-style: italic;
-      cursor: pointer;
-      @include control-transition(var(--transition-fast));
+      font-family: inherit;
 
       &.open {
-        color: var(--text-primary);
-        border-color: rgba(255, 255, 255, 0.45);
+        @include control-active;
       }
     }
 
     .background-description {
-      margin-top: 0.75rem;
-      font-size: 0.75rem;
+      margin-top: var(--space-3);
+      font-size: var(--text-xs);
       max-height: 30vh;
       overflow-y: auto;
     }
@@ -1085,83 +819,39 @@
     // you reach a control on a phone.
     .category-tabs {
       display: flex;
-      gap: 0.35rem;
-      padding: 0.25rem 1rem 0.85rem;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-4) var(--space-3);
       overflow-x: auto;
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
     }
 
+    // A chip on the window's chamfer, like every other chip. The background's
+    // own categories lead; the shared ones read as secondary in the muted
+    // ink. Which tab you are on is the current one, marked the way every
+    // current thing is.
     .category-tab {
       flex: 0 0 auto;
-      padding: 0.4rem 0.75rem;
-      background: var(--bg-accent);
-      border: 1px solid var(--border-color);
-      border-radius: 999px;
+      padding: var(--space-2) var(--space-3);
+      background: transparent;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
       color: var(--text-secondary);
       font-family: inherit;
-      font-size: 0.7rem;
+      font-size: var(--text-xs);
       text-transform: lowercase;
       white-space: nowrap;
       cursor: pointer;
       @include control-transition(var(--transition-fast));
       -webkit-tap-highlight-color: transparent;
 
-      // Categories a background defines for itself lead; the shared ones read
-      // as secondary so the strip still has the desktop's custom/standard
-      // distinction without a second row of headers.
       &.standard {
-        opacity: 0.75;
-        border-style: dashed;
+        color: var(--text-muted);
       }
 
-      // Which tab you are on is a state worth marking loudly, since the strip
-      // scrolls and only a few tabs are visible at once — but it marks it by
-      // being the brightest chip in the row, not the only green one.
       &.active {
-        background: rgba(255, 255, 255, 0.14);
-        border-color: rgba(255, 255, 255, 0.6);
-        border-style: solid;
-        color: var(--text-primary);
-        font-weight: 600;
-        opacity: 1;
+        @include control-active;
       }
     }
-  }
-}
-
-@keyframes slideUpSheet {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-// The sheet's frosted glass arriving after the slide (see .settings-sidebar's
-// mobile block): `none` interpolates from blur(0), so this is a short fade-up
-// to the window's own resting blur rather than a pop.
-@keyframes sheet-blur-in {
-  from {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-  to {
-    backdrop-filter: blur(var(--window-blur));
-    -webkit-backdrop-filter: blur(var(--window-blur));
-  }
-}
-
-@keyframes slideDownToSheet {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(100%);
   }
 }

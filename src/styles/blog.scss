@@ -1,7 +1,4 @@
-// Import variables and mixins
-@import 'variables';
-@import 'mixins';
-@import 'animations';
+@use 'mixins' as *;
 
 // A plain flow child of .main. The content column and its gutter belong to
 // .main and --gutter — a page container that re-states either one puts the
@@ -10,21 +7,16 @@
   position: relative;
 }
 
-// Left-aligned with the posts below it. A page title is not a splash screen;
-// only the homepage hero is. Rendered on the field above the window — see
-// .site-hero in layout.scss, which owns its column and its padding.
+// The page hero, rendered on the field above the window — see .site-hero in
+// layout.scss, which owns its column and its padding. Title and tagline take
+// the halo: they sit on the bare field.
 .blog-header {
   margin-bottom: 0;
   padding: 0;
   position: relative;
 
   h1 {
-    margin-bottom: var(--space-3);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.02em;
+    margin-bottom: var(--space-4);
     @include over-background;
   }
 
@@ -32,60 +24,52 @@
     color: var(--text-secondary);
     @include over-background;
     font-size: var(--text-lead);
-    line-height: 1.6;
+    line-height: var(--leading-chrome);
     font-style: italic;
   }
 }
 
-// The blog's row of chrome: filter on the left, sort beside it, reset at the
-// far end. No bar groups them — they float as loose chips, each carrying its
-// own frosting, so they still read while posts scroll underneath. Geometry
-// and material are the shared ones; see `sticky-control-row` in mixins.scss
-// and .ui-dropdown / .ui-chip-button in controls.scss.
+// The blog's row of chrome: filter on the left, sort beside it, the way to the
+// search box at the far end. No bar groups them — they float as loose chips,
+// each carrying its own frosting, so they still read while posts scroll
+// underneath. Geometry and material are the shared ones; see
+// `sticky-control-row` in mixins.scss and .ui-dropdown / .ui-search-panel in
+// controls.scss. The space under the row and under the search panel is the
+// shared default too, so the three list pages start at the same line.
 .blog-control-bar {
   @include sticky-control-row;
-  margin-bottom: var(--space-5);
-}
-
-// Only the spacing is the blog's own — the panel and its field come from
-// .ui-search-panel in controls.scss. The list below it wants more air than
-// the shared default gives.
-.blog-search-panel {
   margin-bottom: var(--space-6);
 }
 
-// Animations are now in animations.scss
-
+// The page adds no space of its own below the list: the window's own bottom
+// padding (.main) is where every page ends.
 .blog-content {
-  margin-bottom: var(--space-7);
+  margin-bottom: 0;
 }
 
-// Genuinely centred UI: an empty state has nothing to align to.
 .no-posts {
-  text-align: center;
-  padding: var(--space-7) var(--space-5);
-  color: var(--text-secondary);
+  @include empty-state;
+
+  p {
+    margin: 0;
+  }
 }
 
 .posts-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 // The reference card for the whole site: an outline, generous padding, and a
 // clear uncluttered band for its meta. The projects and cv entries are built
 // to the same grammar (title row, body, meta band) so the three list pages
-// read as one system.
-//
-// The heavy left rail it used to carry is gone. It was the one edge on the
-// site drawn at a different weight from the other three, and it was marking a
-// scroll position nobody asked it to track; the hairline easing brighter under
-// the pointer is the whole of "this one" now.
+// read as one system. The hairline easing brighter under the pointer is the
+// whole of "this one".
 .post-preview {
   @include outline-block;
   @include card-highlight;
-  padding: var(--space-5);
+  padding: var(--space-6);
   border-radius: var(--radius-lg);
 
   @include reading-emphasis {
@@ -93,12 +77,10 @@
   }
 }
 
-// The title row: the name alone. The glyph that used to open it is gone — a
-// picture of a page in front of every post title, on a page called "blog".
-// Scoped to the preview: an article's own title block is a `.post-header`
-// too, and it is a card rather than a row.
+// The title row: the name alone. Scoped to the preview: an article's own
+// title block is a `.post-header` too, and it is a card rather than a row.
 .post-preview .post-header {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 
   // The row owns the space under the title here.
   .post-title {
@@ -109,24 +91,26 @@
 
 // Date and tag above an article's own title; on a preview, the date and the
 // way in, as a band at the foot of the card, which is where the projects and
-// cv cards keep theirs.
+// cv cards keep theirs. Lowercase like everything else — the date formatter
+// already writes it that way; this is the belt to its braces.
 .post-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-3);
-  margin-bottom: var(--space-3);
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
   font-size: var(--text-small);
   color: var(--text-secondary);
+  text-transform: lowercase;
 }
 
 .post-preview .post-meta {
   justify-content: space-between;
   flex-wrap: nowrap;
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
   margin-bottom: 0;
-  padding-top: var(--space-3);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline-interior);
 }
 
 // The tag on an article's own header: quiet text at the far end of the date
@@ -137,21 +121,14 @@
   margin-left: auto;
   color: var(--text-muted);
   font-size: var(--text-small);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
   text-transform: lowercase;
 }
 
 .post-title {
   // A card title, not a page heading: without a size of its own the h2
-  // inherited the page scale (and its 4rem top margin).
+  // inherited the page scale (and its top margin).
   font-size: var(--text-h4);
-  margin: 0 0 var(--space-3);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  text-transform: lowercase;
+  margin: 0 0 var(--space-4);
   letter-spacing: -0.01em;
 
   a {
@@ -168,8 +145,8 @@
 .post-description {
   color: var(--text-secondary);
   font-size: var(--text-body);
-  margin-bottom: var(--space-3);
-  line-height: 1.6;
+  margin-bottom: var(--space-4);
+  line-height: var(--leading-prose);
   // The frontmatter descriptions are written in sentence case — they are
   // also the meta descriptions, where that reads better — but on the page
   // they sit directly above a lowercase excerpt, so they take the house
@@ -179,33 +156,29 @@
 
 .post-excerpt {
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: var(--leading-prose);
   margin-bottom: 0;
 }
 
 // The way in, parked at the far end of the meta band — the same place the
 // project card keeps its octocat. An arrow pointing up and out, in the link
 // colour: the card is a link, and this is the one thing on it that says so.
+// It holds still under the pointer; the card's hairline is the answer.
 .read-more {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
   // A larger box than the glyph, so there is something to tap.
-  margin: -0.25rem -0.25rem -0.25rem 0;
-  padding: 0.25rem;
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1))
+    calc(-1 * var(--space-1)) 0;
+  padding: var(--space-1);
   color: var(--ink-primary);
   text-decoration: none;
   border-radius: var(--radius-sm);
-  @include control-transition(var(--transition-fast));
 
   svg {
     width: 18px;
     height: 18px;
-    transition: transform var(--transition-fast);
-  }
-
-  &:hover svg {
-    transform: translate(1px, -1px);
   }
 }
 
@@ -217,42 +190,35 @@
 }
 
 .blog-post-page .post-header {
-  margin-bottom: var(--space-6);
-  padding: var(--space-5);
+  margin-bottom: var(--space-7);
+  padding: var(--space-6);
   @include outline-block;
   border-radius: var(--radius-lg);
   position: relative;
 }
 
 .post-content {
-  margin-bottom: var(--space-6);
-  padding: var(--space-5);
+  margin-bottom: var(--space-7);
+  padding: var(--space-6);
   @include outline-block;
   border-radius: var(--radius-lg);
-  line-height: 1.7;
+  line-height: var(--leading-prose);
   position: relative;
 
-  // MDX content styling
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    margin-top: var(--space-5);
-    margin-bottom: var(--space-3);
+    margin-top: var(--space-6);
+    margin-bottom: var(--space-4);
     color: var(--text-primary);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    text-transform: lowercase;
-    letter-spacing: -0.02em;
     position: relative;
   }
 
   // In-content headings step down one rung from the page title, and they take
-  // their prominence from size and space — the coloured rules underneath them
-  // were the last survivors of the decoration §4 killed globally.
+  // their prominence from size and space.
   h1 {
     font-size: var(--text-h2);
   }
@@ -266,82 +232,75 @@
   }
 
   p {
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-5);
   }
 
   ul,
   ol {
-    margin-bottom: var(--space-4);
-    padding-left: var(--space-5);
+    margin-bottom: var(--space-5);
+    padding-left: var(--space-6);
   }
 
   li {
     margin-bottom: var(--space-2);
   }
 
-  // A pull quote inside an outlined card: the rail is the whole device now,
-  // and it is white-alpha so it survives the scrim.
+  // A pull quote inside an outlined card: the rail is the whole device, in
+  // the lit hairline so it survives the scrim.
   blockquote {
-    border-left: 3px solid rgba(255, 255, 255, 0.25);
-    margin: var(--space-5) 0;
+    border-left: 3px solid var(--hairline-lit);
+    margin: var(--space-6) 0;
     font-style: italic;
     color: var(--text-secondary);
     background: transparent;
-    padding: 1.5rem;
+    padding: var(--space-5);
     border-radius: var(--radius-sm);
     position: relative;
   }
 
   // Inline code takes a wash rather than a bare outline: a hairline around a
   // three-character span in the middle of a sentence reads as a border, not as
-  // an inset, and the whole point of the treatment is that this is set-in text.
+  // an inset, and the whole point of the treatment is that this is set-in
+  // text. The face is the site's own, like everything else here.
   code {
-    background: rgba(255, 255, 255, 0.06);
-    padding: 0.2rem 0.4rem;
+    background: var(--wash-hover);
+    padding: 0.1em 0.35em;
     border-radius: var(--radius-sm);
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 0.9rem;
+    font-size: 0.9em;
     color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--hairline-interior);
   }
 
-  // Code blocks keep the same 4% wash the form fields use. A listing is a
-  // second reading surface inside the prose, and over a live simulation an
-  // entirely transparent one loses its column edges.
+  // Code blocks keep the same wash the form fields use. A listing is a second
+  // reading surface inside the prose, and over a live simulation an entirely
+  // transparent one loses its column edges.
   pre {
-    background: rgba(255, 255, 255, 0.04);
-    padding: var(--space-4);
+    background: var(--wash-field);
+    padding: var(--space-5);
     border-radius: var(--radius-md);
     overflow-x: auto;
-    margin: var(--space-5) 0;
-    border: 1px solid var(--border-floating);
+    margin: var(--space-6) 0;
+    border: 1px solid var(--hairline);
     position: relative;
 
     code {
       background: none;
       padding: 0;
+      font-size: inherit;
       color: var(--text-primary);
       border: none;
     }
   }
 
-  // Links are green everywhere on the site; prose links were the last place
-  // still overriding that to blue.
   a {
-    color: var(--ink-primary);
-    text-decoration: none;
-    @include control-transition(var(--transition-fast));
-
-    &:hover {
-      text-decoration: underline;
-    }
+    @include text-link;
   }
 
   img {
     max-width: 100%;
     height: auto;
     border-radius: var(--radius-md);
-    margin: var(--space-5) 0;
+    margin: var(--space-6) 0;
   }
 
   // Interior rules inside an outlined card: white-alpha, or they are drawn in
@@ -349,8 +308,8 @@
   hr {
     border: none;
     height: 1px;
-    background: rgba(255, 255, 255, 0.08);
-    margin: var(--space-6) 0;
+    background: var(--hairline-interior);
+    margin: var(--space-7) 0;
   }
 
   // Tables scroll independently so wide content never scrolls the page body
@@ -363,25 +322,22 @@
 
   table {
     border-collapse: collapse;
-    margin: 2rem 0;
-    font-size: 0.95rem;
+    margin: var(--space-6) 0;
+    font-size: var(--text-body);
 
     th,
     td {
-      padding: 0.6rem 1rem;
+      padding: var(--space-2) var(--space-4);
       text-align: left;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid var(--hairline-interior);
       vertical-align: top;
     }
 
     th {
-      font-family:
-        'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-        monospace;
       text-transform: lowercase;
       letter-spacing: -0.02em;
       color: var(--text-primary);
-      border-bottom-width: 2px;
+      border-bottom-color: var(--hairline);
       white-space: nowrap;
     }
 
@@ -396,34 +352,25 @@
 }
 
 .post-footer {
-  padding-top: var(--space-5);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--hairline-interior);
 }
 
-// Below the post card, so it sits on the background: white with a halo rather
-// than the green ink, which is tuned for a white card and disappears here.
+// The way back is a link, and reads as one: green, like every other link on a
+// surface.
 .back-to-blog {
-  color: white;
-  @include over-background;
-  text-decoration: none;
-  @include control-transition(var(--transition-fast));
-
-  &:hover {
-    color: var(--primary-color);
-    text-decoration: underline;
-  }
+  @include text-link;
 }
 
 @media (max-width: 768px) {
-  // The type scale is fluid now, so the old hand-set mobile sizes are gone —
-  // they only fought the clamp they were meant to replace. The mobile gutter
-  // is gone with them: it belongs to .main, which narrows it here for the
-  // whole site at once.
+  // The type scale is fluid, so there are no hand-set mobile sizes here — they
+  // only fought the clamp they were meant to replace. The mobile gutter
+  // belongs to .main, which narrows it here for the whole site at once.
 
   // The meta band stays one row: a date at one end and an arrow at the other
   // need no more width than a phone has.
   .post-preview {
-    padding: var(--space-4);
+    padding: var(--space-5);
   }
 
   .post-title {
@@ -435,13 +382,13 @@
   // first line of the piece somewhere below the fold. The same block, closer
   // set: the reader should reach the writing on the first screen.
   .blog-post-page .post-header {
-    padding: var(--space-4);
-    margin-bottom: var(--space-4);
+    padding: var(--space-5);
+    margin-bottom: var(--space-5);
 
     .post-meta {
       flex-direction: row;
       align-items: center;
-      gap: var(--space-2) var(--space-3);
+      gap: var(--space-2) var(--space-4);
       margin-bottom: var(--space-2);
     }
 
@@ -451,12 +398,12 @@
 
     .post-description {
       font-size: var(--text-small);
-      line-height: 1.5;
+      line-height: var(--leading-chrome);
       margin-bottom: 0;
     }
   }
 
   .post-content {
-    padding: var(--space-4);
+    padding: var(--space-5);
   }
 }

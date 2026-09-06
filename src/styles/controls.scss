@@ -1,14 +1,13 @@
 // Shared control chrome — the dropdown that every control row on the site
-// uses (see src/components/ui/Dropdown.tsx). It lives here, imported once by
-// global.scss, rather than in the page stylesheets: two pages drawing their
-// own copy of a trigger is how the CV row and the blog row drift apart.
+// uses (see src/components/ui/Dropdown.tsx), the plain chip, the search panel.
+// It lives here, imported once by global.scss, rather than in the page
+// stylesheets: two pages drawing their own copy of a trigger is how the CV row
+// and the blog row drift apart.
 //
 // The page stylesheets own the rows themselves (which chips, in what order,
 // with what page-specific state); the chips' material comes from the
 // `frosted-chip`, `floating-panel` and `sticky-control-row` mixins.
-
-@import 'variables';
-@import 'mixins';
+@use 'mixins' as *;
 
 // A trigger and the panel it opens. The panel is positioned against this, so
 // the box has to establish the containing block.
@@ -32,8 +31,8 @@
   @include frosted-chip;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   max-width: 100%;
 
   .ui-dropdown-value {
@@ -43,27 +42,19 @@
   }
 
   &:hover {
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.4);
+    @include control-hover;
   }
 
-  &:focus-visible {
-    outline: none;
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.45);
-    background: rgba(255, 255, 255, 0.06);
-  }
+  @include control-focus;
 
   // Open is a real state, and it is marked the way every other current thing
   // on the site is marked — white wash, brighter hairline, brighter type.
   &.is-open {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.45);
+    @include control-active;
   }
 
   .ui-dropdown-caret {
-    font-size: 0.7rem;
+    font-size: 0.7em;
     line-height: 1;
     color: var(--text-muted);
     transition: transform var(--transition-fast);
@@ -74,25 +65,21 @@
   }
 }
 
-@keyframes dropdown-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 .ui-dropdown-menu {
   @include floating-panel;
+  position: absolute;
+  top: calc(100% + var(--space-2));
   left: 0;
+  z-index: 20;
   min-width: 100%;
+  // A long list scrolls inside the panel rather than running off the window.
+  max-height: min(60vh, 20rem);
+  overflow-y: auto;
   margin: 0;
-  padding: 0.25rem;
+  padding: var(--space-1);
   list-style: none;
+  transform-origin: top center;
+  animation: reveal var(--transition-fast);
 
   // Hung from the right edge when the trigger is, so a wide menu grows inward
   // instead of off the window.
@@ -101,6 +88,8 @@
     right: 0;
   }
 
+  // The list takes focus so the arrow keys reach it; the option is what is
+  // marked, so the list itself draws no ring.
   &:focus {
     outline: none;
   }
@@ -108,15 +97,13 @@
 
 .ui-dropdown-option {
   margin: 0;
-  padding: 0.4rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
-  font-family:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  font-family: var(--font-mono);
+  font-size: var(--text-control);
+  line-height: var(--leading-chrome);
   text-transform: lowercase;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -129,19 +116,13 @@
   // Enter would take.
   &.is-active {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.06);
+    background-color: var(--wash-hover);
   }
 
-  // The current value is a value, not a hover — marked with the 8% wash and
-  // the brighter hairline every other active state on the site uses.
+  // The current value is a value, not a hover — marked with the wash and the
+  // brighter hairline every other active state on the site uses.
   &.is-selected {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.45);
-
-    &.is-active {
-      background: rgba(255, 255, 255, 0.11);
-    }
+    @include control-active;
   }
 
   &[aria-disabled='true'] {
@@ -158,12 +139,12 @@
 }
 
 // A plain chip: the same material as a trigger, for a control that acts on
-// click instead of opening a panel. The blog's "clear filters" is one.
+// click instead of opening a panel.
 .ui-chip-button {
   @include frosted-chip;
   display: inline-flex;
   align-items: center;
-  padding: 0.4rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   // Same one-row contract as the dropdowns: shrink and ellipsize, never wrap.
   flex: 0 1 auto;
   min-width: 0;
@@ -173,26 +154,19 @@
   text-overflow: ellipsis;
 
   &:hover:not(:disabled) {
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.4);
+    @include control-hover;
   }
 
-  &:focus-visible {
-    outline: none;
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.45);
-    background: rgba(255, 255, 255, 0.06);
-  }
+  @include control-focus;
 
-  // Nothing to clear is not an error, so it recedes rather than greys out
-  // hard — but only its ink recedes. Whole-element opacity thinned the
-  // frosting with the label, and content scrolling under the chip read
-  // straight through its body; the housing keeps its blur, the text and
-  // hairline drop contrast instead.
+  // Nothing to do is not an error, so it recedes rather than greys out hard —
+  // but only its ink recedes. Whole-element opacity thinned the frosting with
+  // the label, and content scrolling under the chip read straight through its
+  // body; the housing keeps its blur, the text and hairline drop contrast.
   &:disabled {
     cursor: not-allowed;
-    color: rgba(128, 128, 128, 0.55); // --text-muted, receded further
-    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    border-color: var(--hairline-interior);
   }
 }
 
@@ -202,47 +176,44 @@
 // the window; the field is the one thing on these pages that takes a wash
 // rather than a bare hairline, because a text field has to look like
 // something you can type into and a transparent box inside a transparent box
-// reads as a nested panel. The wash is 4% white — enough to name it as a
-// field, far short of a slab.
+// reads as a nested panel.
 .ui-search-panel {
   @include outline-block;
-  padding: var(--space-4);
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-6);
   position: relative;
 
   .search-input {
     width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-floating);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--wash-field);
     color: var(--text-primary);
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-      monospace;
-    font-size: 1rem;
-    text-transform: lowercase;
+    font-family: var(--font-mono);
     // The type stays at 1rem at every width on purpose: iOS zooms the page
     // when a field smaller than 16px takes focus, and a search box that
     // rearranges the whole layout under the thumb is worse than a long
     // placeholder. So the placeholder gives way instead — the CV's names three
     // sections and runs past a phone's field, and a clean elision reads as a
     // sentence continuing rather than as a word cut in half.
+    font-size: 1rem;
     text-overflow: ellipsis;
     @include control-transition(var(--transition-fast));
 
     // Focus is a state of a text field rather than a result, so it says so
     // with a brighter hairline — matching the chips in the row above rather
-    // than lighting a coloured ring for a search box.
+    // than lighting a ring for a search box.
     &:focus {
       outline: none;
-      border-color: rgba(255, 255, 255, 0.45);
-      background: rgba(255, 255, 255, 0.07);
+      border-color: var(--hairline-lit);
+      background: var(--wash-hover);
     }
 
+    // The placeholder takes the house case; what the visitor types does not.
     &::placeholder {
-      color: var(--text-secondary);
+      color: var(--text-muted);
       text-transform: lowercase;
     }
   }
@@ -250,11 +221,11 @@
 
 // --- Search behind a chip, on a phone ---------------------------------------
 // The search panel is the tallest thing in a list page's chrome, and on a
-// phone it was the whole first screen: two pickers, a reset, and a box to
-// type in before a single card. Below the phone breakpoint the panel is
-// folded away and the row grows one more chip — a glyph, no label, so the
-// row's three existing labels keep the width they were measured for — that
-// unfolds it. A desktop never draws the chip and never folds the panel.
+// phone it was the whole first screen: two pickers and a box to type in before
+// a single card. Below the phone breakpoint the panel is folded away and the
+// row grows one more chip — a glyph, no label, so the row's existing labels
+// keep the width they were measured for — that unfolds it. A desktop never
+// draws the chip and never folds the panel.
 .ui-search-toggle {
   display: none;
   padding-inline: 0.55rem;
@@ -264,8 +235,7 @@
   }
 
   &.is-active {
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.4);
+    @include control-active;
   }
 }
 
@@ -288,64 +258,53 @@
 }
 
 // --- The chips on a phone ---------------------------------------------------
-// A chip is 32px of housing under a pointer, which is a comfortable target for
-// a cursor and a mean one for a thumb. On touch widths the padding opens up
-// until the box clears 40px — the number the rail's own controls are built to
-// (see --rail-height) — without changing the type or the frosting, so the row
-// reads exactly the same and is simply easier to hit.
+// A chip is ~35px of housing under a pointer, which is a comfortable target
+// for a cursor and a mean one for a thumb. On touch widths the padding opens
+// up until the box clears 40px — the number the rail's own controls are built
+// to (see --rail-height) — without changing the type or the frosting, so the
+// row reads exactly the same and is simply easier to hit.
 @media (max-width: 768px) {
   .ui-dropdown-trigger,
   .ui-chip-button {
-    padding-block: 0.65rem;
+    padding-block: var(--space-3);
   }
 
   // Options are hit with the same thumb, so the menu opens up with the chip.
   .ui-dropdown-option {
-    padding-block: 0.55rem;
+    padding-block: var(--space-3);
   }
 }
 
-// Narrow phones. The rows are two pickers and a reset against ~340px of
-// column, and at the padding above the blog's row misses one line by a dozen
-// pixels — so the chips give back the horizontal breath they never needed at
-// this width. The vertical padding, which is what the thumb is aiming at, is
-// untouched.
+// Narrow phones. The rows are two pickers and the search chip against ~340px
+// of column, so the chips give back the horizontal breath they never needed
+// at this width. The vertical padding, which is what the thumb is aiming at,
+// is untouched.
 @media (max-width: 480px) {
   .ui-dropdown-trigger,
   .ui-chip-button {
-    padding-inline: 0.5rem;
+    padding-inline: var(--space-2);
   }
 }
 
 // The narrowest phones. A control row is strictly one line (see
-// sticky-control-row in mixins.scss), so at 320px the blog's three chips have
-// ~262px between them and their full labels need every trick: smaller type,
-// tighter housing, a closer caret. This is the floor at which "all",
-// "newest first" and "clear filters" all still read whole — below the numbers
-// here the labels would start giving up characters to ellipsis instead.
+// sticky-control-row in mixins.scss), so at 320px the chips take the smallest
+// type on the scale and a closer caret; below this the labels start giving up
+// characters to ellipsis instead.
 @media (max-width: 360px) {
   .ui-dropdown-trigger,
   .ui-chip-button {
-    font-size: 0.7rem;
+    font-size: var(--text-xs);
     padding-inline: 0.4rem;
   }
 
   .ui-dropdown-trigger {
-    gap: 0.3rem;
-
-    .ui-dropdown-caret {
-      font-size: 0.6rem;
-    }
+    gap: var(--space-1);
   }
 }
 
-// A 120ms fade is small, but it is still motion arriving unasked in the
-// corner of the eye — so it is the menu appearing, without the travel.
+// The menu's arrival is in the global reduced-motion block; the caret's turn
+// is the one piece of motion that is this file's own.
 @media (prefers-reduced-motion: reduce) {
-  .ui-dropdown-menu {
-    animation: none;
-  }
-
   .ui-dropdown-trigger .ui-dropdown-caret {
     transition: none;
   }

@@ -10,10 +10,14 @@ that carries motion or chrome, the shell (`layout.tsx`), the pages, and the
 config. Where a claim could be measured it was: the numbers below come from a
 dev build at 1440×900 and 390×844, read with a headless browser.
 
-**Status.** Findings only. Nothing here has been changed. Each item carries a
-grade — **P1** visibly wrong today, **P2** two answers to one question, **P3**
-hygiene — and the last section proposes the standards that would close most of
-the P2s at once.
+**Status.** Written as findings; then applied, on the same branch, in the
+commit that follows the audit. Each item carries the grade it was found at —
+**P1** visibly wrong, **P2** two answers to one question, **P3** hygiene — and
+§9 records the standards the implementation set, with an addendum on what the
+live work changed from the plan.
+
+The numbers and the "still here" phrasing throughout describe the tree
+_before_ the implementation; they are kept as the record of what was found.
 
 ---
 
@@ -29,10 +33,10 @@ things per scroll frame that are each known to stutter on touch.
 Scrolling the window from 0 to 160px, reading the hero and window boxes after
 each step:
 
-| viewport | hero height, rest → collapsed | window top moves | window height changes | content speed vs finger |
-| -------- | ----------------------------- | ---------------- | --------------------- | ----------------------- |
-| 390 wide | 193.8px → 76.6px              | 117px            | 578px → 695px         | ~1.73×                  |
-| 1440 wide | 228px → 145px               | 83px             | 568px → 651px         | ~1.52×                  |
+| viewport  | hero height, rest → collapsed | window top moves | window height changes | content speed vs finger |
+| --------- | ----------------------------- | ---------------- | --------------------- | ----------------------- |
+| 390 wide  | 193.8px → 76.6px              | 117px            | 578px → 695px         | ~1.73×                  |
+| 1440 wide | 228px → 145px                 | 83px             | 568px → 651px         | ~1.52×                  |
 
 And the published value steps in hundredths: `scrollTop` 1 and 2 both read
 `--hero-collapse: 0.01`; on the desktop a single step moves the title 3.5px.
@@ -44,7 +48,7 @@ And the published value steps in hundredths: `scrollTop` 1 and 2 both read
    window grows by, on the same frame the finger is moving it. Two things
    follow. The browser has to re-lay-out the scroller and re-clamp its scroll
    position mid-gesture, which is the classic source of touch stutter. And the
-   content on screen moves at the finger's speed *plus* the collapse rate —
+   content on screen moves at the finger's speed _plus_ the collapse rate —
    1.7× on a phone — so it slips under the thumb rather than tracking it 1:1,
    which the eye reads as jitter even when every frame is on time. Nothing
    else on the site breaks 1:1 tracking; this is the one place touch does not
@@ -58,7 +62,7 @@ And the published value steps in hundredths: `scrollTop` 1 and 2 both read
    past every notch; it still runs on every frame that moves.
 3. **The `ResizeObserver` forces a layout read every frame.** The split
    measurement (`measure()` in `layout.tsx`) is re-run by the observer on
-   every frame of the collapse, because the hero *is* the element resizing.
+   every frame of the collapse, because the hero _is_ the element resizing.
    The key check drops the style writes, but the reads — `offsetWidth`,
    `offsetHeight`, `clientWidth` — still force a synchronous layout on each
    call, so the browser lays out twice per frame: once for the write, once for
@@ -140,7 +144,7 @@ Structural, one of:
 - **Put the hero inside the scroller.** The native pattern for a title that
   tucks as you scroll is that the large title is the first thing in the
   scroll content and scrolls away at 1:1, while a small title is `position:
-  sticky` at the top. It is compositor-only and needs no JS. The cost is the
+sticky` at the top. It is compositor-only and needs no JS. The cost is the
   design decision in `01-decisions.md` that the hero sits on the field above
   the frame; a sticky collapsed row could still be drawn outside the scrim
   visually, but the DOM would move.
@@ -157,35 +161,40 @@ animations behind `@supports` as the buttery version.
 
 Every duration and easing found in the stylesheets and the shell, by count:
 
-| family | where | count |
-| ------ | ----- | ----- |
-| `var(--transition-fast)` 150ms `ease-in-out` | controls, links | 32 |
-| `var(--transition-normal)` 250ms `ease-in-out` | buttons, cards | 19 |
-| `0.2s cubic-bezier(0.4, 0, 0.2, 1)` | chat buttons, dialogs, outline-button | 9 |
-| `0.3s cubic-bezier(0.16, 1, 0.3, 1)` | stage, nav, sidebars, pills | 8 |
-| `0.3s ease-out` / `0.2s ease-out` / `0.15s ease-out` | dialog, popovers, dropdown | 8 |
-| `0.2s ease` / `0.4s ease` / `0.15s ease` / `0.28s ease` | progress cancel, hint, play button, explore chrome | 5 |
-| `80ms linear` | veil | 1 |
-| `var(--transition-slow)` 350ms | — | 0 (unused) |
-| JS: 160 / 240 / 260 / 380ms, `cubic-bezier(0.16, 1, 0.3, 1)` and its reflection | hero transition | — |
-| JS: 120ms `ease-out` | shortcuts panel | — |
+| family                                                                          | where                                              | count      |
+| ------------------------------------------------------------------------------- | -------------------------------------------------- | ---------- |
+| `var(--transition-fast)` 150ms `ease-in-out`                                    | controls, links                                    | 32         |
+| `var(--transition-normal)` 250ms `ease-in-out`                                  | buttons, cards                                     | 19         |
+| `0.2s cubic-bezier(0.4, 0, 0.2, 1)`                                             | chat buttons, dialogs, outline-button              | 9          |
+| `0.3s cubic-bezier(0.16, 1, 0.3, 1)`                                            | stage, nav, sidebars, pills                        | 8          |
+| `0.3s ease-out` / `0.2s ease-out` / `0.15s ease-out`                            | dialog, popovers, dropdown                         | 8          |
+| `0.2s ease` / `0.4s ease` / `0.15s ease` / `0.28s ease`                         | progress cancel, hint, play button, explore chrome | 5          |
+| `80ms linear`                                                                   | veil                                               | 1          |
+| `var(--transition-slow)` 350ms                                                  | —                                                  | 0 (unused) |
+| JS: 160 / 240 / 260 / 380ms, `cubic-bezier(0.16, 1, 0.3, 1)` and its reflection | hero transition                                    | —          |
+| JS: 120ms `ease-out`                                                            | shortcuts panel                                    | —          |
 
 Fourteen distinct durations between 80 and 400ms, and four easing families in
 the chrome alone (`ease-in-out` in the tokens, the expo-out curve on the
 shell, the material curve in the chat, and the browser keywords). The three
 tokens use a symmetric `ease-in-out`, which is the one curve the shell itself
-does *not* use: the stage, nav, sidebars and the hero transition all take
+does _not_ use: the stage, nav, sidebars and the hero transition all take
 `cubic-bezier(0.16, 1, 0.3, 1)`. So a hover on a card eases one way and the
 panel sliding in beside it eases another.
 
 Proposal: three durations and two curves as tokens, and nothing else.
 
 ```scss
---ease-out: cubic-bezier(0.16, 1, 0.3, 1);   // arriving, settling, hover on
---ease-in:  cubic-bezier(0.7, 0, 0.84, 0);   // leaving (the reflection, already in layout.tsx)
---duration-fast:   120ms;  // ink, hairline, wash — state changes under the pointer
---duration-normal: 240ms;  // lifts, disclosures, popovers
---duration-slow:   320ms;  // panels, the stage, the hero
+--ease-out: cubic-bezier(0.16, 1, 0.3, 1); // arriving, settling, hover on
+--ease-in: cubic-bezier(
+  0.7,
+  0,
+  0.84,
+  0
+); // leaving (the reflection, already in layout.tsx)
+--duration-fast: 120ms; // ink, hairline, wash — state changes under the pointer
+--duration-normal: 240ms; // lifts, disclosures, popovers
+--duration-slow: 320ms; // panels, the stage, the hero
 ```
 
 The three existing `--transition-*` tokens would compose from these, so the 51
@@ -200,12 +209,12 @@ Keyframes are global, and four names are declared more than once with
 different bodies. Confirmed in the built CSS: the blog page carries four copies
 of `fadeIn` and the last one wins.
 
-| name | declared in | bodies differ? | consumed by | what actually plays |
-| ---- | ----------- | -------------- | ----------- | ------------------- |
-| `fadeIn` | `animations.scss` (opacity + `translateY(10px)`), `chat.scss` (opacity only) | yes | `.clear-confirm-overlay`, `.export-chat-overlay` | on `/` and `/blog` the `animations.scss` copy is emitted last (those pages `@import 'animations'` again), so a full-screen overlay **slides up 10px** as it fades |
-| `slideDown` | `animated-backgrounds.scss` (opacity + `translateY(-0.5rem)`), `chat.scss` (`max-height` 0→500px + `padding` 0→1rem) | yes | `.category-content` (settings), `.thinking-content` (chat) | `chat.scss` is imported after `animated-backgrounds.scss` in `global.scss`, so the **settings accordion animates layout** — max-height and padding — and its padding-top runs 0→1rem then snaps to its real 0.5rem at the end |
-| `slideInFromRightWithFade` | `animations.scss` (`20px`), `chat.scss` (`2rem`) | yes, slightly | `.chat-icon-container` | page-dependent 20px vs 32px |
-| `slideInFromRight` | `animated-backgrounds.scss`, `chat.scss` | no | `.chat-sidebar.opening` | duplicate only |
+| name                       | declared in                                                                                                          | bodies differ? | consumed by                                                | what actually plays                                                                                                                                                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fadeIn`                   | `animations.scss` (opacity + `translateY(10px)`), `chat.scss` (opacity only)                                         | yes            | `.clear-confirm-overlay`, `.export-chat-overlay`           | on `/` and `/blog` the `animations.scss` copy is emitted last (those pages `@import 'animations'` again), so a full-screen overlay **slides up 10px** as it fades                                                             |
+| `slideDown`                | `animated-backgrounds.scss` (opacity + `translateY(-0.5rem)`), `chat.scss` (`max-height` 0→500px + `padding` 0→1rem) | yes            | `.category-content` (settings), `.thinking-content` (chat) | `chat.scss` is imported after `animated-backgrounds.scss` in `global.scss`, so the **settings accordion animates layout** — max-height and padding — and its padding-top runs 0→1rem then snaps to its real 0.5rem at the end |
+| `slideInFromRightWithFade` | `animations.scss` (`20px`), `chat.scss` (`2rem`)                                                                     | yes, slightly  | `.chat-icon-container`                                     | page-dependent 20px vs 32px                                                                                                                                                                                                   |
+| `slideInFromRight`         | `animated-backgrounds.scss`, `chat.scss`                                                                             | no             | `.chat-sidebar.opening`                                    | duplicate only                                                                                                                                                                                                                |
 
 Related: `blog.scss` and `index.scss` each `@import 'animations'`, and all ten
 page and component stylesheets `@import 'variables'`. Sass `@import` re-emits
@@ -219,19 +228,19 @@ once, in one file, with one body each.
 `mixins.scss` states the card rule plainly: "No lift, no scale, no shadow
 ramp." The cards obey it. The controls do not agree with each other:
 
-| control | hover | active |
-| ------- | ----- | ------ |
-| `.cta-button` (primary, secondary) | `translateY(-2px)` + `--shadow-md` | `translateY(0)` |
-| `.sample-prompt-pill` | `translateY(-2px)` + shadow, icon `scale(1.1)` | `translateY(-1px)` |
-| `outline-button` (download, retry, reset) | `translateY(-1px)` + `--shadow-lg` | `translateY(0)` + `--shadow-md` |
-| `.chat-icon`, `.background-toolbar` | `translateY(-1px)` | `translateY(0)` |
-| `.chat-send-button`, `.info-button`, `.export-copy/download`, `.preview-button`, `.play-sound-button`, `.clear-confirm-actions button` | `translateY(-1px)` | — |
-| `.feature-item` (not interactive) | `translateY(-1px)` + shadow | — |
-| `.footer-link` | `scale(1.05)`, icon `scale(1.1)` | `scale(0.95)` |
-| `.mobile-interactivity-btn`, `.mobile-explore-exit` | — | `scale(0.97)` |
-| `.chat-progress-cancel`, `.copy-button` | — | `scale(0.95)` |
-| `.nav-link`, chips, cards, `.skill-tag`, `.read-more` | none (ink/hairline only) | — |
-| `.thinking-block` (a container) | `--shadow-md` ramp | — |
+| control                                                                                                                                | hover                                          | active                          |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------- |
+| `.cta-button` (primary, secondary)                                                                                                     | `translateY(-2px)` + `--shadow-md`             | `translateY(0)`                 |
+| `.sample-prompt-pill`                                                                                                                  | `translateY(-2px)` + shadow, icon `scale(1.1)` | `translateY(-1px)`              |
+| `outline-button` (download, retry, reset)                                                                                              | `translateY(-1px)` + `--shadow-lg`             | `translateY(0)` + `--shadow-md` |
+| `.chat-icon`, `.background-toolbar`                                                                                                    | `translateY(-1px)`                             | `translateY(0)`                 |
+| `.chat-send-button`, `.info-button`, `.export-copy/download`, `.preview-button`, `.play-sound-button`, `.clear-confirm-actions button` | `translateY(-1px)`                             | —                               |
+| `.feature-item` (not interactive)                                                                                                      | `translateY(-1px)` + shadow                    | —                               |
+| `.footer-link`                                                                                                                         | `scale(1.05)`, icon `scale(1.1)`               | `scale(0.95)`                   |
+| `.mobile-interactivity-btn`, `.mobile-explore-exit`                                                                                    | —                                              | `scale(0.97)`                   |
+| `.chat-progress-cancel`, `.copy-button`                                                                                                | —                                              | `scale(0.95)`                   |
+| `.nav-link`, chips, cards, `.skill-tag`, `.read-more`                                                                                  | none (ink/hairline only)                       | —                               |
+| `.thinking-block` (a container)                                                                                                        | `--shadow-md` ramp                             | —                               |
 
 Three lift distances, two scale factors, and the heaviest shadow in the system
 (`--shadow-lg`) on the quietest button (the outline). The footer is the only
@@ -309,18 +318,18 @@ rest should be brought to.
 `variables.scss` says the scale is being adopted "page by page". The pages
 are done; the panels are not.
 
-| stylesheet | raw `rem` margin/padding/gap | `--space-*` |
-| ---------- | ---------------------------- | ----------- |
-| `blog.scss` | 5 | 37 |
-| `projects.scss` | 7 | 28 |
-| `cv.scss` | 23 | 55 |
-| `index.scss` | 2 | 19 |
-| `layout.scss` | 11 | 9 |
-| `controls.scss` | 12 | 2 |
-| `shortcuts.scss` | 9 | 0 |
-| `mobile-interactivity.scss` | 6 | 0 |
-| `animated-backgrounds.scss` | 55 | 1 |
-| `chat.scss` | 136 | 0 |
+| stylesheet                  | raw `rem` margin/padding/gap | `--space-*` |
+| --------------------------- | ---------------------------- | ----------- |
+| `blog.scss`                 | 5                            | 37          |
+| `projects.scss`             | 7                            | 28          |
+| `cv.scss`                   | 23                           | 55          |
+| `index.scss`                | 2                            | 19          |
+| `layout.scss`               | 11                           | 9           |
+| `controls.scss`             | 12                           | 2           |
+| `shortcuts.scss`            | 9                            | 0           |
+| `mobile-interactivity.scss` | 6                            | 0           |
+| `animated-backgrounds.scss` | 55                           | 1           |
+| `chat.scss`                 | 136                          | 0           |
 
 The chat and settings panels — the two largest surfaces after the window —
 have not started. Because they were tuned independently they disagree with
@@ -346,22 +355,22 @@ written five ways.
 
 All numbers from the dev build.
 
-| what | where | measured | note | grade |
-| ---- | ----- | -------- | ---- | ----- |
-| card padding on a phone | `.post-preview`, `.project-card-content` vs `.cv-collapse-summary` | 24px vs **32px** | cv.scss's phone rule targets `.experience-item`/`.education-item`, classes no component renders; the CV cards never step down | P1 |
-| meta band top padding | `.post-meta`, `.project-footer`, `.cv-summary-skills` vs `.cert-meta` | 16px vs **24px** | the certification card is the odd one | P2 |
-| CV hero on a phone | `.cv-page-header h1 / p` vs blog/projects heroes | **32px / 16px** vs 30.4px / 16.98px | cv.scss re-pins the sizes at 768px; the other heroes follow the fluid scale. blog.scss's comment says the hand-set mobile sizes are gone — not on the CV | P1 |
-| space under the search panel | `.blog-search-panel` vs projects/cv | **48px** vs 32px | the three list pages are meant to share one row | P2 |
-| space above the footer | blog `.blog-content` + `.main`; projects `.projects-page` + `.main`; cv `#resume-content` + `.main` | 64+48, 48+48, 32+48 | three list pages end at three distances | P2 |
-| section rhythm | `.projects-section` vs `#resume-content` gap | 48px vs 32px | | P2 |
-| anchor clearance on a phone | `#cv-*` `scroll-margin-top` vs the sticky row's height | **50px** vs a 60px row | the mobile rule *reduces* the margin (80→60→50) while the row got taller (thumb padding); anchors land under the chips. Projects uses 76px at every width, `.cv-collapse` 76px | P1 |
-| control-row chips vs rail | `.ui-dropdown-trigger` vs `.nav-link` / pills | 14.4px vs 14px | `frosted-chip` is 0.9rem, the capsules 0.875rem; the nav-link comment says they match | P3 |
-| chat header row heights | `.model-selector .ui-dropdown-trigger` vs the buttons beside it | ~29px vs 34px | the chip is a smaller font at a smaller padding in a row of 34px boxes | P2 |
-| panel gutters | `.chat-header` vs `.sidebar-header` | 24px vs 16px 24px | chat messages `1rem 1.5rem`, settings categories `0.75rem 1rem` — two inner gutters | P2 |
-| panel dividers | chat `rgba(255,255,255,0.1)` vs settings `0.05` vs cards `0.08` | | three interior hairlines | P2 |
-| footer padding | `.footer-content` desktop vs 768px | 24px 32px vs **32px 16px** | more vertical padding on a phone than a desktop, and the only place that inverts | P3 |
-| footer link box | 2.75rem, restated identically at 768px; `.footer-links` gap likewise | | dead restatements | P3 |
-| sticky row padding | `sticky-control-row` `0.4rem 0` desktop, `0.85rem` top on a phone | | raw values; the 0.85 is a tuned number worth a token or a comment | P3 |
+| what                         | where                                                                                               | measured                            | note                                                                                                                                                                           | grade |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| card padding on a phone      | `.post-preview`, `.project-card-content` vs `.cv-collapse-summary`                                  | 24px vs **32px**                    | cv.scss's phone rule targets `.experience-item`/`.education-item`, classes no component renders; the CV cards never step down                                                  | P1    |
+| meta band top padding        | `.post-meta`, `.project-footer`, `.cv-summary-skills` vs `.cert-meta`                               | 16px vs **24px**                    | the certification card is the odd one                                                                                                                                          | P2    |
+| CV hero on a phone           | `.cv-page-header h1 / p` vs blog/projects heroes                                                    | **32px / 16px** vs 30.4px / 16.98px | cv.scss re-pins the sizes at 768px; the other heroes follow the fluid scale. blog.scss's comment says the hand-set mobile sizes are gone — not on the CV                       | P1    |
+| space under the search panel | `.blog-search-panel` vs projects/cv                                                                 | **48px** vs 32px                    | the three list pages are meant to share one row                                                                                                                                | P2    |
+| space above the footer       | blog `.blog-content` + `.main`; projects `.projects-page` + `.main`; cv `#resume-content` + `.main` | 64+48, 48+48, 32+48                 | three list pages end at three distances                                                                                                                                        | P2    |
+| section rhythm               | `.projects-section` vs `#resume-content` gap                                                        | 48px vs 32px                        |                                                                                                                                                                                | P2    |
+| anchor clearance on a phone  | `#cv-*` `scroll-margin-top` vs the sticky row's height                                              | **50px** vs a 60px row              | the mobile rule _reduces_ the margin (80→60→50) while the row got taller (thumb padding); anchors land under the chips. Projects uses 76px at every width, `.cv-collapse` 76px | P1    |
+| control-row chips vs rail    | `.ui-dropdown-trigger` vs `.nav-link` / pills                                                       | 14.4px vs 14px                      | `frosted-chip` is 0.9rem, the capsules 0.875rem; the nav-link comment says they match                                                                                          | P3    |
+| chat header row heights      | `.model-selector .ui-dropdown-trigger` vs the buttons beside it                                     | ~29px vs 34px                       | the chip is a smaller font at a smaller padding in a row of 34px boxes                                                                                                         | P2    |
+| panel gutters                | `.chat-header` vs `.sidebar-header`                                                                 | 24px vs 16px 24px                   | chat messages `1rem 1.5rem`, settings categories `0.75rem 1rem` — two inner gutters                                                                                            | P2    |
+| panel dividers               | chat `rgba(255,255,255,0.1)` vs settings `0.05` vs cards `0.08`                                     |                                     | three interior hairlines                                                                                                                                                       | P2    |
+| footer padding               | `.footer-content` desktop vs 768px                                                                  | 24px 32px vs **32px 16px**          | more vertical padding on a phone than a desktop, and the only place that inverts                                                                                               | P3    |
+| footer link box              | 2.75rem, restated identically at 768px; `.footer-links` gap likewise                                |                                     | dead restatements                                                                                                                                                              | P3    |
+| sticky row padding           | `sticky-control-row` `0.4rem 0` desktop, `0.85rem` top on a phone                                   |                                     | raw values; the 0.85 is a tuned number worth a token or a comment                                                                                                              | P3    |
 
 ### 2.4 spacing rules with no effect (P3)
 
@@ -570,7 +579,7 @@ category header is not bold, so the two disagree.
   green or a token, not a hex that appears nowhere else.
 - **Bootstrap's palette in the badges (P2).** `#28a745`, `#17a2b8`,
   `#ffc107`, `#343a40` in `.cached-badge`/`.device-badge`, with `var(--success,
-  …)` fallbacks to tokens that do not exist. The badges render in the model
+…)` fallbacks to tokens that do not exist. The badges render in the model
   info popover.
 - **Danger red is a literal (P3).** `#ff6b6b` ×3 (clear button, generation
   warning) and `rgba(255,107,107,…)` ×6. It is the one meaning-colour without
@@ -579,7 +588,7 @@ category header is not bold, so the two disagree.
   `.sidebar-keyboard-hints 0.9`, `.chat-keyboard-hints 0.7`,
   `.message-stats 0.75`, `.background-description 0.9`, `.expertise-icon 0.8`,
   `.category-tab.standard 0.75`, `.markdown-hr 0.6`, `.markdown-link:visited
-  0.8`. Each is a shade that is not `--text-secondary` or `--text-muted`, and
+0.8`. Each is a shade that is not `--text-secondary` or `--text-muted`, and
   whole-element opacity thins hairlines and frost with the ink (the
   `.ui-chip-button:disabled` comment already learned this). Use the ink
   tokens.
@@ -729,7 +738,7 @@ Rules whose selectors no component renders:
   (`ChatModal.tsx`), the worker-failed `.error-notice` (`WelcomeScreen.tsx`,
   with a Bootstrap yellow), the desktop settings `settings-content` flex
   block and `marginTop: auto` (`SettingsPanel.tsx`), `<div style={{ width:
-  '100%' }}>` around the progress bars.
+'100%' }}>` around the progress bars.
 
 Comments that describe a previous state:
 
@@ -738,7 +747,7 @@ Comments that describe a previous state:
 - `layout.scss` `.nav-menu` 1024px rule and the `--rail-width` comment
   (§2.4).
 - `animated-backgrounds.scss` `.background-name { font-size: 1rem } // Match
-  chat panel font sizing` — the chat title is 1.1rem.
+chat panel font sizing` — the chat title is 1.1rem.
 - `blog.scss` `.back-to-blog` "sits on the background" (§7.5).
 - `chat.scss` "the only violet thing on the site … is now an inset panel"
   (§5).
@@ -756,31 +765,41 @@ them first makes each migration a find-and-replace rather than a judgement.
 // motion
 --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
---duration-fast: 120ms;    --duration-normal: 240ms;    --duration-slow: 320ms;
---transition-fast: var(--duration-fast) var(--ease-out);   // etc.
+--duration-fast: 120ms;
+--duration-normal: 240ms;
+--duration-slow: 320ms;
+--transition-fast: var(--duration-fast) var(--ease-out); // etc.
 
 // spacing: one more step, or renumber to a 4px base
 --space-2-5: 0.75rem;
 
 // material
---hairline: rgba(255, 255, 255, 0.16);          // = --border-floating
+--hairline: rgba(255, 255, 255, 0.16); // = --border-floating
 --hairline-interior: rgba(255, 255, 255, 0.08);
 --hairline-lit: rgba(255, 255, 255, 0.45);
 --wash-field: rgba(255, 255, 255, 0.04);
 --wash-hover: rgba(255, 255, 255, 0.06);
 --wash-active: rgba(255, 255, 255, 0.08);
---blur-window: 5px;  --blur-panel: 10px;  --blur-chip: 20px;
+--blur-window: 5px;
+--blur-panel: 10px;
+--blur-chip: 20px;
 --shadow-panel: 0 24px 64px rgba(0, 0, 0, 0.4);
 
 // type
---font-mono: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
---text-xs: 0.75rem;  --text-2xs: 0.6875rem;
+--font-mono:
+  'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+--text-xs: 0.75rem;
+--text-2xs: 0.6875rem;
 
 // colour
 --ink-danger: #ff6b6b;
 
 // layering
---z-stage: 1000;  --z-rail: 1001;  --z-panel: 1002;  --z-dialog: 1003;  --z-tooltip: 1004;
+--z-stage: 1000;
+--z-rail: 1001;
+--z-panel: 1002;
+--z-dialog: 1003;
+--z-tooltip: 1004;
 ```
 
 Rules, each one sentence:
@@ -807,8 +826,7 @@ Rules, each one sentence:
 3. **Fix the keyframe collisions and delete the dead stylesheets** (§1.2, §8)
    — small, and it removes the page-dependent behaviour before anything else
    is tuned on top of it.
-4. **Add the tokens and migrate the vocabularies** (§1.1, 2.2, 3.4–3.6, 4.1,
-   6) — one pass per token.
+4. **Add the tokens and migrate the vocabularies** (§1.1, 2.2, 3.4–3.6, 4.1, 6) — one pass per token.
 5. **Interaction fixes** (§7.2, 7.3, 7.1) — modifier keys and the toolbar
    button are an afternoon; the focus unification rides on step 2.
 
@@ -825,3 +843,60 @@ boxes after two frames. The chat worker and retrieval index were not built,
 so the chat panel was measured in its failed-to-load state; that does not
 affect the chrome measured. The 404 could not be measured in a dev build
 (Gatsby shows its own).
+
+---
+
+## addendum — what was implemented, and where it diverged
+
+Everything in §0–§8 was applied in the commit after this document landed.
+The standards in §9 went in as written, with these differences from the plan:
+
+- **Motion tokens.** Two curves and three durations, as proposed; the
+  `--transition-*` tokens compose from them and the fifty-odd existing sites
+  moved for free. The JavaScript twins live in `src/config/motion.ts` and the
+  panel close reads the same number (320ms) in one place, through
+  `closeChatPanel` on the settings-panel context, instead of three copies of
+  a 300ms timer.
+- **The hero collapse** took the quick list in full and not the structural
+  path. The box has two states (`.is-collapsed`), flipped once the scroll has
+  been still for 200ms with a dead band between 0.45 and 0.55; the per-frame
+  work is transform and opacity; the title and tagline are promoted; the value
+  is published to three decimals; the observer measures at rest only, and the
+  tagline's clip height is read from `scrollHeight` so the observer cannot
+  mis-measure it mid-flip. Measured after: the hero's box holds to the pixel
+  through every scroll step at both widths and lands on exactly the old
+  collapsed geometry. Scroll-driven animations remain the next step if a
+  device still shows the one-frame lag.
+- **Spacing** was renumbered onto a 4px base (`--space-1` … `--space-9`, with
+  the 0.75rem step at `--space-3`) rather than given a `--space-2-5`. Every
+  stylesheet was rewritten onto it; the raw values left are the nav capsule's
+  load-bearing paddings (documented) and a handful of hairline-sized gaps.
+- **Keyframes** live in `animations.scss` alone, under twelve unique names.
+  `@import` became `@use`, and only `global.scss` loads the token block, so
+  it reaches the bundle once. `animations.scss`'s dead utilities went; so did
+  the old chat modal, the CV's unrendered rules, `.container`, the body's
+  invisible paint layers, the styles barrel and the unmounted `CVHeader`.
+- **Material.** `--border-color`, `--border-active`, `--bg-hover`,
+  `--bg-accent`, `--bg-card` and `--bg-secondary` are gone; everything draws
+  in `--hairline`, `--hairline-interior`, `--hairline-lit` and the three
+  washes. The chat input, the assistant bubble, the sources popover and the
+  two dialogs are glass; the dialogs sit over the page with no scrim, on the
+  `--z-dialog` rung.
+- **Type.** `--text-control`, `--text-xs` and `--text-2xs` were added beside
+  the existing scale and `--font-mono` replaced thirty restatements of the
+  stack; code is set in the site's face. Positive tracking and uppercase are
+  gone from the panels; dates and message times are formatted in lowercase
+  by one utility; the CV's overview paragraph takes the house case.
+- **Controls.** Nothing lifts or scales; controls answer the pointer with ink,
+  hairline and wash (`control-hover` / `control-active` / `control-focus`).
+  Every close is `icon-button` around one `CloseIcon`. Focus is
+  `:focus-visible` only, with a neutral ring or the control's own wash; the
+  footer links take the global ring. The three keyboard handlers share
+  `isShortcutKey`, so modified keys and keys typed into a select are never
+  shortcuts, and the background toolbar is a button. The panels' printed
+  shortcut rows are gone; `?` is the one place.
+- **Kept, deliberately.** The message avatars stay round (a portrait disc,
+  not a control); the activity legend's swatches keep the svg cells' 2px
+  corner; the two status loops in the chat run under reduced motion; the
+  phone's help dot keeps `:focus` because a tap is the only way to reveal its
+  tooltip there; the activity axis labels are sized in the svg's own units.

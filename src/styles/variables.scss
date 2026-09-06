@@ -1,55 +1,57 @@
-// CSS Custom Properties (Variables)
+// The design tokens — every number the site reuses, stated once. Emitted by
+// global.scss alone: the other stylesheets read these through `var()` and
+// never load this file, so the block reaches the bundle once rather than once
+// per stylesheet.
 :root {
-  // Retro futuristic color palette
-  --primary-color: #00ff88; // Neon green (main brand color)
-  --primary-dark: #00cc6a; // Darker neon green
-
-  // Vibrant accent palette
-  --accent-pink: #ff0080; // Hot pink (for emphasis & borders)
-  --accent-cyan: #00d4ff; // Cyan blue (for highlights)
-  --accent-blue: #0080ff; // Electric blue (for links/CTAs)
-  --accent-purple: #ff00ff; // Magenta (for special effects)
-  --accent-yellow: #ffaa00; // Orange-yellow (for warnings/alerts)
-
-  // Text colors
-  --text-primary: #ffffff; // White text
-  --text-secondary: #b0b0b0; // Light gray
-  --text-muted: #808080; // Medium gray
-
-  // --- Accents as text -----------------------------------------------------
-  // The palette above is tuned for fills, glows and hairlines. Set as words on
-  // a card it has to clear 4.5:1 on its own, which the bright cuts already do
-  // against the near-black surfaces here — so the inks are currently the
-  // accents unchanged. They stay a separate layer so a future treatment can
-  // re-cut them; nothing that renders an accent as `color` should reach past
-  // these.
+  // --- Colour ---------------------------------------------------------------
+  // Colour only where it carries meaning (see docs/design/01-decisions.md).
+  // The one action colour: links, the send button, the consulting call to
+  // action, the "live" states (a cache hit, a copied message).
+  --primary-color: #00ff88;
+  // The same green as words. The bright cut clears 4.5:1 on its own against
+  // the near-black surfaces here, so the ink is the accent unchanged; it stays
+  // a separate token so a future treatment can re-cut it, and nothing that
+  // renders the accent as `color` reaches past it.
   --ink-primary: #00ff88;
-  --ink-cyan: #00d4ff;
-  --ink-pink: #ff0080;
-  --ink-blue: #0080ff;
-  --ink-purple: #ff00ff;
-  --ink-yellow: #ffaa00;
-
-  // Text on a solid accent fill. Every accent in this palette is a bright
-  // mid-tone — white on top of one lands between 1.3:1 and 3.8:1 — so filled
-  // buttons and tags take near-black, which clears AA on all of them.
+  // The one danger colour: clearing a transcript, a warning inside a dialog.
+  --ink-danger: #ff6b6b;
+  // Text on a solid accent fill. The green is a bright mid-tone — white on top
+  // of it lands under 2:1 — so the filled button takes near-black.
   --on-fill: #0a0a0a;
 
-  // Purple as a fill. Kept as its own token so the gradient pairings that use
-  // it can be re-cut without touching --accent-purple, which also drives glows.
-  --fill-purple: #ff00ff;
+  // Text.
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-muted: #808080;
 
-  // The constant backing the animated backgrounds composite onto — see the note
-  // on .background-stage.
+  // The constant backing the animated backgrounds composite onto — see the
+  // note on .background-stage.
   --bg-stage: #07080a;
-
-  // Chrome that floats over the animated backgrounds rather than sitting on a
-  // page surface. Opaque on purpose: the backgrounds run from near-black to
-  // saturated yellow, and any translucency at all picks up the hard edge of
-  // whatever card happens to be passing behind it.
+  // The page's own ground, behind the stage. Nothing inside the window or the
+  // panels fills with this: those are glass, and a solid fill inside glass
+  // reads as a lid on the animation.
+  --bg-primary: #0a0a0a;
+  // Chrome that floats on the field with no surface under it — the key caps.
+  // Opaque on purpose: the backgrounds run from near-black to saturated
+  // yellow, and any translucency picks up the hard edge of whatever passes
+  // behind it.
   --bg-floating: #0e1014;
-  --border-floating: rgba(255, 255, 255, 0.16);
 
+  // --- Hairlines and washes -------------------------------------------------
+  // Every block inside the window is an outline, not a fill, and every line
+  // is white-alpha: a near-black rule disappears against the scrim. Three
+  // lines and three washes are the whole vocabulary.
+  --hairline: rgba(255, 255, 255, 0.16); // the edge of a card, chip or panel
+  --hairline-interior: rgba(255, 255, 255, 0.08); // a divider inside one
+  --hairline-lit: rgba(255, 255, 255, 0.45); // under the pointer, open, current
+  --wash-field: rgba(255, 255, 255, 0.04); // a text field, a code listing
+  --wash-hover: rgba(255, 255, 255, 0.06); // a control under the pointer
+  --wash-active: rgba(255, 255, 255, 0.08); // the current one, the open one
+  // The keyboard's focus ring. Neutral, and bright enough to hold on the
+  // yellow field — green is for links and actions, and focus is neither.
+  --focus-ring: rgba(255, 255, 255, 0.85);
+
+  // --- The window -----------------------------------------------------------
   // The content window — the fixed panel every page renders inside. The scrim
   // has one hard constraint from either side: dark enough that white text
   // holds on the yellow PDE field behind it, light enough that the simulation
@@ -69,13 +71,29 @@
   );
   // The bottom inset is deeper than the sides: the floating pills (background
   // label bottom-left, chat bottom-right) live on the field below the window,
-  // not on top of it. With the keyboard-hint rows gone — the shortcuts live
-  // behind `?` now — a pill is 2.875rem of housing sitting 2rem off the
+  // not on top of it. A pill is 2.875rem of housing sitting 2rem off the
   // bottom, so the stack tops out at ~4.9rem and the window clears it with
   // room to spare rather than by a hairline. The safe area is added on top
   // because the pills are pushed up by exactly that much (see --rail-inset-*).
   --window-inset-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  --window-scrim: rgba(7, 8, 10, 0.38);
+  --window-border: var(--hairline);
+  // The two sidebars — the settings panel on the left, the chat on the right —
+  // are floating peers of the window at this width, and the stage moves over
+  // by the same number when one opens.
+  --panel-width: 28rem;
 
+  // --- Blur -----------------------------------------------------------------
+  // The window and its peer panels wear the light blur; a panel that opens
+  // over the window (a menu, the shortcuts) doubles it; a loose chip on the
+  // window's own surface, with content scrolling under it, needs the heavy
+  // one to turn a heading into a wash. The veil at the window's top edge is
+  // its own case and is set where it lives.
+  --window-blur: 5px;
+  --blur-panel: 10px;
+  --blur-chip: 20px;
+
+  // --- The rail -------------------------------------------------------------
   // The right-hand rail: the nav capsule at the top of the screen and the chat
   // pill at the bottom, one column of floating controls on the field. They
   // take these rather than the window's own offsets, so their right edges
@@ -95,8 +113,10 @@
   );
   --rail-inset-right: calc(var(--rail-inset) + env(safe-area-inset-right, 0px));
   --rail-inset-left: calc(var(--rail-inset) + env(safe-area-inset-left, 0px));
-  // The page selector's natural width — the chat and settings pills pin to
-  // it, so the three rail controls share one footprint.
+  // The two pills' footprint: the chat pill and the backgrounds pill are the
+  // same width, so the two corners of the field carry the same object. The
+  // nav capsule takes its natural width — a centred title would run under a
+  // matched one on a narrow desktop.
   --rail-width: 13.5rem;
   // The chat pill's height, spelled out: a 20px icon in 0.75rem of padding
   // inside a 1px hairline. The nav capsule is built to land on the same number
@@ -109,10 +129,14 @@
   --rail-clearance: calc(
     var(--rail-inset-top) + var(--rail-height) + var(--space-2)
   );
-  --window-scrim: rgba(7, 8, 10, 0.38);
-  --window-blur: 5px;
-  --window-border: var(--border-floating);
+  // What an anchor target inside the window has to clear: the sticky row of
+  // control chips at the top of the window's scroll (its padding and a chip,
+  // ~51px on a desktop and ~67px on a phone, where the chips open up for a
+  // thumb) and a breath. One number for every page and every width, so a
+  // section arriving from a link never parks its heading under the chips.
+  --sticky-row-clearance: 5rem;
 
+  // --- The column -----------------------------------------------------------
   // One content width for the whole site — the projects page's, which was the
   // widest and the one the owner reads as correct. The nav, the page heroes on
   // the field, the scrolling main column and the footer all cap here, so the
@@ -120,84 +144,65 @@
   // prose inside it. The window frame is 40px wider (see --window-max-width),
   // which is what makes it read as a frame around this column.
   --content-max-width: 1100px;
-
   // One gutter for the whole site. The three things that define the content
   // line — the nav, the page hero on the field, and the scrolling window's
   // .main — all take their horizontal padding from here and nothing else, and
   // no page container inside .main adds any of its own. That is what makes the
   // left edge of a hero title, the left edge of the brand pill and the left
   // edge of a card inside the window land on the same x at every width.
-  --gutter: var(--space-5);
+  --gutter: var(--space-6);
 
-  @media (max-width: 768px) {
-    --window-inset: 0.75rem;
-    // Pills move to 1rem and the chat icon shrinks to a 3rem disc. The bottom
-    // inset is unchanged: the hint rows were already hidden at this width, so
-    // there was nothing there to reclaim.
-    --window-inset-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
-    --gutter: var(--space-4);
-    // The rail moves in with the pills, and the capsule takes its natural
-    // width rather than the pill's footprint (the pill is a 3rem disc here).
-    --rail-inset: 1rem;
-    --rail-height: 3rem;
-  }
+  // --- Layering -------------------------------------------------------------
+  // One ladder. The stage (hero and window) is the floor; the rail floats
+  // over it; the two sidebars over that; the shortcuts panel and the phone
+  // sheets over everything on the page; a dialog over a panel.
+  --z-stage: 1000;
+  --z-rail: 1001;
+  --z-panel: 1002;
+  --z-overlay: 1003;
+  --z-dialog: 1004;
 
-  @media (max-width: 480px) {
-    --window-inset: 0.5rem;
-    --window-inset-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
-    --gutter: var(--space-3);
-  }
-
-  // Backgrounds - Consistent black theme
-  --bg-primary: #0a0a0a; // Deep black (main background)
-  --bg-secondary: rgba(
-    0,
-    0,
-    0,
-    0.1
-  ); // Very subtle transparent overlay for controls
-  --bg-card: #0f0f0f; // Slightly lighter black for cards
-  --bg-hover: #141414; // Hover state background
-  --bg-accent: rgba(255, 255, 255, 0.03); // Very light overlay for accents
-
-  // Borders
-  --border-color: #1a1a1a; // Subtle border
-  --border-active: #2a2a2a; // Active/hover border
-
-  // Shadows. These carry a single dark theme: black at the old ~0.1 alpha is
-  // invisible against #0a0a0a surfaces, so the alphas are cut for separation
-  // rather than for the softness a light page wants. Same geometry as before —
-  // only the opacity changed — so elevation still reads as a consistent scale.
+  // --- Elevation ------------------------------------------------------------
+  // A single dark theme: black at a light theme's ~0.1 alpha is invisible
+  // against these surfaces, so the alphas are cut for separation.
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4);
   --shadow-md:
     0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.35);
   --shadow-lg:
     0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.35);
-  --shadow-xl:
-    0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.35);
+  // The window, the sidebars and the shortcuts panel: grounds a panel on the
+  // field, where the field is animated and often bright, so it reads as depth
+  // rather than as a visible shadow shape.
+  --shadow-panel: 0 24px 64px rgba(0, 0, 0, 0.4);
+  // The phone's bottom sheet: the same grounding, cast upward.
+  --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.45);
 
-  // Border radius (more conservative)
+  // --- Shape ----------------------------------------------------------------
+  // One chamfer, three sizes. No pills: a round control beside a chamfered
+  // panel reads as two products.
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
 
-  // --- Spacing scale -------------------------------------------------------
-  // The site's vertical rhythm. Margins and the gaps between sections come
-  // from this scale, not from ad-hoc values: a page that only ever steps
-  // through these eight sizes reads as one document rather than as a stack of
-  // independently-tuned blocks. Existing hand-set margins are being converted
-  // page by page; new work takes its spacing from here.
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 1rem;
-  --space-4: 1.5rem;
-  --space-5: 2rem;
-  --space-6: 3rem;
-  --space-7: 4rem;
-  --space-8: 6rem;
+  // --- Spacing scale --------------------------------------------------------
+  // The site's vertical rhythm, on a 4px base. Margins, paddings and the gaps
+  // between things come from this scale and nowhere else: a page that only
+  // ever steps through these nine sizes reads as one document rather than as
+  // a stack of independently-tuned blocks.
+  --space-1: 0.25rem; // 4px
+  --space-2: 0.5rem; // 8px
+  --space-3: 0.75rem; // 12px
+  --space-4: 1rem; // 16px
+  --space-5: 1.5rem; // 24px
+  --space-6: 2rem; // 32px
+  --space-7: 3rem; // 48px
+  --space-8: 4rem; // 64px
+  --space-9: 6rem; // 96px
 
-  // --- Type scale ----------------------------------------------------------
+  // --- Type -----------------------------------------------------------------
+  --font-mono:
+    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
+    monospace;
   // Fluid rather than stepped: each heading interpolates with the viewport, so
   // the hierarchy holds at every width instead of snapping at a single 768px
   // breakpoint. The clamp floors are the old mobile sizes and the ceilings sit
@@ -207,19 +212,63 @@
   --text-h2: clamp(1.4rem, 1.15rem + 1vw, 1.9rem);
   --text-h3: clamp(1.2rem, 1.05rem + 0.5vw, 1.45rem);
   --text-h4: clamp(1.05rem, 1rem + 0.25vw, 1.2rem);
-  --text-body: 0.9375rem;
-  --text-small: 0.8125rem;
   // The lead line under a page title. One step below h4 rather than equal to
-  // it: the hero subtitles are now unconstrained by any max-width and are
-  // meant to hold a single line at --content-max-width, and the longest of
-  // them (the projects page, 90 characters) does not fit at h4's 1.2rem
-  // ceiling — 90 × 0.6em × 19.2px is 1037px against a 1036px column.
+  // it: the hero subtitles are unconstrained by any max-width and are meant
+  // to hold a single line at --content-max-width, and the longest of them
+  // (the projects page, 90 characters) does not fit at h4's 1.2rem ceiling.
   --text-lead: clamp(1.05rem, 1rem + 0.25vw, 1.125rem);
+  --text-body: 0.9375rem; // Monospace runs wide; 15px reads as 16px serif
+  --text-control: 0.875rem; // the rail's capsules and the control-row chips
+  --text-small: 0.8125rem; // meta bands, descriptions, the panel's body
+  --text-xs: 0.75rem; // labels and captions inside the panels
+  --text-2xs: 0.6875rem; // key caps, stats, the smallest a phone should read
+  // Line heights: headings and labels, chrome, prose.
+  --leading-tight: 1.3;
+  --leading-chrome: 1.5;
+  --leading-prose: 1.7;
 
-  // Transitions
-  --transition-fast: 150ms ease-in-out;
-  --transition-normal: 250ms ease-in-out;
-  --transition-slow: 350ms ease-in-out;
+  // --- Motion ---------------------------------------------------------------
+  // Two curves and three durations, and nothing else. What arrives or settles
+  // eases out; what leaves eases in on the reflected curve, so the two halves
+  // of a swap are one gesture. Fast is a state change under the pointer (ink,
+  // hairline, wash); normal is a disclosure or a popover arriving; slow is a
+  // panel, the stage moving over, the hero.
+  //
+  // The JS twins live in src/config/motion.ts — a panel's close waits for the
+  // slow duration before it unmounts — and must be changed together.
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --duration-fast: 120ms;
+  --duration-normal: 240ms;
+  --duration-slow: 320ms;
+  --transition-fast: var(--duration-fast) var(--ease-out);
+  --transition-normal: var(--duration-normal) var(--ease-out);
+  --transition-slow: var(--duration-slow) var(--ease-out);
+
+  @media (max-width: 768px) {
+    --window-inset: 0.75rem;
+    // Pills move to 1rem and the chat icon shrinks to a 3rem disc. The bottom
+    // inset is unchanged: the hint rows were already hidden at this width, so
+    // there was nothing there to reclaim.
+    --window-inset-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    --gutter: var(--space-5);
+    // The rail moves in with the pills, and the capsule takes its natural
+    // width rather than the pill's footprint (the pill is a 3rem disc here).
+    --rail-inset: 1rem;
+    --rail-height: 3rem;
+    // Chips sit over content that is moving — the one case a backdrop filter
+    // has to re-resolve every frame — and share those frames with the veil
+    // and the window's own blur. Half the radius still turns a heading under
+    // a chip into a wash; what it stops doing is asking a phone GPU for the
+    // desktop's on every scroll frame.
+    --blur-chip: 10px;
+  }
+
+  @media (max-width: 480px) {
+    --window-inset: 0.5rem;
+    --window-inset-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    --gutter: var(--space-4);
+  }
 }
 
 // A light theme used to live here as an attribute-scoped palette that inverted

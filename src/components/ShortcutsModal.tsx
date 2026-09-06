@@ -1,5 +1,9 @@
 import React from 'react';
+import { DURATION_FAST_MS, EASE_OUT } from '../config/motion';
+import { isTypingTarget } from '../lib/utils/keys';
+import { prefersReducedMotion } from '../lib/utils/motion';
 import '../styles/shortcuts.scss';
+import CloseIcon from './ui/CloseIcon';
 
 /**
  * The site's keyboard shortcuts, in one place.
@@ -24,21 +28,9 @@ const SHORTCUTS: Shortcut[] = [
   { keys: ['?'], label: 'this list' },
 ];
 
-const OPEN_MS = 120;
-
-// A shortcut typed into a field is text, not a command.
-const isTyping = (target: EventTarget | null): boolean => {
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.isContentEditable) return true;
-  const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
-};
-
-const prefersReducedMotion = () => {
-  if (typeof window === 'undefined') return false;
-  if (typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-};
+// The panel's arrival: `--duration-fast`, small enough to read as the panel
+// appearing rather than as an animation.
+const OPEN_MS = DURATION_FAST_MS;
 
 const Shortcuts: React.FC = () => {
   const [open, setOpen] = React.useState(false);
@@ -68,7 +60,7 @@ const Shortcuts: React.FC = () => {
         return;
       }
       if (event.key !== '?') return;
-      if (isTyping(event.target)) return;
+      if (isTypingTarget(event.target)) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       event.preventDefault();
       toggle();
@@ -91,8 +83,9 @@ const Shortcuts: React.FC = () => {
     if (previous && typeof previous.focus === 'function') previous.focus();
   }, [open]);
 
-  // The entrance, small enough to read as the panel arriving rather than as an
-  // animation. Silent when the user has asked for less motion.
+  // The entrance: the site's one arrival (the `reveal` keyframe's rise), small
+  // enough to read as the panel arriving rather than as an animation. Silent
+  // when the user has asked for less motion.
   React.useLayoutEffect(() => {
     if (!open) return;
     const panel = panelRef.current;
@@ -100,10 +93,10 @@ const Shortcuts: React.FC = () => {
     if (prefersReducedMotion()) return;
     panel.animate(
       [
-        { opacity: 0, transform: 'scale(0.97)' },
+        { opacity: 0, transform: 'translateY(4px)' },
         { opacity: 1, transform: 'none' },
       ],
-      { duration: OPEN_MS, easing: 'ease-out' }
+      { duration: OPEN_MS, easing: EASE_OUT }
     );
   }, [open]);
 
@@ -153,7 +146,7 @@ const Shortcuts: React.FC = () => {
                 ref={closeButtonRef}
                 aria-label="close"
               >
-                ×
+                <CloseIcon />
               </button>
             </div>
             <ul className="shortcuts-list">

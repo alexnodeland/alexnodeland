@@ -2,6 +2,17 @@ import React, { useState } from 'react';
 import { chatConfig } from '../../config/chat';
 import { useChat } from './ChatContext';
 
+// One grammar for the three marks: the footer's and the entry icons' numbers.
+const featureIconProps = {
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.75,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true,
+};
+
 const WelcomeScreen: React.FC = () => {
   const {
     selectedModel,
@@ -65,47 +76,49 @@ const WelcomeScreen: React.FC = () => {
 
         <div className="welcome-body">
           {workerInitFailed && (
-            <div
-              className="error-notice"
-              style={{
-                background: 'rgba(255, 193, 7, 0.1)',
-                border: '1px solid rgba(255, 193, 7, 0.3)',
-                borderRadius: 'var(--radius-md)',
-                padding: '1rem',
-                marginBottom: '1rem',
-                color: 'var(--text-primary)',
-                fontSize: '0.875rem',
-              }}
-            >
-              <strong>⚠️ Worker initialization failed</strong>
-              <br />
-              Chat is running in basic mode. Try refreshing the page.
+            <div className="welcome-notice" role="status">
+              <strong>the worker could not start</strong>
+              chat is running in basic mode. try refreshing the page.
             </div>
           )}
 
+          {/* Three facts, each with a mark in the site's own monoline grammar
+              (a 24 viewBox, a 1.75 stroke in currentColor) rather than an
+              emoji from somebody else's set. */}
           <div className="welcome-features">
             <div className="feature-item">
-              <div className="feature-icon">🔒</div>
+              <div className="feature-icon">
+                <svg {...featureIconProps}>
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+              </div>
               <div className="feature-text">
                 <strong>private</strong>
-                <br />
                 never leaves your device
               </div>
             </div>
             <div className="feature-item">
-              <div className="feature-icon">⚡</div>
+              <div className="feature-icon">
+                <svg {...featureIconProps}>
+                  <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" />
+                </svg>
+              </div>
               <div className="feature-text">
                 <strong>fast</strong>
-                <br />
-                Hardware accelerated
+                hardware accelerated
               </div>
             </div>
             <div className="feature-item">
-              <div className="feature-icon">📱</div>
+              <div className="feature-icon">
+                <svg {...featureIconProps}>
+                  <rect x="6" y="2" width="12" height="20" rx="2" />
+                  <path d="M11 18h2" />
+                </svg>
+              </div>
               <div className="feature-text">
                 <strong>offline</strong>
-                <br />
-                Works without internet
+                works without internet
               </div>
             </div>
           </div>
@@ -147,10 +160,7 @@ const WelcomeScreen: React.FC = () => {
               no kernel for (see docs/chat-management.md, "The WASM
               fallback"). Better to say so here than after a 760MB download. */}
           {webGPUSupported === false && (
-            <p
-              className="download-note download-note-warning"
-              style={{ color: 'var(--text-secondary)' }}
-            >
+            <p className="download-note download-note-warning">
               this browser has no webgpu, and the model needs it to run. chrome
               or edge on a recent device will work.
             </p>
@@ -240,7 +250,7 @@ const WelcomeScreen: React.FC = () => {
                         <span
                           className={`device-badge device-${currentModel.device}`}
                         >
-                          {currentModel.device === 'webgpu' ? 'gpu' : 'GPU'}
+                          gpu
                         </span>
                       )}
                       {currentModel?.fallbackDevice && (
@@ -249,7 +259,7 @@ const WelcomeScreen: React.FC = () => {
                         >
                           {currentModel.fallbackDevice === 'wasm'
                             ? 'wasm'
-                            : 'CPU'}
+                            : 'cpu'}
                         </span>
                       )}
                     </div>

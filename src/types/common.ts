@@ -1,5 +1,5 @@
 // Common type definitions used across the application
-import React from 'react'
+import React from 'react';
 
 export interface BaseComponentProps {
   className?: string;

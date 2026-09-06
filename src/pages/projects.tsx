@@ -7,6 +7,7 @@ import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
 import { projectsConfig, getLanguageColor } from '../config';
 import type { GitHubProject, ProjectCategory } from '../config';
+import { scrollBehavior } from '../lib/utils/motion';
 import '../styles/projects.scss';
 
 // The category filter's "no filter" option. The rest of the page keys off a
@@ -125,7 +126,7 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
       const id = window.location.hash.slice(1);
       if (!id) return;
       const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
     };
     const timer = window.setTimeout(scrollToHash, 420);
     window.addEventListener('hashchange', scrollToHash);

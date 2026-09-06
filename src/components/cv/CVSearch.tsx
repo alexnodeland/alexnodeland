@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CVData } from '../../config/cv';
+import { scrollBehavior } from '../../lib/utils/motion';
 
 type CVSearchResultType =
   | 'experience'
@@ -129,7 +130,7 @@ const CVSearch: React.FC<CVSearchProps> = ({
     const type = id.split('-')[0] as CVSearchResultType;
     const element = document.getElementById(SECTION_IDS[type] || id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
       setShowResults(false);
       setSearchTerm('');
       setSearchResults([]);

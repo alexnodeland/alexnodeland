@@ -1,3 +1,9 @@
+// The chat: the pill on the field, the sidebar it opens, the messages, the
+// welcome screen, the two dialogs. Everything here is the window's own kit —
+// glass, white-alpha hairlines, the wash — with green kept for the panel's
+// one action (send) and its live states (a copied message, a cache hit).
+@use 'mixins' as *;
+
 // Visually hidden but accessible to screen readers
 .sr-only {
   position: absolute;
@@ -11,128 +17,92 @@
   border: 0;
 }
 
-// Chat Icon Styles
+// The chat pill: the bottom of the same right-hand rail the nav capsule tops.
+// The rail's own offsets, not a matching pair of hand-set values, and they
+// carry the display's safe area with them (see --rail-inset-* in
+// variables.scss).
 .chat-icon-container {
   position: fixed;
-  // The rail's own offsets, not a matching pair of hand-set values: the pill
-  // is the bottom of the same column the nav capsule tops, and these carry the
-  // display's safe area with them (see --rail-inset-* in variables.scss).
   bottom: var(--rail-inset-bottom);
   right: var(--rail-inset-right);
-  z-index: 1000;
+  z-index: var(--z-stage);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  animation: slideInFromRightWithFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)
-    forwards;
+  gap: var(--space-4);
+  animation: pill-in-right var(--transition-slow) forwards;
 
+  // The same machined housing as the background toolbar in the opposite
+  // corner and the nav capsule above — one language for every floating
+  // control on the field — fixed to the page selector's footprint so the rail
+  // reads as one kit. Quiet at rest, brighter under the pointer; no lift.
   .chat-icon {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    // Matches the background toolbar in the opposite corner and the nav
-    // capsule above — one machined housing language for every floating
-    // control on the field.
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
     @include capsule-housing;
-    // Rests quiet like a nav segment, brightens on hover — one label colour
-    // across every capsule on the field. Fixed to the page selector's
-    // footprint so the rail reads as one kit.
     width: var(--rail-width);
     height: var(--rail-height);
     box-sizing: border-box;
-    align-items: center;
-    justify-content: center;
     color: var(--text-secondary);
-    font-size: 0.875rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-control);
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
     cursor: pointer;
-    @include control-transition(var(--transition-normal));
+    @include control-transition(var(--transition-fast));
 
     &:hover {
-      border-color: rgba(255, 255, 255, 0.45);
-      transform: translateY(-1px);
       color: var(--text-primary);
-
-      .chat-icon-inner {
-        color: var(--text-primary);
-      }
+      border-color: var(--hairline-lit);
     }
 
-    &:active {
-      transform: translateY(0);
+    &:focus-visible {
+      outline: none;
+      color: var(--text-primary);
+      border-color: var(--hairline-lit);
     }
 
-    // Matches the background launcher in the opposite corner and the nav
-    // segments: quiet at rest, white on hover.
     .chat-icon-inner {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      color: var(--text-secondary);
-      transition: color var(--transition-fast);
+      gap: var(--space-2);
 
       svg {
         flex-shrink: 0;
-      }
-
-      .chat-label {
-        font-size: 0.875rem;
       }
     }
   }
 }
 
-// Responsive design - match background manager behavior
 @media (max-width: 768px) {
   .chat-icon-container {
     // Flush with the window's right edge on a phone — the panel is the
     // alignment grid here, so both corner buttons share its side token
     // rather than the viewport rail inset desktop uses.
     right: var(--window-side);
-    z-index: 1001; // Above mobile notice button, below chat sidebar
+    z-index: var(--z-rail);
 
+    // A rounded square, not a circle — the one corner radius the rest of the
+    // chrome carries, and the same box as the backgrounds launcher in the
+    // opposite corner.
     .chat-icon {
-      padding: 0.75rem;
-      min-width: auto;
-      // A rounded square, not a circle — the one corner radius the rest of
-      // the chrome carries, and the same box as the backgrounds launcher in
-      // the opposite corner.
-      border-radius: var(--radius-lg);
+      padding: 0;
       width: 3rem;
       height: 3rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
 
-      .chat-icon-inner {
-        .chat-label {
-          display: none; // Hide label text, show icon only
-        }
+      .chat-label {
+        display: none;
       }
     }
-  }
-
-  // The phone treatment of .chat-sidebar lives below the base rule rather than
-  // here — see the note there. Nothing that shares a property with the base
-  // rule can live in this block: media queries add no specificity, so the base
-  // declaration simply wins. This block is deliberately empty of .chat-sidebar
-  // rules for that reason.
-
-  .chat-modal {
-    width: calc(100vw - 2rem);
-    height: calc(100vh - 4rem);
-    max-width: none;
-    bottom: 1rem;
-    right: 1rem;
   }
 }
 
 // Chat sidebar — a floating peer of the content window, mirroring the settings
-// panel on the opposite side. It takes the window's own insets, scrim, blur,
-// hairline and shadow so the three panels read as one family of surfaces; the
-// tokens live in variables.scss and are shared with .layout.
+// panel on the opposite side. It takes the window's own insets and material so
+// the three panels read as one family of surfaces.
 .chat-sidebar {
   position: fixed;
   // The window's live top edge, published by the shell — the sidebar's height
@@ -141,53 +111,45 @@
   right: var(--window-inset);
   // Rides above the floating pills, exactly as the window does
   bottom: var(--window-inset-bottom);
-  width: 28rem;
-  background: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-  border: 1px solid var(--window-border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
-  z-index: 1002; // Above background controls
+  width: var(--panel-width);
+  @include window-material;
+  z-index: var(--z-panel);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 
   // Opening animation - only when actually opening, not on every mount
   &.opening {
-    animation: slideInFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: panel-in-right var(--transition-slow) forwards;
   }
 
-  // Closing animation
   &.closing {
-    animation: slideOutToRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: panel-out-right var(--transition-slow) forwards;
   }
 
-  // Chat sidebar header styling
+  // The header: the same gutter, divider and title size as the settings
+  // panel's, and a row of the same 34px controls.
   .chat-header {
-    background: transparent;
-    padding: 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--hairline-interior);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-3);
     flex-shrink: 0;
     overflow: visible;
 
-    // A panel title, styled like every other heading on the site.
     .chat-title {
       color: var(--text-primary);
-      font-size: 1.1rem;
+      font-size: var(--text-h4);
       margin: 0;
-      text-transform: lowercase;
-      letter-spacing: 0.02em;
+      letter-spacing: -0.01em;
     }
 
     .chat-header-controls {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: var(--space-2);
     }
 
     .thinking-toggle-container {
@@ -197,262 +159,118 @@
       flex-shrink: 0;
 
       .thinking-toggle {
-        background: transparent;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        color: var(--text-muted);
-        cursor: pointer;
-        padding: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        @include control-transition(var(--transition-normal));
-        position: relative;
-
-        &:hover {
-          border-color: var(--border-active);
-          color: var(--text-primary);
-          background: var(--bg-hover);
-        }
-
-        &:focus {
-          outline: none;
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 2px var(--primary-color);
-        }
+        @include icon-button;
 
         // A toggle that is on. That is a genuine state, so it keeps a colour —
-        // the same green the site uses for anything live — but its hover wash
-        // is neutral rather than the stray violet it used to be.
+        // the same green the site uses for anything live.
         &.enabled {
           color: var(--ink-primary);
 
-          &:hover {
-            background: rgba(255, 255, 255, 0.06);
+          &:hover:not(:disabled) {
             color: var(--ink-primary);
-            border-color: var(--border-active);
           }
-        }
-
-        svg {
-          width: 16px;
-          height: 16px;
-          flex-shrink: 0;
         }
       }
     }
 
-    // The model picker is the shared listbox now (see .ui-dropdown in
-    // controls.scss and src/components/ui/Dropdown.tsx), so all that is left
-    // here is where it sits: one chip in a row of header controls, at the
-    // header's own small size, with its panel free to hang past the header's
-    // lower edge.
+    // The model picker is the shared listbox (see .ui-dropdown in
+    // controls.scss). All that is left here is where it sits: one chip in a
+    // row of 34px controls, at the header's own small size and the same
+    // height as the buttons beside it.
     .model-selector {
       .ui-dropdown-trigger {
-        font-size: 0.75rem;
-        padding: 0.4rem 0.6rem;
+        font-size: var(--text-xs);
+        padding: var(--space-2) var(--space-3);
+        min-height: calc(1rem + var(--space-4) + 2px);
         max-width: 11rem;
-
-        .ui-dropdown-value {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
       }
 
       .ui-dropdown-option {
-        font-size: 0.75rem;
+        font-size: var(--text-xs);
       }
     }
 
     .chat-export-button,
     .chat-clear-button,
     .chat-close-button {
-      background: transparent;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 0.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      @include control-transition(var(--transition-normal));
-
-      &:hover:not(:disabled) {
-        border-color: var(--border-active);
-        color: var(--text-primary);
-        background: var(--bg-hover);
-      }
-
-      &:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 2px var(--primary-color);
-      }
-
-      &:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-        background: var(--bg-secondary);
-        color: var(--text-muted);
-      }
-
-      svg {
-        width: 16px;
-        height: 16px;
-      }
+      @include icon-button;
     }
 
-    // Closing a panel destroys nothing, so it does not get the danger colour —
-    // that belongs to the clear button next to it, and having both wear it
-    // made "put this away" look as consequential as "throw this away".
-    .chat-close-button {
-      color: var(--text-muted);
-
-      &:hover {
-        color: var(--text-primary);
-        border-color: var(--border-active);
-      }
+    // Clearing the transcript is destructive and unrecoverable, so it keeps
+    // the danger colour under the pointer; closing a panel destroys nothing
+    // and stays neutral.
+    .chat-clear-button:hover:not(:disabled) {
+      color: var(--ink-danger);
     }
   }
 
-  // Chat messages area
   .chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem 1.5rem;
+    padding: var(--space-4) var(--space-5);
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--space-4);
   }
 
-  // Chat input container - positioned at bottom
+  // Generation speed while a reply streams: the quietest line in the panel.
+  .chat-tps-indicator {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-align: right;
+    padding: 0 var(--space-3);
+    font-variant-numeric: tabular-nums;
+  }
+
   .chat-input-container {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: transparent;
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--hairline-interior);
     flex-shrink: 0;
 
     .chat-input-form {
       display: flex;
-      gap: 0.75rem;
+      gap: var(--space-3);
       align-items: flex-end;
 
+      // A text field takes the field wash, like the search boxes.
       .chat-input {
         flex: 1;
-        background: var(--bg-primary);
+        background: var(--wash-field);
         color: var(--text-primary);
-        border: 1px solid var(--border-color);
+        border: 1px solid var(--hairline);
         border-radius: var(--radius-md);
-        padding: 0.75rem;
-        font-size: 0.875rem;
-        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        padding: var(--space-3);
+        font-size: var(--text-small);
+        font-family: inherit;
+        line-height: var(--leading-chrome);
         resize: none;
         min-height: 44px;
         max-height: 120px;
-        @include control-transition(var(--transition-normal));
+        @include control-transition(var(--transition-fast));
 
         &:focus {
           outline: none;
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 2px var(--primary-color);
-          background: var(--bg-hover);
-        }
-
-        &:hover {
-          border-color: var(--border-active);
-          background: var(--bg-primary);
+          border-color: var(--hairline-lit);
+          background: var(--wash-hover);
         }
 
         &::placeholder {
           color: var(--text-muted);
-          font-style: italic;
         }
       }
 
+      // Send is the panel's one action, and actions on this site are green —
+      // the same green as a link, for the same reason. It is the only
+      // coloured control in the chat chrome.
       .chat-send-button {
-        background: transparent;
-        color: var(--text-muted);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        font-size: 0.875rem;
-        font-family: 'JetBrains Mono', 'Fira Code', monospace;
-        @include control-transition(var(--transition-normal));
-        min-width: 60px;
+        @include icon-button;
+        min-width: 44px;
         height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
 
-        // Send is the panel's one action, and actions on this site are green —
-        // the same green as a link, for the same reason. It is the only
-        // coloured control left in the chat chrome.
         &:hover:not(:disabled) {
-          background: var(--bg-accent);
-          border-color: var(--primary-color);
           color: var(--ink-primary);
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-md);
-        }
-
-        &:active:not(:disabled) {
-          transform: translateY(0);
-          box-shadow: var(--shadow-sm);
-        }
-
-        &:focus {
-          outline: none;
           border-color: var(--primary-color);
-          box-shadow: 0 0 0 2px var(--primary-color);
         }
-
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-          background: var(--bg-secondary);
-        }
-
-        // Show send icon or text
-        .send-icon {
-          width: 16px;
-          height: 16px;
-          transform: rotate(-45deg);
-        }
-      }
-    }
-  }
-
-  // Chat sidebar footer for persistent keyboard shortcuts
-  .chat-sidebar-footer {
-    flex-shrink: 0;
-    padding: 1rem 1.5rem;
-    background: transparent;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    .chat-keyboard-hints {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.25rem;
-      font-size: 0.6875rem;
-      color: var(--text-muted);
-      opacity: 0.7;
-      font-family: inherit;
-
-      kbd {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--radius-sm);
-        padding: 0.125rem 0.3rem;
-        font-size: 0.625rem;
-        font-family: inherit;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        color: var(--text-primary);
       }
     }
   }
@@ -461,17 +279,8 @@
 // Phones get the whole screen. A 28rem panel is wider than the viewport itself
 // on most phones, so the desktop peer-window geometry can't survive here.
 //
-// This block sits *after* the base rule on purpose. It used to live in the
-// 768px section near the top of the file, where it lost every property it
-// shared with the base rule — media queries add no specificity, so the later
-// declaration simply won and the panel stayed a 28rem card hanging off the
-// right edge of a phone.
-//
-// The visual treatment departs from the window's scrim here, and deliberately:
-// at full-bleed there is no frame left to read as a floating panel, and the
-// window's 0.38 scrim over a live simulation makes long chat prose unreadable.
-// So the surface goes nearly opaque and keeps a heavier blur — the same family,
-// turned up until the text holds.
+// This block sits *after* the base rule on purpose: media queries add no
+// specificity, so declared above it, the shared properties would simply lose.
 @media (max-width: 768px) {
   .chat-sidebar {
     top: 0;
@@ -481,39 +290,33 @@
     width: 100vw;
     height: 100vh;
     height: 100dvh; // Dynamic viewport height for mobile browsers
-    // No background or backdrop-filter override: the sheet wears the same
-    // frosted glass as the content window and the desktop sidebar — the base
-    // rule's --window-scrim over blur(--window-blur) — so the whole kit is
-    // one material. (A near-opaque tint with a 16px blur+saturate used to
-    // live here; it was both the odd surface out and the most expensive
-    // thing a phone GPU was asked to hold.)
-    //
-    // The glass is worn only at rest. Sliding a full-screen backdrop filter
-    // over a canvas that repaints every frame forces the blur to be
-    // re-resolved on every frame of the slide, so the sheet travels as tint
-    // alone (the states below) and the blur fades back in once it has
-    // parked, via this transition.
+    // The sheet wears the same frosted glass as the content window and the
+    // desktop sidebar, so the whole kit is one material — worn only at rest.
+    // Sliding a full-screen backdrop filter over a canvas that repaints every
+    // frame forces the blur to be re-resolved on every frame of the slide, so
+    // the sheet travels as tint alone (the states below) and the blur fades
+    // back in once it has parked, via this transition.
     transition:
-      backdrop-filter 220ms ease,
-      -webkit-backdrop-filter 220ms ease;
+      backdrop-filter var(--transition-normal),
+      -webkit-backdrop-filter var(--transition-normal);
     border: none;
     border-radius: 0;
     box-shadow: none;
-    z-index: 1003;
+    z-index: var(--z-overlay);
 
     // A sheet that owns the screen comes up from the bottom edge; the
     // sidebar's horizontal slide reads wrong at this size. Both states shed
-    // the backdrop filter for the length of the move (see the note on the
-    // sheet's own blur above): the class drops ~300ms after opening, which is
-    // what hands the blur back through the transition.
+    // the backdrop filter for the length of the move: the class drops once
+    // the slide is done, which is what hands the blur back through the
+    // transition.
     &.opening {
-      animation: slideInFromBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: sheet-in var(--transition-slow) forwards;
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
     }
 
     &.closing {
-      animation: slideOutToBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: sheet-out var(--transition-slow) forwards;
       // An instant cut, not the settle fade in reverse: easing the blur out
       // would keep a shrinking filter live under most of the slide, and a
       // departing sheet has no rest state for the glass to belong to.
@@ -525,249 +328,13 @@
     // Edge to edge means edge to edge: the sheet runs under the status bar and
     // the home indicator, so its first and last rows have to hold themselves
     // clear of both. The floor stays the desktop padding — `env()` is zero on
-    // a phone with no cut-out, and this is not the place to lose a rem.
+    // a phone with no cut-out.
     .chat-header {
-      padding-top: max(1.5rem, env(safe-area-inset-top));
+      padding-top: max(var(--space-5), env(safe-area-inset-top));
     }
 
     .chat-input-container {
-      padding-bottom: max(1rem, env(safe-area-inset-bottom));
-    }
-
-    // The shortcuts are a keyboard's affordance, and this width has no
-    // keyboard until one slides up over the sheet. The same reasoning hides
-    // the `?` hint on the field (see shortcuts.scss).
-    .chat-sidebar-footer {
-      display: none;
-    }
-  }
-}
-
-// Old Chat Modal Styles (keeping for reference/fallback)
-.chat-modal {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 400px;
-  height: 600px;
-  background: rgba(0, 0, 0, 0.7); // Match settings panel transparency
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  box-shadow:
-    var(--shadow-xl),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  @include control-transition(0.3s cubic-bezier(0.4, 0, 0.2, 1));
-
-  &.opening {
-    animation: slideInUp 0.3s ease-out;
-  }
-
-  &.closing {
-    animation: slideOutDown 0.3s ease-in;
-  }
-
-  .chat-header {
-    background: transparent;
-    padding: 1rem;
-    border-bottom: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    .chat-title {
-      color: var(--text-primary);
-      font-size: 1.1rem;
-      margin: 0;
-      flex: 1;
-    }
-
-    .chat-header-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .model-selector {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-
-      // The native <select> this block dressed is gone — the model picker is
-      // the shared listbox now (see .ui-dropdown in controls.scss).
-
-      .model-info {
-        .model-details {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          flex-wrap: wrap;
-
-          .model-size {
-            opacity: 0.8;
-          }
-
-          .cached-badge {
-            background: var(--success, #28a745);
-            color: white;
-            padding: 0.125rem 0.25rem;
-            border-radius: 0.125rem;
-            font-size: 0.625rem;
-            text-transform: uppercase;
-          }
-
-          .device-badge {
-            padding: 0.125rem 0.25rem;
-            border-radius: 0.125rem;
-            font-size: 0.625rem;
-            text-transform: uppercase;
-
-            &.device-webgpu {
-              background: var(--info, #17a2b8);
-              color: white;
-            }
-
-            &.device-cpu {
-              background: var(--warning, #ffc107);
-              color: var(--dark, #343a40);
-            }
-
-            &.device-wasm {
-              background: var(--success, #28a745);
-              color: white;
-            }
-          }
-        }
-      }
-    }
-
-    .chat-export-button,
-    .chat-clear-button,
-    .chat-close-button {
-      background: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 0.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
-
-      &:hover {
-        background: var(--bg-hover);
-        color: var(--text-primary);
-        border-color: var(--border-active);
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
-      }
-
-      &:active {
-        transform: translateY(0);
-      }
-
-      &:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px var(--text-primary);
-      }
-
-      svg {
-        width: 18px;
-        height: 18px;
-      }
-    }
-
-    // Clearing the transcript is destructive and unrecoverable, so it keeps a
-    // colour — but the border joins the text in the danger red instead of
-    // pairing it with the decorative pink.
-    .chat-clear-button:hover {
-      color: #ff6b6b;
-      border-color: rgba(255, 107, 107, 0.5);
-    }
-  }
-
-  .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    background: transparent;
-  }
-
-  .chat-input-container {
-    padding: 1rem;
-    border-top: none;
-    background: transparent;
-
-    .chat-input-form {
-      display: flex;
-      gap: 0.5rem;
-      align-items: flex-end;
-
-      .chat-input {
-        flex: 1;
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-sm);
-        padding: 0.75rem;
-        font-size: 0.875rem;
-        resize: none;
-        min-height: 40px;
-        max-height: 120px;
-        font-family: inherit;
-
-        &:focus {
-          outline: none;
-          border-color: var(--primary-color);
-        }
-
-        &::placeholder {
-          color: var(--text-muted);
-        }
-      }
-
-      // Send is the one action in the panel, so it is allowed the green the
-      // site gives every action. It was magenta, which matched nothing.
-      .chat-send-button {
-        background: transparent;
-        color: var(--text-primary);
-        border: 1px solid var(--primary-color);
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        font-size: 0.875rem;
-        @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
-
-        &:hover:not(:disabled) {
-          background: var(--bg-accent);
-          border-color: var(--primary-color);
-          color: var(--ink-primary);
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-lg);
-        }
-
-        &:active:not(:disabled) {
-          transform: translateY(0);
-          box-shadow: var(--shadow-md);
-        }
-
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      }
+      padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
     }
   }
 }
@@ -775,30 +342,31 @@
 // Message Styles
 .chat-message {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-3);
   align-items: flex-start;
 
-  // Who said it is already carried by which side the bubble sits on and by
-  // the avatar beside it, so the two speakers are two surfaces rather than a
-  // grey one and a filled green one. The green also read as the link colour,
-  // which made every word the reader had typed look clickable.
+  // Who said it is carried by which side the bubble sits on and by the avatar
+  // beside it, so the two speakers are two surfaces: the reader's a wash, the
+  // model's an outline.
   &.user {
     flex-direction: row-reverse;
 
     .message-content {
-      background: rgba(255, 255, 255, 0.12);
+      background: var(--wash-active);
+      border: 1px solid transparent;
       color: var(--text-primary);
     }
   }
 
   &.assistant {
     .message-content {
-      background: var(--bg-hover);
+      background: transparent;
+      border: 1px solid var(--hairline);
       color: var(--text-primary);
-      border: 1px solid var(--border-color);
     }
   }
 
+  // Two neutral discs, distinguished by surface rather than by hue.
   .message-avatar {
     width: 32px;
     height: 32px;
@@ -806,36 +374,77 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     flex-shrink: 0;
 
-    // Two neutral discs, distinguished by weight rather than by hue — pink
-    // and cyan were an arbitrary code for a distinction the initial inside
-    // each disc already makes.
     &.user {
-      background: rgba(255, 255, 255, 0.2);
+      background: var(--wash-active);
       color: var(--text-primary);
     }
 
     &.assistant {
-      background: var(--bg-hover);
-      border: 1px solid var(--border-active);
+      border: 1px solid var(--hairline);
       color: var(--text-secondary);
     }
   }
 
   .message-content {
     max-width: 80%;
-    padding: 0.75rem 1rem;
+    padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
-    font-size: 0.875rem;
-    line-height: 1.4;
+    font-size: var(--text-small);
+    line-height: var(--leading-chrome);
     word-wrap: break-word;
 
+    // The time, and the copy beside it, revealed when the message is pointed
+    // at.
     .message-timestamp {
-      font-size: 0.75rem;
-      opacity: 0.7;
-      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      margin-top: var(--space-1);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+
+      .timestamp-text {
+        flex: 1;
+      }
+    }
+
+    .copy-button {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: var(--space-1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      opacity: 0;
+      transition:
+        color var(--transition-fast),
+        background-color var(--transition-fast),
+        opacity var(--transition-fast);
+
+      svg {
+        flex-shrink: 0;
+      }
+
+      &:hover,
+      &:focus-visible {
+        outline: none;
+        color: var(--text-primary);
+        background-color: var(--wash-hover);
+      }
+
+      // "Copied" is a genuine success state and the only feedback the action
+      // gives, so this one keeps the green.
+      &.is-copied {
+        color: var(--ink-primary);
+        opacity: 1;
+      }
     }
 
     // What the answer cost. Deliberately the quietest thing in the bubble —
@@ -844,39 +453,21 @@
       display: flex;
       flex-wrap: wrap;
       align-items: baseline;
-      gap: 0.3rem;
-      margin-top: 0.5rem;
-      font-size: 0.6875rem;
+      gap: var(--space-1);
+      margin-top: var(--space-2);
+      font-size: var(--text-2xs);
       font-variant-numeric: tabular-nums;
       color: var(--text-muted);
-      opacity: 0.75;
-      transition: opacity var(--transition-normal);
-
-      &:hover {
-        opacity: 1;
-      }
 
       .stat {
         cursor: help;
         white-space: nowrap;
       }
 
-      .stat-sep {
-        opacity: 0.4;
-      }
-
-      .stat-cache {
-        // A hit is information too, not a success — so it reads brighter than
-        // a miss rather than arriving in a colour of its own.
-        &.is-hit {
-          color: var(--text-secondary);
-          opacity: 1;
-        }
-        // A miss is information, not an error — it is normal on the first turn
-        // of a conversation. Muted rather than coloured.
-        &.is-miss {
-          opacity: 0.7;
-        }
+      // A hit is information too, not a success — so it reads brighter than
+      // a miss rather than arriving in a colour of its own.
+      .stat-cache.is-hit {
+        color: var(--text-secondary);
       }
     }
 
@@ -885,56 +476,55 @@
     // reading "Optimal Wavelet Bases For A…" is not worth its space.
     .message-sources {
       position: relative;
-      margin-top: 0.625rem;
-      padding-top: 0.625rem;
-      border-top: 1px solid var(--border-color);
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--hairline-interior);
 
       .sources-toggle {
         display: inline-flex;
         align-items: center;
-        gap: 0.375rem;
-        padding: 0.1875rem 0.5rem 0.1875rem 0.375rem;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-2);
         border: 1px solid transparent;
-        border-radius: var(--radius-sm, 4px);
+        border-radius: var(--radius-sm);
         background: transparent;
         color: var(--text-muted);
         font-family: inherit;
-        font-size: 0.6875rem;
-        letter-spacing: 0.03em;
+        font-size: var(--text-2xs);
+        text-transform: lowercase;
         cursor: pointer;
-        @include control-transition(var(--transition-normal));
+        @include control-transition(var(--transition-fast));
 
         &:hover,
         &:focus-visible,
         &.is-open {
-          border-color: var(--border-color);
-          background: var(--bg-primary);
-          color: var(--text-primary);
+          outline: none;
+          @include control-hover;
         }
 
         svg {
           flex-shrink: 0;
-          opacity: 0.8;
         }
       }
 
       .sources-popover {
+        @include floating-panel;
         position: absolute;
         bottom: 100%;
         left: 0;
         z-index: 20;
         min-width: 15rem;
         // Wider than the bubble is allowed to be, so full titles fit, but
-        // never wider than the modal itself.
+        // never wider than the panel itself.
         max-width: min(22rem, 78vw);
-        margin: 0 0 0.375rem;
-        padding: 0.25rem;
+        margin: 0 0 var(--space-2);
+        padding: var(--space-1);
         list-style: none;
-        background: var(--bg-primary);
-        border: 1px solid var(--border-active, var(--border-color));
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-lg);
-        animation: slideUp 0.15s ease-out;
+        animation: reveal var(--transition-fast);
+
+        li {
+          margin: 0;
+        }
 
         li + li {
           margin-top: 0.125rem;
@@ -944,30 +534,31 @@
       .source-row {
         display: flex;
         align-items: baseline;
-        gap: 0.4375rem;
+        gap: var(--space-2);
         // Vertical padding is set by the tap target rather than by the type —
         // these are links, and on a phone they are the only thing in the
         // bubble worth hitting.
-        padding: 0.5rem;
-        border-radius: var(--radius-sm, 4px);
-        color: var(--text-secondary, var(--text-primary));
-        font-size: 0.75rem;
-        line-height: 1.35;
+        padding: var(--space-2);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        font-size: var(--text-xs);
+        line-height: var(--leading-chrome);
         text-decoration: none;
-        @include control-transition(var(--transition-normal));
+        @include control-transition(var(--transition-fast));
 
         &:hover,
         &:focus-visible {
-          background: var(--bg-hover);
+          outline: none;
+          background-color: var(--wash-hover);
           color: var(--text-primary);
         }
 
-        // A category label in front of a link. It is deliberately quieter than
-        // the title it introduces, which cyan was not.
+        // A category label in front of a link, quieter than the title it
+        // introduces.
         .source-kind {
           flex-shrink: 0;
           color: var(--text-muted);
-          font-size: 0.625rem;
+          font-size: var(--text-2xs);
           text-transform: lowercase;
         }
 
@@ -981,85 +572,82 @@
         .source-external {
           flex-shrink: 0;
           align-self: center;
-          opacity: 0.6;
+          color: var(--text-muted);
         }
       }
     }
   }
 
-  // The user's own bubble is a lighter surface than the assistant's, so the
-  // near-black hairline the sources block uses would vanish into it. Sources
-  // never render there, but the border would if a future message type did.
-  &.user .message-content .message-sources {
-    border-top-color: rgba(255, 255, 255, 0.16);
+  &:hover .message-content .copy-button,
+  .message-content .copy-button:focus-visible {
+    opacity: 1;
   }
 }
 
-// Loading indicator
 .chat-error-boundary {
-  padding: 1rem;
+  padding: var(--space-4);
   text-align: center;
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 
   .chat-error-retry {
-    @include outline-button;
-    margin-top: 0.5rem;
+    @include button-secondary;
+    margin-top: var(--space-2);
   }
 }
 
 // The model failed to load. The notice stands where the input would, and its
 // retry is the welcome screen's download button again — the same action,
-// tried a second time — so it wears the same outline rather than the
-// browser's own button.
+// tried a second time — so it wears the same button.
 .model-error-notice {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.5rem;
+  gap: var(--space-2);
   width: 100%;
-  padding: 0.5rem 0;
+  padding: var(--space-2) 0;
   text-align: center;
 
   .model-error-title {
     margin: 0;
     color: var(--text-primary);
-    font-size: 0.875rem;
+    font-size: var(--text-small);
   }
 
   .model-error-detail {
     margin: 0;
     color: var(--text-secondary);
-    font-size: 0.8125rem;
+    font-size: var(--text-small);
     word-break: break-word;
     // The worker's own wording ("Worker error"), in the panel's case.
     text-transform: lowercase;
   }
 
   .model-error-retry {
-    @include outline-button;
-    margin-top: 0.25rem;
+    @include button-secondary;
+    margin-top: var(--space-1);
   }
 }
 
+// The reply is coming: a status loop, kept under reduced motion.
 .chat-loading {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   color: var(--text-muted);
-  font-size: 0.875rem;
-  padding: 0.75rem 1rem;
+  font-size: var(--text-small);
+  padding: var(--space-3) var(--space-4);
 
   .loading-dots {
     display: flex;
-    gap: 0.25rem;
+    gap: var(--space-1);
 
     .dot {
       width: 4px;
       height: 4px;
       background: var(--text-muted);
       border-radius: 50%;
-      animation: loadingDots 1.4s infinite ease-in-out both;
+      animation: loading-dots 1.4s infinite ease-in-out both;
 
       &:nth-child(1) {
         animation-delay: -0.32s;
@@ -1074,98 +662,10 @@
   }
 }
 
-// Animations
-@keyframes slideInUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideOutDown {
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-}
-
-@keyframes slideInFromRight {
-  from {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideOutToRight {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-}
-
-@keyframes slideInFromBottom {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideOutToBottom {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-}
-
-@keyframes slideInFromRightWithFade {
-  from {
-    opacity: 0;
-    transform: translateX(2rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes loadingDots {
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
-}
-
-// Progress Component Styles
+// Model download progress. A loading state is one of the few things the rule
+// lets keep a colour, so the fill is the site's live green.
 .chat-progress-container {
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
   width: 100%;
 }
 
@@ -1173,21 +673,18 @@
   position: relative;
   width: 100%;
   height: 1.5rem;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: var(--wash-field);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   line-height: 1.5rem;
 }
 
-// Model download progress. A loading state is one of the few things the rule
-// lets keep a colour, so the fill stays coloured — but in the green the site
-// already uses for "this is live", not in a magenta used nowhere else.
 .chat-progress-bar {
   height: 100%;
   background: var(--primary-color);
-  transition: width 0.3s ease-out;
+  transition: width var(--transition-slow);
   position: relative;
   z-index: 1;
 }
@@ -1201,21 +698,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 0.5rem;
+  padding: 0 var(--space-2);
   z-index: 2;
   pointer-events: none;
 }
 
+// White over a green fill needs the halo the field text carries.
 .chat-progress-text {
   color: var(--text-primary);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
-  text-shadow:
-    0 0 3px var(--bg-primary),
-    0 0 6px var(--bg-primary);
+  @include over-background;
 }
 
 .chat-progress-cancel {
@@ -1229,18 +725,18 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
-  margin-left: 0.5rem;
-  @include control-transition(0.2s ease);
+  margin-left: var(--space-2);
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
+    outline: none;
     color: var(--text-primary);
-    background: var(--bg-hover);
-  }
-
-  &:active {
-    transform: scale(0.95);
+    background-color: var(--wash-hover);
   }
 
   svg {
@@ -1249,385 +745,33 @@
   }
 }
 
-// Loading message styles
 .loading-message {
-  font-size: 0.6875rem;
+  font-size: var(--text-2xs);
   color: var(--text-secondary);
   text-align: center;
-  margin-bottom: 0.375rem;
-  padding: 0.25rem 0.5rem;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  border: none;
-  opacity: 0.9;
-  animation: fadeInOut 3s ease-in-out;
+  margin-bottom: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  animation: reveal var(--transition-normal);
 }
 
-@keyframes fadeInOut {
-  0% {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  20% {
-    opacity: 0.8;
-    transform: translateY(0);
-  }
-  80% {
-    opacity: 0.8;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0.6;
-    transform: translateY(0);
-  }
-}
-
-// Responsive adjustments
 @media (max-width: 480px) {
   .chat-progress-text {
-    font-size: 0.625rem;
+    font-size: var(--text-2xs);
   }
 
   .chat-progress-bar-wrapper {
     height: 1.25rem;
     line-height: 1.25rem;
   }
-
-  .loading-message {
-    font-size: 0.625rem;
-    margin-bottom: 0.25rem;
-    padding: 0.1875rem 0.375rem;
-  }
 }
 
-// Responsive design
-@media (max-width: 768px) {
-  .chat-modal {
-    width: calc(100vw - 2rem);
-    height: calc(100vh - 4rem);
-    bottom: 1rem;
-    right: 1rem;
-    left: 1rem;
-  }
-
-  .chat-icon {
-    bottom: 1rem;
-    right: 1rem;
-  }
-
-  .chat-welcome-screen {
-    padding: 0.75rem;
-
-    .welcome-content {
-      max-width: 100%;
-      min-height: 100%;
-    }
-
-    .welcome-header {
-      margin-bottom: 0.75rem;
-
-      .welcome-icon {
-        margin: 0 auto 0.5rem;
-        width: 36px;
-        height: 36px;
-      }
-
-      h3 {
-        font-size: 1rem;
-      }
-
-      .welcome-subtitle {
-        font-size: 0.75rem;
-      }
-    }
-
-    .welcome-body {
-      margin-bottom: 1rem;
-
-      .welcome-features {
-        gap: 0.5rem;
-
-        .feature-item {
-          padding: 0.5rem 0.625rem;
-
-          .feature-text {
-            font-size: 0.6875rem;
-            line-height: 1.25;
-
-            strong {
-              font-size: 0.71875rem;
-            }
-          }
-        }
-      }
-    }
-
-    .welcome-actions {
-      .download-button-group {
-        gap: 0.375rem;
-      }
-
-      .download-button {
-        padding: 0.625rem 1rem;
-        font-size: 0.75rem;
-
-        svg {
-          width: 16px;
-          height: 16px;
-        }
-      }
-
-      .info-button {
-        padding: 0.625rem;
-
-        svg {
-          width: 14px;
-          height: 14px;
-        }
-      }
-
-      .info-popover {
-        .info-popover-content {
-          padding: 0.875rem;
-
-          .info-header h4 {
-            font-size: 0.875rem;
-          }
-
-          .info-description {
-            font-size: 0.75rem;
-          }
-
-          .info-details {
-            .info-item {
-              font-size: 0.6875rem;
-
-              .compatibility-badges {
-                gap: 0.1875rem;
-              }
-            }
-          }
-
-          .huggingface-link {
-            font-size: 0.6875rem;
-          }
-        }
-      }
-
-      .download-note {
-        font-size: 0.625rem;
-      }
-    }
-  }
-}
-
-// Clear Confirmation Dialog Styles
-.clear-confirm-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--bg-primary);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px); // Safari 17 and earlier
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.clear-confirm-dialog {
-  background: rgba(0, 0, 0, 0.7); // Match settings panel transparency
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 12px;
-  box-shadow: var(--shadow-xl), var(--shadow-xl);
-  border: 1px solid var(--border-color);
-  max-width: 380px;
-  width: 90vw;
-  overflow: hidden;
-  animation: slideIn 0.3s ease-out;
-
-  .clear-confirm-header {
-    padding: 1.25rem 1.5rem;
-    background: transparent;
-    border-bottom: none;
-
-    h3 {
-      margin: 0;
-      font-size: 1rem;
-      color: var(--text-primary);
-      text-align: center;
-    }
-  }
-
-  .clear-confirm-content {
-    padding: 0 1.5rem 1.5rem;
-    text-align: center;
-
-    .clear-message {
-      margin: 0 0 1.5rem;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      line-height: 1.5;
-
-      // Emphasis inside a warning, not a link — it takes the heavier weight
-      // the type system allows rather than the link colour.
-      strong {
-        color: var(--text-primary);
-      }
-    }
-
-    .generation-warning {
-      margin: 0.75rem 0 1.5rem;
-      color: #ff6b6b;
-      font-size: 0.85rem;
-      line-height: 1.4;
-      padding: 0.75rem;
-      background: rgba(255, 107, 107, 0.1);
-      border: 1px solid rgba(255, 107, 107, 0.2);
-      border-radius: var(--radius-md);
-      text-align: center;
-
-      strong {
-        color: #ff6b6b;
-      }
-    }
-
-    .dont-ask-checkbox {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      cursor: pointer;
-      user-select: none;
-
-      input[type='checkbox'] {
-        width: 18px;
-        height: 18px;
-        accent-color: var(--primary-color);
-        cursor: pointer;
-      }
-
-      .checkbox-label {
-        color: var(--text-muted);
-        font-size: 0.85rem;
-      }
-
-      &:hover .checkbox-label {
-        color: var(--text-primary);
-      }
-    }
-  }
-
-  .clear-confirm-actions {
-    padding: 1.25rem 1.5rem;
-    display: flex;
-    gap: 0.75rem;
-    justify-content: center;
-    background: transparent;
-    border-top: none;
-
-    button {
-      padding: 0.625rem 1.5rem;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      cursor: pointer;
-      @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
-      min-width: 100px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px); // Safari 17 and earlier
-
-      &:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px var(--primary-color);
-      }
-
-      &:hover {
-        transform: translateY(-1px);
-      }
-
-      &:active {
-        transform: translateY(0);
-      }
-    }
-
-    .clear-cancel-button {
-      background: transparent;
-      color: var(--text-primary);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-
-      &:hover {
-        background: var(--bg-hover);
-        border-color: var(--border-active);
-      }
-    }
-
-    .clear-confirm-button {
-      background: transparent;
-      color: var(--text-primary);
-      border: 1px solid rgba(255, 107, 107, 0.4);
-
-      &:hover:not(:disabled) {
-        background: rgba(255, 107, 107, 0.15);
-        border-color: rgba(255, 107, 107, 0.6);
-        box-shadow: 0 4px 16px rgba(255, 107, 107, 0.2);
-      }
-
-      &:active:not(:disabled) {
-        background: rgba(255, 107, 107, 0.1);
-      }
-
-      &:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-        background: var(--bg-secondary);
-        border-color: var(--border-color);
-        color: var(--text-muted);
-      }
-    }
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-// Thinking Block Styles. The model's reasoning is an aside inside the answer,
-// and it was the only violet thing on the site — a whole second accent that
-// appeared nowhere else and meant nothing. It is now an inset panel: a quieter
-// surface than the bubble around it, which is what "aside" actually looks like.
+// Thinking block. The model's reasoning is an aside inside the answer: an
+// inset outline, quieter than the bubble around it, in the panel's own ink.
 .thinking-block {
-  margin: 0.75rem 0 0.5rem 0;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  margin: var(--space-3) 0 var(--space-2);
+  @include outline-block;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  @include control-transition(var(--transition-fast));
-
-  &:hover {
-    border-color: var(--border-active);
-    box-shadow: var(--shadow-md);
-  }
 
   .thinking-toggle {
     width: 100%;
@@ -1635,58 +779,53 @@
     border: none;
     cursor: pointer;
     padding: 0;
+    color: inherit;
+    font-family: inherit;
 
-    &:focus {
-      outline: none;
-
-      .thinking-header {
-        background: rgba(255, 255, 255, 0.04);
-      }
+    &:hover .thinking-header,
+    &:focus-visible .thinking-header {
+      background-color: var(--wash-hover);
     }
 
-    &:hover .thinking-header {
-      background: rgba(255, 255, 255, 0.04);
+    &:focus-visible {
+      outline: none;
     }
   }
 
   .thinking-header {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 1rem;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
     transition: background-color var(--transition-fast);
 
     .thinking-icon {
-      color: #8b5cf6;
+      color: var(--text-secondary);
       display: flex;
       align-items: center;
-      opacity: 0.8;
     }
 
     .thinking-label {
-      font-size: 0.8rem;
-      color: #8b5cf6;
-      opacity: 0.9;
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
       flex: 1;
       text-align: left;
-      text-transform: uppercase;
-      letter-spacing: 0.025em;
+      text-transform: lowercase;
     }
 
     .thinking-typing-indicator {
       display: flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: var(--space-1);
       margin-left: auto;
-      margin-right: 0.5rem;
+      margin-right: var(--space-2);
 
       .typing-dot {
         width: 3px;
         height: 3px;
-        background: #8b5cf6;
+        background: var(--text-secondary);
         border-radius: 50%;
-        opacity: 0.6;
-        animation: thinkingTyping 1.2s infinite ease-in-out;
+        animation: thinking-dots 1.2s infinite ease-in-out;
 
         &:nth-child(1) {
           animation-delay: -0.24s;
@@ -1703,33 +842,27 @@
     }
 
     .thinking-chevron {
-      color: #8b5cf6;
-      opacity: 0.7;
-      @include control-transition(var(--transition-fast));
+      color: var(--text-secondary);
+      transition: transform var(--transition-fast);
       display: flex;
       align-items: center;
 
       &.expanded {
         transform: rotate(180deg);
-        opacity: 1;
       }
     }
   }
 
   .thinking-content {
-    border-top: 1px solid var(--border-color);
-    padding: 1rem;
-    background: transparent;
+    border-top: 1px solid var(--hairline-interior);
+    padding: var(--space-4);
     position: relative;
-    animation: slideDown 0.25s ease-out;
+    animation: reveal var(--transition-normal);
 
     .thinking-text {
-      font-size: 0.8rem;
-      line-height: 1.6;
+      font-size: var(--text-xs);
+      line-height: var(--leading-prose);
       color: var(--text-secondary);
-      font-family:
-        ui-monospace, 'SF Mono', 'Monaco', 'Menlo', 'Roboto Mono',
-        'Courier New', monospace;
       white-space: pre-wrap;
       word-break: break-word;
       margin: 0;
@@ -1738,162 +871,51 @@
 
     .thinking-cursor {
       display: inline-block;
-      color: #8b5cf6;
-      animation: blink 0.8s infinite;
-      font-family: monospace;
+      color: var(--text-secondary);
       margin-left: 1px;
     }
   }
 }
 
-@keyframes thinkingTyping {
-  0%,
-  80%,
-  100% {
-    opacity: 0.3;
-    transform: scale(0.8);
-  }
-  40% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-  to {
-    opacity: 1;
-    max-height: 500px;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-  }
-}
-
-@keyframes blink {
-  0%,
-  60% {
-    opacity: 1;
-  }
-  61%,
-  100% {
-    opacity: 0.2;
-  }
-}
-
-// Sample Prompts Styles - Unified glass design
+// Sample prompts, floating above the input until the first message is sent.
+// Each is the site's secondary button, wrapping where it must.
 .sample-prompts {
   position: relative;
-  margin-bottom: 1rem;
-  animation: fadeInUp 0.4s ease-out;
-  background: transparent; // Matches parent container
+  margin-bottom: var(--space-4);
+  animation: reveal var(--transition-normal);
 
   .sample-prompts-title {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 0.75rem;
-    font-weight: 400;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-bottom: var(--space-3);
     text-align: center;
-    letter-spacing: 0.02em;
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    text-transform: lowercase;
   }
 
   .sample-prompts-grid {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     justify-content: center;
     flex-wrap: wrap;
   }
 
   .sample-prompt-pill {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    cursor: pointer;
-    @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
-    text-align: left;
-    font-size: 0.8rem;
+    @include button-secondary;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
     color: var(--text-secondary);
-    text-decoration: none;
-    white-space: nowrap;
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-primary);
-      border-color: var(--border-active);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-
-      .prompt-icon {
-        transform: scale(1.1);
-      }
-    }
-
-    &:active {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-sm);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 2px var(--primary-color);
-    }
-
-    .prompt-icon {
-      font-size: 1em;
-      flex-shrink: 0;
-      transition: transform 0.2s ease;
-    }
-
-    .prompt-text {
-      flex: 1;
-      line-height: 1.3;
-      font-weight: 400;
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    }
+    text-align: left;
+    white-space: normal;
   }
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-// Welcome Screen Styles
+// Welcome Screen
 .chat-welcome-screen {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
-  background: transparent;
+  padding: var(--space-4);
   overflow-y: auto;
   min-height: 0; // Allow flex child to shrink
   height: 100%; // Ensure it takes full height
@@ -1907,294 +929,409 @@
     flex-direction: column;
     justify-content: center;
     min-height: 100%;
+  }
 
-    .welcome-header {
-      margin-bottom: 1rem;
+  .welcome-header {
+    margin-bottom: var(--space-4);
 
-      .welcome-icon {
-        margin: 0 auto 0.75rem;
-        width: 40px;
-        height: 40px;
-        color: var(--text-secondary);
-      }
-
-      h3 {
-        margin: 0 0 0.375rem 0;
-        font-size: 1.1rem;
-        font-weight: 400;
-        color: var(--text-primary);
-        text-transform: lowercase;
-        letter-spacing: 0.02em;
-      }
-
-      .welcome-subtitle {
-        margin: 0;
-        color: var(--text-secondary);
-        font-size: 0.8rem;
-        line-height: 1.3;
-      }
+    .welcome-icon {
+      margin: 0 auto var(--space-3);
+      width: 40px;
+      height: 40px;
+      color: var(--text-secondary);
     }
 
-    .welcome-body {
-      margin-bottom: 1.5rem;
-      text-align: left;
-
-      .welcome-features {
-        display: grid;
-        gap: 0.625rem;
-
-        .feature-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.75rem;
-          padding: 0.625rem 0.75rem;
-          background: transparent;
-          border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
-
-          &:hover {
-            background: var(--bg-hover);
-            border-color: var(--border-active);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-          }
-
-          .feature-icon {
-            font-size: 1.25rem;
-            flex-shrink: 0;
-            margin-top: 0.125rem;
-          }
-
-          .feature-text {
-            font-size: 0.75rem;
-            line-height: 1.3;
-
-            strong {
-              color: var(--text-primary);
-              display: block;
-              margin-bottom: 0.125rem;
-              font-size: 0.78125rem;
-            }
-
-            color: var(--text-secondary);
-          }
-        }
-      }
+    h3 {
+      margin: 0 0 var(--space-1);
+      font-size: var(--text-h4);
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
     }
 
-    .welcome-actions {
-      text-align: center;
-      position: relative;
-      margin-top: auto; // Push to bottom if content is too short
+    .welcome-subtitle {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: var(--text-small);
+      line-height: var(--leading-chrome);
+    }
+  }
 
-      .model-picker {
-        display: flex;
-        flex-direction: column;
-        gap: 0.375rem;
-        margin-bottom: 0.75rem;
+  // The worker could not start. A notice in the panel's own kit, with the
+  // danger ink for the one line that is the warning.
+  .welcome-notice {
+    @include outline-block;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    color: var(--text-secondary);
+    font-size: var(--text-small);
+    line-height: var(--leading-chrome);
+    text-align: left;
 
-        .model-option {
-          display: flex;
-          flex-direction: column;
-          gap: 0.125rem;
-          text-align: left;
-          background: transparent;
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-          padding: 0.5rem 0.75rem;
-          cursor: pointer;
-          font-family: inherit;
-          @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
+    strong {
+      display: block;
+      color: var(--ink-danger);
+      font-weight: 400;
+    }
+  }
 
-          &:hover {
-            background: var(--bg-hover);
-            border-color: var(--border-active);
-          }
+  .welcome-body {
+    margin-bottom: var(--space-5);
+    text-align: left;
 
-          // Which model is selected is a state, marked the way every other
-          // selected thing on the site is: brightest hairline in the list.
-          &.selected {
-            border-color: rgba(255, 255, 255, 0.45);
-            background: var(--bg-accent);
-          }
+    .welcome-features {
+      display: grid;
+      gap: var(--space-2);
+    }
 
-          .model-option-name {
-            display: flex;
-            align-items: baseline;
-            gap: 0.5rem;
-            color: var(--text-primary);
-            font-size: 0.75rem;
+    // Three facts, stated. Not controls, so they do not answer the pointer.
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      @include outline-block;
+      border-color: var(--hairline-interior);
+      border-radius: var(--radius-md);
 
-            .model-option-size {
-              color: var(--text-secondary);
-              font-size: 0.6875rem;
-              font-weight: 400;
-            }
-          }
-
-          .model-option-description {
-            color: var(--text-secondary);
-            font-size: 0.6875rem;
-            line-height: 1.3;
-          }
-        }
-      }
-
-      .download-button-group {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-      }
-
-      .download-button {
-        @include outline-button;
-        flex: 1;
+      .feature-icon {
+        flex-shrink: 0;
+        color: var(--text-secondary);
+        margin-top: 0.125rem;
 
         svg {
-          flex-shrink: 0;
+          display: block;
           width: 18px;
           height: 18px;
         }
       }
 
-      .info-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
+      .feature-text {
+        font-size: var(--text-xs);
+        line-height: var(--leading-chrome);
         color: var(--text-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 0.75rem;
+
+        strong {
+          display: block;
+          margin-bottom: 0.125rem;
+          color: var(--text-primary);
+          font-weight: 400;
+        }
+      }
+    }
+  }
+
+  .welcome-actions {
+    text-align: center;
+    position: relative;
+    margin-top: auto; // Push to bottom if content is too short
+
+    .model-picker {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+
+      .model-option {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        text-align: left;
+        @include outline-block;
+        border-radius: var(--radius-md);
+        padding: var(--space-2) var(--space-3);
         cursor: pointer;
-        @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
-        flex-shrink: 0;
+        font-family: inherit;
+        color: var(--text-primary);
+        @include control-transition(var(--transition-fast));
 
         &:hover {
-          background: var(--bg-hover);
-          color: var(--text-primary);
-          border-color: var(--border-active);
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-md);
+          @include control-hover;
         }
 
-        &:active {
-          transform: translateY(0);
+        @include control-focus;
+
+        // Which model is selected is a state, marked the way every other
+        // selected thing on the site is.
+        &.selected {
+          @include control-active;
         }
+
+        .model-option-name {
+          display: flex;
+          align-items: baseline;
+          gap: var(--space-2);
+          color: var(--text-primary);
+          font-size: var(--text-xs);
+
+          .model-option-size {
+            color: var(--text-secondary);
+            font-size: var(--text-2xs);
+          }
+        }
+
+        .model-option-description {
+          color: var(--text-secondary);
+          font-size: var(--text-2xs);
+          line-height: var(--leading-chrome);
+        }
+      }
+    }
+
+    // The download and the info beside it stretch to one height.
+    .download-button-group {
+      display: flex;
+      align-items: stretch;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+
+    .download-button {
+      @include button-secondary;
+      flex: 1;
+
+      svg {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .info-button {
+      @include icon-button;
+      padding: var(--space-3);
+    }
+
+    .info-popover {
+      @include floating-panel;
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      margin-bottom: var(--space-2);
+      z-index: 100;
+      text-align: left;
+      animation: reveal var(--transition-normal);
+
+      .info-popover-content {
+        padding: var(--space-4);
+      }
+
+      .info-header {
+        margin-bottom: var(--space-3);
+
+        h4 {
+          margin: 0;
+          font-size: var(--text-small);
+          color: var(--text-primary);
+        }
+      }
+
+      .info-description {
+        margin: 0 0 var(--space-3);
+        color: var(--text-secondary);
+        font-size: var(--text-small);
+        line-height: var(--leading-chrome);
+      }
+
+      .info-details {
+        margin-bottom: var(--space-3);
+
+        .info-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: var(--text-xs);
+          color: var(--text-secondary);
+          margin-bottom: var(--space-1);
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          strong {
+            color: var(--text-primary);
+            margin-right: var(--space-2);
+            font-weight: 400;
+          }
+
+          .compatibility-badges {
+            display: flex;
+            gap: var(--space-1);
+            flex-shrink: 0;
+          }
+        }
+      }
+
+      .huggingface-link {
+        @include text-link;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--text-xs);
+        text-transform: lowercase;
 
         svg {
           flex-shrink: 0;
-          width: 16px;
-          height: 16px;
+          width: 14px;
+          height: 14px;
         }
       }
+    }
 
-      .info-popover {
-        position: absolute;
-        bottom: 100%;
-        left: 0;
-        right: 0;
-        margin-bottom: 0.5rem;
-        background: rgba(0, 0, 0, 0.7); // Match settings panel transparency
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-lg);
-        z-index: 100;
-        animation: slideUp 0.2s ease-out;
-
-        .info-popover-content {
-          padding: 1rem;
-
-          .info-header {
-            margin-bottom: 0.625rem;
-
-            h4 {
-              margin: 0;
-              font-size: 0.9375rem;
-              color: var(--text-primary);
-            }
-          }
-
-          .info-description {
-            margin: 0 0 0.75rem 0;
-            color: var(--text-secondary);
-            font-size: 0.8125rem;
-            line-height: 1.3;
-          }
-
-          .info-details {
-            margin-bottom: 0.75rem;
-
-            .info-item {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              font-size: 0.75rem;
-              color: var(--text-secondary);
-              margin-bottom: 0.25rem;
-
-              &:last-child {
-                margin-bottom: 0;
-              }
-
-              strong {
-                color: var(--text-primary);
-                margin-right: 0.5rem;
-              }
-
-              .compatibility-badges {
-                display: flex;
-                gap: 0.25rem;
-                flex-shrink: 0;
-              }
-            }
-          }
-
-          .huggingface-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            color: var(--ink-primary);
-            text-decoration: none;
-            font-size: 0.75rem;
-            padding: 0.375rem 0.5rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border-color);
-            background: var(--bg-primary);
-            @include control-transition(var(--transition-fast));
-
-            &:hover {
-              background: var(--bg-hover);
-              border-color: var(--primary-color);
-              text-decoration: none;
-            }
-
-            svg {
-              flex-shrink: 0;
-              width: 16px;
-              height: 16px;
-            }
-          }
-        }
-      }
-
-      .download-note {
-        margin: 0 0 0.75rem 0;
-        font-size: 0.6875rem;
-        color: var(--text-muted);
-        line-height: 1.25;
-        text-align: center;
-      }
+    .download-note {
+      margin: 0 0 var(--space-3);
+      font-size: var(--text-2xs);
+      color: var(--text-muted);
+      line-height: var(--leading-chrome);
+      text-align: center;
     }
   }
 }
 
-// Markdown rendering styles for chat messages
-.markdown-content {
-  line-height: 1.6;
+// A device the model can run on: a fact in a small outline, lowercase like
+// everything else.
+.device-badge {
+  padding: 0.125rem var(--space-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-2xs);
+  color: var(--text-secondary);
+  text-transform: lowercase;
+}
 
-  // Headings
+@media (max-width: 768px) {
+  .chat-welcome-screen {
+    padding: var(--space-3);
+
+    .welcome-content {
+      max-width: 100%;
+    }
+
+    .welcome-header {
+      margin-bottom: var(--space-3);
+
+      .welcome-icon {
+        margin-bottom: var(--space-2);
+        width: 36px;
+        height: 36px;
+      }
+    }
+
+    .welcome-body {
+      margin-bottom: var(--space-4);
+    }
+  }
+}
+
+// The two dialogs — clear the transcript, export it. A dialog is a panel over
+// a panel: the floating-panel material with the panel shadow, arriving the
+// way everything arrives. No scrim behind it: the field is the point of the
+// site, and the shortcuts panel already made that call.
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+}
+
+.dialog {
+  @include floating-panel;
+  box-shadow: var(--shadow-panel);
+  width: min(24rem, calc(100vw - 2 * var(--window-inset)));
+  overflow: hidden;
+  text-transform: lowercase;
+  animation: reveal var(--transition-normal);
+
+  .dialog-header {
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--hairline-interior);
+
+    h3 {
+      margin: 0;
+      font-size: var(--text-small);
+      color: var(--text-primary);
+    }
+  }
+
+  .dialog-body {
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    text-align: left;
+
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: var(--text-small);
+      line-height: var(--leading-chrome);
+
+      strong {
+        color: var(--text-primary);
+      }
+    }
+
+    // The one line that is a warning takes the danger ink.
+    .dialog-warning,
+    .dialog-warning strong {
+      color: var(--ink-danger);
+    }
+
+    .dialog-checkbox {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      cursor: pointer;
+      user-select: none;
+      font-size: var(--text-small);
+      color: var(--text-secondary);
+
+      input[type='checkbox'] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--text-primary);
+        cursor: pointer;
+      }
+
+      &:hover {
+        color: var(--text-primary);
+      }
+    }
+  }
+
+  .dialog-actions {
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--hairline-interior);
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+
+    button {
+      @include button-secondary;
+
+      svg {
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+      }
+    }
+
+    // The destructive one says so in the danger ink, and only under the
+    // pointer — at rest it is one of the row.
+    .dialog-danger:hover:not(:disabled) {
+      color: var(--ink-danger);
+    }
+  }
+}
+
+// Markdown rendering inside an assistant bubble.
+.markdown-content {
+  line-height: var(--leading-prose);
+
   .markdown-h1,
   .markdown-h2,
   .markdown-h3,
@@ -2202,52 +1339,47 @@
   .markdown-h5,
   .markdown-h6 {
     color: var(--text-primary);
-    margin: 1.5rem 0 0.75rem 0;
-    line-height: 1.3;
+    margin: var(--space-5) 0 var(--space-3);
+    line-height: var(--leading-tight);
 
     &:first-child {
       margin-top: 0;
     }
   }
 
+  // Two rungs, then the body size: a bubble is not a page.
   .markdown-h1 {
-    font-size: 1.5rem;
-  }
-  .markdown-h2 {
-    font-size: 1.35rem;
-  }
-  .markdown-h3 {
-    font-size: 1.2rem;
-  }
-  .markdown-h4 {
-    font-size: 1.1rem;
-  }
-  .markdown-h5 {
-    font-size: 1rem;
-  }
-  .markdown-h6 {
-    font-size: 0.95rem;
+    font-size: var(--text-h3);
   }
 
-  // Paragraphs
+  .markdown-h2 {
+    font-size: var(--text-h4);
+  }
+
+  .markdown-h3,
+  .markdown-h4,
+  .markdown-h5,
+  .markdown-h6 {
+    font-size: var(--text-body);
+  }
+
   .markdown-p {
     color: var(--text-primary);
-    margin: 0 0 1rem 0;
+    margin: 0 0 var(--space-4);
 
     &:last-child {
       margin-bottom: 0;
     }
   }
 
-  // Lists
   .markdown-ul,
   .markdown-ol {
     color: var(--text-primary);
-    margin: 0.75rem 0;
-    padding-left: 1.5rem;
+    margin: var(--space-3) 0;
+    padding-left: var(--space-5);
 
     .markdown-li {
-      margin-bottom: 0.25rem;
+      margin-bottom: var(--space-1);
 
       &:last-child {
         margin-bottom: 0;
@@ -2255,13 +1387,13 @@
     }
   }
 
-  // Blockquotes. The rail is a structural marker, not a link, so it is the
-  // same neutral hairline the collapsible cards on the CV use.
+  // The rail is a structural marker, not a link: the lit hairline, like the
+  // blog's pull quotes.
   .markdown-blockquote {
-    margin: 1rem 0;
-    padding: 0.75rem 1rem;
-    border-left: 3px solid var(--border-active);
-    background: var(--bg-accent);
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    border-left: 3px solid var(--hairline-lit);
+    background: var(--wash-field);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 
     .markdown-p {
@@ -2271,29 +1403,26 @@
     }
   }
 
-  // Code. The green here sat in the same paragraphs as `.markdown-link`, in
-  // exactly the same green, so an identifier and a link were indistinguishable
-  // until you moused over one. The inset surface is what marks it as code.
+  // Code: the inset surface is what marks it — the same wash and hairline the
+  // blog's code takes, in the same face.
   .markdown-code-inline {
-    background: var(--bg-accent);
+    background: var(--wash-hover);
     color: var(--text-primary);
-    padding: 0.125rem 0.375rem;
+    padding: 0.1em 0.35em;
     border-radius: var(--radius-sm);
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
     font-size: 0.875em;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--hairline-interior);
   }
 
   .markdown-pre {
-    background: var(--bg-accent);
-    border: 1px solid var(--border-color);
+    background: var(--wash-field);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-md);
-    padding: 1rem;
-    margin: 1rem 0;
+    padding: var(--space-4);
+    margin: var(--space-4) 0;
     overflow-x: auto;
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    font-size: 0.875rem;
-    line-height: 1.5;
+    font-size: var(--text-small);
+    line-height: var(--leading-chrome);
 
     .markdown-code-block {
       background: none;
@@ -2306,24 +1435,14 @@
     }
   }
 
-  // Links
   .markdown-link {
-    color: var(--ink-primary);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color var(--transition-fast);
-
-    &:hover {
-      border-bottom-color: var(--primary-color);
-    }
+    @include text-link;
 
     &:visited {
       color: var(--ink-primary);
-      opacity: 0.8;
     }
   }
 
-  // Text formatting
   .markdown-strong {
     color: var(--text-primary);
     font-weight: 600;
@@ -2334,52 +1453,42 @@
     font-style: italic;
   }
 
-  // Tables
   .markdown-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 1rem 0;
-    border: 1px solid var(--border-color);
+    margin: var(--space-4) 0;
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-md);
     overflow: hidden;
 
     .markdown-th,
     .markdown-td {
-      padding: 0.75rem;
+      padding: var(--space-3);
       text-align: left;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid var(--hairline-interior);
+      font-size: var(--text-small);
+      color: var(--text-primary);
     }
 
     .markdown-th {
-      background: var(--bg-accent);
-      color: var(--text-primary);
+      background: var(--wash-field);
       font-weight: 400;
-      font-size: 0.875rem;
     }
 
-    .markdown-td {
-      color: var(--text-primary);
-      font-size: 0.875rem;
-    }
-
-    .markdown-tr:last-child {
-      .markdown-td {
-        border-bottom: none;
-      }
+    .markdown-tr:last-child .markdown-td {
+      border-bottom: none;
     }
   }
 
-  // Horizontal rule
   .markdown-hr {
     border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    margin: 2rem 0;
-    opacity: 0.6;
+    border-top: 1px solid var(--hairline-interior);
+    margin: var(--space-6) 0;
   }
 
-  // Syntax highlighting overrides
+  // The highlighter ships its own surface; the block above draws ours.
   .hljs {
-    background: var(--bg-accent) !important;
+    background: transparent !important;
     color: var(--text-primary) !important;
     padding: 0 !important;
   }
@@ -2389,7 +1498,7 @@
   .markdown-ul,
   .markdown-ol {
     .markdown-p {
-      margin: 0.5rem 0;
+      margin: var(--space-2) 0;
 
       &:first-child {
         margin-top: 0;
@@ -2397,184 +1506,6 @@
 
       &:last-child {
         margin-bottom: 0;
-      }
-    }
-  }
-}
-
-// Per-message copy button (revealed on message hover)
-.chat-message {
-  .message-timestamp {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-
-    .timestamp-text {
-      flex: 1;
-    }
-
-    .copy-button {
-      background: transparent;
-      border: none;
-      color: var(--text-primary);
-      cursor: pointer;
-      padding: 0.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--radius-sm);
-      @include control-transition(var(--transition-fast));
-      opacity: 0;
-      transform: translateY(2px);
-
-      svg {
-        flex-shrink: 0;
-      }
-
-      &:hover {
-        color: var(--text-primary);
-        background: var(--bg-hover);
-        transform: translateY(0);
-      }
-
-      &:active {
-        transform: scale(0.95);
-      }
-
-      // "Copied" is a genuine success state and the only feedback the action
-      // gives, so this one keeps the green while the hover above lets it go.
-      &[title='Copied!'] {
-        color: var(--ink-primary);
-        opacity: 1;
-      }
-    }
-  }
-
-  &:hover .message-timestamp .copy-button,
-  .message-timestamp .copy-button:focus-visible {
-    opacity: 0.7;
-    transform: translateY(0);
-  }
-}
-
-// Export chat dialog
-.export-chat-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--bg-primary);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px); // Safari 17 and earlier
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.export-chat-dialog {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  width: min(420px, calc(100vw - 2rem));
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-
-  .export-chat-header h3 {
-    margin: 0;
-    color: var(--text-primary);
-    font-size: 1rem;
-  }
-
-  .export-chat-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-
-    .export-message {
-      margin: 0;
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-
-      strong {
-        color: var(--text-primary);
-      }
-    }
-
-    .thinking-toggle-checkbox {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      user-select: none;
-
-      input[type='checkbox'] {
-        width: 16px;
-        height: 16px;
-        accent-color: var(--primary-color);
-        cursor: pointer;
-      }
-
-      .checkbox-label {
-        color: var(--text-secondary);
-        font-size: 0.8125rem;
-      }
-
-      &:hover .checkbox-label {
-        color: var(--text-primary);
-      }
-    }
-  }
-
-  .export-chat-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-
-    button {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      font-family: inherit;
-      font-size: 0.8125rem;
-      border-radius: 8px;
-      padding: 0.5rem 0.875rem;
-      cursor: pointer;
-      @include control-transition(0.2s cubic-bezier(0.4, 0, 0.2, 1));
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    }
-
-    .export-cancel-button {
-      background: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--text-secondary);
-
-      &:hover:not(:disabled) {
-        background: var(--bg-hover);
-        color: var(--text-primary);
-      }
-    }
-
-    .export-copy-button,
-    .export-download-button {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: var(--text-primary);
-
-      &:hover:not(:disabled) {
-        background: var(--bg-accent);
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
       }
     }
   }

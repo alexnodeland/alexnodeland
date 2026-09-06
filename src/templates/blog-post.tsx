@@ -1,6 +1,7 @@
 import { graphql, Link } from 'gatsby';
 import React from 'react';
 import SEO from '../components/seo';
+import { formatDate } from '../lib/utils/dates';
 import '../styles/blog.scss';
 
 interface BlogPostProps {
@@ -24,11 +25,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
         <header className="post-header">
           <div className="post-meta">
             <time dateTime={post.frontmatter.date}>
-              {new Date(post.frontmatter.date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
+              {formatDate(post.frontmatter.date)}
             </time>
             {post.frontmatter.category && (
               <span className="post-category">{post.frontmatter.category}</span>
