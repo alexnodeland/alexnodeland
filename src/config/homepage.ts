@@ -82,7 +82,8 @@ export const homepageConfig: HomepageConfig = {
       {
         icon: '⚙️',
         title: 'infrastructure',
-        description: 'aws, kubernetes, infrastructure as code, and ci/cd',
+        description:
+          'aws, container orchestration, infrastructure as code, and ci/cd',
       },
       {
         icon: '📊',
