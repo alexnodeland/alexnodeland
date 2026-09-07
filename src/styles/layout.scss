@@ -40,6 +40,12 @@
   // sibling — can run its fold off it.
   timeline-scope: --window;
 
+  // The line the phone's folded title sits on: the nav capsule's centre.
+  // Layout measures the capsule and writes the real number here; this is the
+  // same line from the tokens, for the frame before it does and for a page
+  // with the chrome hidden.
+  --rail-centre: calc(var(--rail-inset-top) + var(--rail-height) / 2);
+
   // The band the hero gives up when it folds: its resting box less the folded
   // row's. Layout publishes the resting height (and, for the desktop's row,
   // the tagline's lift); the folded row's height is the stylesheet's own.
@@ -289,13 +295,16 @@
     }
 
     h1 {
-      // The rise re-centres the line on the nav capsule: from a top padded to
-      // the rail's clearance plus the breath, that is the breath, half the
-      // rail, the clearance gap, and half the line's own height (~1.15em; the
-      // scale is about the centre, so the centre is what travels).
+      // The rise re-centres the line on the nav capsule. The scale is about
+      // the centre, so the centre is what travels: from where the title's
+      // box sits at rest (--title-centre, measured by Layout — its line box,
+      // not an em guess at it, which put the cover's title and the crumb's on
+      // different lines) to the capsule's own centre line.
       --fold-rise: calc(
-        var(--rail-height) / 2 + var(--space-2) + 0.575em +
-          var(--hero-rest-lift)
+        var(
+            --title-centre,
+            calc(var(--rail-clearance) + var(--hero-rest-lift) + 0.65em)
+          ) - var(--rail-centre)
       );
       --fold-transform: translate(
           calc(-1 * var(--title-shift, 0px)),
@@ -379,6 +388,56 @@
   p,
   .hero-crumb-rest {
     animation-name: none;
+  }
+}
+
+// The brand alone, on a page with no title of its own (a post): the crumb
+// without its tail, worn folded from the start — so the way home is on every
+// page, on the line it folds to everywhere else. Sized as the crumb heroes
+// are; the blank second line keeps the folded row's geometry theirs.
+.brand-header {
+  margin-bottom: 0;
+  padding: 0;
+  position: relative;
+
+  h1 {
+    margin-bottom: var(--space-4);
+    @include over-background;
+  }
+
+  p {
+    font-size: var(--text-lead);
+    line-height: var(--leading-chrome);
+    visibility: hidden;
+  }
+}
+
+// Pinned: the hero is folded by the stylesheet and never opens. The scroll
+// timeline is off it, the frame is whole, and the content starts at the
+// frame's edge rather than under a band.
+.stage.is-pinned {
+  .site-hero.is-collapsible {
+    --hero-collapse: 1;
+
+    h1,
+    p,
+    .hero-crumb-rest {
+      animation-name: none;
+    }
+  }
+
+  .window-frame {
+    animation-name: none;
+    clip-path: inset(1px 0 0 0 round var(--radius-lg));
+  }
+
+  .window-edge {
+    animation-name: none;
+    transform: none;
+  }
+
+  .window-band {
+    height: 0;
   }
 }
 

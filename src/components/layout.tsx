@@ -58,6 +58,19 @@ const readBand = (region: HTMLElement, panel: HTMLElement): number =>
 const readProgress = (panel: HTMLElement, band: number): number =>
   band > 0 ? Math.min(Math.max(panel.scrollTop / band, 0), 1) : 0;
 
+// An element's layout top within an ancestor, summed up the offset chain —
+// unaffected by any transform on the way, which is the point: the title is
+// measured while it may be mid-fold.
+const offsetTopWithin = (el: HTMLElement, ancestor: HTMLElement): number => {
+  let top = 0;
+  let node: HTMLElement | null = el;
+  while (node && node !== ancestor) {
+    top += node.offsetTop;
+    node = node.offsetParent as HTMLElement | null;
+  }
+  return top;
+};
+
 // The veil fades in over this much scroll past the band — once content is
 // actually passing under the frame's finished edge.
 const VEIL_RANGE = 90;
@@ -187,6 +200,7 @@ interface HeroGhost {
   id: number;
   path: string;
   collapsible: boolean;
+  pinned: boolean;
   style: React.CSSProperties;
 }
 
@@ -223,6 +237,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     key: heroKey,
     hero,
     collapsible,
+    pinned,
   } = React.useMemo(() => resolveHero(shownPath), [shownPath]);
   const shouldCollapse = Boolean(hero) && collapsible;
 
@@ -288,6 +303,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         id: ghostId,
         path: shownPath,
         collapsible: shouldCollapse,
+        pinned,
         style: {
           top: box.top - stageBox.top,
           left: box.left - stageBox.left,
@@ -295,9 +311,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
           height: box.height,
           // Pinned, so the ghost keeps the fold the reader was actually
           // looking at while the live region below it goes back to rest.
-          '--hero-collapse': panel
-            ? String(readProgress(panel, bandRef.current))
-            : '0',
+          '--hero-collapse': pinned
+            ? '1'
+            : panel
+              ? String(readProgress(panel, bandRef.current))
+              : '0',
         } as React.CSSProperties,
       });
     } else {
@@ -481,6 +499,8 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     const panel = windowRef.current;
     const readers = [region, frameRef.current, edgeRef.current];
     if (!shouldCollapse || !region || !panel) return;
+    // A pinned hero is folded by the stylesheet, for good.
+    if (pinned) return;
     if (supportsScrollDrivenFold()) return;
 
     let frame = 0;
@@ -528,7 +548,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       }
       region.classList.remove('is-folded');
     };
-  }, [shouldCollapse]);
+  }, [shouldCollapse, pinned]);
 
   // The veil only exists once something is actually under it: opacity tracks
   // the window's scroll over the ~90px past the band — the first band's worth
@@ -748,6 +768,15 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       const width = container.clientWidth;
       const subWidth = sub.offsetWidth;
       const subHeight = sub.offsetHeight;
+      // Where the title's line box sits at rest, from the top of the screen
+      // (the region is the offset parent, and it starts at the stage's top),
+      // and where the nav capsule's centre line is. On a phone the fold
+      // carries the one to the other, so both are real pixels rather than a
+      // guess from the font: the cover's title and the crumb's have different
+      // metrics, and an em-based rise put them on different lines.
+      const titleCentre = offsetTopWithin(h1, el) + h1.offsetHeight / 2;
+      const rail = document.querySelector<HTMLElement>('.nav');
+      const railCentre = rail ? rail.offsetTop + rail.offsetHeight / 2 : null;
       // The hero's resting box, which the stylesheet turns into the band the
       // window reaches up by. During a navigation the region wears a hard
       // height while it eases between two heroes; its scroll height is the
@@ -772,12 +801,18 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       const room = width - h1.offsetWidth * titleScale - COLLAPSED_GAP;
       const scale = subWidth > 0 ? Math.min(1, room / subWidth) : 1;
 
-      const key = `${titleShift}|${subShift}|${rowLift}|${scale}|${restHeight}|${titleScale}`;
+      const key = `${titleShift}|${subShift}|${rowLift}|${scale}|${restHeight}|${titleScale}|${titleCentre}|${railCentre}`;
       if (key !== lastKey) {
         lastKey = key;
         el.style.setProperty('--title-shift', `${titleShift}px`);
         el.style.setProperty('--sub-shift', `${subShift}px`);
         el.style.setProperty('--sub-scale', String(scale));
+        el.style.setProperty('--title-centre', `${titleCentre}px`);
+        if (railCentre !== null) {
+          stage?.style.setProperty('--rail-centre', `${railCentre}px`);
+        } else {
+          stage?.style.removeProperty('--rail-centre');
+        }
         // These two land on the stage rather than the hero: the window's
         // frame reads the band they make, and it is not in the hero's
         // subtree. A write there restyles the page, which is why it happens
@@ -787,8 +822,10 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       }
       // The band, read back as geometry for the veil and the fallback. It can
       // move without the text moving — the stage resizing under a sidebar —
-      // so it is read on every observation, after the numbers above land.
-      if (panel) bandRef.current = readBand(el, panel);
+      // so it is read on every observation, after the numbers above land. A
+      // pinned hero has already given its band up, so its scroll starts at
+      // the frame's finished edge.
+      if (panel) bandRef.current = pinned ? 0 : readBand(el, panel);
     };
 
     measure();
@@ -798,7 +835,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       observer.disconnect();
       bandRef.current = 0;
     };
-  }, [shouldCollapse, heroKey]);
+  }, [shouldCollapse, heroKey, pinned]);
 
   // Panel-state classes. The stage carries them for the hero and the window,
   // which move as one block when a sidebar opens; the nav capsule carries its
@@ -813,6 +850,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   const stageClasses = [
     'stage',
     ...(shouldCollapse ? ['has-fold'] : []),
+    ...(pinned ? ['is-pinned'] : []),
     ...panelState,
   ].join(' ');
   const navClasses = ['nav', ...panelState].join(' ');
@@ -867,7 +905,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                 key={ghost.id}
                 className={`site-hero hero-ghost${
                   ghost.collapsible ? ' is-collapsible' : ''
-                }`}
+                }${ghost.pinned ? ' is-pinned' : ''}`}
                 ref={ghostRef}
                 style={ghost.style}
                 aria-hidden="true"

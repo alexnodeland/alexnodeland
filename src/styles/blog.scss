@@ -66,11 +66,18 @@
 // to the same grammar (title row, body, meta band) so the three list pages
 // read as one system. The hairline easing brighter under the pointer is the
 // whole of "this one".
+// The whole card is the way in, like a project card: the title's link is
+// stretched over the card (see .post-title below), so a tap anywhere on it
+// opens the post. The card itself stays an <article> with real links inside
+// — a card that is one big anchor cannot hold other links — and the pointer
+// says so from edge to edge.
 .post-preview {
   @include outline-block;
   @include card-highlight;
+  position: relative;
   padding: var(--space-6);
   border-radius: var(--radius-lg);
+  cursor: pointer;
 
   @include reading-emphasis {
     @include card-highlight-on;
@@ -82,10 +89,14 @@
 .post-preview .post-header {
   margin-bottom: var(--space-4);
 
-  // The row owns the space under the title here.
+  // The row owns the space under the title here. And the title is not a
+  // positioned box, unlike every other heading: the stretched link's pseudo
+  // element (see .post-title below) has to reach the card's edges, and a
+  // positioned heading would be its containing block instead.
   .post-title {
     margin: 0;
     min-width: 0;
+    position: static;
   }
 }
 
@@ -133,11 +144,20 @@
 
   // A card title that is a link: it answers the pointer by taking the link
   // green, and never by underlining — the global anchor rule's hover
-  // underline is kept off it.
+  // underline is kept off it. Its hit area is the whole card: the pseudo
+  // element is laid over the card's box (the card is the positioned
+  // ancestor), so the title lights wherever the pointer is on the card.
   a {
     color: var(--text-primary);
     text-decoration: none;
     transition: color var(--transition-fast);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+    }
 
     &:hover {
       color: var(--ink-primary);
@@ -167,11 +187,14 @@
 // The way in, parked at the far end of the meta band — the same place the
 // project card keeps its octocat. An arrow pointing up and out, in the link
 // colour: the card is a link, and this is the one thing on it that says so.
-// It holds still under the pointer; the card's hairline is the answer.
+// It holds still under the pointer; the card's hairline is the answer. It
+// sits above the stretched title link, so it stays a target of its own.
 .read-more {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
   // A larger box than the glyph, so there is something to tap.
   margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1))
     calc(-1 * var(--space-1)) 0;

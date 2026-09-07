@@ -291,11 +291,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
 // Separator between the summary and what it opens. Inset from the card edges
 // so it reads as a divider rather than a seam, and with the same buffer above
-// and below the rule as the summary keeps under its own last line.
+// and below the rule as the summary keeps under its own last line. The body
+// closes the card too (see collapse.ts), so the pointer says so across it.
 .cv-collapse-details {
   margin: 0 var(--space-6);
   padding: var(--space-5) 0 var(--space-6);
   border-top: 1px solid var(--hairline-interior);
+  cursor: pointer;
 }
 
 // The date range, as quiet text — the same treatment the blog card gives its

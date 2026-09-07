@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExperienceItem } from '../../types';
+import { closeFromBody } from './collapse';
 
 interface CVExperienceSectionProps {
   experiences: ExperienceItem[];
@@ -44,7 +45,7 @@ const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
             )}
           </summary>
 
-          <div className="cv-collapse-details">
+          <div className="cv-collapse-details" onClick={closeFromBody}>
             <div className="experience-location">{exp.location}</div>
             {exp.description && (
               <p className="experience-description">{exp.description}</p>
