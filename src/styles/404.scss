@@ -54,7 +54,7 @@
 // the capsule, which is small and does not scroll. The field behind, where
 // the number forms, is the background's own and is not touched from here.
 html[data-not-found] {
-  .stage .layout {
+  .stage .window {
     will-change: translate, scale, opacity;
     animation: nf-window-adrift 12s var(--ease-out) 0.8s forwards;
   }
@@ -139,7 +139,7 @@ html[data-not-found] {
   }
 
   // A phone has nowhere for the window to go; it thins out where it stands.
-  html[data-not-found] .stage .layout {
+  html[data-not-found] .stage .window {
     animation-name: nf-window-thin;
   }
 }
@@ -156,7 +156,7 @@ html[data-not-found] {
 // backgrounds handle that) and the chrome staying exactly where it is.
 @media (prefers-reduced-motion: reduce) {
   html[data-not-found] {
-    .stage .layout,
+    .stage .window,
     .nav,
     .site-hero .hero-crumb-rest,
     .site-hero p {

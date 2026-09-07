@@ -28,20 +28,39 @@ interface LayoutProps {
   location?: { pathname?: string };
 }
 
-// Where the hero folds. The window's scrollTop is read against this range,
-// and the hero folds when it passes COLLAPSE_ON and unfolds when it comes
-// back under COLLAPSE_OFF — a dead band, so a scroll resting near the line
-// cannot flap. Short on purpose: the tagline should be gone by the time the
-// first card clears the top of the frame, not halfway down the page.
+// The fold. As the window scrolls, the hero folds to a compact row above it
+// and the window's frame rises to take the room — following the scroll
+// exactly, both ways (see .site-hero.is-collapsible in layout.scss for the
+// choreography and why nothing in it lays out).
 //
-// The fold is one state change (`.is-collapsed`, see layout.scss), eased in
-// CSS on every property alike. It used to be two: the title and tagline
-// tracked the scroll frame by frame while the box waited for the scroll to
-// rest and then flipped, and on a phone the two came apart for the whole of a
-// momentum scroll. One state cannot disagree with itself.
-const HERO_COLLAPSE_RANGE = 160;
-const COLLAPSE_ON = 0.55;
-const COLLAPSE_OFF = 0.45;
+// Where the browser can run the fold off the window's scroll timeline, the
+// compositor reads the progress itself and nothing here runs on a scroll
+// frame. Both features are needed as a pair: the timeline alone, without the
+// scope that lets the hero — the scroller's sibling — name it, would leave
+// the fold with no driver at all.
+const supportsScrollDrivenFold = (): boolean =>
+  typeof CSS !== 'undefined' &&
+  typeof CSS.supports === 'function' &&
+  CSS.supports('animation-timeline: scroll()') &&
+  CSS.supports('timeline-scope: --window');
+
+// The band the hero gives up: how far the window's box reaches up into the
+// hero's. The stylesheet derives it (--fold-band) from the resting height
+// measure() publishes; reading it back as geometry is simpler than parsing
+// the calc.
+const readBand = (region: HTMLElement, panel: HTMLElement): number =>
+  Math.max(
+    0,
+    region.getBoundingClientRect().bottom - panel.getBoundingClientRect().top
+  );
+
+// The fold's progress, 0 → 1 across the band.
+const readProgress = (panel: HTMLElement, band: number): number =>
+  band > 0 ? Math.min(Math.max(panel.scrollTop / band, 0), 1) : 0;
+
+// The veil fades in over this much scroll past the band — once content is
+// actually passing under the frame's finished edge.
+const VEIL_RANGE = 90;
 
 // The space left between the shrunken title and the tagline once the two
 // share a row. The title's collapsed scale is the stylesheet's
@@ -88,20 +107,6 @@ const RISE_IN = [
 
 const canAnimate = (el: Element | null | undefined): el is HTMLElement =>
   Boolean(el) && typeof (el as HTMLElement).animate === 'function';
-
-// The collapse the hero region is wearing right now — the stylesheet's 0 or 1
-// for its folded state. Read before a navigation unfolds it, and pinned onto
-// the ghost, so a hero that was scrolled down when the reader clicked leaves
-// looking exactly as it did.
-const readCollapse = (region: HTMLElement): string => {
-  if (typeof window === 'undefined') return '0';
-  if (typeof window.getComputedStyle !== 'function') return '0';
-  const value = window
-    .getComputedStyle(region)
-    .getPropertyValue('--hero-collapse')
-    .trim();
-  return value || '0';
-};
 
 // The footer marks, drawn as one monoline set rather than collected: the
 // vendor logos were a mix of outline and solid and read as five unrelated
@@ -182,8 +187,6 @@ interface HeroGhost {
   id: number;
   path: string;
   collapsible: boolean;
-  // Whether the region had handed its height back when the reader left.
-  collapsed: boolean;
   style: React.CSSProperties;
 }
 
@@ -200,6 +203,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   const mainRef = React.useRef<HTMLElement>(null);
   const heroRef = React.useRef<HTMLElement>(null);
   const veilRef = React.useRef<HTMLDivElement>(null);
+  const frameRef = React.useRef<HTMLDivElement>(null);
+  const edgeRef = React.useRef<HTMLDivElement>(null);
+  // The band the hero gives up, in pixels, as last measured — the veil's and
+  // the fallback publisher's reference for the scroll's progress.
+  const bandRef = React.useRef(0);
 
   // A missing page is rendered at whatever address was typed, so it cannot
   // be told from its path; it raises a flag instead, and the shell resolves
@@ -280,15 +288,16 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         id: ghostId,
         path: shownPath,
         collapsible: shouldCollapse,
-        collapsed: region.classList.contains('is-collapsed'),
         style: {
           top: box.top - stageBox.top,
           left: box.left - stageBox.left,
           width: box.width,
           height: box.height,
-          // Pinned, so the ghost keeps the geometry the reader was actually
+          // Pinned, so the ghost keeps the fold the reader was actually
           // looking at while the live region below it goes back to rest.
-          '--hero-collapse': readCollapse(region),
+          '--hero-collapse': panel
+            ? String(readProgress(panel, bandRef.current))
+            : '0',
         } as React.CSSProperties,
       });
     } else {
@@ -297,7 +306,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
     // The window is one element across the whole site now, so it keeps its
     // scroll position between pages unless we put it back, and a new hero must
-    // never arrive already collapsed.
+    // never arrive already folded.
     if (panel) {
       panel.scrollTop = 0;
     }
@@ -458,73 +467,74 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     };
   }, [shownPath]);
 
-  // The hero fold. The page scrolls inside `.layout`, not the document, so
-  // this reads that element's scrollTop, once per animation frame while the
-  // scroll is live, and toggles the hero's folded state at the threshold.
-  // That class is the whole of what the scroll does to the hero: the
-  // stylesheet eases every property of the fold from it, on one duration and
-  // one curve, so the title, the tagline and the box move together.
+  // The fold's publisher, for browsers that cannot run it off the scroll
+  // timeline. The page scrolls inside `.layout`, not the document, so this
+  // reads that element's scrollTop once per animation frame and writes the
+  // progress as --hero-collapse on the three elements that read it — the
+  // hero region, the window's frame and its edge — and nowhere higher: a
+  // custom property inherits, so a per-frame write on the stage or the window
+  // would drag the whole page into every scroll frame's style invalidation.
+  // Nothing that reads it lays out; the write costs a composite.
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
     const region = heroRef.current;
     const panel = windowRef.current;
+    const readers = [region, frameRef.current, edgeRef.current];
     if (!shouldCollapse || !region || !panel) return;
+    if (supportsScrollDrivenFold()) return;
 
     let frame = 0;
-    let collapsed = false;
+    let last = -1;
 
-    const readProgress = () =>
-      Math.min(Math.max(panel.scrollTop / HERO_COLLAPSE_RANGE, 0), 1);
-
-    const apply = () => {
+    // Three decimals: the title travels a few hundred pixels across the
+    // band, so a hundredth was a 3px step and a slow drag moved it in
+    // visible increments.
+    const publish = () => {
       frame = 0;
-      const progress = readProgress();
-      const want = collapsed
-        ? progress > COLLAPSE_OFF
-        : progress >= COLLAPSE_ON;
-      if (want === collapsed) return;
-      collapsed = want;
-      region.classList.toggle('is-collapsed', want);
+      const progress =
+        Math.round(readProgress(panel, bandRef.current) * 1000) / 1000;
+      if (progress === last) return;
+      last = progress;
+      const value = String(progress);
+      for (const reader of readers) {
+        reader?.style.setProperty('--hero-collapse', value);
+      }
+      region.classList.toggle('is-folded', progress >= 1);
     };
-
-    // One decision per frame however many scroll events land in it.
     const onScroll = () => {
-      if (!frame) frame = window.requestAnimationFrame(apply);
+      if (!frame) frame = window.requestAnimationFrame(publish);
     };
 
     // Wherever the effect lands it lands at once: mount is not motion.
-    apply();
+    publish();
 
-    // How the navigation hands the fold back: drop any decision in flight and
-    // put the box back to rest without its ease — the region is about to be
-    // measured for the navigation's own height animation, and a padding
-    // still in flight would hand that measurement a number from the middle
-    // of a transition.
+    // How the navigation hands the fold back: forget the last written value —
+    // it describes a page that is gone — and republish from the real scroll.
     syncCollapseRef.current = () => {
       if (frame) {
         window.cancelAnimationFrame(frame);
         frame = 0;
       }
-      if (collapsed) {
-        collapsed = false;
-        region.style.transition = 'none';
-        region.classList.remove('is-collapsed');
-        void region.offsetHeight;
-        region.style.removeProperty('transition');
-      }
+      last = -1;
+      publish();
     };
     panel.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       panel.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
       syncCollapseRef.current = null;
-      region.classList.remove('is-collapsed');
+      for (const reader of readers) {
+        reader?.style.removeProperty('--hero-collapse');
+      }
+      region.classList.remove('is-folded');
     };
   }, [shouldCollapse]);
 
   // The veil only exists once something is actually under it: opacity tracks
-  // the window's scroll over its first ~90px, so page tops read at full
-  // strength at rest and the overscroll bounce never drags a gradient along.
+  // the window's scroll over the ~90px past the band — the first band's worth
+  // of scroll carries the content up to the frame's edge, and only after that
+  // does anything pass under it — so page tops read at full strength at rest
+  // and the overscroll bounce never drags a gradient along.
   //
   // Both writes land on the veil element itself — the one node that reads
   // them. They used to land on the window, which invalidated style for the
@@ -539,8 +549,8 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     let last = -1;
     const apply = () => {
       frame = 0;
-      const o =
-        Math.round(Math.min(Math.max(panel.scrollTop / 90, 0), 1) * 20) / 20;
+      const past = (panel.scrollTop - bandRef.current) / VEIL_RANGE;
+      const o = Math.round(Math.min(Math.max(past, 0), 1) * 20) / 20;
       if (o === last) return;
       last = o;
       veil.style.setProperty('--veil-strength', String(o));
@@ -725,11 +735,8 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     // invalidate the hero's subtree once per animation frame.
     let lastKey = '';
     const measure = () => {
-      // The distances describe the resting hero. Collapsed, the tagline's box
-      // is clipped on a phone and the column carries a negative margin, and a
-      // reading taken then (the observer fires on every frame of the flip)
-      // would publish the wrong numbers for the next time the hero opens.
-      if (el.classList.contains('is-collapsed')) return;
+      const stage = stageRef.current;
+      const panel = windowRef.current;
       const h1 = el.querySelector('h1');
       const sub = el.querySelector('p');
       // The registry owns the element the two sit in, so that — not the hero
@@ -740,11 +747,12 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
       const width = container.clientWidth;
       const subWidth = sub.offsetWidth;
-      // scrollHeight, not offsetHeight: on a phone the tagline is clipped by
-      // a max-height while the box is closing or opening, and the observer
-      // fires on every frame of that. The content's own height is the number
-      // the clip has to be able to open back to.
-      const subHeight = sub.scrollHeight || sub.offsetHeight;
+      const subHeight = sub.offsetHeight;
+      // The hero's resting box, which the stylesheet turns into the band the
+      // window reaches up by. During a navigation the region wears a hard
+      // height while it eases between two heroes; its scroll height is the
+      // natural one throughout.
+      const restHeight = el.style.height ? el.scrollHeight : el.offsetHeight;
       const titleShift = (width - h1.offsetWidth) / 2;
       const subShift = (width - subWidth) / 2;
       const rowLift = (h1.offsetHeight + subHeight) / 2;
@@ -764,22 +772,32 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       const room = width - h1.offsetWidth * titleScale - COLLAPSED_GAP;
       const scale = subWidth > 0 ? Math.min(1, room / subWidth) : 1;
 
-      const key = `${titleShift}|${subShift}|${rowLift}|${scale}|${subHeight}|${titleScale}`;
-      if (key === lastKey) return;
-      lastKey = key;
-      el.style.setProperty('--title-shift', `${titleShift}px`);
-      el.style.setProperty('--sub-shift', `${subShift}px`);
-      el.style.setProperty('--row-lift', `${rowLift}px`);
-      el.style.setProperty('--sub-scale', String(scale));
-      // The phone clips the tagline away when the box collapses; this is the
-      // height the clip closes from, so the ease covers the real distance.
-      el.style.setProperty('--tagline-height', `${subHeight}px`);
+      const key = `${titleShift}|${subShift}|${rowLift}|${scale}|${restHeight}|${titleScale}`;
+      if (key !== lastKey) {
+        lastKey = key;
+        el.style.setProperty('--title-shift', `${titleShift}px`);
+        el.style.setProperty('--sub-shift', `${subShift}px`);
+        el.style.setProperty('--sub-scale', String(scale));
+        // These two land on the stage rather than the hero: the window's
+        // frame reads the band they make, and it is not in the hero's
+        // subtree. A write there restyles the page, which is why it happens
+        // here — on a change of text or column — and never on a scroll frame.
+        stage?.style.setProperty('--row-lift', `${rowLift}px`);
+        stage?.style.setProperty('--hero-rest-height', `${restHeight}px`);
+      }
+      // The band, read back as geometry for the veil and the fallback. It can
+      // move without the text moving — the stage resizing under a sidebar —
+      // so it is read on every observation, after the numbers above land.
+      if (panel) bandRef.current = readBand(el, panel);
     };
 
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      bandRef.current = 0;
+    };
   }, [shouldCollapse, heroKey]);
 
   // Panel-state classes. The stage carries them for the hero and the window,
@@ -792,7 +810,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     isChatPanelOpen && 'chat-panel-open',
     isClosingChatPanel && 'chat-panel-closing',
   ].filter(Boolean);
-  const stageClasses = ['stage', ...panelState].join(' ');
+  const stageClasses = [
+    'stage',
+    ...(shouldCollapse ? ['has-fold'] : []),
+    ...panelState,
+  ].join(' ');
   const navClasses = ['nav', ...panelState].join(' ');
 
   return (
@@ -845,7 +867,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                 key={ghost.id}
                 className={`site-hero hero-ghost${
                   ghost.collapsible ? ' is-collapsible' : ''
-                }${ghost.collapsed ? ' is-collapsed' : ''}`}
+                }`}
                 ref={ghostRef}
                 style={ghost.style}
                 aria-hidden="true"
@@ -853,59 +875,75 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                 {resolveHero(ghost.path).hero}
               </section>
             )}
-            {/* Focusable so a click inside hands it the keyboard: PageDown and
-                the arrows then scroll it natively. Not in the tab order — the
-                links inside it are. */}
-            <div className="layout" ref={windowRef} tabIndex={-1}>
-              {/* A tapered blur pinned to the window's visible top edge:
-                  content dissolves as it scrolls out instead of colliding with
-                  whatever floats up there (the cv's sticky controls). Skipped
-                  where nothing floats — see `wantsVeil`. */}
-              {wantsVeil && (
-                <div className="window-veil" ref={veilRef} aria-hidden="true" />
-              )}
-              <main className="main" ref={mainRef}>
-                {children}
-              </main>
-              <footer className="footer">
-                <div className="footer-content">
-                  <div className="footer-links">
-                    <a
-                      href={`mailto:${siteConfig.contact.email}`}
-                      className="footer-link"
-                      data-platform="email"
-                      aria-label="email"
-                    >
-                      <span className="icon">{socialIcon('email')}</span>
-                    </a>
-                    {getAllSocialLinks().map(({ platform, url }) => {
-                      return (
-                        <a
-                          key={platform}
-                          href={url}
-                          className="footer-link"
-                          data-platform={platform}
-                          aria-label={platform}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <span className="icon">{socialIcon(platform)}</span>
-                        </a>
-                      );
-                    })}
-                  </div>
-                  <p className="footer-copyright">
-                    © {new Date().getFullYear()} all rights reserved,{' '}
-                    {/* The line runs to two on the narrowest phones, and the
+            {/* The window, in three layers (see .window in layout.scss): the
+                frame carrying the material, clipped from the top by the fold
+                so its edge rises with the content; the top hairline riding
+                that clip; and the transparent scroller over both. */}
+            <div className="window">
+              <div className="window-frame" ref={frameRef} aria-hidden="true" />
+              <div className="window-edge" ref={edgeRef} aria-hidden="true" />
+              {/* Focusable so a click inside hands it the keyboard: PageDown
+                  and the arrows then scroll it natively. Not in the tab order
+                  — the links inside it are. */}
+              <div className="layout" ref={windowRef} tabIndex={-1}>
+                {/* The room the hero occupies at rest. The content starts
+                    under it, and the first band's worth of scroll carries it
+                    up to the frame's finished edge. */}
+                <div className="window-band" aria-hidden="true" />
+                {/* A tapered blur pinned to the window's visible top edge:
+                    content dissolves as it scrolls out instead of colliding
+                    with whatever floats up there (the cv's sticky controls).
+                    Skipped where nothing floats — see `wantsVeil`. */}
+                {wantsVeil && (
+                  <div
+                    className="window-veil"
+                    ref={veilRef}
+                    aria-hidden="true"
+                  />
+                )}
+                <main className="main" ref={mainRef}>
+                  {children}
+                </main>
+                <footer className="footer">
+                  <div className="footer-content">
+                    <div className="footer-links">
+                      <a
+                        href={`mailto:${siteConfig.contact.email}`}
+                        className="footer-link"
+                        data-platform="email"
+                        aria-label="email"
+                      >
+                        <span className="icon">{socialIcon('email')}</span>
+                      </a>
+                      {getAllSocialLinks().map(({ platform, url }) => {
+                        return (
+                          <a
+                            key={platform}
+                            href={url}
+                            className="footer-link"
+                            data-platform={platform}
+                            aria-label={platform}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <span className="icon">{socialIcon(platform)}</span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                    <p className="footer-copyright">
+                      © {new Date().getFullYear()} all rights reserved,{' '}
+                      {/* The line runs to two on the narrowest phones, and the
                         only break it must not take is the one inside the name
                         — "alex" left on one line and "nodeland" on the next
                         reads as two people. */}
-                    <span className="footer-copyright-name">
-                      {siteConfig.author.toLowerCase()}
-                    </span>
-                  </p>
-                </div>
-              </footer>
+                      <span className="footer-copyright-name">
+                        {siteConfig.author.toLowerCase()}
+                      </span>
+                    </p>
+                  </div>
+                </footer>
+              </div>
             </div>
           </div>
           {/* The one place the site's shortcuts are written down, plus the

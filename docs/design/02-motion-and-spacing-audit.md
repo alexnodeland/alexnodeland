@@ -882,6 +882,28 @@ The standards in §9 went in as written, with these differences from the plan:
   rewritten to the new contract: every eased property shares one duration
   and curve, and the box's and the title's progress agree in every frame.
 
+  _Revised again, for the feel._ One state change held together but snapped:
+  the scroll only triggered the fold, it did not drive it. The structural
+  path the first note deferred is what shipped next, and it changes what
+  moves. The hero keeps its resting box for good and the window starts
+  inside it, at the folded row's foot (a negative margin the size of the
+  band), so the scroll container never changes size; the content starts
+  under a spacer the size of the band and the first band's worth of scroll
+  carries it up. The window's material moved off the scroller onto a frame
+  layer behind it, clipped from the top by the fold's progress so its edge
+  rides up with the content, with the top hairline and corners on a layer of
+  their own riding the clip. Title, tagline, clip and hairline all move by
+  transform, opacity and clip-path — compositor properties — and where the
+  browser has scroll-driven animations (`animation-timeline` with
+  `timeline-scope`, so the hero can name the scroller's timeline from beside
+  it), the compositor reads the progress itself: no JavaScript runs on a
+  scroll frame. Elsewhere Layout publishes `--hero-collapse` once per frame
+  on the three elements that read it and the same properties are written as
+  functions of it. The frame's outer shadow is the one casualty: a clipped
+  layer cannot cast outside its clip. The guards assert that the window's
+  box never moves, and that the clip edge, the hairline, the content's top
+  and the title's progress agree at every sampled scroll offset.
+
 - **Spacing** was renumbered onto a 4px base (`--space-1` … `--space-9`, with
   the 0.75rem step at `--space-3`) rather than given a `--space-2-5`. Every
   stylesheet was rewritten onto it; the raw values left are the nav capsule's

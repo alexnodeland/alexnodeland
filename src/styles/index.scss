@@ -41,8 +41,11 @@
 
 // The subtitle segments are real links — each one lands on its section of the
 // projects page — so they take the link green like every other action.
+// The tagline's words are links into the sections below. They are part of
+// the hero, so they take the link green without the underline a link in
+// running text would.
 .hero-subtitle-link {
-  @include text-link;
+  @include quiet-link;
 }
 
 // Plain prose on the scrim — the owner pulled the outline off this one and

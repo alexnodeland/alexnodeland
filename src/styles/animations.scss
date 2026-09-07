@@ -151,3 +151,52 @@
     transform: scale(1);
   }
 }
+
+// --- The hero fold, driven by the window's scroll ----------------------------
+// These four run on a scroll timeline (see layout.scss): their progress is the
+// window's scroll offset across the band the hero gives up, not time. They
+// carry no curve — a scroll-driven animation with an ease lags the finger and
+// then rushes it — and each moves only a property the compositor animates
+// without the main thread: transform, opacity, clip-path.
+
+// A hero line travelling to its folded place. The destination is the
+// element's own `--fold-transform`, so one keyframe serves the title on a
+// desktop, the title on a phone and the tagline beside it.
+@keyframes hero-fold-transform {
+  to {
+    transform: var(--fold-transform, none);
+  }
+}
+
+// A hero line that fades as the hero folds — the tagline and the crumb's tail
+// on a phone. Hidden at the very end, so a faded-out line stops taking the
+// taps meant for whatever has scrolled up under it.
+@keyframes hero-fold-fade {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+// The window's frame completing. Its top band is clipped away at rest — the
+// hero sits on the bare field there — and the clip edge rises with the content
+// until the frame is whole. It stops 1px short of the frame's own top edge:
+// the top hairline is the edge layer's, which rides the clip.
+@keyframes window-frame-fold {
+  from {
+    clip-path: inset(var(--fold-band, 0px) 0 0 0 round var(--radius-lg));
+  }
+  to {
+    clip-path: inset(1px 0 0 0 round var(--radius-lg));
+  }
+}
+
+// The window's top hairline and corners, riding the clip edge up.
+@keyframes window-edge-fold {
+  from {
+    transform: translateY(var(--fold-band, 0px));
+  }
+  to {
+    transform: none;
+  }
+}

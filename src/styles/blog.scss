@@ -131,6 +131,9 @@
   margin: 0 0 var(--space-4);
   letter-spacing: -0.01em;
 
+  // A card title that is a link: it answers the pointer by taking the link
+  // green, and never by underlining — the global anchor rule's hover
+  // underline is kept off it.
   a {
     color: var(--text-primary);
     text-decoration: none;
@@ -138,6 +141,7 @@
 
     &:hover {
       color: var(--ink-primary);
+      text-decoration: none;
     }
   }
 }
