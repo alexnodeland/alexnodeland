@@ -60,12 +60,17 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
     <article className="project-card">
       <div className="project-card-content">
         {/* The name, the body, the tags, and one meta band at the foot —
-            the blog preview's grammar. */}
-        <div className="project-header">
-          <h3 className="project-name">{project.name}</h3>
-        </div>
+            the blog preview's grammar. The name and body are grouped: a card
+            in a grid row is as tall as the tallest in that row, and this is
+            the block that takes up the difference, so the slack lands under
+            the description instead of inside it (see .project-card-body). */}
+        <div className="project-card-body">
+          <div className="project-header">
+            <h3 className="project-name">{project.name}</h3>
+          </div>
 
-        <p className="project-description">{project.description}</p>
+          <p className="project-description">{project.description}</p>
+        </div>
 
         {/* The tags as one quiet line, the way a cv card lists its key
             skills — not a row of chips. */}

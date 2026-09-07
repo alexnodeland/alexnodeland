@@ -122,6 +122,18 @@
   height: 100%;
 }
 
+// The card's upper block — the name and the description — and the one part of
+// it that grows. The grid stretches every card in a row to the tallest, and
+// the difference has to go somewhere: it goes here, as space under the
+// description, which leaves the tag line and the meta band sitting together at
+// the foot. It used to go on the description itself, so a paragraph's box
+// ended a long way below its own last line and the tags drifted with it. (The
+// certification cards do the same job with an auto margin; they have no tag
+// line between the two, so they need no group.)
+.project-card-body {
+  flex: 1;
+}
+
 // The title row: the name alone. Every card on the page is a repo, and the
 // octocat at the foot already says where it leads.
 .project-header {
@@ -146,13 +158,16 @@
   color: var(--text-secondary);
   line-height: var(--leading-prose);
   margin: 0 0 var(--space-5);
-  flex: 1;
 }
 
 // The tags, as one line directly above the meta foot — the same quiet band
 // a cv card lists its key skills in.
 .project-tags {
-  margin: 0 0 var(--space-2);
+  // No margin of its own: the meta band below states the whole distance to the
+  // hairline. The two used to stack — margins do not collapse in a flex column
+  // — and made the widest gap on the card out of two values that each read as
+  // something smaller.
+  margin: 0;
   font-size: var(--text-small);
   line-height: var(--leading-chrome);
   color: var(--text-muted);
