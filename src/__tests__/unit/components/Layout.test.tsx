@@ -526,91 +526,134 @@ describe('Layout Component', () => {
     });
   });
 
-  it('should fold the hero at the threshold and unfold it under the dead band', () => {
-    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+  // The ResizeObserver stub hands back its callback so a re-measure can be
+  // driven by hand; both the fold and the split geometry lean on it.
+  let observers: (() => void)[] = [];
+  let observe: jest.Mock;
+  let disconnect: jest.Mock;
+  let originalResizeObserver: typeof ResizeObserver;
 
-    const region = document.querySelector('.site-hero') as HTMLElement;
-    const windowPanel = document.querySelector('.layout') as HTMLElement;
+  beforeEach(() => {
+    observers = [];
+    observe = jest.fn();
+    disconnect = jest.fn();
+    originalResizeObserver = global.ResizeObserver;
+    global.ResizeObserver = class {
+      observe = observe;
+      unobserve = jest.fn();
+      disconnect = disconnect;
+      constructor(callback: () => void) {
+        observers.push(callback);
+      }
+    } as unknown as typeof ResizeObserver;
+  });
 
-    // jsdom runs rAF callbacks on a timer, so drive the frame by hand. Two
-    // scroll events land in the same frame here on purpose: the decision is
-    // made once per frame however many arrive (the veil's publisher shares
-    // the event and queues a frame of its own, so the queue is not counted).
-    const scrollTo = (top: number) => {
-      const queue: ((time: number) => void)[] = [];
-      const raf = jest
-        .spyOn(window, 'requestAnimationFrame')
-        .mockImplementation(cb => {
-          queue.push(cb);
-          return 1;
-        });
-      Object.defineProperty(windowPanel, 'scrollTop', {
-        value: top,
+  afterEach(() => {
+    global.ResizeObserver = originalResizeObserver;
+  });
+
+  describe('the hero fold', () => {
+    it('should mark the stage on a page whose hero folds, and not on a post', () => {
+      const { unmount } = render(
+        <TestWrapper pathname="/blog">{mockChildren}</TestWrapper>
+      );
+      expect(document.querySelector('.stage')).toHaveClass('has-fold');
+      // The window is three layers plus the band the content starts under.
+      const layout = document.querySelector('.layout') as HTMLElement;
+      expect(layout.parentElement).toHaveClass('window');
+      expect(document.querySelector('.window-frame')).not.toBeNull();
+      expect(document.querySelector('.window-edge')).not.toBeNull();
+      expect(layout.firstElementChild).toHaveClass('window-band');
+      unmount();
+
+      // A post has no hero, so there is nothing to fold and no band: the
+      // window starts under the empty region as it always did.
+      render(<TestWrapper pathname="/blog/a-post">{mockChildren}</TestWrapper>);
+      expect(document.querySelector('.stage')).not.toHaveClass('has-fold');
+    });
+
+    // jsdom has no CSS.supports, so this is the published path: the browsers
+    // that cannot run the fold off the scroll timeline get the progress
+    // written once per frame, on the three elements that read it.
+    it('should publish the scroll progress across the band on the fallback path', () => {
+      render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+
+      const stage = document.querySelector('.stage') as HTMLElement;
+      const region = document.querySelector('.site-hero') as HTMLElement;
+      const frame = document.querySelector('.window-frame') as HTMLElement;
+      const edge = document.querySelector('.window-edge') as HTMLElement;
+      const windowPanel = document.querySelector('.layout') as HTMLElement;
+
+      // jsdom lays nothing out, so the band — the hero's bottom less the
+      // window's top — is planted: 100px.
+      Object.defineProperty(region, 'getBoundingClientRect', {
+        value: () => ({ bottom: 200 }),
         configurable: true,
       });
-      windowPanel.dispatchEvent(new Event('scroll'));
-      windowPanel.dispatchEvent(new Event('scroll'));
-      queue.forEach(cb => cb(performance.now()));
-      raf.mockRestore();
-    };
+      Object.defineProperty(windowPanel, 'getBoundingClientRect', {
+        value: () => ({ top: 100 }),
+        configurable: true,
+      });
 
-    expect(region).not.toHaveClass('is-collapsed');
+      // jsdom runs rAF callbacks on a timer, so drive the frame by hand. Two
+      // scroll events land in the same frame here on purpose: the value is
+      // published once per frame however many arrive (the veil's publisher
+      // shares the event and queues a frame of its own).
+      const scrollTo = (top: number) => {
+        const queue: ((time: number) => void)[] = [];
+        const raf = jest
+          .spyOn(window, 'requestAnimationFrame')
+          .mockImplementation(cb => {
+            queue.push(cb);
+            return 1;
+          });
+        Object.defineProperty(windowPanel, 'scrollTop', {
+          value: top,
+          configurable: true,
+        });
+        windowPanel.dispatchEvent(new Event('scroll'));
+        windowPanel.dispatchEvent(new Event('scroll'));
+        queue.forEach(cb => cb(performance.now()));
+        raf.mockRestore();
+      };
 
-    // The middle of the dead band, from rest: nothing happens.
-    scrollTo(80);
-    expect(region).not.toHaveClass('is-collapsed');
+      // The band is read back when the hero is measured; the measurement is
+      // driven by the ResizeObserver stub above.
+      observers.forEach(callback => callback());
 
-    // Past the fold line.
-    scrollTo(88);
-    expect(region).toHaveClass('is-collapsed');
+      expect(region.style.getPropertyValue('--hero-collapse')).toBe('0');
 
-    // Back into the dead band, from folded: still folded — a scroll resting
-    // near the line cannot flap the hero.
-    scrollTo(80);
-    expect(region).toHaveClass('is-collapsed');
+      scrollTo(50);
+      for (const reader of [region, frame, edge]) {
+        expect(reader.style.getPropertyValue('--hero-collapse')).toBe('0.5');
+      }
+      expect(region).not.toHaveClass('is-folded');
 
-    // Under the unfold line.
-    scrollTo(72);
-    expect(region).not.toHaveClass('is-collapsed');
+      // Past the band it saturates rather than running away, and the faded
+      // tagline is taken out of hit-testing.
+      scrollTo(4000);
+      expect(region.style.getPropertyValue('--hero-collapse')).toBe('1');
+      expect(region).toHaveClass('is-folded');
 
-    // Nothing is written per frame: the fold is the class, and the
-    // stylesheet owns the value the transforms read.
-    expect(region.style.getPropertyValue('--hero-collapse')).toBe('');
+      scrollTo(0);
+      expect(region.style.getPropertyValue('--hero-collapse')).toBe('0');
+      expect(region).not.toHaveClass('is-folded');
+
+      // And never on the stage or the window: a custom property inherits, and
+      // a per-frame write there would restyle the whole page.
+      expect(stage.style.getPropertyValue('--hero-collapse')).toBe('');
+      expect(windowPanel.style.getPropertyValue('--hero-collapse')).toBe('');
+    });
   });
 
   describe('hero split geometry', () => {
     // jsdom lays nothing out — every box is 0×0 — so the numbers the effect
-    // reads have to be planted on the elements by hand, and the ResizeObserver
-    // stub has to hand back its callback so the re-measure can be driven.
+    // reads have to be planted on the elements by hand.
     const stub = (el: HTMLElement, box: Record<string, number>) => {
       Object.entries(box).forEach(([key, value]) => {
         Object.defineProperty(el, key, { value, configurable: true });
       });
     };
-
-    let observers: (() => void)[] = [];
-    let observe: jest.Mock;
-    let disconnect: jest.Mock;
-    let original: typeof ResizeObserver;
-
-    beforeEach(() => {
-      observers = [];
-      observe = jest.fn();
-      disconnect = jest.fn();
-      original = global.ResizeObserver;
-      global.ResizeObserver = class {
-        observe = observe;
-        unobserve = jest.fn();
-        disconnect = disconnect;
-        constructor(callback: () => void) {
-          observers.push(callback);
-        }
-      } as unknown as typeof ResizeObserver;
-    });
-
-    afterEach(() => {
-      global.ResizeObserver = original;
-    });
 
     const plant = (widths: { title: number; sub: number }) => {
       const heroRegion = document.querySelector('.site-hero') as HTMLElement;
@@ -643,8 +686,13 @@ describe('Layout Component', () => {
       // the title sits on the left edge and the tagline on the right.
       expect(heroRegion.style.getPropertyValue('--title-shift')).toBe('400px');
       expect(heroRegion.style.getPropertyValue('--sub-shift')).toBe('50px');
-      // Half of the stacked height is what puts the tagline on the title's row.
-      expect(heroRegion.style.getPropertyValue('--row-lift')).toBe('45px');
+      // Half of the stacked height is what puts the tagline on the title's
+      // row. It lands on the stage, with the resting height, because the
+      // window's frame reads the band the two make and it is not in the
+      // hero's subtree.
+      const stage = document.querySelector('.stage') as HTMLElement;
+      expect(stage.style.getPropertyValue('--row-lift')).toBe('45px');
+      expect(stage.style.getPropertyValue('--hero-rest-height')).toBe('0px');
       // 900 does not fit beside 200 × 0.55 with a 24px gap in 1000, so the
       // tagline gives back exactly the overrun.
       expect(

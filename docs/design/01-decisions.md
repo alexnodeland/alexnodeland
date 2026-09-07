@@ -216,11 +216,12 @@ thing as it built. Decisions made from looking, recorded so the doc stays honest
   panel-state matrix, which now lives once on the stage. The nav links took the
   window's language with them (scrim + blur + hairline), since they are
   controls on the simulation now rather than text on a panel. On every page but
-  the homepage the hero folds once the window has scrolled past a threshold —
-  Layout toggles `.is-collapsed` on the hero, with a dead band, and CSS eases
-  every property of the fold on one clock — so the tagline gives its room back
-  to the content. (It was scroll-linked first, `--hero-collapse` published
-  frame by frame; see the audit's addendum for why it became one state change.)
+  the homepage the hero folds with the window's scroll — the hero keeps its
+  resting box and the window starts inside it at the folded row's foot, so the
+  scroller never resizes; the title, tagline and the frame's clipped edge
+  travel by compositor properties on the window's scroll timeline — so the
+  tagline gives its room back to the content. (The audit's addendum has the
+  two versions this replaced and why.)
 - **One content width, `--content-max-width: 1100px`** — the projects page's,
   which was the widest. The nav, the heroes, `.main`, the footer and every page
   container cap there, and `--window-max-width` moved 1240 → 1140 so the frame

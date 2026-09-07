@@ -35,6 +35,32 @@
     pointer-events: auto;
   }
 
+  // The window's scroll is a named timeline (declared on .layout, the
+  // scroller). Its scope is lifted to here so the hero — the scroller's
+  // sibling — can run its fold off it.
+  timeline-scope: --window;
+
+  // The band the hero gives up when it folds: its resting box less the folded
+  // row's. Layout publishes the resting height (and, for the desktop's row,
+  // the tagline's lift); the folded row's height is the stylesheet's own.
+  // Zero on a page whose hero does not fold (the cover, a post), where the
+  // window starts under the hero as it always did.
+  --hero-folded-height: calc(
+    var(--rail-clearance) + var(--row-lift, 0px) + var(--space-4)
+  );
+  --fold-band: 0px;
+
+  @media (max-width: 768px) {
+    --hero-folded-height: calc(var(--rail-clearance) + var(--space-1));
+  }
+
+  &.has-fold {
+    --fold-band: max(
+      0px,
+      calc(var(--hero-rest-height, 0px) - var(--hero-folded-height))
+    );
+  }
+
   // A sidebar open on one side moves the block over by the panel's width and
   // the two insets either side of it; both open squeezes it between them.
   &.settings-panel-open {
@@ -62,10 +88,10 @@
 // the window, which is why every hero already carries the halo. Its column is
 // the content column, so a title lines up with the prose under it.
 .site-hero {
-  // The hero's collapse, 0 at rest and 1 collapsed. The collapsible hero
-  // below flips it with its `.is-collapsed` state; it is a number rather than
-  // a second set of rules so the title's and tagline's transforms can be
-  // written once, as functions of it.
+  // The fold's progress, 0 at rest and 1 folded, for browsers that cannot run
+  // the fold off the scroll timeline (see the collapsible hero below): Layout
+  // writes it on each scroll frame, and the same properties the timeline
+  // animates are written here as functions of it.
   --hero-collapse: 0;
   flex-shrink: 0;
   width: 100%;
@@ -135,23 +161,24 @@
   color: var(--text-muted);
 }
 
-// The collapse. Scrolled past a threshold the hero folds to a compact row
-// above the window — the title to the left edge, shrunk; the tagline beside
-// it on a desktop, faded out on a phone — and the window rises to take the
-// room. Scrolled back it unfolds.
+// The fold. As the window scrolls, the hero folds to a compact row above it
+// — the title to the left edge, shrunk; the tagline beside it on a desktop,
+// faded out on a phone — and the window's frame rises to take the room. The
+// fold follows the scroll exactly, both ways.
 //
-// It is one state change, not a scroll-linked scrub. It used to be two
-// things: the title and tagline followed the scroll frame by frame while the
-// box (the paddings, the title's margin, the tagline's clip) waited for the
-// scroll to rest and then flipped. On a phone the two came apart for the
-// whole of a momentum scroll — the box open with the title already gone, or
-// the box shut with the full title tucked under the window's edge — because
-// nothing tied the picture to the box. Now Layout toggles `.is-collapsed` at a
-// threshold (with a dead band, so a scroll resting near it cannot flap) and
-// this block eases every property of the fold on one duration and one curve,
-// so the box, the title and the tagline arrive together and cannot disagree
-// in any frame. A scroll frame costs nothing here at all; the fold itself
-// lays out for its 320ms, once, the way the nav's own state changes do.
+// Nothing here lays out. The first version of this scrubbed the hero's
+// paddings and margins with the scroll, which resized the window — the scroll
+// container being scrolled — on every frame under the finger; the second made
+// the fold a timed state change, which held together but snapped. This one
+// changes what moves instead. The hero keeps its resting box for good and the
+// window starts inside it, at the folded row's foot, so the scroll container
+// never changes size; the title and tagline travel by transform and opacity;
+// and the window's frame is a layer of its own, clipped from the top by the
+// same progress, so its edge rides up with the content (see .window below).
+// Every one of those is a compositor property. Where the browser can, the
+// progress is the scroll offset itself, read by the compositor from the
+// window's scroll timeline; elsewhere Layout publishes it once per frame as
+// --hero-collapse and the same properties are written as functions of it.
 .site-hero.is-collapsible {
   // How far the title shrinks when folded. Layout reads this for the fit
   // calculation too, so it lives here and nowhere else. Just over half on a
@@ -160,13 +187,20 @@
   // the homepage's full name still clears the nav capsule with real air.
   --collapsed-title-scale: 0.55;
 
-  // The resting box, stated outright — it is the base .site-hero padding, but
-  // the folded state below needs a definite value to ease from.
-  padding-top: calc(var(--rail-clearance) + var(--space-2));
-  padding-bottom: var(--space-6);
-  transition:
-    padding-top var(--transition-slow),
-    padding-bottom var(--transition-slow);
+  // The breath above the title that the fold gives back: the base padding is
+  // the rail's clearance plus this, and the folded row sits on the rail.
+  --hero-rest-lift: var(--space-2);
+
+  // The window starts this far up inside the hero's box — at the folded row's
+  // foot — so its scroller never changes size. The title and tagline overflow
+  // into that band at rest, on the bare field: the frame is clipped away
+  // there until the scroll brings it up.
+  margin-bottom: calc(-1 * var(--fold-band));
+  position: relative;
+  z-index: 1;
+  // The band belongs to the window: a tap there goes to whatever has scrolled
+  // up under the hero's box. Only the two lines take the pointer.
+  pointer-events: none;
 
   // Every hero is a title and a tagline stacked and centred. The column of
   // content-width boxes is what lets the fold move each one outward by
@@ -176,72 +210,67 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    transition: margin-bottom var(--transition-slow);
+  }
+
+  h1,
+  p {
+    pointer-events: auto;
   }
 
   h1 {
     margin-bottom: var(--space-4);
     transform-origin: left center;
-    transform: translateX(
-        calc(-1 * var(--hero-collapse) * var(--title-shift, 0px))
-      )
-      scale(calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse)));
-    transition:
-      transform var(--transition-slow),
-      margin-bottom var(--transition-slow);
   }
 
   // The tagline is the last thing in the hero; the room under it is the
   // hero's own padding, not a paragraph margin.
   p {
     margin-bottom: 0;
-    transition:
-      transform var(--transition-slow),
-      opacity var(--transition-slow);
-  }
-
-  // The folded box. The hero gives back the breath above the title and the
-  // gap under it; both paddings bottom out at a floor rather than zero, so
-  // the window's frame never touches the hero text and the folded row never
-  // rides the screen edge.
-  &.is-collapsed {
-    --hero-collapse: 1;
-    padding-top: var(--rail-clearance);
-    padding-bottom: var(--space-4);
-
-    h1 {
-      margin-bottom: 0;
-    }
   }
 
   // The split. At rest the two are stacked and centred; folded, the title
   // sits at the left edge, shrunk, and the tagline at the right edge, risen
-  // onto the title's row, so the two make one line floating above the window.
-  // The pixel distances are measured by Layout — they depend on rendered text
-  // widths — and everything here does is scale them by --hero-collapse.
+  // onto the title's row — both lifted by the breath the row gives back — so
+  // the two make one line floating above the window. The pixel distances are
+  // measured by Layout (they depend on rendered text widths); each line
+  // states its destination as --fold-transform, which the scroll timeline
+  // travels to, and the same journey as a function of --hero-collapse for
+  // the browsers that cannot.
   @media (min-width: 769px) {
+    h1 {
+      --fold-transform: translate(
+          calc(-1 * var(--title-shift, 0px)),
+          calc(-1 * var(--hero-rest-lift))
+        )
+        scale(var(--collapsed-title-scale));
+      transform: translate(
+          calc(-1 * var(--hero-collapse) * var(--title-shift, 0px)),
+          calc(-1 * var(--hero-collapse) * var(--hero-rest-lift))
+        )
+        scale(
+          calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse))
+        );
+    }
+
     p {
       // The tagline travels rather than fading, so it keeps its ink the whole
       // way. --sub-scale is 1 wherever it already fits beside the shrunken
       // title, and below 1 on the one page where it does not; the right-edge
       // origin keeps it parked against the column's right side either way.
-      // The rise onto the title's row is a translate here, not a margin: the
-      // tagline's layout box never moves, only its picture does.
-      opacity: 1;
+      --fold-transform: translate(
+          var(--sub-shift, 0px),
+          calc(-1 * (var(--row-lift, 0px) + var(--hero-rest-lift)))
+        )
+        scale(var(--sub-scale, 1));
+      transform-origin: right center;
       transform: translate(
           calc(var(--hero-collapse) * var(--sub-shift, 0px)),
-          calc(-1 * var(--hero-collapse) * var(--row-lift, 0px))
+          calc(
+            -1 * var(--hero-collapse) *
+              (var(--row-lift, 0px) + var(--hero-rest-lift))
+          )
         )
         scale(calc(1 - (1 - var(--sub-scale, 1)) * var(--hero-collapse)));
-      transform-origin: right center;
-    }
-
-    // Folded, the tagline has risen onto the title's row, so its own row is
-    // handed back — through a negative margin on the column, not on the
-    // tagline. Its box has to stay where it was: the transform above already
-    // moved the picture, and a box that moved too would move it twice.
-    &.is-collapsed > * {
-      margin-bottom: calc(-1 * var(--row-lift, 0px));
     }
   }
 
@@ -258,25 +287,23 @@
       --collapsed-title-scale: 0.44;
     }
 
-    // The resting box at this width (the base .site-hero's phone padding).
-    padding-top: calc(var(--rail-clearance) + var(--space-2));
-    padding-bottom: var(--space-4);
-
     h1 {
-      // Right-to-left: scale first (about the left edge, so --title-shift
-      // stays honest at any scale), then the unscaled rise and slide. The
-      // rise re-centres the line on the nav capsule: from a top padded to
-      // --rail-clearance that is half the rail, the clearance gap, and half
-      // the line's own height (~1.15em; the scale is about the centre, so
-      // the centre is what travels).
-      transform: translateX(
-          calc(-1 * var(--hero-collapse) * var(--title-shift, 0px))
+      // The rise re-centres the line on the nav capsule: from a top padded to
+      // the rail's clearance plus the breath, that is the breath, half the
+      // rail, the clearance gap, and half the line's own height (~1.15em; the
+      // scale is about the centre, so the centre is what travels).
+      --fold-rise: calc(
+        var(--rail-height) / 2 + var(--space-2) + 0.575em +
+          var(--hero-rest-lift)
+      );
+      --fold-transform: translate(
+          calc(-1 * var(--title-shift, 0px)),
+          calc(-1 * var(--fold-rise))
         )
-        translateY(
-          calc(
-            -1 * var(--hero-collapse) *
-              (var(--rail-height) / 2 + var(--space-2) + 0.575em)
-          )
+        scale(var(--collapsed-title-scale));
+      transform: translate(
+          calc(-1 * var(--hero-collapse) * var(--title-shift, 0px)),
+          calc(-1 * var(--hero-collapse) * var(--fold-rise))
         )
         scale(
           calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse))
@@ -286,61 +313,71 @@
     // The tail goes with the tagline; the anchor keeps its ink the whole way.
     .hero-crumb-rest {
       opacity: calc(1 - var(--hero-collapse));
-      transition: opacity var(--transition-slow);
     }
 
-    // The tagline fades and drifts up, and its box closes with it. The clip's
-    // resting height is the tagline's own, published by Layout, so the ease
-    // runs over the real distance rather than idling through empty headroom
-    // first.
+    // The tagline fades and drifts up as the finger moves.
     p {
+      --fold-transform: translateY(-0.5rem);
       opacity: calc(1 - var(--hero-collapse));
-      max-height: var(--tagline-height, 6rem);
-      overflow: hidden;
       transform: translateY(calc(-0.5rem * var(--hero-collapse)));
-      transition:
-        transform var(--transition-slow),
-        opacity var(--transition-slow),
-        max-height var(--transition-slow);
     }
 
-    // Folded, the title has left its band entirely, so the whole line-height
-    // is handed back through the margin and the window rises to just under
-    // the rail; the tagline's box closes with it.
-    &.is-collapsed {
-      padding-top: var(--rail-clearance);
-      padding-bottom: 0;
-
-      h1 {
-        margin-bottom: -1.15em;
-      }
-
-      p {
-        max-height: 0;
-      }
+    // Folded (Layout's class, on the published path), the faded tagline is
+    // taken out of hit-testing: its box sits over the content that has
+    // scrolled up under the hero, and the chips there are what a tap means.
+    &.is-folded p {
+      visibility: hidden;
     }
   }
 
   @media (max-width: 480px) {
-    padding-top: calc(var(--rail-clearance) + var(--space-1));
-    padding-bottom: var(--space-2);
-
-    &.is-collapsed {
-      padding-top: var(--rail-clearance);
-      padding-bottom: 0;
-    }
+    --hero-rest-lift: var(--space-1);
   }
 
-  // Less motion: the hero still has its two states; it simply changes between
-  // them in place.
-  @media (prefers-reduced-motion: reduce) {
-    &,
-    > *,
+  // The fold on the scroll timeline. Each line's progress is the window's
+  // scroll offset across the band, read by the compositor; nothing on the
+  // main thread runs on a scroll frame. Longhands only, on purpose: the
+  // `animation` shorthand resets the timeline and the range, and the build's
+  // minifier sorts declarations — it put the shorthand after them once, and
+  // every fold ran as a zero-second animation straight to its end. Both
+  // features are required as a pair: a browser with the timeline but not the
+  // scope could not reach the scroller's timeline from the hero, and would be
+  // left with the base transforms and no one writing --hero-collapse.
+  @supports (animation-timeline: scroll()) and (timeline-scope: --window) {
     h1,
     p,
     .hero-crumb-rest {
-      transition: none;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --window;
+      animation-range: 0 var(--fold-band);
     }
+
+    h1,
+    p {
+      animation-name: hero-fold-transform;
+    }
+
+    @media (max-width: 768px) {
+      p {
+        animation-name: hero-fold-transform, hero-fold-fade;
+      }
+
+      .hero-crumb-rest {
+        animation-name: hero-fold-fade;
+      }
+    }
+  }
+}
+
+// The ghost wears the fold the reader was looking at, pinned by Layout as an
+// inline --hero-collapse: the timeline would unfold it as the new page's
+// scroll goes back to the top.
+.site-hero.hero-ghost {
+  h1,
+  p,
+  .hero-crumb-rest {
+    animation-name: none;
   }
 }
 
@@ -441,16 +478,85 @@
   visibility: visible;
 }
 
-// The content window — the scrolling panel the page lives in. It does not
-// position itself: the stage owns the geometry, and this fills whatever the
-// hero leaves. The page never scrolls; content scrolls in here.
-.layout {
+// The content window — the panel the page lives in. It does not position
+// itself: the stage owns the geometry, and this fills whatever the hero
+// leaves — from the folded row's foot down, since the hero's box reaches
+// into it by the band (see .site-hero.is-collapsible). The page never
+// scrolls; content scrolls in here.
+//
+// It is three layers. The frame carries the material — scrim, blur,
+// hairline, corners — and is clipped from the top by the fold's progress, so
+// at rest the band under the hero is bare field and the frame's edge rises
+// with the content as the window scrolls. The edge is the top hairline and
+// its corners on a layer of their own, translated to ride the clip: a border
+// cannot sit on a clip line. The scroller is transparent and sits over both.
+.window {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.window-frame {
   @include window-material;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  // Never quite whole: the top hairline is the edge's, so the frame's own is
+  // always under the clip.
+  clip-path: inset(
+    max(1px, calc(var(--fold-band) * (1 - var(--hero-collapse, 0)))) 0 0 0 round
+      var(--radius-lg)
+  );
+}
+
+.window-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--radius-lg);
+  border: 1px solid var(--window-border);
+  border-bottom: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  pointer-events: none;
+  transform: translateY(calc(var(--fold-band) * (1 - var(--hero-collapse, 0))));
+}
+
+// The frame and its edge on the scroll timeline, on the pages that fold.
+// Longhands only — see the hero's block for why.
+@supports (animation-timeline: scroll()) and (timeline-scope: --window) {
+  .stage.has-fold .window-frame,
+  .stage.has-fold .window-edge {
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: --window;
+    animation-range: 0 var(--fold-band);
+  }
+
+  .stage.has-fold .window-frame {
+    animation-name: window-frame-fold;
+  }
+
+  .stage.has-fold .window-edge {
+    animation-name: window-edge-fold;
+  }
+}
+
+.layout {
+  position: relative;
   flex: 1;
   min-height: 0; // Let the flex child actually shrink so `overflow` can work
   display: flex;
   flex-direction: column;
   overflow: auto;
+  // The frame's hairline is the layer behind; this keeps the content the
+  // inset it had inside that hairline, and clips it to the same corners.
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  // The scroll the hero and the frame fold to (scope: the stage).
+  scroll-timeline: --window block;
 
   // Focusable (tabindex=-1) so a click inside gives it the keyboard. It is
   // never in the tab order — the links inside it are — so the ring the
@@ -458,6 +564,14 @@
   &:focus {
     outline: none;
   }
+}
+
+// The band at the top of the scroll: the room the hero occupies at rest. The
+// content starts under it, where it always did, and the first band's worth
+// of scroll carries it up through the field to the frame's finished edge.
+.window-band {
+  flex-shrink: 0;
+  height: var(--fold-band);
 }
 
 // On a phone the panels take the full width, so the stage dims instead of

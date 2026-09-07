@@ -125,15 +125,34 @@ test.describe('structural performance guards', () => {
       .toBe('visible');
   });
 
-  test('the hero fold eases every property on one clock', async ({ page }) => {
-    await page.goto('/');
+  test('the hero fold runs on the scroll timeline, on compositor properties', async ({
+    page,
+  }) => {
+    await page.goto('/projects');
     await settle(page);
 
-    const clocks = await page.evaluate(() => {
-      // What an element actually eases: its transition-property list, minus
-      // every entry whose paired duration is zero (an element with no
-      // transition declared reports the initial `all 0s`).
-      const read = (selector: string) => {
+    const fold = await page.evaluate(() => {
+      const supported =
+        CSS.supports('animation-timeline: scroll()') &&
+        CSS.supports('timeline-scope: --window');
+      const animations = (selector: string) => {
+        const el = document.querySelector(selector);
+        return el
+          ? getComputedStyle(el)
+              .animationName.split(',')
+              .map(name => name.trim())
+          : null;
+      };
+      // Whether an element's animations run on the window's scroll rather
+      // than on the clock — the whole point of the timeline path.
+      const timelines = (selector: string) =>
+        Array.from(document.querySelector(selector)!.getAnimations()).map(
+          animation =>
+            animation.timeline ? animation.timeline.constructor.name : 'none'
+        );
+      // What an element eases in time: its transition-property list, minus
+      // every entry whose paired duration is zero.
+      const eased = (selector: string) => {
         const el = document.querySelector(selector);
         if (!el) return null;
         const style = getComputedStyle(el);
@@ -142,139 +161,189 @@ test.describe('structural performance guards', () => {
           .map(property => property.trim());
         const durations = style.transitionDuration
           .split(',')
-          .map(duration => duration.trim());
-        const timings = style.transitionTimingFunction
-          .split(/,(?![^(]*\))/)
-          .map(timing => timing.trim());
-        const eased = properties
-          .map((property, index) => ({
-            property,
-            duration: durations[index % durations.length],
-            timing: timings[index % timings.length],
-          }))
-          .filter(entry => parseFloat(entry.duration) > 0);
-        return eased;
+          .map(duration => parseFloat(duration));
+        return properties.filter(
+          (_, index) => durations[index % durations.length] > 0
+        );
       };
+      const inline = (selector: string) =>
+        (
+          document.querySelector(selector) as HTMLElement
+        ).style.getPropertyValue('--hero-collapse');
       return {
-        hero: read('.site-hero.is-collapsible'),
-        title: read('.site-hero.is-collapsible h1'),
-        tagline: read('.site-hero.is-collapsible p'),
+        supported,
+        names: {
+          title: animations('.site-hero.is-collapsible h1'),
+          tagline: animations('.site-hero.is-collapsible p'),
+          frame: animations('.window-frame'),
+          edge: animations('.window-edge'),
+        },
+        timelines: {
+          title: timelines('.site-hero.is-collapsible h1'),
+          frame: timelines('.window-frame'),
+          edge: timelines('.window-edge'),
+        },
+        eased: {
+          hero: eased('.site-hero.is-collapsible'),
+          title: eased('.site-hero.is-collapsible h1'),
+          tagline: eased('.site-hero.is-collapsible p'),
+          frame: eased('.window-frame'),
+          edge: eased('.window-edge'),
+        },
+        inline: {
+          hero: inline('.site-hero'),
+          frame: inline('.window-frame'),
+          stage: inline('.stage'),
+        },
       };
     });
 
-    // The fold is one state change. Its box (the paddings), its title (the
-    // transform) and its tagline all have to ease on the same duration and
-    // the same curve, or they arrive at different times and the title spends
-    // frames under the window's edge — the mismatch this replaced.
-    const durations = new Set<string>();
-    const timings = new Set<string>();
-    for (const eased of Object.values(clocks)) {
-      expect(eased).not.toBeNull();
-      expect(eased!.length).toBeGreaterThan(0);
-      for (const entry of eased!) {
-        durations.add(entry.duration);
-        timings.add(entry.timing);
-      }
+    // Nothing about the fold is eased in time: it is the scroll, and only
+    // the scroll, that moves it.
+    for (const properties of Object.values(fold.eased)) {
+      expect(properties).toEqual([]);
     }
-    expect([...durations]).toHaveLength(1);
-    expect([...timings]).toHaveLength(1);
-    expect(clocks.hero!.map(e => e.property)).toContain('padding-top');
-    expect(clocks.title!.map(e => e.property)).toContain('transform');
-    expect(clocks.tagline!.map(e => e.property)).toContain('transform');
+
+    test.skip(
+      !fold.supported,
+      'this browser cannot run the fold off the scroll timeline'
+    );
+
+    // On the timeline path the compositor reads the scroll itself: each
+    // moving piece carries its scroll-driven animation, on a scroll timeline
+    // and not the document's clock (a shorthand that reset the timeline once
+    // left every fold finished at scroll zero), and nothing is written per
+    // frame from JavaScript.
+    expect(fold.names.title).toContain('hero-fold-transform');
+    expect(fold.names.tagline).toContain('hero-fold-transform');
+    expect(fold.names.frame).toContain('window-frame-fold');
+    expect(fold.names.edge).toContain('window-edge-fold');
+    for (const timelines of Object.values(fold.timelines)) {
+      expect(timelines.length).toBeGreaterThan(0);
+      for (const timeline of timelines) expect(timeline).toBe('ScrollTimeline');
+    }
+    expect(fold.inline.hero).toBe('');
+    expect(fold.inline.frame).toBe('');
+    expect(fold.inline.stage).toBe('');
   });
 
-  test('the hero box and its title fold together in every frame', async ({
+  test('the frame edge, the content and the title agree at every scroll offset', async ({
     page,
   }) => {
-    // The projects list: long enough to scroll past the fold line on every
-    // device profile, which the homepage is not on a phone.
+    // The projects list: long enough to scroll past the band on every device
+    // profile, which the homepage is not on a phone.
     await page.goto('/projects');
     await settle(page);
 
-    // Hydration is what arms the fold, and on a loaded runner it can land
-    // after `settle`. So the first fold is only waited for — it proves the
-    // shell is live — and the hero is put back to rest before the run that
-    // is actually measured.
-    const collapsed = () =>
-      page.evaluate(() =>
-        document.querySelector('.site-hero')!.classList.contains('is-collapsed')
-      );
+    // Hydration is what measures the band, and on a loaded runner it can land
+    // after `settle`. Fold once and unfold, as proof the shell is live, before
+    // the run that is measured.
+    const edgeAt = () =>
+      page.evaluate(() => {
+        const transform = getComputedStyle(
+          document.querySelector('.window-edge')!
+        ).transform;
+        const matrix = transform.match(/matrix\(([^)]+)\)/);
+        return matrix ? parseFloat(matrix[1].split(',')[5]) : 0;
+      });
     const scrollTo = (top: number) =>
       page.evaluate(value => {
         (document.querySelector('.layout') as HTMLElement).scrollTop = value;
       }, top);
-    await scrollTo(200);
+    await scrollTo(600);
     await expect
-      .poll(collapsed, { message: 'the hero should fold', timeout: 20_000 })
-      .toBe(true);
+      .poll(edgeAt, { message: 'the frame should complete', timeout: 20_000 })
+      .toBeLessThan(1);
     await scrollTo(0);
     await expect
-      .poll(collapsed, { message: 'the hero should unfold', timeout: 20_000 })
-      .toBe(false);
-    // Past the unfold's ease, so the resting numbers below are resting.
-    await page.waitForTimeout(600);
+      .poll(edgeAt, { message: 'the frame should open', timeout: 20_000 })
+      .toBeGreaterThan(40);
 
-    // Scroll past the fold line and sample the box and the title's transform
-    // on every frame of the fold. The two are eased from the same class on
-    // the same clock, so their progress has to agree at every sample — a box
-    // that is closed around a title still at full size, or a title already
-    // tucked away above an open box, is the state this guards against.
+    // The window is the scroll container, so its box must never move or
+    // resize while the fold runs — that was the stutter. Within it, three
+    // things travel on one number: the frame's clip edge, its hairline, and
+    // the content's top, each sitting exactly `band - scrollTop` below the
+    // window's top until the content passes the edge; and the title's scale
+    // has to have come the same fraction of its way.
     const run = await page.evaluate(async () => {
       const layout = document.querySelector('.layout') as HTMLElement;
       const hero = document.querySelector('.site-hero') as HTMLElement;
       const title = hero.querySelector('h1') as HTMLElement;
-      const frame = () =>
-        new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-      const padding = () => parseFloat(getComputedStyle(hero).paddingTop);
-      const scale = () => {
-        const transform = getComputedStyle(title).transform;
+      const frame = document.querySelector('.window-frame') as HTMLElement;
+      const edge = document.querySelector('.window-edge') as HTMLElement;
+      const main = document.querySelector('.main') as HTMLElement;
+      const frames = () =>
+        new Promise<void>(resolve =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        );
+      const clipTop = () => {
+        const clip = getComputedStyle(frame).clipPath;
+        const inset = clip.match(/inset\(([-\d.]+)px/);
+        return inset ? parseFloat(inset[1]) : NaN;
+      };
+      const translateY = (el: Element) => {
+        const transform = getComputedStyle(el).transform;
+        const matrix = transform.match(/matrix\(([^)]+)\)/);
+        return matrix ? parseFloat(matrix[1].split(',')[5]) : 0;
+      };
+      const scaleOf = (el: Element) => {
+        const transform = getComputedStyle(el).transform;
         const matrix = transform.match(/matrix\(([^)]+)\)/);
         return matrix ? parseFloat(matrix[1].split(',')[0]) : 1;
       };
-      const restPadding = padding();
+
+      const heroBox = hero.getBoundingClientRect();
+      const windowBox = layout.getBoundingClientRect();
+      const band = heroBox.bottom - windowBox.top;
       const foldedScale =
         parseFloat(
           getComputedStyle(hero).getPropertyValue('--collapsed-title-scale')
         ) || 0.55;
 
-      layout.scrollTop = 200;
-      const samples: { collapsed: boolean; padding: number; scale: number }[] =
-        [];
-      const started = performance.now();
-      // Well past the 320ms fold, however long the runner's frames are.
-      while (performance.now() - started < 900) {
-        await frame();
+      const samples = [];
+      for (const fraction of [0, 0.2, 0.4, 0.6, 0.8, 1, 1.5]) {
+        layout.scrollTop = Math.round(band * fraction);
+        await frames();
+        await frames();
+        const window_ = layout.getBoundingClientRect();
         samples.push({
-          collapsed: hero.classList.contains('is-collapsed'),
-          padding: padding(),
-          scale: scale(),
+          scrollTop: layout.scrollTop,
+          windowTop: window_.top,
+          windowHeight: window_.height,
+          heroHeight: hero.getBoundingClientRect().height,
+          clip: clipTop(),
+          edge: translateY(edge),
+          contentTop: main.getBoundingClientRect().top - window_.top,
+          scale: scaleOf(title),
         });
       }
-      return { restPadding, foldedPadding: padding(), foldedScale, samples };
+      return {
+        band,
+        windowTop: windowBox.top,
+        windowHeight: windowBox.height,
+        heroHeight: heroBox.height,
+        foldedScale,
+        samples,
+      };
     });
 
-    expect(run.foldedPadding).toBeLessThan(run.restPadding);
-    const last = run.samples[run.samples.length - 1];
-    expect(last.collapsed).toBe(true);
-
+    expect(run.band).toBeGreaterThan(40);
     for (const sample of run.samples) {
-      const box =
-        (run.restPadding - sample.padding) /
-        (run.restPadding - run.foldedPadding);
+      const remaining = run.band - sample.scrollTop;
+      expect(Math.abs(sample.windowTop - run.windowTop)).toBeLessThan(1);
+      expect(Math.abs(sample.windowHeight - run.windowHeight)).toBeLessThan(1);
+      expect(Math.abs(sample.heroHeight - run.heroHeight)).toBeLessThan(1);
+      // The clip never quite reaches the frame's own top edge (1px), so the
+      // hairline is always the edge layer's.
+      expect(Math.abs(sample.clip - Math.max(1, remaining))).toBeLessThan(1.5);
+      expect(Math.abs(sample.edge - Math.max(0, remaining))).toBeLessThan(1.5);
+      // The content's top: the band less the scroll, plus the scroller's
+      // 1px transparent border.
+      expect(Math.abs(sample.contentTop - (remaining + 1))).toBeLessThan(1.5);
+      const progress = Math.min(1, sample.scrollTop / run.band);
       const titleProgress = (1 - sample.scale) / (1 - run.foldedScale);
-      if (!sample.collapsed) {
-        // Not yet folded: nothing has moved.
-        expect(box).toBeLessThan(0.02);
-        expect(titleProgress).toBeLessThan(0.02);
-      } else {
-        expect(Math.abs(box - titleProgress)).toBeLessThan(0.1);
-      }
+      expect(Math.abs(titleProgress - progress)).toBeLessThan(0.03);
     }
-    // And the last frame has landed, both halves of it.
-    expect(
-      (run.restPadding - last.padding) / (run.restPadding - run.foldedPadding)
-    ).toBeGreaterThan(0.98);
-    expect((1 - last.scale) / (1 - run.foldedScale)).toBeGreaterThan(0.98);
   });
 
   test('the scroll-linked properties land on their readers, not their containers', async ({
@@ -285,23 +354,21 @@ test.describe('structural performance guards', () => {
 
     await page.evaluate(() => {
       const layout = document.querySelector('.layout');
-      if (layout) layout.scrollTop = 200;
+      if (layout) layout.scrollTop = 600;
     });
 
-    // 200px is past both ranges: the hero folds and the veil's publisher
-    // settles at 1. Both run on the page's animation frames — generous
-    // timeout, as everywhere here.
+    // 600px is past the band and the veil's range after it, so the veil's
+    // publisher settles at 1. It runs on the page's animation frames —
+    // generous timeout, as everywhere here.
     await expect
       .poll(
         () =>
           page.evaluate(() =>
-            getComputedStyle(
-              document.querySelector('.site-hero') as HTMLElement
-            )
-              .getPropertyValue('--hero-collapse')
-              .trim()
+            (
+              document.querySelector('.window-veil') as HTMLElement
+            ).style.getPropertyValue('--veil-strength')
           ),
-        { message: 'the hero should fold', timeout: 20_000 }
+        { message: 'the veil should reach full strength', timeout: 20_000 }
       )
       .toBe('1');
 
@@ -311,8 +378,8 @@ test.describe('structural performance guards', () => {
           document.querySelector(selector) as HTMLElement
         ).style.getPropertyValue(property);
       return {
-        collapseOnHero: inline('.site-hero', '--hero-collapse'),
         collapseOnStage: inline('.stage', '--hero-collapse'),
+        collapseOnWindow: inline('.layout', '--hero-collapse'),
         veilOnWindow: inline('.layout', '--veil-strength'),
         veilOnVeil: inline('.window-veil', '--veil-strength'),
       };
@@ -321,10 +388,10 @@ test.describe('structural performance guards', () => {
     // A custom property inherits, so a per-frame write must sit on the
     // smallest subtree that reads it. On the stage or the window it drags
     // every element of the page into every scroll frame's style invalidation.
-    // The hero's own value is not written per frame at all any more — it is
-    // the stylesheet's, from the folded state — so nothing inline carries it.
-    expect(placement.collapseOnHero).toBe('');
+    // (The fold's own value is written only where the browser cannot run it
+    // off the scroll timeline, and then on the hero, the frame and the edge.)
     expect(placement.collapseOnStage).toBe('');
+    expect(placement.collapseOnWindow).toBe('');
     expect(placement.veilOnWindow).toBe('');
     expect(placement.veilOnVeil).toBe('1');
   });
