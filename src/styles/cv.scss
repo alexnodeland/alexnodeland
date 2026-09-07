@@ -34,10 +34,10 @@
 // CV Overview and Contact Combined
 .cv-overview-contact {
   @include outline-block;
-  padding: var(--space-6);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
   // The same step the sections below keep between each other.
-  margin-bottom: var(--space-7);
+  margin-bottom: var(--stack-gap);
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: var(--space-6);
@@ -97,14 +97,17 @@
   }
 }
 
-// The sections, one below the other at the page's section rhythm. The page
+// The sections, one below the other at the window's one rhythm — the same
+// step the cards inside them keep, so a section title has the same air above
+// it as below it. What separates a section from the one before it is its
+// title: bigger type with a halo, over a column of outlined cards. The page
 // adds nothing below the last: the window's own bottom padding is where every
 // page ends.
 #resume-content {
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-7);
+  gap: var(--stack-gap);
 }
 
 // Anchor jumps land clear of the sticky control chips at every width.
@@ -121,7 +124,10 @@
   color: var(--text-primary);
   @include over-background;
   font-size: var(--text-h3);
-  margin-bottom: var(--space-5);
+  // The window's rhythm, so the title sits the same distance from its cards
+  // as from the section above. Inside the flex sections this is overridden to
+  // zero and the section's own gap does the same job.
+  margin-bottom: var(--stack-gap);
   display: inline-block;
   position: relative;
 }
@@ -134,7 +140,7 @@
 .cv-card {
   @include outline-block;
   @include card-highlight;
-  padding: var(--space-6);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
 
   @include reading-emphasis {
@@ -149,7 +155,7 @@
 .certifications-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--stack-gap);
 
   // The heading is not one of the cards, so it keeps its own space and does
   // not take the list's gap on top of it.
@@ -191,7 +197,7 @@
   // so the card itself has none of its own.
   padding: 0;
   // When single-open repositions a card, it lands clear of the floating
-  // control chips and the veil rather than sliding underneath them.
+  // control chips rather than sliding underneath them.
   scroll-margin-top: var(--sticky-row-clearance);
 
   summary {
@@ -212,7 +218,7 @@
 // The whole summary is the toggle — it fills the collapsed card edge to edge —
 // so it has to look like it, rather than leaving the chevron as the only cue.
 .cv-collapse-summary {
-  padding: var(--space-6);
+  padding: var(--card-pad);
   cursor: pointer;
   display: block;
   // The card does not clip its children, so the wash carries the card's own
@@ -355,7 +361,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 .certifications-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-6);
+  gap: var(--stack-gap);
 }
 
 .certification-card {
@@ -439,7 +445,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 // `sticky-control-row` in mixins.scss and .ui-dropdown in controls.scss.
 .cv-control-bar {
   @include sticky-control-row;
-  margin-bottom: var(--space-6);
 }
 
 // Only the results list is the CV's own — the panel and its field come from
@@ -511,23 +516,12 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
 @media (max-width: 768px) {
   .cv-overview-contact {
-    padding: var(--space-5);
     grid-template-columns: 1fr;
     gap: var(--space-5);
   }
 
-  // The same step down the blog and project cards take on a phone. A
-  // collapsing entry is excluded by name: its padding lives on its summary
-  // (see .cv-collapse above), and this rule reaching the <details> as well
-  // padded the experience and education cards twice over on a phone while
-  // the certifications beside them kept the one coat.
-  .cv-card:not(.cv-collapse),
-  .cv-collapse-summary {
-    padding: var(--space-5);
-  }
-
   .cv-collapse-details {
-    margin: 0 var(--space-5);
+    margin: 0 var(--card-pad);
     padding: var(--space-4) 0 var(--space-5);
   }
 

@@ -15,7 +15,6 @@
 // .ui-search-panel in controls.scss.
 .projects-control-bar {
   @include sticky-control-row;
-  margin-bottom: var(--space-6);
 }
 
 // A search that empties the page still has to say so, rather than leaving the
@@ -48,9 +47,10 @@
 }
 
 // A section of the catalogue. The sections step at the same rhythm the CV's
-// do, and an anchor target lands clear of the sticky control chips.
+// do — the window's one gap — and an anchor target lands clear of the sticky
+// control chips.
 .projects-section {
-  margin-bottom: var(--space-7);
+  margin-bottom: var(--stack-gap);
   scroll-margin-top: var(--sticky-row-clearance);
 }
 
@@ -62,18 +62,19 @@
 // it.
 .projects-page .section-title {
   font-size: var(--text-h3);
-  margin-bottom: var(--space-5);
+  // The window's rhythm, matching the air above the title.
+  margin-bottom: var(--stack-gap);
   display: inline-block;
   color: var(--text-primary);
   @include over-background;
 }
 
 // Projects Grid. The gap matches the blog's list gap — the three list pages
-// step to the same rhythm.
+// step to the same rhythm (--stack-gap in variables.scss).
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--space-6);
+  gap: var(--stack-gap);
 }
 
 // Project Card — the blog preview's grammar in a grid cell: the name, the
@@ -85,6 +86,11 @@
   @include card-highlight;
   border-radius: var(--radius-lg);
   display: block;
+  // The anchor that used to be the card is now the octocat at its foot, with
+  // an overlay stretched back across the whole box (.project-out-repo below):
+  // the card had to stop being a link the day a second one appeared in it.
+  // This is what the overlay is measured against.
+  position: relative;
   // A block of content that happens to be a link, not a link in running
   // text: the global anchor rule's hover underline (see `text-link`) would
   // otherwise rule every line on the card in green — and on a phone stay
@@ -99,14 +105,33 @@
   @include reading-emphasis {
     @include card-highlight-on;
   }
+
+  // The keyboard's version of the same thing. The pointer lights the card by
+  // being over it; a keyboard lights it by landing on one of its ways out,
+  // which is the only thing in the card it can land on.
+  &:focus-within {
+    @include card-highlight-on;
+  }
 }
 
 .project-card-content {
   // The blog preview's padding, so a card reads the same on either page.
-  padding: var(--space-6);
+  padding: var(--card-pad);
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+// The card's upper block — the name and the description — and the one part of
+// it that grows. The grid stretches every card in a row to the tallest, and
+// the difference has to go somewhere: it goes here, as space under the
+// description, which leaves the tag line and the meta band sitting together at
+// the foot. It used to go on the description itself, so a paragraph's box
+// ended a long way below its own last line and the tags drifted with it. (The
+// certification cards do the same job with an auto margin; they have no tag
+// line between the two, so they need no group.)
+.project-card-body {
+  flex: 1;
 }
 
 // The title row: the name alone. Every card on the page is a repo, and the
@@ -133,13 +158,16 @@
   color: var(--text-secondary);
   line-height: var(--leading-prose);
   margin: 0 0 var(--space-5);
-  flex: 1;
 }
 
 // The tags, as one line directly above the meta foot — the same quiet band
 // a cv card lists its key skills in.
 .project-tags {
-  margin: 0 0 var(--space-2);
+  // No margin of its own: the meta band below states the whole distance to the
+  // hairline. The two used to stack — margins do not collapse in a flex column
+  // — and made the widest gap on the card out of two values that each read as
+  // something smaller.
+  margin: 0;
   font-size: var(--text-small);
   line-height: var(--leading-chrome);
   color: var(--text-muted);
@@ -190,9 +218,13 @@
 // repo, and this is the one thing on it that says so — the counterpart of the
 // arrow at the foot of a blog preview. The words it replaced ("view on
 // github") are still there for a screen reader.
+// The ways out, at the footer's far end: the chain to the project's own site
+// where there is one, then the octocat. Both in the link colour — they are
+// the only things on the card that leave it.
 .project-link-indicator {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-3);
   flex-shrink: 0;
   color: var(--ink-primary);
 
@@ -200,6 +232,48 @@
     width: 18px;
     height: 18px;
   }
+}
+
+.project-out {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  // Same reason the card gives: a mark is not a link in running text, and the
+  // global underline has nothing to underline here anyway.
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+  }
+
+  // The mark a pointer is actually on brightens, so a card with two ways out
+  // says which one is under the cursor. The card's own highlight is behind
+  // this and does not change.
+  @include reading-emphasis {
+    color: var(--text-primary);
+  }
+}
+
+// The card's own link — the site where the project has one, the repo where it
+// does not. Its overlay covers the whole box, so a click anywhere that is not
+// the other mark follows it, and the card reads as one target the way it did
+// when it was an anchor. The cost is that text on the card can no longer be
+// selected by dragging across it, which is the trade every stretched-link
+// card makes; the card is a name, a line and a row of tags, and none of it is
+// meant to be copied.
+.project-out.is-card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+// The other mark, lifted above that overlay so it is hit directly rather than
+// buried under the card's click target. Everything else on the card stays
+// under it, which is what makes the rest of the card one target.
+.project-out.is-raised {
+  position: relative;
+  z-index: 1;
 }
 
 // Activity panel — the github year at the foot of the page, after the
@@ -211,7 +285,7 @@
 .activity-panel {
   @include outline-block;
   border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  padding: var(--card-pad);
   // No gap of its own: the last section's bottom margin is the space above
   // it, the same space the sections keep between each other.
   margin: 0;
@@ -393,17 +467,9 @@
 }
 
 @media (max-width: 768px) {
+  // One column on a phone; the gap is the site's rhythm at every width.
   .projects-grid {
     grid-template-columns: 1fr;
-    gap: var(--space-5);
-  }
-
-  .project-card-content {
-    padding: var(--space-5);
-  }
-
-  .activity-panel {
-    padding: var(--space-5);
   }
 
   // On a phone the year's grid is 740px wide behind a sideways scroll that

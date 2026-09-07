@@ -170,6 +170,24 @@
   }
 }
 
+// A chip that is only a mark — the search toggle, the blog's feed link. The
+// label's side padding would leave a 14px glyph swimming in a chip twice its
+// width, so these sit tighter. The feed link is an anchor in chip clothing:
+// the global link rule would underline it under the pointer, and a chip does
+// not underline.
+.ui-icon-chip {
+  padding-inline: 0.55rem;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+  }
+
+  svg {
+    display: block;
+  }
+}
+
 // Search is somewhere to type rather than a piece of chrome, so on every page
 // that has one it sits in a panel of its own below the control row instead of
 // being wedged into it. The panel is an outline like every other block inside
@@ -179,7 +197,7 @@
 // reads as a nested panel.
 .ui-search-panel {
   @include outline-block;
-  padding: var(--space-5);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-6);
   position: relative;
@@ -228,11 +246,6 @@
 // draws the chip and never folds the panel.
 .ui-search-toggle {
   display: none;
-  padding-inline: 0.55rem;
-
-  svg {
-    display: block;
-  }
 
   &.is-active {
     @include control-active;

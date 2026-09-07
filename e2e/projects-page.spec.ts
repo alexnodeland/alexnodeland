@@ -27,13 +27,29 @@ test.describe('Projects Page', () => {
   }) => {
     await page.goto('/projects');
 
-    const projectLinks = page.locator('a.project-card');
-    await expect(projectLinks.first()).toBeVisible();
+    // The card is a box with its ways out at the foot: the octocat to the
+    // repo, and the chain to the project's own site where there is one.
+    const cards = page.locator('article.project-card');
+    await expect(cards.first()).toBeVisible();
 
-    const firstLink = projectLinks.first();
-    await expect(firstLink).toHaveAttribute('target', '_blank');
-    await expect(firstLink).toHaveAttribute('rel', 'noopener noreferrer');
-    await expect(firstLink).toHaveAttribute('href', /^https:\/\/github\.com\//);
+    const firstRepo = cards.first().locator('.project-out-repo');
+    await expect(firstRepo).toHaveAttribute('target', '_blank');
+    await expect(firstRepo).toHaveAttribute('rel', 'noopener noreferrer');
+    await expect(firstRepo).toHaveAttribute('href', /^https:\/\/github\.com\//);
+
+    // Whichever mark the card as a whole follows covers the whole card, so a
+    // click on the body of it lands on that link rather than on nothing.
+    const covered = await cards.first().evaluate(card => {
+      const link = card.querySelector('.is-card-link') as HTMLElement;
+      const box = card.getBoundingClientRect();
+      const hit = document.elementFromPoint(
+        box.left + box.width / 2,
+        box.top + box.height / 2
+      );
+      return { href: link.getAttribute('href'), covers: link.contains(hit) };
+    });
+    expect(covered.covers).toBe(true);
+    expect(covered.href).toMatch(/^https:\/\//);
   });
 
   test('should have proper meta tags', async ({ page }) => {

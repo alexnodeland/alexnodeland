@@ -232,10 +232,26 @@
 // it carries its own material (see `frosted-chip`). The gaps between the chips
 // are dead to the pointer, so scroll and clicks aimed at the document pass
 // straight through the row instead of being caught by an invisible strip.
+//
+// The row starts where it ends up. The window's column pads its content off
+// the frame (--main-pad-top on .main), and the row cancels that padding for
+// itself alone: at rest it sits on the frame's edge, which is exactly where
+// it sits once stuck, so the only gap between the chips and the edge is the
+// row's own padding in both states — the row never appears to jump inward
+// when it locks. Cancelling the padding also lines the two moves up: the row
+// reaches the top of the scroll in the same distance the hero takes to fold,
+// so the frame's edge arrives under it rather than after it. Everything
+// below scrolls as it did; only the room above the row is gone.
 @mixin sticky-control-row {
   position: sticky;
   top: 0;
   z-index: 10;
+  margin-top: calc(-1 * var(--main-pad-top, 0px));
+  // Nothing under the row but its own padding. The pages used to add a
+  // --space-6 margin here, which made the space below the chips several times
+  // the space above them; the row's band is symmetrical now, and what follows
+  // it keeps whatever spacing it carries itself.
+  margin-bottom: 0;
   display: flex;
   align-items: center;
   // One row, strictly — a control that cannot fit shrinks and ellipsizes
@@ -243,21 +259,15 @@
   // others.
   flex-wrap: nowrap;
   gap: var(--space-2);
-  padding: var(--space-2) 0;
+  // The window's rhythm, above the chips and below them alike, so the row sits
+  // in a band of even air rather than riding high in it — and the same gap the
+  // list underneath keeps between its cards (--stack-gap in variables.scss).
+  padding: var(--stack-gap) 0;
   pointer-events: none;
 
   > * {
     pointer-events: auto;
     min-width: 0;
-  }
-
-  // Stuck, the row's own top padding is the entire gap between the chips and
-  // the window's frame — on a phone, where the row is the first thing under
-  // the border and the frame is a hard bright line, a half-step left them all
-  // but touching it. More room above than below sets it off the edge; the
-  // bottom stays where it is, so nothing below the row moves.
-  @media (max-width: 768px) {
-    padding-top: var(--space-4);
   }
 
   @media (max-width: 480px) {

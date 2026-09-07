@@ -428,103 +428,6 @@
   }
 }
 
-// A steep tapered blur riding the window's visible top edge. Content scrolling
-// out of the window dissolves through it instead of sliding under the sticky
-// control chips at full strength. Sticky with zero height, so it costs no
-// layout; the ::before is the actual veil, masked from solid to nothing.
-//
-// Its band and the row it protects are a tuned pair: the row is ~51px on a
-// desktop and ~67px on a phone (see --sticky-row-clearance), and the veil's
-// solid zone has to reach past it so content dissolves before it arrives.
-.window-veil {
-  position: sticky;
-  top: 0;
-  height: 0;
-  z-index: 5; // Under the control row (10), over the content
-  pointer-events: none;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 88px;
-    // Scroll-gated: invisible at rest so page tops read at full strength;
-    // fades in over the first ~90px of scroll (Layout publishes the value).
-    opacity: var(--veil-strength, 0);
-    transition: opacity 80ms linear;
-    // Fully invisible is fully off. An opacity-0 backdrop filter is still a
-    // live filter surface — over a canvas that repaints every frame, the
-    // compositor kept resolving the blur nobody could see. The shell marks
-    // the veil itself `veil-live` the moment there is any scroll to veil.
-    visibility: hidden;
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px); // Safari 17 and earlier
-    // Near-opaque at the very edge — content genuinely disappears under the
-    // floating chips — tapering steeply to nothing.
-    background: linear-gradient(
-      to bottom,
-      rgba(7, 8, 10, 0.92) 0%,
-      rgba(7, 8, 10, 0.65) 35%,
-      rgba(7, 8, 10, 0) 100%
-    );
-    mask-image: linear-gradient(
-      to bottom,
-      black 0%,
-      black 40%,
-      transparent 96%
-    );
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      black 0%,
-      black 40%,
-      transparent 96%
-    );
-
-    // The chip row is taller on a phone (the thumb padding in controls.scss),
-    // so the band reaches further. The tint is lighter: near-opaque, over a
-    // bright field it stopped reading as a veil and started reading as a
-    // black bar laid across the top of the page. The blur is what destroys
-    // the text (the chips add their own on top); the tint only has to keep
-    // the smear from competing. And the radius is halved for the same reason
-    // the chips' was: the band re-resolves on every scroll frame over a
-    // canvas that repaints every frame, and it shares those frames with the
-    // hero collapse.
-    @media (max-width: 768px) {
-      height: 140px;
-      backdrop-filter: blur(9px);
-      -webkit-backdrop-filter: blur(9px);
-      background: linear-gradient(
-        to bottom,
-        rgba(7, 8, 10, 0.62) 0%,
-        rgba(7, 8, 10, 0.5) 50%,
-        rgba(7, 8, 10, 0) 100%
-      );
-      mask-image: linear-gradient(
-        to bottom,
-        black 0%,
-        black 55%,
-        transparent 96%
-      );
-      -webkit-mask-image: linear-gradient(
-        to bottom,
-        black 0%,
-        black 55%,
-        transparent 96%
-      );
-    }
-  }
-}
-
-// Anything scrolled under the veil: the blur layer comes back for exactly as
-// long as --veil-strength is above zero. Class and property both live on the
-// veil element itself — putting them on the scrolling window made every
-// twenty-step fade-in invalidate style for the whole page inside it.
-.window-veil.veil-live::before {
-  visibility: visible;
-}
-
 // The content window — the panel the page lives in. It does not position
 // itself: the stage owns the geometry, and this fills whatever the hero
 // leaves — from the folded row's foot down, since the hero's box reaches
@@ -760,7 +663,14 @@
   // window frame and the content, and the page containers inside it add none
   // of their own. The bottom is the same on every page — the page containers
   // add none of their own either.
-  padding: var(--space-6) var(--gutter) var(--space-7);
+  //
+  // The top is published as a token because one thing has to cancel it: a
+  // sticky control row sits at the window's top edge in both its states, and
+  // the only way its resting gap can equal its stuck one is to start with no
+  // room above it at all (see `sticky-control-row` in mixins.scss). Every
+  // breakpoint below re-publishes it with the padding it sets.
+  --main-pad-top: var(--space-6);
+  padding: var(--main-pad-top) var(--gutter) var(--space-7);
   width: 100%;
   position: relative;
 }
@@ -872,7 +782,8 @@
   }
 
   .main {
-    padding: var(--space-5) var(--gutter) var(--space-6);
+    --main-pad-top: var(--space-5);
+    padding: var(--main-pad-top) var(--gutter) var(--space-6);
   }
 }
 
@@ -890,7 +801,8 @@
   }
 
   .main {
-    padding: var(--space-4) var(--gutter) var(--space-5);
+    --main-pad-top: var(--space-4);
+    padding: var(--main-pad-top) var(--gutter) var(--space-5);
   }
 
   .footer-link {

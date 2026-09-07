@@ -59,10 +59,79 @@ describe('Projects Page', () => {
   it('renders external links with target=_blank and rel=noopener noreferrer', () => {
     render(<ProjectsPage />);
     const firstProject = projectsConfig.projects[0];
-    const link = screen.getByText(firstProject.name).closest('a');
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-    expect(link).toHaveAttribute('href', firstProject.url);
+    // The card is a box, not a link: the ways out are the marks at its foot.
+    const card = screen
+      .getByText(firstProject.name)
+      .closest('.project-card') as HTMLElement;
+    expect(card.tagName).toBe('ARTICLE');
+    const repo = card.querySelector('.project-out-repo') as HTMLElement;
+    expect(repo).toHaveAttribute('target', '_blank');
+    expect(repo).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(repo).toHaveAttribute('href', firstProject.url);
+  });
+
+  describe('the ways out of a card', () => {
+    const cardFor = (name: string) =>
+      screen.getByText(name).closest('.project-card') as HTMLElement;
+
+    it('links to the site as well as the repo, when there is one', () => {
+      const withSite = projectsConfig.projects.find(project => project.site);
+      if (!withSite) throw new Error('no project carries a site');
+      render(<ProjectsPage />);
+      const card = cardFor(withSite.name);
+
+      const site = card.querySelector('.project-out-site') as HTMLElement;
+      expect(site).toHaveAttribute('href', withSite.site as string);
+      expect(site).toHaveAttribute('target', '_blank');
+      expect(site).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(site).toHaveAccessibleName(`visit the ${withSite.name} site`);
+
+      // The chain sits to the left of the octocat.
+      const marks = Array.from(
+        card.querySelectorAll('.project-link-indicator > a')
+      );
+      expect(marks.map(mark => mark.className.split(' ')[1])).toEqual([
+        'project-out-site',
+        'project-out-repo',
+      ]);
+    });
+
+    it('draws no chain on a project with no site of its own', () => {
+      const noSite = projectsConfig.projects.find(project => !project.site);
+      if (!noSite) throw new Error('every project carries a site');
+      render(<ProjectsPage />);
+      expect(
+        cardFor(noSite.name).querySelector('.project-out-site')
+      ).toBeNull();
+    });
+
+    it('follows the site with the whole card, and the repo where there is none', () => {
+      const withSite = projectsConfig.projects.find(project => project.site);
+      const noSite = projectsConfig.projects.find(project => !project.site);
+      if (!withSite || !noSite) throw new Error('need one of each');
+      render(<ProjectsPage />);
+
+      // The card's link is the one that stretches across it. With a site,
+      // that is the chain, and the octocat is lifted clear so it can still be
+      // hit; with no site, the octocat is the card.
+      const site = cardFor(withSite.name);
+      expect(site.querySelector('.project-out-site')).toHaveClass(
+        'is-card-link'
+      );
+      expect(site.querySelector('.project-out-repo')).toHaveClass('is-raised');
+
+      const repoOnly = cardFor(noSite.name);
+      expect(repoOnly.querySelector('.project-out-repo')).toHaveClass(
+        'is-card-link'
+      );
+    });
+
+    it('points every site link at a real address', () => {
+      for (const project of projectsConfig.projects) {
+        if (!project.site) continue;
+        expect(project.site).toMatch(/^https:\/\//);
+      }
+    });
   });
 
   describe('control row', () => {
