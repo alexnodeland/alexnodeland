@@ -9,10 +9,10 @@ interface SearchToggleProps {
 }
 
 /**
- * The way to the search box on a phone. On a desktop the box sits in its own
- * panel under the control row and this chip is not drawn at all (see
- * .ui-search-toggle in controls.scss); below the phone breakpoint the panel
- * is folded away behind it, so the first screen of a list page is the list.
+ * The way to the search box. The box sits in its own panel under the control
+ * row, folded away behind this chip until it is asked for (see
+ * .ui-search-toggle in controls.scss), so the first screen of a list page is
+ * the list — at every width.
  */
 const SearchToggle: React.FC<SearchToggleProps> = ({
   open,

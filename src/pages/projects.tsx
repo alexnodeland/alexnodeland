@@ -254,8 +254,8 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
         </div>
 
         {/* Somewhere to type rather than a piece of chrome, so it keeps its
-            own panel below the row. On a phone the panel is folded away
-            behind the chip above until asked for. */}
+            own panel below the row, folded away behind the chip above until
+            it is asked for. */}
         <div
           id="projects-search"
           className={`ui-search-panel projects-search-panel${
