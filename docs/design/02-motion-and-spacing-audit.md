@@ -914,6 +914,19 @@ The standards in §9 went in as written, with these differences from the plan:
   alone, pinned folded: the crumb without its tail, on that same line, so
   the way home is on every page.
 
+  _A full visual pass, then._ Every page in every state — rest, mid-fold,
+  folded, deep — at a phone and a desktop width, with the panels, menus,
+  search, an open CV entry and the shortcuts, sixty-odd captures reviewed
+  as contact sheets. Two things came out of it. The post's frame was clipped
+  by the brand's band: the pinned overrides were declared before the
+  timeline's rules and lost to them at equal specificity, so they now sit
+  after, and pin the fallback value too. And on a phone the tagline, fading
+  over the whole band, was still half there over the chips when the content
+  reached its line a tenth of the way in — and still taking taps; it is
+  gone, and out of hit-testing, by a fifth. The desktop's side panels align
+  to the window's constant top rather than to the frame's visible edge at
+  rest, which is the one deliberate consequence of the fixed box.
+
 - **Spacing** was renumbered onto a 4px base (`--space-1` … `--space-9`, with
   the 0.75rem step at `--space-3`) rather than given a `--space-2-5`. Every
   stylesheet was rewritten onto it; the raw values left are the nav capsule's

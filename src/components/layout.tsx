@@ -75,6 +75,11 @@ const offsetTopWithin = (el: HTMLElement, ancestor: HTMLElement): number => {
 // actually passing under the frame's finished edge.
 const VEIL_RANGE = 90;
 
+// How far into the fold the phone's tagline is gone (the stylesheet's
+// hero-tagline-fade keyframe and its published-path expression carry the
+// same fraction): past this the published path takes it out of hit-testing.
+const TAGLINE_FADE = 0.2;
+
 // The space left between the shrunken title and the tagline once the two
 // share a row. The title's collapsed scale is the stylesheet's
 // (`--collapsed-title-scale` on the hero, per breakpoint) and is read from it
@@ -519,7 +524,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       for (const reader of readers) {
         reader?.style.setProperty('--hero-collapse', value);
       }
-      region.classList.toggle('is-folded', progress >= 1);
+      region.classList.toggle('is-folded', progress >= TAGLINE_FADE);
     };
     const onScroll = () => {
       if (!frame) frame = window.requestAnimationFrame(publish);

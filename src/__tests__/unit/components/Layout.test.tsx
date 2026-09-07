@@ -633,14 +633,19 @@ describe('Layout Component', () => {
 
       expect(region.style.getPropertyValue('--hero-collapse')).toBe('0');
 
-      scrollTo(50);
+      scrollTo(10);
       for (const reader of [region, frame, edge]) {
-        expect(reader.style.getPropertyValue('--hero-collapse')).toBe('0.5');
+        expect(reader.style.getPropertyValue('--hero-collapse')).toBe('0.1');
       }
       expect(region).not.toHaveClass('is-folded');
 
-      // Past the band it saturates rather than running away, and the faded
-      // tagline is taken out of hit-testing.
+      // A fifth of the way in the phone's tagline has faded, and is taken
+      // out of hit-testing.
+      scrollTo(50);
+      expect(region.style.getPropertyValue('--hero-collapse')).toBe('0.5');
+      expect(region).toHaveClass('is-folded');
+
+      // Past the band it saturates rather than running away.
       scrollTo(4000);
       expect(region.style.getPropertyValue('--hero-collapse')).toBe('1');
       expect(region).toHaveClass('is-folded');
