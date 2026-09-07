@@ -136,11 +136,23 @@ test.describe('navigation stability', () => {
     // The outgoing hero is a second .site-hero parked over the live one. Ranked
     // below the collapsible hero's own rules it took their `position: relative`
     // and stayed in the stage's column — a hero-sized box in the flow, which
-    // pushed the window down by its height for the length of every navigation.
+    // pushed the window down by its height for the length of every navigation:
+    // 144px on a desktop, 126px on a phone.
+    //
+    // Within a pixel, not to the bit. The edge is pinned by a cancellation —
+    // the band the hero's negative bottom margin gives back is the height it
+    // occupies — which is exact, but the folded height it lands on is a token
+    // sum that a hero with a taller tagline would legitimately move. A pixel
+    // is a long way inside the regression this is here to catch.
     await goTo(page, '/blog');
     for (let sample = 0; sample < 8; sample += 1) {
       await page.waitForTimeout(60);
-      expect(await windowBox()).toEqual(before);
+      const [top, height] = await windowBox();
+      expect(top, `window top at sample ${sample}`).toBeCloseTo(before[0], 0);
+      expect(height, `window height at sample ${sample}`).toBeCloseTo(
+        before[1],
+        0
+      );
     }
   });
 

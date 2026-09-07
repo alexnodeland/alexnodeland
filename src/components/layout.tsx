@@ -878,7 +878,16 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       // It is also the one number here that moves while that ease runs, so it
       // is published on its own: the text-derived distances above are the same
       // on every frame of it and must not be rewritten for a height that is.
-      const restHeight = `${el.offsetHeight}px`;
+      //
+      // The real box, unrounded, rather than the offset height. The
+      // cancellation above is what pins the window's edge, and it cancels
+      // exactly only if the band is the height the region actually occupies:
+      // rounded, each hero leaked its own fraction into that edge, so the drawn
+      // hairline sat at a slightly different place per page (76.45 on the
+      // cover, 75.98 on the blog at a 2.75 pixel ratio) and shifted as one gave
+      // way to the other. Rounding it back to hundredths left a tenth of that;
+      // the raw reading is already snapped to the device's own grid.
+      const restHeight = `${el.getBoundingClientRect().height}px`;
       if (restHeight !== lastHeight) {
         lastHeight = restHeight;
         stage?.style.setProperty('--hero-rest-height', restHeight);
