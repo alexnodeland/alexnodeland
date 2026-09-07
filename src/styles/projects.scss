@@ -116,7 +116,7 @@
 
 .project-card-content {
   // The blog preview's padding, so a card reads the same on either page.
-  padding: var(--space-6);
+  padding: var(--card-pad);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -270,7 +270,7 @@
 .activity-panel {
   @include outline-block;
   border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  padding: var(--card-pad);
   // No gap of its own: the last section's bottom margin is the space above
   // it, the same space the sections keep between each other.
   margin: 0;
@@ -455,14 +455,6 @@
   // One column on a phone; the gap is the site's rhythm at every width.
   .projects-grid {
     grid-template-columns: 1fr;
-  }
-
-  .project-card-content {
-    padding: var(--space-5);
-  }
-
-  .activity-panel {
-    padding: var(--space-5);
   }
 
   // On a phone the year's grid is 740px wide behind a sideways scroll that

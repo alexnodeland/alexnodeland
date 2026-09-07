@@ -206,6 +206,14 @@
   // were tuned to on a phone.
   --stack-gap: var(--space-4);
 
+  // The coat of air inside a card — a blog preview, a project, a cv entry, a
+  // panel. One value at every width, the rhythm's own: a card's inside and the
+  // space around it are the same distance, so a column of cards reads as an
+  // even weave rather than as slabs with wide margins. It was a step wider on
+  // a desktop and a step narrower on a phone, which made the same card two
+  // different objects.
+  --card-pad: var(--space-4);
+
   // --- Type -----------------------------------------------------------------
   --font-mono:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',

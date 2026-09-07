@@ -34,7 +34,7 @@
 // CV Overview and Contact Combined
 .cv-overview-contact {
   @include outline-block;
-  padding: var(--space-6);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
   // The same step the sections below keep between each other.
   margin-bottom: var(--stack-gap);
@@ -140,7 +140,7 @@
 .cv-card {
   @include outline-block;
   @include card-highlight;
-  padding: var(--space-6);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
 
   @include reading-emphasis {
@@ -218,7 +218,7 @@
 // The whole summary is the toggle — it fills the collapsed card edge to edge —
 // so it has to look like it, rather than leaving the chevron as the only cue.
 .cv-collapse-summary {
-  padding: var(--space-6);
+  padding: var(--card-pad);
   cursor: pointer;
   display: block;
   // The card does not clip its children, so the wash carries the card's own
@@ -516,23 +516,12 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
 @media (max-width: 768px) {
   .cv-overview-contact {
-    padding: var(--space-5);
     grid-template-columns: 1fr;
     gap: var(--space-5);
   }
 
-  // The same step down the blog and project cards take on a phone. A
-  // collapsing entry is excluded by name: its padding lives on its summary
-  // (see .cv-collapse above), and this rule reaching the <details> as well
-  // padded the experience and education cards twice over on a phone while
-  // the certifications beside them kept the one coat.
-  .cv-card:not(.cv-collapse),
-  .cv-collapse-summary {
-    padding: var(--space-5);
-  }
-
   .cv-collapse-details {
-    margin: 0 var(--space-5);
+    margin: 0 var(--card-pad);
     padding: var(--space-4) 0 var(--space-5);
   }
 

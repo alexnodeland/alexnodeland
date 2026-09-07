@@ -74,7 +74,7 @@
   @include outline-block;
   @include card-highlight;
   position: relative;
-  padding: var(--space-6);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
   cursor: pointer;
 
@@ -217,7 +217,7 @@
 
 .blog-post-page .post-header {
   margin-bottom: var(--space-7);
-  padding: var(--space-6);
+  padding: var(--card-pad);
   @include outline-block;
   border-radius: var(--radius-lg);
   position: relative;
@@ -225,7 +225,7 @@
 
 .post-content {
   margin-bottom: var(--space-7);
-  padding: var(--space-6);
+  padding: var(--card-pad);
   @include outline-block;
   border-radius: var(--radius-lg);
   line-height: var(--leading-prose);
@@ -393,12 +393,6 @@
   // only fought the clamp they were meant to replace. The mobile gutter
   // belongs to .main, which narrows it here for the whole site at once.
 
-  // The meta band stays one row: a date at one end and an arrow at the other
-  // need no more width than a phone has.
-  .post-preview {
-    padding: var(--space-5);
-  }
-
   .post-title {
     overflow-wrap: anywhere;
   }
@@ -408,7 +402,6 @@
   // first line of the piece somewhere below the fold. The same block, closer
   // set: the reader should reach the writing on the first screen.
   .blog-post-page .post-header {
-    padding: var(--space-5);
     margin-bottom: var(--space-5);
 
     .post-meta {
@@ -427,9 +420,5 @@
       line-height: var(--leading-chrome);
       margin-bottom: 0;
     }
-  }
-
-  .post-content {
-    padding: var(--space-5);
   }
 }

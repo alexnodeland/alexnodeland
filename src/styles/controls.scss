@@ -197,7 +197,7 @@
 // reads as a nested panel.
 .ui-search-panel {
   @include outline-block;
-  padding: var(--space-5);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-6);
   position: relative;
