@@ -339,6 +339,21 @@
   text-align: left;
 }
 
+// A link that is part of the chrome rather than of a sentence — the brand in
+// a hero title, the words in a hero tagline. It keeps the link green, so it
+// still reads as the way somewhere, but it never underlines: an underline
+// under a heading reads as a mistake, and on a phone a tap latches :hover
+// and leaves it there.
+@mixin quiet-link {
+  color: var(--ink-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
 // A link in running text: green, and underlined under the pointer at one
 // offset everywhere.
 @mixin text-link {

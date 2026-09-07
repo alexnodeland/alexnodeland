@@ -144,9 +144,10 @@
 }
 
 // The way home lives in the title: "alex → blog". The crumb is a real link,
-// so it takes the link green; the arrow is punctuation and stays quiet.
+// so it takes the link green — and no underline, being a title; the arrow is
+// punctuation and stays quiet.
 .hero-crumb {
-  @include text-link;
+  @include quiet-link;
   display: inline-block; // Transformable: the brand FLIP animates this box
 }
 
@@ -725,6 +726,12 @@
   text-decoration: none;
   border-radius: var(--radius-md);
   transition: color var(--transition-fast);
+
+  // A glyph, not a word: the global anchor rule's hover underline has
+  // nothing to draw under, and is kept off it all the same.
+  &:hover {
+    text-decoration: none;
+  }
 
   // One monoline set drawn inline rather than five vendor logos pulled in as
   // data-URI backgrounds: those were a mix of outline (the envelope) and solid
