@@ -25,9 +25,15 @@ export interface ResolvedHero {
   hero: React.ReactNode | null;
   /**
    * Whether the hero compresses as the window scrolls. Every hero the site
-   * actually has does; a path with no hero has nothing to compress.
+   * has does.
    */
   collapsible: boolean;
+  /**
+   * Whether the hero is worn folded from the start and never opens — the
+   * brand alone on a page with no title of its own (a post), so the way home
+   * is on every page, on the line it folds to everywhere else.
+   */
+  pinned: boolean;
 }
 
 // The way home lives in the title: "alex → blog". The crumb is a real link and
@@ -107,8 +113,24 @@ const HEROES: Record<string, () => React.ReactNode> = {
 };
 
 // What a path with no hero of its own resolves to — blog posts, and any
-// address that is not a page until the 404 raises its flag.
-const NO_HERO = 'none';
+// address that is not a page until the 404 raises its flag: the brand alone,
+// worn folded. The crumb without its tail, so the FLIP that carries "alex"
+// between heroes has the same anchor to land on; the blank tagline keeps the
+// header's second line so the folded row's geometry is the crumb pages'.
+const NO_HERO = 'brand';
+
+const brandHero = () => (
+  <header className="brand-header">
+    <h1>
+      <Link to="/" className="hero-crumb" data-brand-anchor>
+        alex
+      </Link>
+    </h1>
+    <p className="hero-tagline-blank" aria-hidden="true">
+      &nbsp;
+    </p>
+  </header>
+);
 
 /**
  * Trailing-slash tolerant exact match. Gatsby serves `/blog` and `/blog/` as
@@ -131,8 +153,9 @@ export const heroKeyFor = (pathname: string): string => {
 
 export const resolveHero = (pathname: string): ResolvedHero => {
   const key = heroKeyFor(pathname);
-  if (key === NO_HERO) return { key, hero: null, collapsible: false };
-  return { key, hero: HEROES[key](), collapsible: true };
+  if (key === NO_HERO)
+    return { key, hero: brandHero(), collapsible: true, pinned: true };
+  return { key, hero: HEROES[key](), collapsible: true, pinned: false };
 };
 
 export default resolveHero;

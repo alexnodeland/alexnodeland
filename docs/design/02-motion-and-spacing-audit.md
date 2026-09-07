@@ -904,6 +904,16 @@ The standards in §9 went in as written, with these differences from the plan:
   box never moves, and that the clip edge, the hairline, the content's top
   and the title's progress agree at every sampled scroll offset.
 
+  _Then, from a hand on the phone._ The rise that put the folded title on
+  the nav capsule's line was an em guess at half a line box; the cover's
+  title and the crumbs' have different metrics, and it put them on different
+  lines. It is now the distance between two measured centres — the title's
+  line box (up the offset chain, since a hero header is positioned) and the
+  capsule's — published by Layout, with the token formula standing in until
+  it does. And a page with no title of its own (a post) wears the brand
+  alone, pinned folded: the crumb without its tail, on that same line, so
+  the way home is on every page.
+
 - **Spacing** was renumbered onto a 4px base (`--space-1` … `--space-9`, with
   the 0.75rem step at `--space-3`) rather than given a `--space-2-5`. Every
   stylesheet was rewritten onto it; the raw values left are the nav capsule's

@@ -1,5 +1,6 @@
 import React from 'react';
 import { EducationItem } from '../../types';
+import { closeFromBody } from './collapse';
 
 interface CVEducationSectionProps {
   education: EducationItem[];
@@ -42,7 +43,7 @@ const CVEducationSection: React.FC<CVEducationSectionProps> = ({
             )}
           </summary>
 
-          <div className="cv-collapse-details">
+          <div className="cv-collapse-details" onClick={closeFromBody}>
             <div className="education-location">{edu.location}</div>
             {edu.gpa && <div className="education-gpa">GPA: {edu.gpa}</div>}
             {edu.description && (

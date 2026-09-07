@@ -313,17 +313,23 @@ describe('Layout Component', () => {
     });
 
     it.each([['/blog/some-post'], ['/not-a-page']])(
-      'should wear no hero on %s',
+      'should wear the brand alone, pinned folded, on %s',
       pathname => {
         render(<TestWrapper pathname={pathname}>{mockChildren}</TestWrapper>);
 
         const region = document.querySelector('.site-hero') as HTMLElement;
-        // The region is still there — it is what the transition eases, and
-        // empty it is what holds the window clear of the floating capsule —
-        // but it carries nothing and is not collapsible.
-        expect(region).not.toBeNull();
-        expect(region).toBeEmptyDOMElement();
-        expect(region).not.toHaveClass('is-collapsible');
+        // A page with no title of its own still carries the way home: the
+        // crumb without its tail, worn folded from the start so it sits on
+        // the line the other heroes fold to.
+        expect(region.querySelector('.brand-header')).not.toBeNull();
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+          'alex'
+        );
+        expect(
+          region.querySelector('a.hero-crumb[data-brand-anchor]')
+        ).toHaveAttribute('href', '/');
+        expect(region).toHaveClass('is-collapsible');
+        expect(document.querySelector('.stage')).toHaveClass('is-pinned');
       }
     );
 
@@ -494,7 +500,7 @@ describe('Layout Component', () => {
         expect(document.querySelector('.hero-ghost')).toBeNull();
       });
 
-      it('should not ghost a page that had no hero', () => {
+      it('should ghost the pinned brand, folded, when leaving a post', () => {
         const { rerender } = render(
           <Shell pathname="/blog/a-post" label="post" />
         );
@@ -503,8 +509,12 @@ describe('Layout Component', () => {
           rerender(<Shell pathname="/cv" label="cv" />);
         });
 
-        // Nothing was on screen to see out; the new hero simply rises in.
-        expect(document.querySelector('.hero-ghost')).toBeNull();
+        // The brand was on screen, folded; it leaves as it stood while the
+        // crumb hero rises in under it.
+        const ghost = document.querySelector('.hero-ghost') as HTMLElement;
+        expect(ghost).not.toBeNull();
+        expect(ghost).toHaveClass('is-pinned');
+        expect(ghost.style.getPropertyValue('--hero-collapse')).toBe('1');
         expect(document.querySelector('.cv-page-header')).not.toBeNull();
       });
     });
@@ -566,10 +576,10 @@ describe('Layout Component', () => {
       expect(layout.firstElementChild).toHaveClass('window-band');
       unmount();
 
-      // A post has no hero, so there is nothing to fold and no band: the
-      // window starts under the empty region as it always did.
+      // A post wears the brand pinned folded: the stage folds, and says so.
       render(<TestWrapper pathname="/blog/a-post">{mockChildren}</TestWrapper>);
-      expect(document.querySelector('.stage')).not.toHaveClass('has-fold');
+      expect(document.querySelector('.stage')).toHaveClass('has-fold');
+      expect(document.querySelector('.stage')).toHaveClass('is-pinned');
     });
 
     // jsdom has no CSS.supports, so this is the published path: the browsers
@@ -693,6 +703,11 @@ describe('Layout Component', () => {
       const stage = document.querySelector('.stage') as HTMLElement;
       expect(stage.style.getPropertyValue('--row-lift')).toBe('45px');
       expect(stage.style.getPropertyValue('--hero-rest-height')).toBe('0px');
+      // The title's centre line, from its planted 60px box at the top of the
+      // region, and the nav capsule's (0 in jsdom, which lays nothing out):
+      // the phone's fold carries the one to the other.
+      expect(heroRegion.style.getPropertyValue('--title-centre')).toBe('30px');
+      expect(stage.style.getPropertyValue('--rail-centre')).toBe('0px');
       // 900 does not fit beside 200 × 0.55 with a 24px gap in 1000, so the
       // tagline gives back exactly the overrun.
       expect(
@@ -735,15 +750,14 @@ describe('Layout Component', () => {
       expect(observe).toHaveBeenCalled();
     });
 
-    it('should measure nothing for a path with no hero', () => {
+    it('should measure the pinned brand too, for the row it sits on', () => {
       render(<TestWrapper pathname="/blog/a-post">{mockChildren}</TestWrapper>);
 
       const heroRegion = document.querySelector('.site-hero') as HTMLElement;
-      // The window-top publisher observes the panel on every page; what a
-      // hero-less path must never do is observe (measure) the hero region.
-      expect(observe).not.toHaveBeenCalledWith(heroRegion);
-      expect(heroRegion.style.getPropertyValue('--title-shift')).toBe('');
-      expect(heroRegion.style.getPropertyValue('--sub-scale')).toBe('');
+      // The brand folds onto the same line the crumb heroes do, from the
+      // same measurements.
+      expect(observe).toHaveBeenCalledWith(heroRegion);
+      expect(heroRegion.style.getPropertyValue('--title-centre')).toBe('0px');
     });
   });
 
@@ -792,7 +806,9 @@ describe('the 404 hero', () => {
   it('wears the 404 crumb hero while the not-found flag is up', () => {
     render(<TestWrapper pathname="/not-a-page">{mockChildren}</TestWrapper>);
     const region = document.querySelector('.site-hero') as HTMLElement;
-    expect(region).toBeEmptyDOMElement();
+    // Until the page raises its flag the address is just one with no hero of
+    // its own, and wears the brand alone.
+    expect(region.querySelector('.brand-header')).not.toBeNull();
 
     act(() => markNotFound(true));
     expect(region.querySelector('.not-found-header')).not.toBeNull();
@@ -804,7 +820,7 @@ describe('the 404 hero', () => {
     ).toBeInTheDocument();
 
     act(() => markNotFound(false));
-    expect(region).toBeEmptyDOMElement();
+    expect(region.querySelector('.brand-header')).not.toBeNull();
   });
 });
 
