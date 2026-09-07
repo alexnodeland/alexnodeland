@@ -168,10 +168,23 @@
   }
 }
 
-// A hero line that fades as the hero folds — the tagline and the crumb's tail
-// on a phone. Hidden at the very end, so a faded-out line stops taking the
-// taps meant for whatever has scrolled up under it.
+// A hero line that fades as the hero folds — the crumb's tail on a phone.
+// Hidden at the very end, so a faded-out line stops taking the taps meant for
+// whatever has scrolled up under it.
 @keyframes hero-fold-fade {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+// The phone's tagline, which goes early. The content rises through the band
+// as the hero folds, and the tagline sits in that band — the content reaches
+// its line about a tenth of the way in. Faded over the whole scroll it was
+// still half there, over the chips, and still taking taps meant for them.
+// It is gone, and out of hit-testing, by a fifth of the way.
+@keyframes hero-tagline-fade {
+  20%,
   to {
     opacity: 0;
     visibility: hidden;

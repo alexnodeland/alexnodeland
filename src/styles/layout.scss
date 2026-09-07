@@ -325,16 +325,19 @@
       opacity: calc(1 - var(--hero-collapse));
     }
 
-    // The tagline fades and drifts up as the finger moves.
+    // The tagline fades and drifts up as the finger moves — and is gone by a
+    // fifth of the way (see hero-tagline-fade): the content rises through
+    // the band it sits in, and a tagline still fading over the chips read as
+    // a smear. The published path's fraction is Layout's TAGLINE_FADE.
     p {
       --fold-transform: translateY(-0.5rem);
-      opacity: calc(1 - var(--hero-collapse));
+      opacity: calc(1 - var(--hero-collapse) / 0.2);
       transform: translateY(calc(-0.5rem * var(--hero-collapse)));
     }
 
-    // Folded (Layout's class, on the published path), the faded tagline is
-    // taken out of hit-testing: its box sits over the content that has
-    // scrolled up under the hero, and the chips there are what a tap means.
+    // Faded (Layout's class, on the published path), the tagline is taken
+    // out of hit-testing: its box sits over the content that has scrolled up
+    // under the hero, and the chips there are what a tap means.
     &.is-folded p {
       visibility: hidden;
     }
@@ -370,7 +373,7 @@
 
     @media (max-width: 768px) {
       p {
-        animation-name: hero-fold-transform, hero-fold-fade;
+        animation-name: hero-fold-transform, hero-tagline-fade;
       }
 
       .hero-crumb-rest {
@@ -412,32 +415,16 @@
   }
 }
 
-// Pinned: the hero is folded by the stylesheet and never opens. The scroll
-// timeline is off it, the frame is whole, and the content starts at the
-// frame's edge rather than under a band.
-.stage.is-pinned {
-  .site-hero.is-collapsible {
-    --hero-collapse: 1;
+// Pinned: the hero is folded by the stylesheet and never opens — the scroll
+// timeline is off it. (The window's half of the pinned state is with the
+// window, below, after the rules it has to outrank.)
+.stage.is-pinned .site-hero.is-collapsible {
+  --hero-collapse: 1;
 
-    h1,
-    p,
-    .hero-crumb-rest {
-      animation-name: none;
-    }
-  }
-
-  .window-frame {
+  h1,
+  p,
+  .hero-crumb-rest {
     animation-name: none;
-    clip-path: inset(1px 0 0 0 round var(--radius-lg));
-  }
-
-  .window-edge {
-    animation-name: none;
-    transform: none;
-  }
-
-  .window-band {
-    height: 0;
   }
 }
 
@@ -632,6 +619,32 @@
 .window-band {
   flex-shrink: 0;
   height: var(--fold-band);
+}
+
+// Pinned (see .stage.is-pinned above): the frame is whole, its hairline is
+// home, and the content starts at the edge rather than under a band. These
+// sit after the timeline rules on purpose — same specificity, and the later
+// one wins; declared before them, the animation ran on and clipped a post's
+// frame by the brand's band — and the fallback value is pinned as well, so
+// the browsers without the timeline read the same state.
+.stage.is-pinned {
+  .window-frame,
+  .window-edge {
+    --hero-collapse: 1;
+    animation-name: none;
+  }
+
+  .window-frame {
+    clip-path: inset(1px 0 0 0 round var(--radius-lg));
+  }
+
+  .window-edge {
+    transform: none;
+  }
+
+  .window-band {
+    height: 0;
+  }
 }
 
 // On a phone the panels take the full width, so the stage dims instead of

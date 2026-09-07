@@ -346,6 +346,56 @@ test.describe('structural performance guards', () => {
     }
   });
 
+  test('a page with the brand pinned wears the frame whole from the start', async ({
+    page,
+  }) => {
+    // A post has no hero of its own: the brand alone, folded for good. The
+    // fold's rules must not reach the frame there — a rule declared before
+    // the timeline's once lost to it, and the frame was clipped by a band
+    // the content did not start under.
+    await page.goto('/blog');
+    await settle(page);
+    const post = await page
+      .locator('.post-preview .post-title a')
+      .first()
+      .getAttribute('href');
+    expect(post).toBeTruthy();
+    await page.goto(post!);
+    await settle(page);
+
+    const state = await page.evaluate(() => {
+      const layout = document.querySelector('.layout') as HTMLElement;
+      const frame = document.querySelector('.window-frame') as HTMLElement;
+      const edge = document.querySelector('.window-edge') as HTMLElement;
+      const main = document.querySelector('.main') as HTMLElement;
+      const clip = getComputedStyle(frame).clipPath.match(/inset\(([-\d.]+)px/);
+      const transform =
+        getComputedStyle(edge).transform.match(/matrix\(([^)]+)\)/);
+      return {
+        pinned: document
+          .querySelector('.stage')!
+          .classList.contains('is-pinned'),
+        clip: clip ? parseFloat(clip[1]) : NaN,
+        edge: transform ? parseFloat(transform[1].split(',')[5]) : 0,
+        band: (
+          document.querySelector('.window-band') as HTMLElement
+        ).getBoundingClientRect().height,
+        contentTop:
+          main.getBoundingClientRect().top - layout.getBoundingClientRect().top,
+        brand: Boolean(
+          document.querySelector('.site-hero a.hero-crumb[href="/"]')
+        ),
+      };
+    });
+
+    expect(state.pinned).toBe(true);
+    expect(state.brand).toBe(true);
+    expect(state.clip).toBeLessThanOrEqual(1);
+    expect(Math.abs(state.edge)).toBeLessThan(0.5);
+    expect(state.band).toBe(0);
+    expect(Math.abs(state.contentTop - 1)).toBeLessThan(1.5);
+  });
+
   test('the scroll-linked properties land on their readers, not their containers', async ({
     page,
   }) => {
