@@ -237,36 +237,30 @@
   }
 }
 
-// --- Search behind a chip, on a phone ---------------------------------------
-// The search panel is the tallest thing in a list page's chrome, and on a
-// phone it was the whole first screen: two pickers and a box to type in before
-// a single card. Below the phone breakpoint the panel is folded away and the
-// row grows one more chip — a glyph, no label, so the row's existing labels
-// keep the width they were measured for — that unfolds it. A desktop never
-// draws the chip and never folds the panel.
+// --- Search behind a chip ---------------------------------------------------
+// The search panel is the tallest thing in a list page's chrome, and unfolded
+// it is most of the first screen: two pickers and a box to type in before a
+// single card. So it is folded away at every width, and the row grows one more
+// chip — a glyph, no label, so the row's existing labels keep the width they
+// were measured for — that unfolds it. The first screen of a list page is the
+// list, on a phone and on a desktop alike.
 .ui-search-toggle {
-  display: none;
+  display: inline-flex;
+  flex-shrink: 0;
+  // The far end of the row, whatever is to its left: every list page's row is
+  // its pickers on the left and this on the right.
+  margin-left: auto;
 
   &.is-active {
     @include control-active;
   }
 }
 
-@media (max-width: 768px) {
-  .ui-search-toggle {
-    display: inline-flex;
-    flex-shrink: 0;
-    // The far end of the row, whatever is to its left: every list page's
-    // row is its pickers on the left and this on the right.
-    margin-left: auto;
-  }
+.ui-search-panel {
+  display: none;
 
-  .ui-search-panel {
-    display: none;
-
-    &.is-open {
-      display: block;
-    }
+  &.is-open {
+    display: block;
   }
 }
 

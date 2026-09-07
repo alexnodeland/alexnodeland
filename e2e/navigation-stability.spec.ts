@@ -227,8 +227,10 @@ test.describe('navigation stability', () => {
       .poll(scrollTop, { message: 'PageDown should page the window' })
       .toBeGreaterThan(0);
 
-    // A field still keeps its own keys.
-    await page.click('.blog-search input, input[type="search"], input');
+    // A field still keeps its own keys. The search box is folded away behind
+    // the chip in the control row until it is asked for.
+    await page.click('.ui-search-toggle');
+    await page.click('#blog-search .search-input');
     const parked = await scrollTop();
     await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(200);
