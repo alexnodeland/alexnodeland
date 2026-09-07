@@ -1,8 +1,8 @@
 import React from 'react';
 
 /**
- * The two marks a card's footer uses to point out of itself: the arrow into
- * a post and the octocat out to a repo. (The glyphs that said what *kind* of
+ * The marks a card's footer uses to point out of itself: the arrow into a
+ * post, the chain out to a project's own site, and the octocat out to a repo. (The glyphs that said what *kind* of
  * thing a card was — a page, a book, a case, a mortarboard, a seal — are
  * gone. They opened every title row on the site, then sat in every corner,
  * and in both places they were a picture restating what the section heading
@@ -28,6 +28,18 @@ export const ArrowOutIcon: React.FC = () => (
   <svg {...iconProps}>
     <path d="M7 17 17 7" />
     <path d="M8 7h9v9" />
+  </svg>
+);
+
+/**
+ * A chain of two links: the way out to a project's own site. Drawn at the
+ * octocat's weight and on its grid, since the two sit side by side in a card's
+ * footer and a heavier chain would read as the louder of the two ways out.
+ */
+export const LinkIcon: React.FC = () => (
+  <svg {...iconProps}>
+    <path d="M10.5 13.5a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1.5 1.5" />
+    <path d="M13.5 10.5a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1.5-1.5" />
   </svg>
 );
 

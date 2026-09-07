@@ -15,7 +15,6 @@
 // .ui-search-panel in controls.scss.
 .projects-control-bar {
   @include sticky-control-row;
-  margin-bottom: var(--space-6);
 }
 
 // A search that empties the page still has to say so, rather than leaving the
@@ -48,9 +47,10 @@
 }
 
 // A section of the catalogue. The sections step at the same rhythm the CV's
-// do, and an anchor target lands clear of the sticky control chips.
+// do — the window's one gap — and an anchor target lands clear of the sticky
+// control chips.
 .projects-section {
-  margin-bottom: var(--space-7);
+  margin-bottom: var(--stack-gap);
   scroll-margin-top: var(--sticky-row-clearance);
 }
 
@@ -62,18 +62,19 @@
 // it.
 .projects-page .section-title {
   font-size: var(--text-h3);
-  margin-bottom: var(--space-5);
+  // The window's rhythm, matching the air above the title.
+  margin-bottom: var(--stack-gap);
   display: inline-block;
   color: var(--text-primary);
   @include over-background;
 }
 
 // Projects Grid. The gap matches the blog's list gap — the three list pages
-// step to the same rhythm.
+// step to the same rhythm (--stack-gap in variables.scss).
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--space-6);
+  gap: var(--stack-gap);
 }
 
 // Project Card — the blog preview's grammar in a grid cell: the name, the
@@ -85,6 +86,11 @@
   @include card-highlight;
   border-radius: var(--radius-lg);
   display: block;
+  // The anchor that used to be the card is now the octocat at its foot, with
+  // an overlay stretched back across the whole box (.project-out-repo below):
+  // the card had to stop being a link the day a second one appeared in it.
+  // This is what the overlay is measured against.
+  position: relative;
   // A block of content that happens to be a link, not a link in running
   // text: the global anchor rule's hover underline (see `text-link`) would
   // otherwise rule every line on the card in green — and on a phone stay
@@ -97,6 +103,13 @@
   }
 
   @include reading-emphasis {
+    @include card-highlight-on;
+  }
+
+  // The keyboard's version of the same thing. The pointer lights the card by
+  // being over it; a keyboard lights it by landing on one of its ways out,
+  // which is the only thing in the card it can land on.
+  &:focus-within {
     @include card-highlight-on;
   }
 }
@@ -190,9 +203,13 @@
 // repo, and this is the one thing on it that says so — the counterpart of the
 // arrow at the foot of a blog preview. The words it replaced ("view on
 // github") are still there for a screen reader.
+// The ways out, at the footer's far end: the chain to the project's own site
+// where there is one, then the octocat. Both in the link colour — they are
+// the only things on the card that leave it.
 .project-link-indicator {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-3);
   flex-shrink: 0;
   color: var(--ink-primary);
 
@@ -200,6 +217,48 @@
     width: 18px;
     height: 18px;
   }
+}
+
+.project-out {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  // Same reason the card gives: a mark is not a link in running text, and the
+  // global underline has nothing to underline here anyway.
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+  }
+
+  // The mark a pointer is actually on brightens, so a card with two ways out
+  // says which one is under the cursor. The card's own highlight is behind
+  // this and does not change.
+  @include reading-emphasis {
+    color: var(--text-primary);
+  }
+}
+
+// The card's own link — the site where the project has one, the repo where it
+// does not. Its overlay covers the whole box, so a click anywhere that is not
+// the other mark follows it, and the card reads as one target the way it did
+// when it was an anchor. The cost is that text on the card can no longer be
+// selected by dragging across it, which is the trade every stretched-link
+// card makes; the card is a name, a line and a row of tags, and none of it is
+// meant to be copied.
+.project-out.is-card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+// The other mark, lifted above that overlay so it is hit directly rather than
+// buried under the card's click target. Everything else on the card stays
+// under it, which is what makes the rest of the card one target.
+.project-out.is-raised {
+  position: relative;
+  z-index: 1;
 }
 
 // Activity panel — the github year at the foot of the page, after the
@@ -393,9 +452,9 @@
 }
 
 @media (max-width: 768px) {
+  // One column on a phone; the gap is the site's rhythm at every width.
   .projects-grid {
     grid-template-columns: 1fr;
-    gap: var(--space-5);
   }
 
   .project-card-content {

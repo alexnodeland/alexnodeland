@@ -118,6 +118,19 @@ describe('Blog Page', () => {
     ]);
   });
 
+  it('links to the feed from the control row, beside the pickers', () => {
+    render(<BlogPage data={mockData as any} />);
+    const feed = screen.getByRole('link', { name: 'rss feed' });
+    expect(feed).toHaveAttribute('href', '/rss.xml');
+    expect(feed).toHaveAttribute('type', 'application/rss+xml');
+    // In the row, in the chips' chrome, right after the sort picker.
+    const row = document.querySelector('.blog-control-bar') as HTMLElement;
+    expect(row).toContainElement(feed);
+    expect(feed).toHaveClass('ui-chip-button');
+    const sort = row.querySelector('.blog-sort-dropdown') as HTMLElement;
+    expect(sort.nextElementSibling).toBe(feed);
+  });
+
   it('filters by tag through the dropdown', async () => {
     const user = userEvent.setup();
     render(<BlogPage data={mockData as any} />);

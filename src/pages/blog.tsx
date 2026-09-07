@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { graphql, Link } from 'gatsby';
 import Dropdown from '../components/ui/Dropdown';
 import { ArrowOutIcon } from '../components/ui/EntryIcons';
+import FeedLink from '../components/ui/FeedLink';
 import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
@@ -104,9 +105,9 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
     <>
       <SEO title="blog" pathname={location?.pathname} />
       <div className="blog-page">
-        {/* The two pickers, left, and the way to the search box at the far
-            end: the one row every list page carries (see the cv and
-            projects). Each picker resets itself through its own "all" or
+        {/* The two pickers and the feed, left, and the way to the search box
+            at the far end: the one row every list page carries (see the cv
+            and projects). Each picker resets itself through its own "all" or
             default option, so there is no separate reset. */}
         <div className="blog-control-bar">
           <Dropdown
@@ -128,6 +129,9 @@ const BlogPage: React.FC<BlogPageProps> = ({ data, location }) => {
             onSelect={value => setSortOrder(value as 'desc' | 'asc')}
             className="blog-sort-dropdown"
           />
+
+          {/* The feed, beside the pickers: the same list, for a reader. */}
+          <FeedLink href="/rss.xml" className="blog-feed-link" />
 
           <SearchToggle
             open={searchOpen}

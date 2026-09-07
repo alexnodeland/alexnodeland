@@ -15,6 +15,13 @@ export interface GitHubProject {
   language: string;
   tags: string[];
   url: string;
+  /**
+   * The project's own site, where it has one — a docs site or a landing page,
+   * most of them served by github pages off the repo. Absent on the projects
+   * that are only a repo, and the card draws the link only when it is here,
+   * so a project that never gets a site never gets a dead mark.
+   */
+  site?: string;
   stars?: number;
   category: ProjectCategory;
 }
@@ -48,6 +55,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Rust',
       tags: ['featured', 'library', 'ppl', 'probabilistic-programming'],
       url: 'https://github.com/alexnodeland/fugue',
+      site: 'https://fugue.run/',
       stars: 12,
       category: 'math',
     },
@@ -58,6 +66,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Rust',
       tags: ['library', 'evolutionary-algorithms', 'inference'],
       url: 'https://github.com/alexnodeland/fugue-evo',
+      site: 'https://evo.fugue.run/',
       stars: 2,
       category: 'math',
     },
@@ -80,6 +89,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Rust',
       tags: ['featured', 'library', 'category-theory', 'modular-synthesizers'],
       url: 'https://github.com/alexnodeland/quiver',
+      site: 'https://quiver-dsp.com/',
       stars: 3,
       category: 'audio-dsp',
     },
@@ -90,6 +100,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Rust',
       tags: ['app', 'synthesis', 'preference-learning'],
       url: 'https://github.com/alexnodeland/auracle',
+      site: 'https://alexnodeland.github.io/auracle/',
       stars: 1,
       category: 'audio-dsp',
     },
@@ -99,6 +110,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Rust',
       tags: ['tool', 'cli', 'audio'],
       url: 'https://github.com/alexnodeland/sleeve',
+      site: 'https://alexnodeland.github.io/sleeve/',
       stars: 1,
       category: 'misc',
     },
@@ -109,6 +121,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Python',
       tags: ['experiment', 'music', 'llm'],
       url: 'https://github.com/alexnodeland/llmcomposer',
+      site: 'https://alexnodeland.github.io/llmcomposer/',
       stars: 1,
       category: 'audio-dsp',
     },
@@ -120,6 +133,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Python',
       tags: ['tool', 'real-time', 'agents'],
       url: 'https://github.com/alexnodeland/reflex',
+      site: 'https://alexnodeland.github.io/reflex/',
       stars: 4,
       category: 'distributed-systems',
     },
@@ -152,6 +166,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Rust',
       tags: ['tool', 'mcp', 'local-first'],
       url: 'https://github.com/alexnodeland/curator',
+      site: 'https://alexnodeland.github.io/curator/',
       stars: 1,
       category: 'ai',
     },
@@ -203,6 +218,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'TypeScript',
       tags: ['app', 'markdown', 'url-sharing'],
       url: 'https://github.com/alexnodeland/md-share',
+      site: 'https://alexnodeland.github.io/md-share/',
       stars: 2,
       category: 'misc',
     },
@@ -213,6 +229,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Rust',
       tags: ['app', 'rss', 'local-first', 'macos'],
       url: 'https://github.com/alexnodeland/curio-rss',
+      site: 'https://alexnodeland.github.io/curio-rss/',
       stars: 2,
       category: 'misc',
     },
@@ -232,6 +249,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Swift',
       tags: ['app', 'macos', 'menu-bar'],
       url: 'https://github.com/alexnodeland/no-doze',
+      site: 'https://alexnodeland.github.io/no-doze/',
       stars: 1,
       category: 'misc',
     },
@@ -252,6 +270,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Swift',
       tags: ['app', 'macos', 'menu-bar'],
       url: 'https://github.com/alexnodeland/StatusBar',
+      site: 'https://alexnodeland.github.io/StatusBar/',
       stars: 2,
       category: 'misc',
     },

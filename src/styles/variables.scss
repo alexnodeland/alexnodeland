@@ -87,8 +87,7 @@
   // The window and its peer panels wear the light blur; a panel that opens
   // over the window (a menu, the shortcuts) doubles it; a loose chip on the
   // window's own surface, with content scrolling under it, needs the heavy
-  // one to turn a heading into a wash. The veil at the window's top edge is
-  // its own case and is set where it lives.
+  // one to turn a heading into a wash.
   --window-blur: 5px;
   --blur-panel: 10px;
   --blur-chip: 20px;
@@ -199,6 +198,14 @@
   --space-8: 4rem; // 64px
   --space-9: 6rem; // 96px
 
+  // The window's one vertical rhythm. It is the air above a sticky control row
+  // and the air below it, and it is the gap between the stacked items of every
+  // list page — so a page reads as an even column rather than as bands of
+  // different depths. One value at every width on purpose: a rhythm that
+  // changes at a breakpoint is not a rhythm, and this is the number the pages
+  // were tuned to on a phone.
+  --stack-gap: var(--space-4);
+
   // --- Type -----------------------------------------------------------------
   --font-mono:
     'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
@@ -257,8 +264,8 @@
     --rail-inset: 1rem;
     --rail-height: 3rem;
     // Chips sit over content that is moving — the one case a backdrop filter
-    // has to re-resolve every frame — and share those frames with the veil
-    // and the window's own blur. Half the radius still turns a heading under
+    // has to re-resolve every frame — and share those frames with the
+    // window's own blur. Half the radius still turns a heading under
     // a chip into a wash; what it stops doing is asking a phone GPU for the
     // desktop's on every scroll frame.
     --blur-chip: 10px;

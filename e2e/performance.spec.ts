@@ -85,46 +85,6 @@ test.describe('structural performance guards', () => {
       .toMatch(/px$/);
   });
 
-  test('the window veil keeps no live blur surface at rest', async ({
-    page,
-  }) => {
-    // The veil only renders off the home route.
-    await page.goto('/blog');
-    await settle(page);
-
-    const veilState = () =>
-      page.evaluate(() => {
-        const veil = document.querySelector('.window-veil');
-        if (!veil) return null;
-        return {
-          live: veil.classList.contains('veil-live'),
-          visibility: getComputedStyle(veil, '::before').visibility,
-        };
-      });
-
-    // At the top of the page the veil is invisible — and must be *gone*
-    // (visibility), not merely transparent, or its 18px backdrop blur keeps
-    // re-resolving over the animated canvas behind the window every frame.
-    const atRest = await veilState();
-    expect(atRest).not.toBeNull();
-    expect(atRest!.live).toBe(false);
-    expect(atRest!.visibility).toBe('hidden');
-
-    // Scrolled, the veil comes back for exactly as long as there is
-    // something to veil. The publisher runs on the page's animation frames,
-    // which crawl under parallel software-GL load — hence the long timeout.
-    await page.evaluate(() => {
-      const layout = document.querySelector('.layout');
-      if (layout) layout.scrollTop = 200;
-    });
-    await expect
-      .poll(async () => (await veilState())!.visibility, {
-        message: 'scrolling should re-arm the veil',
-        timeout: 20_000,
-      })
-      .toBe('visible');
-  });
-
   test('the hero fold runs on the scroll timeline, on compositor properties', async ({
     page,
   }) => {
@@ -407,20 +367,19 @@ test.describe('structural performance guards', () => {
       if (layout) layout.scrollTop = 600;
     });
 
-    // 600px is past the band and the veil's range after it, so the veil's
-    // publisher settles at 1. It runs on the page's animation frames —
-    // generous timeout, as everywhere here.
+    // 600px is past the band, so the fold's publisher — where it runs at all
+    // — has settled. It runs on the page's animation frames: generous
+    // timeout, as everywhere here.
     await expect
       .poll(
         () =>
-          page.evaluate(() =>
-            (
-              document.querySelector('.window-veil') as HTMLElement
-            ).style.getPropertyValue('--veil-strength')
-          ),
-        { message: 'the veil should reach full strength', timeout: 20_000 }
+          page.evaluate(() => {
+            const layout = document.querySelector('.layout');
+            return layout ? layout.scrollTop : 0;
+          }),
+        { message: 'the window should take the scroll', timeout: 20_000 }
       )
-      .toBe('1');
+      .toBe(600);
 
     const placement = await page.evaluate(() => {
       const inline = (selector: string, property: string) =>
@@ -430,8 +389,6 @@ test.describe('structural performance guards', () => {
       return {
         collapseOnStage: inline('.stage', '--hero-collapse'),
         collapseOnWindow: inline('.layout', '--hero-collapse'),
-        veilOnWindow: inline('.layout', '--veil-strength'),
-        veilOnVeil: inline('.window-veil', '--veil-strength'),
       };
     });
 
@@ -442,8 +399,6 @@ test.describe('structural performance guards', () => {
     // off the scroll timeline, and then on the hero, the frame and the edge.)
     expect(placement.collapseOnStage).toBe('');
     expect(placement.collapseOnWindow).toBe('');
-    expect(placement.veilOnWindow).toBe('');
-    expect(placement.veilOnVeil).toBe('1');
   });
 
   test('the mobile chat sheet sheds its backdrop filter while sliding', async ({

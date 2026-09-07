@@ -1,7 +1,7 @@
 import React from 'react';
 import ActivityPanel from '../components/ui/ActivityPanel';
 import Dropdown from '../components/ui/Dropdown';
-import { GitHubIcon } from '../components/ui/EntryIcons';
+import { GitHubIcon, LinkIcon } from '../components/ui/EntryIcons';
 import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
@@ -51,12 +51,13 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
   const languageColor = getLanguageColor(project.language);
 
   return (
-    <a
-      href={project.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="project-card"
-    >
+    // Not an anchor any more: a card with a site of its own carries two ways
+    // out, and a link inside a link is not markup a browser will honour. The
+    // card is a plain box, and one of the two links at its foot stretches an
+    // overlay across the whole of it (see .is-card-link in projects.scss) —
+    // so the whole card is still a single target, and the other mark is a
+    // real link rather than a click handler wearing a link's clothes.
+    <article className="project-card">
       <div className="project-card-content">
         {/* The name, the body, the tags, and one meta band at the foot —
             the blog preview's grammar. */}
@@ -72,9 +73,14 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
           <p className="project-tags">{project.tags.join(' • ')}</p>
         )}
 
-        {/* The language and the stars at one end, the way out at the other:
-            the octocat, in the link colour, since the whole card is a link
-            to the repo and this is the one thing on it that says so. */}
+        {/* The language and the stars at one end, the ways out at the other,
+            in the link colour: the chain to the project's own site where
+            there is one, then the octocat. The chain sits inside the octocat
+            so the repo mark stays where it has always been, at the corner.
+            Whichever of the two the card as a whole follows — the site if the
+            project has one, the repo if it does not — is the one that
+            stretches across the card; the other stays a mark you hit
+            directly. */}
         <div className="project-footer">
           <div className="project-language">
             <span
@@ -86,13 +92,33 @@ const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
               <span className="project-stars">★ {project.stars}</span>
             )}
           </div>
-          <span className="project-link-indicator">
-            <GitHubIcon />
-            <span className="sr-only">view on github</span>
-          </span>
+          <div className="project-link-indicator">
+            {project.site && (
+              <a
+                href={project.site}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="project-out project-out-site is-card-link"
+              >
+                <LinkIcon />
+                <span className="sr-only">{`visit the ${project.name} site`}</span>
+              </a>
+            )}
+            <a
+              href={project.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`project-out project-out-repo ${
+                project.site ? 'is-raised' : 'is-card-link'
+              }`}
+            >
+              <GitHubIcon />
+              <span className="sr-only">{`view ${project.name} on github`}</span>
+            </a>
+          </div>
         </div>
       </div>
-    </a>
+    </article>
   );
 };
 

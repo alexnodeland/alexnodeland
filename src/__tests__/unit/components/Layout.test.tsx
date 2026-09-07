@@ -1,10 +1,13 @@
 import { act, render, screen } from '@testing-library/react';
 import React from 'react';
-import { SettingsPanelProvider } from '../../../components/SettingsPanelContext';
+import {
+  SettingsPanelProvider,
+  useSettingsPanel,
+} from '../../../components/SettingsPanelContext';
 import { ChatProvider } from '../../../components/chat';
 import Layout from '../../../components/layout';
 import { getAllSocialLinks } from '../../../config';
-import { markNotFound } from '../../../lib/notFound';
+import { isNotFound, markNotFound } from '../../../lib/notFound';
 
 // Mock the config. The hero registry reads homepageConfig and projectsConfig,
 // so this mock has to carry them too — Layout resolves its own hero now.
@@ -426,10 +429,6 @@ describe('Layout Component', () => {
       });
 
       expect(windowPanel.scrollTop).toBe(0);
-      // The reset lands on the veil itself — the one element that reads it.
-      const veil = document.querySelector('.window-veil') as HTMLElement;
-      expect(veil.style.getPropertyValue('--veil-strength')).toBe('0');
-      expect(windowPanel.style.getPropertyValue('--veil-strength')).toBe('');
     });
 
     describe('the crossfade', () => {
@@ -607,8 +606,7 @@ describe('Layout Component', () => {
 
       // jsdom runs rAF callbacks on a timer, so drive the frame by hand. Two
       // scroll events land in the same frame here on purpose: the value is
-      // published once per frame however many arrive (the veil's publisher
-      // shares the event and queues a frame of its own).
+      // published once per frame however many arrive.
       const scrollTo = (top: number) => {
         const queue: ((time: number) => void)[] = [];
         const raf = jest
@@ -826,6 +824,80 @@ describe('the 404 hero', () => {
 
     act(() => markNotFound(false));
     expect(region.querySelector('.brand-header')).not.toBeNull();
+  });
+
+  it('holds the flag up while the content is hidden, and lets it go after', () => {
+    // A stand-in for the 404 page: raises the flag while mounted, lowers it
+    // on unmount, exactly as the page does. Hiding the content unmounts it.
+    const MissingPage: React.FC = () => {
+      React.useEffect(() => {
+        markNotFound(true);
+        return () => markNotFound(false);
+      }, []);
+      return <div data-testid="missing">missing</div>;
+    };
+    let setHidden: (hidden: boolean) => void = () => {};
+    const Landscape: React.FC = () => {
+      setHidden = useSettingsPanel().setContentHidden;
+      return null;
+    };
+    render(
+      <SettingsPanelProvider>
+        <ChatProvider>
+          <Landscape />
+          <Layout location={{ pathname: '/not-a-page' }}>
+            <MissingPage />
+          </Layout>
+        </ChatProvider>
+      </SettingsPanelProvider>
+    );
+    expect(isNotFound()).toBe(true);
+
+    // The page is gone with the rest of the stage, but the field is still
+    // playing the 404 — the flag it reads stays up.
+    act(() => setHidden(true));
+    expect(screen.queryByTestId('missing')).toBeNull();
+    expect(isNotFound()).toBe(true);
+
+    // Back, and the page's own flag carries it — the hold has let go, so a
+    // different page returning would have brought it down.
+    act(() => setHidden(false));
+    expect(screen.getByTestId('missing')).toBeInTheDocument();
+    expect(isNotFound()).toBe(true);
+  });
+
+  it('lets the flag down with the hold when a different page comes back', () => {
+    const MissingPage: React.FC = () => {
+      React.useEffect(() => {
+        markNotFound(true);
+        return () => markNotFound(false);
+      }, []);
+      return null;
+    };
+    let setHidden: (hidden: boolean) => void = () => {};
+    const Landscape: React.FC = () => {
+      setHidden = useSettingsPanel().setContentHidden;
+      return null;
+    };
+    const Shell: React.FC<{ missing: boolean }> = ({ missing }) => (
+      <SettingsPanelProvider>
+        <ChatProvider>
+          <Landscape />
+          <Layout location={{ pathname: '/not-a-page' }}>
+            {missing ? <MissingPage /> : <div>found</div>}
+          </Layout>
+        </ChatProvider>
+      </SettingsPanelProvider>
+    );
+    const { rerender } = render(<Shell missing />);
+    act(() => setHidden(true));
+    expect(isNotFound()).toBe(true);
+
+    // Navigated while hidden (the browser's back button): the page that
+    // mounts on return is not the 404, and nothing keeps the flag up.
+    rerender(<Shell missing={false} />);
+    act(() => setHidden(false));
+    expect(isNotFound()).toBe(false);
   });
 });
 

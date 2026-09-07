@@ -9,14 +9,33 @@ import { useSyncExternalStore } from 'react';
  * hero for as long as it is up. Deliberately not in the SSR markup: the flag
  * is only ever raised after mount, so the hero arrives through the same
  * transition every other hero does.
+ *
+ * The flag has two sources. The page marks it while mounted. The shell holds
+ * it while the site's content is hidden — the landscape control unmounts the
+ * page along with everything else, and without the hold the page's unmount
+ * would lower the flag and the field would put its number away the moment
+ * the chrome left it alone. Either source keeps it up; both have to let go.
  */
+let marked = false;
+let held = false;
 let active = false;
 const listeners = new Set<() => void>();
 
-export const markNotFound = (on: boolean): void => {
-  if (active === on) return;
-  active = on;
+const publish = () => {
+  const next = marked || held;
+  if (active === next) return;
+  active = next;
   listeners.forEach(listener => listener());
+};
+
+export const markNotFound = (on: boolean): void => {
+  marked = on;
+  publish();
+};
+
+export const holdNotFound = (on: boolean): void => {
+  held = on;
+  publish();
 };
 
 export const isNotFound = (): boolean => active;

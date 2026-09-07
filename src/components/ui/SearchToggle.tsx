@@ -22,7 +22,7 @@ const SearchToggle: React.FC<SearchToggleProps> = ({
 }) => (
   <button
     type="button"
-    className={`ui-chip-button ui-search-toggle${open ? ' is-active' : ''} ${className}`.trim()}
+    className={`ui-chip-button ui-icon-chip ui-search-toggle${open ? ' is-active' : ''} ${className}`.trim()}
     aria-label={open ? 'hide search' : 'search'}
     aria-expanded={open}
     aria-controls={controls}

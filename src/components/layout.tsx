@@ -2,7 +2,7 @@ import { Link } from 'gatsby';
 import React from 'react';
 import { getAllSocialLinks, siteConfig } from '../config';
 import { EASE_IN, EASE_OUT } from '../config/motion';
-import { useNotFound } from '../lib/notFound';
+import { holdNotFound, isNotFound, useNotFound } from '../lib/notFound';
 import { prefersReducedMotion, scrollBehavior } from '../lib/utils/motion';
 import '../styles/layout.scss';
 import { useSettingsPanel } from './SettingsPanelContext';
@@ -70,10 +70,6 @@ const offsetTopWithin = (el: HTMLElement, ancestor: HTMLElement): number => {
   }
   return top;
 };
-
-// The veil fades in over this much scroll past the band — once content is
-// actually passing under the frame's finished edge.
-const VEIL_RANGE = 90;
 
 // How far into the fold the phone's tagline is gone (the stylesheet's
 // hero-tagline-fade keyframe and its published-path expression carry the
@@ -221,11 +217,10 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   const windowRef = React.useRef<HTMLDivElement>(null);
   const mainRef = React.useRef<HTMLElement>(null);
   const heroRef = React.useRef<HTMLElement>(null);
-  const veilRef = React.useRef<HTMLDivElement>(null);
   const frameRef = React.useRef<HTMLDivElement>(null);
   const edgeRef = React.useRef<HTMLDivElement>(null);
-  // The band the hero gives up, in pixels, as last measured — the veil's and
-  // the fallback publisher's reference for the scroll's progress.
+  // The band the hero gives up, in pixels, as last measured — the fallback
+  // publisher's reference for the scroll's progress.
   const bandRef = React.useRef(0);
 
   // A missing page is rendered at whatever address was typed, so it cannot
@@ -246,11 +241,19 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   } = React.useMemo(() => resolveHero(shownPath), [shownPath]);
   const shouldCollapse = Boolean(hero) && collapsible;
 
-  // The veil is there for the sticky control rows — the chips on blog,
-  // projects and cv that content scrolls underneath. The home page has no
-  // row, so the band up there was darkening a page nothing floats over: a
-  // slab of shade on the field, protecting a collision that cannot happen.
-  const wantsVeil = pathname.replace(/\/+$/, '') !== '';
+  // The landscape control takes the whole stage down, the page with it. A
+  // 404 lowers its flag as it unmounts, and the field would put its number
+  // away the moment the chrome left it alone — so the shell holds the flag
+  // for as long as the content is hidden. The hold goes up in the layout
+  // phase, before the page's own cleanup runs, and comes down in the passive
+  // phase after the returning page's effects have run: the flag never dips
+  // in between, so the field plays one sequence across the whole hide.
+  React.useLayoutEffect(() => {
+    if (isContentHidden) holdNotFound(isNotFound());
+  }, [isContentHidden]);
+  React.useEffect(() => {
+    if (!isContentHidden) holdNotFound(false);
+  }, [isContentHidden]);
 
   const previousPathRef = React.useRef<string | null>(null);
   const snapshotRef = React.useRef<HeroSnapshot | null>(null);
@@ -263,7 +266,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   // it and republish — otherwise the next scroll that lands on the same number
   // is skipped as "no change".
   const syncCollapseRef = React.useRef<(() => void) | null>(null);
-  const syncVeilRef = React.useRef<(() => void) | null>(null);
 
   // The outgoing hero, held on screen while it leaves.
   const [ghost, setGhost] = React.useState<HeroGhost | null>(null);
@@ -333,11 +335,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     if (panel) {
       panel.scrollTop = 0;
     }
-    // The veil belongs to a scroll that no longer exists. It has its own
-    // short opacity transition, so writing 0 fades it rather than cutting.
-    veilRef.current?.style.setProperty('--veil-strength', '0');
     syncCollapseRef.current?.();
-    syncVeilRef.current?.();
 
     if (animating) snapshotRef.current = { height, brand, ghostId };
 
@@ -554,54 +552,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       region.classList.remove('is-folded');
     };
   }, [shouldCollapse, pinned]);
-
-  // The veil only exists once something is actually under it: opacity tracks
-  // the window's scroll over the ~90px past the band — the first band's worth
-  // of scroll carries the content up to the frame's edge, and only after that
-  // does anything pass under it — so page tops read at full strength at rest
-  // and the overscroll bounce never drags a gradient along.
-  //
-  // Both writes land on the veil element itself — the one node that reads
-  // them. They used to land on the window, which invalidated style for the
-  // whole scrolling page twenty times over the first 90px — and the publisher
-  // ran on the home page too, which renders no veil at all.
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const panel = windowRef.current;
-    const veil = veilRef.current;
-    if (!panel || !veil) return;
-    let frame = 0;
-    let last = -1;
-    const apply = () => {
-      frame = 0;
-      const past = (panel.scrollTop - bandRef.current) / VEIL_RANGE;
-      const o = Math.round(Math.min(Math.max(past, 0), 1) * 20) / 20;
-      if (o === last) return;
-      last = o;
-      veil.style.setProperty('--veil-strength', String(o));
-      // At rest the veil is invisible but its backdrop blur was still a live
-      // filter surface the compositor had to keep resolving — over a canvas
-      // that repaints every frame. The class lets the stylesheet take the
-      // whole layer out (visibility) whenever there is nothing to veil.
-      veil.classList.toggle('veil-live', o > 0);
-    };
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(apply);
-    };
-    apply();
-    syncVeilRef.current = () => {
-      last = -1;
-      apply();
-    };
-    panel.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      panel.removeEventListener('scroll', onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-      syncVeilRef.current = null;
-      veil.classList.remove('veil-live');
-    };
-  }, [wantsVeil]);
 
   // The page scrolls inside the window, not the document, so a wheel turned
   // over the field beside it — a fifth of a wide screen — used to do nothing,
@@ -825,7 +775,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         stage?.style.setProperty('--row-lift', `${rowLift}px`);
         stage?.style.setProperty('--hero-rest-height', `${restHeight}px`);
       }
-      // The band, read back as geometry for the veil and the fallback. It can
+      // The band, read back as geometry for the fallback publisher. It can
       // move without the text moving — the stage resizing under a sidebar —
       // so it is read on every observation, after the numbers above land. A
       // pinned hero has already given its band up, so its scroll starts at
@@ -933,17 +883,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                     under it, and the first band's worth of scroll carries it
                     up to the frame's finished edge. */}
                 <div className="window-band" aria-hidden="true" />
-                {/* A tapered blur pinned to the window's visible top edge:
-                    content dissolves as it scrolls out instead of colliding
-                    with whatever floats up there (the cv's sticky controls).
-                    Skipped where nothing floats — see `wantsVeil`. */}
-                {wantsVeil && (
-                  <div
-                    className="window-veil"
-                    ref={veilRef}
-                    aria-hidden="true"
-                  />
-                )}
                 <main className="main" ref={mainRef}>
                   {children}
                 </main>

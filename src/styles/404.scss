@@ -9,6 +9,11 @@
 .not-found {
   padding: var(--space-7) 0;
   max-width: 600px;
+  // Centred, block and lines both: the window is about to drift, and a
+  // column of text set hard left on a panel that is sliding reads as a
+  // page that lost its margin rather than one that let go on purpose.
+  margin: 0 auto;
+  text-align: center;
 
   p {
     font-size: var(--text-h4);

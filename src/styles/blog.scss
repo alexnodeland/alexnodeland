@@ -38,7 +38,6 @@
 // shared default too, so the three list pages start at the same line.
 .blog-control-bar {
   @include sticky-control-row;
-  margin-bottom: var(--space-6);
 }
 
 // The page adds no space of its own below the list: the window's own bottom
@@ -58,7 +57,7 @@
 .posts-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--stack-gap);
 }
 
 // The reference card for the whole site: an outline, generous padding, and a
