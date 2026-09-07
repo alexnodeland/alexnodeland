@@ -664,9 +664,13 @@
     color var(--transition-fast),
     background-color var(--transition-fast);
 
+  // A segment in a control, not a link in running text: the pointer lights
+  // the wash and the ink, and the global anchor rule's hover underline (see
+  // `text-link`) stays off it.
   &:hover {
     color: var(--text-primary);
     background-color: var(--wash-hover);
+    text-decoration: none;
   }
 
   &.active {
