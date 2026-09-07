@@ -123,31 +123,8 @@
   }
 }
 
-// The hero that is leaving. It is a second .site-hero — same padding, same
-// collapse choreography, pinned to the value and the box state it was wearing
-// — parked at the box the live one occupied and taken out from under its
-// replacement, so the two are on screen together and a navigation never shows
-// an empty hero.
-//
-// Its geometry is written inline by Layout from the measured box, so the
-// centring the live region does by `margin: 0 auto` inside a max-width has to
-// come off, and it sits behind everything in the stage: the arriving hero
-// reads over it, and the window's frame rising into the space it is vacating
-// covers it rather than the other way round.
-.hero-ghost {
-  position: absolute;
-  z-index: -1;
-  margin: 0;
-  max-width: none;
-  pointer-events: none;
-
-  // The brand is not part of the dissolve. The live copy is travelling from
-  // exactly this box to its new home, and two of the same word — one flying,
-  // one fading in place — reads as a glitch rather than as continuity.
-  [data-brand-anchor] {
-    visibility: hidden;
-  }
-}
+// The hero that is leaving is with the collapsible hero below, after the
+// rules it has to outrank.
 
 // The way home lives in the title: "alex → blog". The crumb is a real link,
 // so it takes the link green — and no underline, being a title; the arrow is
@@ -383,10 +360,49 @@
   }
 }
 
-// The ghost wears the fold the reader was looking at, pinned by Layout as an
-// inline --hero-collapse: the timeline would unfold it as the new page's
-// scroll goes back to the top.
+// The hero that is leaving. It is a second .site-hero — same padding, same
+// collapse choreography, pinned to the value and the box state it was wearing
+// — parked at the box the live one occupied and taken out from under its
+// replacement, so the two are on screen together and a navigation never shows
+// an empty hero.
+//
+// Its geometry is written inline by Layout from the measured box, so the
+// centring the live region does by `margin: 0 auto` inside a max-width has to
+// come off, and it sits behind everything in the stage: the arriving hero
+// reads over it, and the window's frame rising into the space it is vacating
+// covers it rather than the other way round.
+//
+// It has to outrank .site-hero.is-collapsible, which every hero wears — hence
+// the doubled class and this place in the file, after it. Ranked below it, the
+// ghost took that rule's `position: relative` and its negative bottom margin
+// and stayed in the stage's column: a second hero-sized box in the flow, which
+// pushed the window down by its height and shrank it by the same, for the
+// length of every navigation.
 .site-hero.hero-ghost {
+  position: absolute;
+  z-index: -1;
+  margin: 0;
+  max-width: none;
+  pointer-events: none;
+
+  // The collapsible hero hands the pointer back to its two lines. A picture of
+  // a page that has already gone takes no clicks — Layout also marks it inert,
+  // and this is the same statement in the stylesheet.
+  h1,
+  p {
+    pointer-events: none;
+  }
+
+  // The brand is not part of the dissolve. The live copy is travelling from
+  // exactly this box to its new home, and two of the same word — one flying,
+  // one fading in place — reads as a glitch rather than as continuity.
+  [data-brand-anchor] {
+    visibility: hidden;
+  }
+
+  // It wears the fold the reader was looking at, pinned by Layout as an inline
+  // --hero-collapse: the timeline would unfold it as the new page's scroll
+  // goes back to the top.
   h1,
   p,
   .hero-crumb-rest {

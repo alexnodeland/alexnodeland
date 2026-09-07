@@ -122,6 +122,18 @@ const RISE_IN = [
 const canAnimate = (el: Element | null | undefined): el is HTMLElement =>
   Boolean(el) && typeof (el as HTMLElement).animate === 'function';
 
+// The fold's measured distances. They are properties of the rendered text —
+// how far this title has to travel to reach the column's left edge, where its
+// line box sits — so Layout writes them on the hero region itself rather than
+// anywhere they would inherit from. The ghost is the region's sibling, not its
+// child, so it has to be handed a copy (see the navigation's first half).
+const FOLD_MEASURES = [
+  '--title-shift',
+  '--sub-shift',
+  '--sub-scale',
+  '--title-centre',
+] as const;
+
 // The footer marks, drawn as one monoline set rather than collected: the
 // vendor logos were a mix of outline and solid and read as five unrelated
 // stickers. One viewBox, one stroke weight, `currentColor`, so they inherit
@@ -266,6 +278,40 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   // it and republish — otherwise the next scroll that lands on the same number
   // is skipped as "no change".
   const syncCollapseRef = React.useRef<(() => void) | null>(null);
+  // The pieces the arrival is animating: the incoming title and tagline, the
+  // brand travelling between the two heroes, the page's own fade-in. Each of
+  // them takes `transform` and `opacity` outright for the length of the move,
+  // which outranks the fold — so a reader who scrolls in that window would see
+  // the hero sit at rest above content already rising, and then snap. They are
+  // held here and finished on the first scroll: the arrival is over, and the
+  // hero belongs to the fold again.
+  const entryRef = React.useRef<Animation[]>([]);
+  const endEntry = React.useCallback(() => {
+    const playing = entryRef.current;
+    entryRef.current = [];
+    for (const animation of playing) {
+      // finish() lands each piece on the state it was travelling to, and a
+      // non-filling animation stops applying there — so the fold takes the
+      // element back at the value it already has.
+      try {
+        animation.finish();
+      } catch {
+        animation.cancel();
+      }
+    }
+  }, []);
+  const playEntry = React.useCallback(
+    (
+      el: HTMLElement,
+      keyframes: Parameters<HTMLElement['animate']>[0],
+      options: Parameters<HTMLElement['animate']>[1]
+    ) => {
+      const animation = el.animate(keyframes, options);
+      entryRef.current.push(animation);
+      return animation;
+    },
+    []
+  );
 
   // The outgoing hero, held on screen while it leaves.
   const [ghost, setGhost] = React.useState<HeroGhost | null>(null);
@@ -281,6 +327,9 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     previousPathRef.current = pathname;
     // First mount renders plainly — a cold load is not a transition.
     if (previous === null || previous === pathname) return;
+
+    // Whatever the last arrival was still playing, this one supersedes.
+    endEntry();
 
     const region = heroRef.current;
     const stage = stageRef.current;
@@ -306,12 +355,22 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     if (seeingOut && stage) {
       const box = region.getBoundingClientRect();
       const stageBox = stage.getBoundingClientRect();
+      // The fold's distances travel with the box. They live on the live
+      // region and the ghost is its sibling, so without the copy a hero
+      // caught mid-fold would spend its whole exit snapped back to the
+      // resting, centred layout — the one thing the ghost exists to avoid.
+      const measures: Record<string, string> = {};
+      for (const name of FOLD_MEASURES) {
+        const value = region.style.getPropertyValue(name);
+        if (value) measures[name] = value;
+      }
       setGhost({
         id: ghostId,
         path: shownPath,
         collapsible: shouldCollapse,
         pinned,
         style: {
+          ...measures,
           top: box.top - stageBox.top,
           left: box.left - stageBox.left,
           width: box.width,
@@ -347,7 +406,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     // is the same panel it was a moment ago and blinking it would say
     // otherwise.
     if (!reduce && canAnimate(mainRef.current)) {
-      mainRef.current.animate(RISE_IN, {
+      playEntry(mainRef.current, RISE_IN, {
         duration: CONTENT_IN_MS,
         easing: EASE_OUT,
       });
@@ -357,6 +416,19 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     // the transition halfway through its own swap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  // The arrival's handover to the fold. The window is put back to the top by
+  // the navigation above, and at the top the two do not disagree — so the cue
+  // is not the scroll event itself but the first one that leaves the top.
+  React.useEffect(() => {
+    const panel = windowRef.current;
+    if (!panel) return;
+    const onScroll = () => {
+      if (panel.scrollTop > 0 && entryRef.current.length) endEntry();
+    };
+    panel.addEventListener('scroll', onScroll, { passive: true });
+    return () => panel.removeEventListener('scroll', onScroll);
+  }, [endEntry]);
 
   // ── The navigation, half two ────────────────────────────────────────────
   // Both heroes are in the DOM. Run the move: the region's height eases from
@@ -412,11 +484,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       region.querySelector<HTMLElement>('.hero-crumb-rest') ??
       (anchor && h1?.contains(anchor) ? null : h1);
     if (canAnimate(title)) {
-      title.animate(RISE_IN, { duration: HERO_IN_MS, easing: EASE_OUT });
+      playEntry(title, RISE_IN, { duration: HERO_IN_MS, easing: EASE_OUT });
     }
     const tagline = region.querySelector<HTMLElement>('p');
     if (canAnimate(tagline)) {
-      tagline.animate(RISE_IN, {
+      playEntry(tagline, RISE_IN, {
         duration: TAGLINE_IN_MS,
         easing: EASE_OUT,
         delay: TAGLINE_DELAY_MS,
@@ -443,11 +515,19 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         const moved =
           Math.abs(dx) >= 2 || Math.abs(dy) >= 2 || Math.abs(scale - 1) >= 0.05;
         if (moved) {
-          anchor.style.transformOrigin = 'left top';
-          anchor.animate(
+          // The corner the move was measured from, carried in the keyframes
+          // rather than written on the element: on the cover the anchor is
+          // the title itself, whose own origin is the centre the fold scales
+          // it about — and an inline one left behind after the flip folded
+          // every later scroll about the wrong point.
+          playEntry(
+            anchor,
             [
-              { transform: `translate(${dx}px, ${dy}px) scale(${scale})` },
-              { transform: 'none' },
+              {
+                transformOrigin: 'left top',
+                transform: `translate(${dx}px, ${dy}px) scale(${scale})`,
+              },
+              { transformOrigin: 'left top', transform: 'none' },
             ],
             { duration: BRAND_FLIP_MS, easing: EASE_OUT }
           );
@@ -486,7 +566,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       releaseHeightRef.current?.();
       window.clearTimeout(ghostTimerRef.current);
     };
-  }, [shownPath]);
+  }, [shownPath, playEntry]);
 
   // The fold's publisher, for browsers that cannot run it off the scroll
   // timeline. The page scrolls inside `.layout`, not the document, so this
@@ -590,15 +670,30 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         event.altKey
       )
         return;
-      // Anything focused handles its own keys — the window included, which
-      // scrolls natively once a click has put focus in it.
+      // Only what actually owns these keys keeps them: a field or anything
+      // editable, and anything with a scroll of its own — the window
+      // included, which scrolls natively once a click has put focus in it.
+      // Everything else leaves the page keys to the window. That last part
+      // matters: the router moves focus to its own wrapper after every
+      // client-side navigation, and it wraps the whole shell rather than
+      // sitting inside the scroller — so treating "something is focused" as
+      // "someone else will handle this" left the page unscrollable by
+      // keyboard after every link, until a click put focus back in the
+      // window.
       const active = document.activeElement;
-      if (
-        active &&
-        active !== document.body &&
-        active !== document.documentElement
-      )
-        return;
+      if (active instanceof Element) {
+        if (
+          active.matches(
+            'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+          )
+        )
+          return;
+        if (panel.contains(active) || active.closest(OWN_SCROLL) !== null)
+          return;
+        // Space is a button's own activation key; the rest are not.
+        if (event.key === ' ' && active.matches('button, [role="button"]'))
+          return;
+      }
       const page = panel.clientHeight * 0.85;
       const scrollTo = (top: number) => {
         if (typeof panel.scrollTo === 'function')
@@ -709,6 +804,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     // dropped before they turn into style writes, which would otherwise
     // invalidate the hero's subtree once per animation frame.
     let lastKey = '';
+    let lastHeight = '';
     const measure = () => {
       const stage = stageRef.current;
       const panel = windowRef.current;
@@ -732,11 +828,6 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       const titleCentre = offsetTopWithin(h1, el) + h1.offsetHeight / 2;
       const rail = document.querySelector<HTMLElement>('.nav');
       const railCentre = rail ? rail.offsetTop + rail.offsetHeight / 2 : null;
-      // The hero's resting box, which the stylesheet turns into the band the
-      // window reaches up by. During a navigation the region wears a hard
-      // height while it eases between two heroes; its scroll height is the
-      // natural one throughout.
-      const restHeight = el.style.height ? el.scrollHeight : el.offsetHeight;
       const titleShift = (width - h1.offsetWidth) / 2;
       const subShift = (width - subWidth) / 2;
       const rowLift = (h1.offsetHeight + subHeight) / 2;
@@ -756,7 +847,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       const room = width - h1.offsetWidth * titleScale - COLLAPSED_GAP;
       const scale = subWidth > 0 ? Math.min(1, room / subWidth) : 1;
 
-      const key = `${titleShift}|${subShift}|${rowLift}|${scale}|${restHeight}|${titleScale}|${titleCentre}|${railCentre}`;
+      const key = `${titleShift}|${subShift}|${rowLift}|${scale}|${titleScale}|${titleCentre}|${railCentre}`;
       if (key !== lastKey) {
         lastKey = key;
         el.style.setProperty('--title-shift', `${titleShift}px`);
@@ -768,12 +859,29 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
         } else {
           stage?.style.removeProperty('--rail-centre');
         }
-        // These two land on the stage rather than the hero: the window's
-        // frame reads the band they make, and it is not in the hero's
-        // subtree. A write there restyles the page, which is why it happens
-        // here — on a change of text or column — and never on a scroll frame.
+        // This lands on the stage rather than the hero: the window's frame
+        // reads the band it makes, and it is not in the hero's subtree. A
+        // write there restyles the page, which is why it happens here — on a
+        // change of text or column — and never on a scroll frame.
         stage?.style.setProperty('--row-lift', `${rowLift}px`);
-        stage?.style.setProperty('--hero-rest-height', `${restHeight}px`);
+      }
+
+      // The hero's resting box, which the stylesheet turns into the band the
+      // window reaches up by — and the band is what the hero's negative bottom
+      // margin gives back, so the window's top edge holds still only while the
+      // two describe the same box. That is why this is the region as it stands
+      // rather than the height it is settling at: during a navigation the
+      // region eases between two heroes, and a band fixed at the destination
+      // would step the window's edge down by the difference and then walk it
+      // back over the transition.
+      //
+      // It is also the one number here that moves while that ease runs, so it
+      // is published on its own: the text-derived distances above are the same
+      // on every frame of it and must not be rewritten for a height that is.
+      const restHeight = `${el.offsetHeight}px`;
+      if (restHeight !== lastHeight) {
+        lastHeight = restHeight;
+        stage?.style.setProperty('--hero-rest-height', restHeight);
       }
       // The band, read back as geometry for the fallback publisher. It can
       // move without the text moving — the stage resizing under a sidebar —
