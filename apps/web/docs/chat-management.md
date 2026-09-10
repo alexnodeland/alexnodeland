@@ -14,6 +14,7 @@ Worker — no server, no API keys, no data leaving the visitor's browser.
 - [Interface Customization](#interface-customization)
 - [Build Pipeline](#build-pipeline)
 - [Evaluation](#evaluation)
+- [The Intent Router](#-the-intent-router)
 - [Troubleshooting](#troubleshooting)
 
 ## 🎯 Overview
@@ -840,6 +841,29 @@ Add an object to the `CASES` array in `scripts/chat-eval.mjs`:
 The script prints a `[PASS]`/`[FAIL]` line per case with TTFA, total time,
 and peak tok/s, then a final `N/M passed` summary and a full JSON dump of
 `results` for deeper inspection or CI capture.
+
+## 🧭 The Intent Router
+
+`apps/model` in this repo fine-tunes [Needle 2](https://github.com/cactus-compute/needle),
+a 14 MB tool-calling model, into a router for this chat. Given a visitor's
+question it returns one of five typed site tools — a role by employer, a
+project by name, a skill check, a section search with a topic, a contact
+channel — or the empty call for anything off-topic, injected, or negated.
+It generates no prose; the chat above still retrieves and answers.
+
+Where it is meant to fit, once wired in:
+
+- the empty call replaces the similarity gate for off-topic questions;
+- `check_skill` becomes an exact lookup against the skills list before the
+  model answers, which is the question the small models fabricate on;
+- the other calls become filters on the retrieval index (`cv:exp:*`,
+  `project:*`, `blog:*`) rather than a bare vector search.
+
+The corpus is derived from this site's content by
+`scripts/export-site-content.mjs`, so the router tracks the site the way the
+retrieval index does. The current model, its tool catalogue and system facts
+are in `apps/model/models/`; Needle publishes a WASM build of its engine for
+the browser. See [`apps/model/README.md`](../../model/README.md).
 
 ## 🚨 Troubleshooting
 

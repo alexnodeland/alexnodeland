@@ -96,7 +96,7 @@ def finish(cfg: Config, the_run: Run, tracking: bool = True, baseline: str | Non
     for reason in verdict["reasons"]:
         print(f"  - {reason}")
     if verdict["ok"] and promote:
-        for path in registry.snapshot(the_run):
+        for path in registry.write_snapshot(the_run):
             log.say("snapshot", path=str(path))
     print(f"\nrun: {the_run.dir}")
     return verdict["ok"]

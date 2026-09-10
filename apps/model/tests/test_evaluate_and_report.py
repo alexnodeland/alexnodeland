@@ -101,7 +101,7 @@ def test_report_renders_from_a_run_dir(tmp_path, content, content_path, corpus_c
     text = run.path("report.md").read_text()
     assert "PASS" in text and "By slice" in text and "objective (exact call)" in text
     assert "site-needle.cact" in run.path("model-card.md").read_text()
-    files = registry.snapshot(run, tmp_path / "models")
+    files = registry.write_snapshot(run, tmp_path / "models")
     assert {p.name for p in files} >= {"model-card.md", "eval.json", "manifest.json", "tools.json"}
 
 

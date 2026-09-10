@@ -116,7 +116,7 @@ def release_eval(release: dict) -> dict | None:
     return release_json(release, "eval.json")
 
 
-def snapshot(run: Run, models_dir: Path = MODELS_DIR) -> list[Path]:
+def write_snapshot(run: Run, models_dir: Path = MODELS_DIR) -> list[Path]:
     """Copy the shippable files into ``models/`` — the committed snapshot."""
     models_dir.mkdir(parents=True, exist_ok=True)
     written = []
@@ -185,10 +185,10 @@ def upload_hf(run: Run, repo: str, token: str | None = None) -> str:
 
 
 def publish(run: Run, cfg: RegistryConfig, hf_repo: str | None = None, github: bool = False,
-            snapshot_too: bool = False, snapshot: bool = False) -> str:
+            snapshot: bool = False) -> str:
     done = []
-    if snapshot or snapshot_too:
-        paths = globals()["snapshot"](run)
+    if snapshot:
+        paths = write_snapshot(run)
         done.append(f"snapshot: {len(paths)} files into {MODELS_DIR}")
     if github:
         done.append(f"release: {create_release(run, cfg)}")
