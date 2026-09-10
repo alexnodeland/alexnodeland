@@ -835,11 +835,27 @@ REFUSALS: dict[str, tuple[str, list[str]]] = {
 }
 
 
-def gen_refusals(rng: Random) -> list[Example]:
+def gen_refusals(rng: Random, cfg: CorpusConfig | None = None,
+                 positives: int | None = None) -> list[Example]:
+    """The refusal pool, sampled down per category when it would exceed
+    ``cfg.refusal_share`` of the assistant examples. The pool is fixed while
+    everything else scales with the content, so a small site would otherwise
+    train a router that mostly says no."""
+    target = None
+    if cfg is not None and positives is not None:
+        target = round(cfg.refusal_share * positives / max(1e-9, 1 - cfg.refusal_share))
+    pool_size = sum(len(q) for _, q in REFUSALS.values())
+    ratio = 1.0 if target is None or target >= pool_size else target / pool_size
     out: list[Example] = []
     n = 0
     for why, (reasoning, queries) in REFUSALS.items():
-        for i, query in enumerate(queries):
+        keep = list(range(len(queries)))
+        if ratio < 1.0:
+            floor = 2 if why in ("negation", "injection") else 1
+            k = max(floor, round(len(queries) * ratio))
+            keep = sorted(rng.sample(keep, k=min(k, len(keep))))
+        for i in keep:
+            query = queries[i]
             n += 1
             out.append(Example(
                 id=f"assistant:refusal:{n}",
@@ -1051,7 +1067,7 @@ def generate(content: Content, cfg: CorpusConfig) -> list[Example]:
 
     # The site's own prompts go first so that, where a generator produces the
     # same question, the graded copy is the one deduplication keeps.
-    examples = [
+    positives = [
         *gen_site_prompts(content),
         *gen_lookup_role(content, cfg, stream("lookup_role")),
         *gen_lookup_project(content, cfg, stream("lookup_project")),
@@ -1059,7 +1075,9 @@ def generate(content: Content, cfg: CorpusConfig) -> list[Example]:
         *gen_search_site(content, cfg, stream("search_site")),
         *gen_contact(stream("contact")),
         *gen_parallel(content, cfg, stream("parallel")),
-        *gen_refusals(stream("refusals")),
+    ]
+    return [
+        *positives,
+        *gen_refusals(stream("refusals"), cfg, len(positives)),
         *gen_extraction(content, cfg, stream("extraction")),
     ]
-    return examples
