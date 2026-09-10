@@ -83,13 +83,14 @@ def check_example(example: Example) -> list[Problem]:
     return problems
 
 
-def check_corpus(examples: list[Example], max_tokens: int, lengths: dict[str, int],
+def check_corpus(examples: list[Example], max_tokens: int | None, lengths: dict[str, int],
                  refusal_bounds: tuple[float, float] = (0.10, 0.25),
                  min_per_tool: int = 5) -> list[Problem]:
+    """``max_tokens`` None skips the budget check (lengths are estimates)."""
     problems: list[Problem] = []
     for example in examples:
         problems.extend(check_example(example))
-        if lengths.get(example.id, 0) > max_tokens:
+        if max_tokens is not None and lengths.get(example.id, 0) > max_tokens:
             problems.append(Problem(
                 example.id, f"{lengths[example.id]} tokens exceeds the budget of {max_tokens}"))
 

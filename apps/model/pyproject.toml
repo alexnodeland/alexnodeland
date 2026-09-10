@@ -11,6 +11,8 @@ dependencies = [
   "cactus-needle>=2.0.12",
   "huggingface_hub>=0.25",
   "pydantic>=2.7",
+  # Needle's tokenizer, so the corpus build counts real tokens without JAX.
+  "sentencepiece>=0.2",
 ]
 
 [project.optional-dependencies]

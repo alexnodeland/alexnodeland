@@ -16,7 +16,7 @@ default:
 # Install both apps' dependencies
 install:
     cd apps/web && npm install
-    cd apps/model && uv sync --all-extras
+    cd apps/model && uv sync --extra train --extra tracking --extra dev
 
 # Export the site's content and rebuild the training corpus from it
 corpus:

@@ -22,7 +22,9 @@ def test_bucket_rounds_to_power_of_two_under_cap():
     assert tokens.bucket(900, 512) == 512
 
 
-def test_estimate_is_pessimistic_against_the_real_tokenizer(content, corpus_cfg):
+def test_estimate_tracks_the_real_tokenizer(content, corpus_cfg):
+    """The estimate feeds the manifest's statistics when the tokenizer is
+    absent; it should be in the right neighbourhood, and never far under."""
     tokenizer = tokens.try_tokenizer()
     if tokenizer is None:
         pytest.skip("tokenizer not available")
@@ -30,7 +32,8 @@ def test_estimate_is_pessimistic_against_the_real_tokenizer(content, corpus_cfg)
 
     for e in generate(content, corpus_cfg)[::9]:
         row = e.row()
-        assert tokens.count(row) >= tokens.count(row, tokenizer)
+        real = tokens.count(row, tokenizer)
+        assert 0.95 * real <= tokens.count(row) <= 1.35 * real
 
 
 class _Run:

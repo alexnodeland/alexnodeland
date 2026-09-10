@@ -3,7 +3,7 @@ from dataclasses import replace
 
 import pytest
 
-from site_needle import corpus
+from site_needle import corpus, tokens
 from site_needle.generate import Example
 from site_needle.validate import check_corpus, check_example
 
@@ -65,11 +65,20 @@ def test_diff_reports_new_sources_and_moved_counts(content, content_path, corpus
     assert corpus.diff(None, new)["baseline"] is None
 
 
-def test_build_fails_on_problems(tmp_path, content, content_path, corpus_cfg, monkeypatch):
+def test_build_fails_on_problems(tmp_path, content, content_path, corpus_cfg):
     bad = replace(corpus_cfg, max_tokens=64)  # everything is over budget
+    if tokens.try_tokenizer() is None:
+        pytest.skip("the budget is only enforced with the real tokenizer")
     with pytest.raises(corpus.CorpusError, match="exceeds the budget"):
         corpus.build(bad, content_path, tmp_path / "out")
     assert not (tmp_path / "out" / "train.jsonl").exists()
+
+
+def test_estimated_lengths_do_not_fail_the_budget(content, content_path, corpus_cfg):
+    tight = replace(corpus_cfg, max_tokens=64)
+    built = corpus.build_in_memory(content, content_path, tight, tokenizer=None)
+    assert not any("budget" in p.message for p in built.problems)
+    assert built.manifest["corpus"]["length"]["tokenizer"] == "estimate"
 
 
 def _example(**overrides) -> Example:

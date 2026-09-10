@@ -3777,6 +3777,7 @@ dependencies = [
     { name = "cactus-needle" },
     { name = "huggingface-hub" },
     { name = "pydantic" },
+    { name = "sentencepiece" },
 ]
 
 [package.optional-dependencies]
@@ -3804,6 +3805,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
+    { name = "sentencepiece", specifier = ">=0.2" },
 ]
 provides-extras = ["train", "gpu", "tracking", "dev"]
 

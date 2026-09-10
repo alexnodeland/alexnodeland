@@ -83,7 +83,8 @@ class Run:
 
     @classmethod
     def new(cls, runs_dir: Path = RUNS_DIR, run_id: str | None = None) -> Run:
-        run = cls(run_id or new_run_id(), (runs_dir / (run_id or new_run_id())).resolve())
+        run_id = run_id or new_run_id()
+        run = cls(run_id, (runs_dir / run_id).resolve())
         run.dir.mkdir(parents=True, exist_ok=False)
         run.write("run.json", {
             "id": run.id,

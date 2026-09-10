@@ -21,8 +21,10 @@ TOOLS_START, TOOLS_END = "<tools>", "</tools>"
 TOOL_CALL_START, TOOL_CALL_END = "<tool_call>", "</tool_call>"
 
 # Measured on this corpus: JSON-heavy prompts tokenize at ~4.2 characters per
-# token under the 8k-piece vocabulary; 3.4 leaves a margin.
-CHARS_PER_TOKEN_ESTIMATE = 3.4
+# token under the 8k-piece vocabulary; 3.6 leaves a margin. Estimates are
+# for the manifest's statistics only — the budget is enforced with the real
+# tokenizer, which is why sentencepiece is a base dependency.
+CHARS_PER_TOKEN_ESTIMATE = 3.6
 
 
 def render(row: dict) -> tuple[str, str]:

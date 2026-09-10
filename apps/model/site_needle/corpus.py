@@ -168,7 +168,10 @@ def build_in_memory(content: Content, content_path: Path, cfg: CorpusConfig,
     examples, dropped = dedupe(examples)
     assign_splits(examples, cfg)
     lengths = {e.id: count(e.row(), tokenizer) for e in examples}
-    problems = check_corpus(examples, cfg.max_tokens, lengths)
+    # Without the real tokenizer the lengths are estimates, and a pessimistic
+    # estimate must not fail a corpus the trainer will measure exactly: the
+    # budget check waits for `site-needle train`'s preflight in that case.
+    problems = check_corpus(examples, cfg.max_tokens if tokenizer else None, lengths)
     name = None
     if tokenizer is not None:
         name = f"needle2 sentencepiece ({tokenizer.vocab_size} pieces)"
