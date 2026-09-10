@@ -207,6 +207,10 @@ def build_in_memory(content: Content, content_path: Path, cfg: CorpusConfig,
             examples = [e for e in examples if e.id not in over]
             lengths = {k: v for k, v in lengths.items() if k not in over}
             augmentation["dropped_over_budget"] = len(over)
+    if augmentation is not None:
+        # What survived every rule, which is what the manifest should say.
+        augmentation["kept"] = sum(1 for e in examples if "augmented" in e.tags)
+        augmentation["natural_kept"] = sum(1 for e in examples if "natural" in e.tags)
     # Without the real tokenizer the lengths are estimates, and a pessimistic
     # estimate must not fail a corpus the trainer will measure exactly: the
     # budget check waits for `site-needle train`'s preflight in that case.

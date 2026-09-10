@@ -32,6 +32,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from random import Random
@@ -166,7 +167,8 @@ class Target:
                          "refer to Alex by name, as 'he'/'his', or as 'you' (talking to the "
                          "site). No two with the same wording.")
         lines.append("Do not name any other employer, project, skill or person than the one "
-                     "given. Do not number them.")
+                     "given. Do not number them. At most one may open with a greeting such "
+                     "as 'hey' or 'hi', and at least half should be under ten words.")
         return "\n".join(lines)
 
 
@@ -216,10 +218,13 @@ def targets(content: Content, cfg: CorpusConfig) -> list[Target]:
                     f"Alex's CV / whether he knows or has used it",
                 entities=(skill,)))
     for section, meaning in SECTION_MEANING.items():
+        # Weighted against the topic targets below: a section is one intent
+        # that tens of topics share, and the plain sections were the ones the
+        # router got wrong.
         out.append(Target(
             key=f"search_site:{section}", category="search_site",
             answers=(call("search_site", section=section),), enums={"section": section},
-            ask=f"read about {meaning}", weight=3))
+            ask=f"read about {meaning}", weight=8))
     by_section = topics(content)
     for section in ("writing", "projects", "press"):
         for topic in by_section.get(section, []):
@@ -371,9 +376,19 @@ def provider_for(name: str, model: str | None = None):
 # --- the stage ----------------------------------------------------------------
 
 
+GREETING = re.compile(r"^(?:hey|hi|hello|hey there|hi there|yo)[,!]?\s+", re.IGNORECASE)
+
+
 def _example(target: Target, i: int, question: str, cue: str, natural: bool) -> Example | None:
     question = " ".join(question.split())
     cue = " ".join(cue.split())
+    # The generator opens a quarter of its questions with a greeting; visitors
+    # do not. Half of those lose it (seeded on the text, so a rebuild agrees).
+    if GREETING.match(question) and int(hashlib.sha256(question.encode()).hexdigest()[:2], 16) % 2:
+        stripped = GREETING.sub("", question, count=1)
+        if stripped and (not cue or cue in stripped):
+            recase = stripped[0].islower() and not natural
+            question = stripped[0].upper() + stripped[1:] if recase else stripped
     if not question:
         return None
     parts = [f"'{span}' -> {arg}" for arg, span in target.verbatim.items()]
@@ -403,11 +418,19 @@ def cache_path(provider: str, model: str, content_hash: str) -> Path:
     return CACHE_DIR / f"{provider}-{stamp.hexdigest()[:12]}.jsonl"
 
 
-def desired(targets_: list[Target], total: int, natural: int) -> dict[tuple[str, str], int]:
-    """How many questions each (target, mode) should have."""
+def desired(targets_: list[Target], total: int, natural: int,
+            holdout: set[str] | None = None) -> dict[tuple[str, str], int]:
+    """How many questions each (target, mode) should have. A target on a
+    held-out entity gets no training questions — the split holds those
+    names out of training on purpose, and a paraphrase about them would put
+    them back."""
+    holdout = {h.lower() for h in (holdout or ())}
     out: dict[tuple[str, str], int] = {}
     if total > 0:
+        by_key = {t.key: t for t in targets_}
         for key, k in allocate(targets_, total).items():
+            if any(e.lower() in holdout for e in by_key[key].entities):
+                continue
             out[(key, "train")] = k
     for t in spread(targets_, natural // NATURAL_PER_TARGET):
         out[(t.key, "natural")] = NATURAL_PER_TARGET
@@ -416,8 +439,8 @@ def desired(targets_: list[Target], total: int, natural: int) -> dict[tuple[str,
 
 def prompts_for(targets_: list[Target], total: int, natural: int,
                 asked: dict[tuple[str, str], int] | None = None,
-                next_batch: dict[tuple[str, str], int] | None = None
-                ) -> tuple[dict[str, str], dict[str, int]]:
+                next_batch: dict[tuple[str, str], int] | None = None,
+                holdout: set[str] | None = None) -> tuple[dict[str, str], dict[str, int]]:
     """The requests to make so every (target, mode) reaches its desired
     count, given how many questions were already asked for. Keys join
     target, mode and batch with NUL; batches continue from the highest one
@@ -429,7 +452,7 @@ def prompts_for(targets_: list[Target], total: int, natural: int,
     next_batch = next_batch or {}
     prompts: dict[str, str] = {}
     counts: dict[str, int] = {}
-    for (key, mode), want in desired(targets_, total, natural).items():
+    for (key, mode), want in desired(targets_, total, natural, holdout).items():
         short = want - asked.get((key, mode), 0)
         batch = next_batch.get((key, mode), 0)
         while short > 0:
@@ -528,7 +551,8 @@ def augment(existing: list[Example], content: Content, cfg: CorpusConfig, total:
         if not r.get("asked"):
             asked[slot] = asked.get(slot, 0) + 1
         next_batch[slot] = max(next_batch.get(slot, 0), batch_of(r) + 1)
-    missing, counts = prompts_for(targets_, total, natural, asked, next_batch)
+    holdout = {*cfg.holdout_projects, *cfg.holdout_companies, *cfg.holdout_skills}
+    missing, counts = prompts_for(targets_, total, natural, asked, next_batch, holdout)
     if missing:
         rows.extend(generate_raw(missing, counts, provider, log))
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -537,7 +561,7 @@ def augment(existing: list[Example], content: Content, cfg: CorpusConfig, total:
                 new_requests=len(missing))
     # Only the (target, mode) slots the current settings ask for are used,
     # and a natural slot contributes at most its desired count.
-    want = desired(targets_, total, natural)
+    want = desired(targets_, total, natural, holdout)
     used: dict[tuple[str, str], int] = {}
     selected: list[dict] = []
     for r in rows:

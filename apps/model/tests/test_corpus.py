@@ -240,6 +240,38 @@ def test_augment_targets_cover_every_tool(content, corpus_cfg):
     assert "5 distinct" in prompt and "exactly as written" in prompt
 
 
+def test_held_out_entities_get_no_training_paraphrases(content, corpus_cfg):
+    from site_needle import augment as augment_mod
+
+    ts = augment_mod.targets(content, corpus_cfg)
+    holdout = {*corpus_cfg.holdout_projects, *corpus_cfg.holdout_companies,
+               *corpus_cfg.holdout_skills}
+    want = augment_mod.desired(ts, 200, 20, holdout)
+    by_key = {t.key: t for t in ts}
+    for (key, mode) in want:
+        if mode == "train":
+            assert not {e.lower() for e in by_key[key].entities} & {h.lower() for h in holdout}
+    assert any(mode == "train" for _, mode in want)
+
+
+def test_greetings_are_thinned():
+    from site_needle import augment as augment_mod
+
+    target = augment_mod.Target(key="check_skill:rust", category="check_skill",
+                                answers=(augment_mod.call("check_skill", skill="rust"),),
+                                verbatim={"skill": "rust"})
+    kept, stripped = 0, 0
+    for i in range(40):
+        ex = augment_mod._example(target, i, f"hey, does alex know rust? (variant {i})", "rust",
+                                  False)
+        assert ex is not None and "rust" in ex.query
+        if ex.query.lower().startswith("hey"):
+            kept += 1
+        else:
+            stripped += 1
+    assert kept > 0 and stripped > 0
+
+
 def test_openrouter_augmentation_needs_a_key(content, content_path, corpus_cfg, monkeypatch):
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
