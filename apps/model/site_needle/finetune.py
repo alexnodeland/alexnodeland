@@ -69,12 +69,36 @@ def _row_weights(rows: list[dict], refusal_weight: float) -> np.ndarray:
                       np.float32)
 
 
+REFUSAL_TARGETS = ("phrase", "span")
+
+
+def shape_refusals(rows: list[dict], target: str) -> list[dict]:
+    """``phrase`` keeps the corpus reasoning ("general knowledge; no site
+    tool answers it"). ``span`` rewrites every refusal's reasoning into the
+    shape the tool-call rows use — ``'<query>' -> no tool`` — so the first
+    token after ``<think>`` no longer decides between refusing and calling;
+    the decision moves to after the quoted span, where the tool rows make
+    theirs. Extraction refusals (a passage with nothing to extract) keep
+    their reasoning. The calls are untouched, so grading is unaffected."""
+    if target not in REFUSAL_TARGETS:
+        raise ValueError(f"refusal_target must be one of {REFUSAL_TARGETS}")
+    if target == "phrase":
+        return rows
+    out = []
+    for row in rows:
+        if not row.get("answers") and row.get("kind") != "extraction":
+            row = {**row, "reasoning": f"'{row['query']}' -> no tool"}
+        out.append(row)
+    return out
+
+
 def finetune(args, progress=None, on_epoch=None) -> dict:
     """``args`` carries: checkpoint, fit_path, dev_path (or None), epochs,
     batch_size, lr, lora_rank, lora_alpha, max_len, seed, qat_bits, out, and
     optionally prefix_regime ("tuned" or "base"), prefix_grad (False: the
     tuned prefix cache is recomputed every step but not trained through,
-    which is what the Metal backend can compile) and refusal_weight (1.0).
+    which is what the Metal backend can compile), refusal_weight (1.0) and
+    refusal_target ("phrase" or "span", see ``shape_refusals``).
 
     ``progress(line)`` receives the same lines ``needle finetune`` prints.
     ``on_epoch(epoch, record, save)`` runs after each epoch's validation
@@ -108,6 +132,7 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
     if prefix_regime not in ("tuned", "base"):
         raise ValueError("prefix_regime must be 'tuned' or 'base'")
     refusal_weight = float(getattr(args, "refusal_weight", 1.0) or 1.0)
+    refusal_target = str(getattr(args, "refusal_target", "phrase") or "phrase")
     prefix_grad = bool(getattr(args, "prefix_grad", False))
 
     base_path = str(args.checkpoint)
@@ -119,10 +144,10 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
     emit(f"  {'backend':<9} {backend}  float32")
 
     tokenizer = get_tokenizer(config.vocab_size)
-    fit_rows = _read_rows(str(args.fit_path))
+    fit_rows = shape_refusals(_read_rows(str(args.fit_path)), refusal_target)
     if not fit_rows:
         raise SystemExit(f"no usable examples in {args.fit_path}")
-    dev_rows = _read_rows(args.dev_path)
+    dev_rows = shape_refusals(_read_rows(args.dev_path), refusal_target)
     # One group per distinct prefix (the catalogue, plus one per extraction
     # schema); each group has its own cache and its own compiled step.
     fit_groups = [pad_to(g, min(fit_seq_len(g), args.max_len))
@@ -184,6 +209,8 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
         emit(f"  {'holdout':<9} {n_val} examples for validation (by target)")
     if refusal_weight != 1.0:
         emit(f"  {'weights':<9} refusal rows x{refusal_weight:g} in the loss")
+    if refusal_target != "phrase":
+        emit(f"  {'refusals':<9} reasoning reshaped as '<query>' -> no tool")
 
     batch, count = args.batch_size, len(fit_rows)
     steps_per_epoch = sum(-(-len(g.rows) // batch) for g in fit_groups)
@@ -244,7 +271,7 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
     val_groups = [_Group(g) for g in dev_groups]
 
     trained_with = {"prefix_regime": prefix_regime, "prefix_grad": prefix_grad,
-                    "refusal_weight": refusal_weight,
+                    "refusal_weight": refusal_weight, "refusal_target": refusal_target,
                     "prefix_len": main.prefix_len, "seq_len": main.seq_len,
                     "prefixes": len(fit_groups)}
 
@@ -302,6 +329,7 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
         "prefix_regime": prefix_regime,
         "prefix_grad": prefix_grad,
         "refusal_weight": refusal_weight,
+        "refusal_target": refusal_target,
         "total_steps": total_steps,
         "warmup_steps": warmup,
         "lora_groups": len(paths),

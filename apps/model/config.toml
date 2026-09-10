@@ -60,6 +60,11 @@ prefix_grad = false
 # one behaviour that does not survive the engine (see README, "Results so
 # far"); weighting them up is the cheapest lever on that margin.
 refusal_weight = 1.0
+# The refusal reasoning's shape: "phrase" trains the corpus text ("general
+# knowledge; no site tool answers it"); "span" trains the tool rows' shape,
+# '<query>' -> no tool, so the refuse-or-call decision is made where the
+# tool rows make theirs, after the quoted span.
+refusal_target = "phrase"
 
 [eval]
 max_new_tokens = 128

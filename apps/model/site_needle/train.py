@@ -375,11 +375,12 @@ def train(cfg: Config, corpus_dir: Path = CORPUS_DIR, runs_dir: Path = RUNS_DIR,
             prefix_regime=tc.prefix_regime,
             prefix_grad=tc.prefix_grad,
             refusal_weight=tc.refusal_weight,
+            refusal_target=tc.refusal_target,
             out=None,
         )
         with log.stage("train", epochs=epochs, batch_size=tc.batch_size, lr=tc.lr,
                        grade_epochs=grade, prefix_regime=tc.prefix_regime,
-                       refusal_weight=tc.refusal_weight):
+                       refusal_weight=tc.refusal_weight, refusal_target=tc.refusal_target):
             shape = finetune(args, progress=progress, on_epoch=grader)
         summary = progress.summary()
         summary.update({k: v for k, v in shape.items() if k != "epochs"})

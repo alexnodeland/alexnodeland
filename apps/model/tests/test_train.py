@@ -190,3 +190,19 @@ def test_train_config_carries_the_selection_knobs():
     assert cfg.train.select in ("dev", "val_loss", "last")
     assert isinstance(cfg.train.grade_epochs, bool)
     assert SimpleNamespace(**vars(cfg.train)).lora_rank > 0
+
+
+def test_shape_refusals_rewrites_only_assistant_refusals():
+    from site_needle.finetune import shape_refusals
+
+    rows = [_row(1, [], kind="assistant"), _row(2, [], kind="extraction"),
+            _row(3, [_call("check_skill", skill="Go")])]
+    for r in rows:
+        r["reasoning"] = "as written"
+    assert shape_refusals(rows, "phrase") is rows
+    shaped = shape_refusals(rows, "span")
+    assert shaped[0]["reasoning"] == "'question 1' -> no tool"
+    assert shaped[1]["reasoning"] == "as written" and shaped[2]["reasoning"] == "as written"
+    assert [r["answers"] for r in shaped] == [r["answers"] for r in rows]
+    with pytest.raises(ValueError):
+        shape_refusals(rows, "haiku")

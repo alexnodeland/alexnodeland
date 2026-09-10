@@ -68,6 +68,9 @@ class TrainConfig:
     prefix_grad: bool = False
     # Loss weight of refusal rows relative to tool-call rows.
     refusal_weight: float = 1.0
+    # Shape of the refusal reasoning: "phrase" as written in the corpus, or
+    # "span", the tool rows' shape ('<query>' -> no tool).
+    refusal_target: str = "phrase"
 
 
 @dataclass
