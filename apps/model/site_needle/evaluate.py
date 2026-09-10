@@ -23,7 +23,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from .catalogue import SYSTEM, TOOLS
-from .paths import CORPUS_DIR, Config
+from .paths import CORPUS_DIR, EVAL_CACHE_DIR, HANDWRITTEN_PATH, Config
 
 
 def _canon(call: dict) -> str:
@@ -203,17 +203,81 @@ def _group_by_tool(cases: list[dict]) -> dict[str, list[dict]]:
     return out
 
 
+def load_rows(path: Path) -> list[dict]:
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
 def load_test(corpus_dir: Path, limit: int | None = None) -> list[dict]:
     path = corpus_dir / "test.jsonl"
     if not path.exists():
         raise FileNotFoundError(f"no test split at {path}; run `site-needle corpus build`")
-    rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    rows = load_rows(path)
     return rows[:limit] if limit else rows
 
 
+def load_set(path: Path, corpus_dir: Path, slice_name: str | None = None) -> list[dict]:
+    """An evaluation set written by hand: ``{id, query, answers, category?,
+    critical?, note?}`` per line. The catalogue and system text come from
+    the corpus directory so the rows are graded against exactly what the
+    model was trained on."""
+    tools_path, system_path = corpus_dir / "tools.json", corpus_dir / "system.txt"
+    tools = json.loads(tools_path.read_text()) if tools_path.exists() else TOOLS
+    system = system_path.read_text().strip() if system_path.exists() else SYSTEM
+    slice_name = slice_name or path.stem
+    rows = []
+    for i, row in enumerate(load_rows(path)):
+        calls = row.get("answers") or []
+        category = row.get("category") or (
+            "refusal" if not calls else "+".join(sorted({c["name"] for c in calls})))
+        rows.append({
+            "id": row.get("id") or f"{slice_name}:{i}",
+            "kind": "assistant",
+            "category": category,
+            "slice": row.get("slice") or slice_name,
+            "critical": bool(row.get("critical")),
+            "query": row["query"],
+            "answers": calls,
+            "tools": tools,
+            "system": system,
+            "note": row.get("note"),
+        })
+    return rows
+
+
+def load_handwritten(corpus_dir: Path, path: Path = HANDWRITTEN_PATH) -> list[dict]:
+    return load_set(path, corpus_dir, "handwritten") if path.exists() else []
+
+
+def rows_hash(rows: list[dict]) -> str:
+    """Identity of an evaluation set: the questions, the expected calls and
+    the catalogue they are graded under."""
+    digest = hashlib.sha256()
+    for row in rows:
+        digest.update(json.dumps(
+            {"id": row.get("id"), "query": row["query"], "answers": row.get("answers"),
+             "tools": row.get("tools"), "system": row.get("system")},
+            sort_keys=True, ensure_ascii=False).encode())
+    return digest.hexdigest()
+
+
+def model_key(weights: Path | None) -> str:
+    """Identity of a model for caching: the base model by its library
+    version, tuned weights by their bytes."""
+    if weights is None:
+        try:
+            from importlib.metadata import version
+            return f"base-needle{version('cactus-needle')}"
+        except Exception:  # pragma: no cover - metadata missing
+            return "base"
+    return hashlib.sha256(weights.read_bytes()).hexdigest()[:16]
+
+
 def evaluate(cfg: Config, corpus_dir: Path = CORPUS_DIR, weights: Path | None = None,
-             out: Path | None = None, limit: int | None = None, progress=None) -> dict:
-    rows = load_test(corpus_dir, limit)
+             out: Path | None = None, limit: int | None = None, progress=None,
+             rows: list[dict] | None = None, name: str = "test") -> dict:
+    """Grade ``weights`` (``None`` for the base model) on ``rows`` — by
+    default the corpus's test split."""
+    rows = load_test(corpus_dir, limit) if rows is None else (rows[:limit] if limit else rows)
     manifest_path = corpus_dir / "manifest.json"
     manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
     started = time.time()
@@ -221,6 +285,8 @@ def evaluate(cfg: Config, corpus_dir: Path = CORPUS_DIR, weights: Path | None = 
     result = {
         "model": str(weights) if weights else "base",
         "model_sha256": (hashlib.sha256(weights.read_bytes()).hexdigest() if weights else None),
+        "set": name,
+        "rows_hash": rows_hash(rows),
         "corpus_hash": manifest.get("corpus", {}).get("hash"),
         "content_hash": manifest.get("content", {}).get("hash"),
         "n": len(cases),
@@ -231,6 +297,26 @@ def evaluate(cfg: Config, corpus_dir: Path = CORPUS_DIR, weights: Path | None = 
     if out:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
+    return result
+
+
+def cached(cfg: Config, rows: list[dict], weights: Path | None, name: str,
+           cache_dir: Path = EVAL_CACHE_DIR, limit: int | None = None, progress=None,
+           corpus_dir: Path | None = None) -> dict:
+    """``evaluate`` behind a cache keyed on the model and the rows, so the
+    base model is graded once per test split and a run graded during
+    training is not graded again by ``finish`` or ``compare``. A partial
+    evaluation (``limit``) is never cached."""
+    key = f"{model_key(weights)}-{name}-{rows_hash(rows)[:12]}.json"
+    path = cache_dir / key
+    if limit is None and path.exists():
+        result = json.loads(path.read_text())
+        result["cached"] = True
+        return result
+    result = evaluate(cfg, corpus_dir or CORPUS_DIR, weights, None, limit, progress, rows, name)
+    if limit is None:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
     return result
 
 

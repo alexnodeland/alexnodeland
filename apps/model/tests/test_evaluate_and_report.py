@@ -179,7 +179,9 @@ def test_cli_parses_every_command():
                  ["corpus", "diff", "--against", "x"], ["train", "--epochs", "1"],
                  ["build", "r"], ["eval", "--weights", "base"], ["pipeline", "--promote"],
                  ["report", "r"], ["probe", "hi"], ["publish", "r", "--github"], ["pull"],
-                 ["finish", "r", "--promote"], ["ui"]):
+                 ["finish", "r", "--promote"], ["ui"], ["compare", "base", "runs/x"],
+                 ["eval", "--weights", "base", "--set", "evals/handwritten.jsonl"],
+                 ["train", "--no-epoch-grading"], ["analyze", "--eval", "e.json"]):
         args = parser.parse_args(argv)
         assert callable(args.func)
     assert json.dumps(vars(parser.parse_args(["train"])), default=str)

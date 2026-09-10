@@ -95,6 +95,7 @@ just corpus             # export the site's content, build the corpus
 just model train        # LoRA fine-tune (CPU: ~2h; Apple GPU: minutes)
 just model build runs/<id>
 just model eval runs/<id>/model.cact
+just model compare base models runs/<id>      # one test split, side by side, with the flips
 just model probe "what did alex do at musiio?" runs/<id>/model.cact
 
 # or all of it, with the gate and the report
@@ -103,7 +104,7 @@ just pipeline
 
 Requirements: Node 22 (for the content export), Python ≥ 3.11, and
 [uv](https://docs.astral.sh/uv/). `just install` runs `uv sync --extra train
---extra tracking --extra dev`. The base checkpoint (90 MB), the tokenizer,
+--extra tracking --extra analysis --extra dev`. The base checkpoint (90 MB), the tokenizer,
 and the native engine (14 MB) download from Hugging Face on first use into
 `checkpoints/` and `~/.cache/cactus-needle/`.
 
@@ -205,6 +206,14 @@ run spends the compute, and writes `analysis.md`, `analysis.json` and
 - **distance from the templates**: for each generated question, its
   nearest template, so you can see whether augmentation added phrasings or
   restated the ones you had;
+- **label drift**: each question's five nearest neighbours vote, and a
+  question whose neighbours mostly carry another label is listed with them.
+  The grounding check proves an argument was copied from the question, not
+  that the question means what the target asked for; this is the check for
+  that. On the current corpus it flags 27 of 2,484, every one an intended
+  contrast — a negation beside the phrasing it negates, another person's
+  name in a shape the site answers for Alex — which is the reading it
+  should give when nothing is wrong;
 - **coverage**: examples per tool and per source in each split, entities
   per tool, enum values seen in training, refusal categories, phrasing
   families, and the test entities never seen in training;
@@ -230,32 +239,58 @@ says so and keeps everything.
 
 ## Training
 
-`site-needle train` wraps Needle's own `finetune` — LoRA rank 16 on the five
+`site-needle train` runs Needle's own LoRA loop — rank 32 on the five
 attention projections of every layer, quantisation-aware through the
-checkpoint's 2-bit export scheme, merged at export — so a run here matches
-`needle finetune` step for step. Hyper-parameters live in `config.toml` and
-are recorded with every run.
+checkpoint's 2-bit export scheme, the same checkpoint loader, encoder,
+schedule and loss (`site_needle/finetune.py` imports them from
+`needle.model`; the version range in `pyproject.toml` is what keeps that
+honest) — opened up in the two places a CPU budget needs:
+
+- **Validation is held out by target.** Needle's loop holds out a random
+  tenth of the rows. With several paraphrases of every target, a validation
+  row's twin is usually in training and the validation loss is optimistic
+  by construction. Here the split is by the call a row teaches
+  (`train.group_key`): every phrasing of `check_skill(skill="rust")` lands
+  on one side. The split travels with the run as `corpus/fit.jsonl` and
+  `corpus/dev.jsonl`.
+- **Every epoch is a candidate.** After each epoch the adapter is saved
+  under `epochs/NN/`, exported to a `.cact`, and graded through the native
+  engine on the dev rows, the held-out test split and the hand-written set.
+  The epoch that ships is the one with the highest dev objective
+  (`train.select` in `config.toml`: `dev`, `val_loss` or `last`); the test
+  split and the hand-written set are curves people read, never the
+  selection signal. `--no-epoch-grading` keeps the adapters and selects by
+  validation loss instead. One run on CPU therefore yields one graded
+  candidate per epoch and the curve that says whether another epoch would
+  have helped.
+
+Hyper-parameters live in `config.toml` and are recorded with every run,
+with the base checkpoint's SHA-256 beside them.
 
 What a run writes, under `runs/<id>/`:
 
 ```
-run.json         config, corpus hash, content hash, environment, timings, gate
+run.json         config, corpus/content/checkpoint hashes, environment, timings, selected epoch, gate
 events.jsonl     stage timings
-metrics.jsonl    the loss curve, one line per reported step and epoch
-corpus/          the exact corpus trained on
-adapter.pkl      the LoRA adapter (8 MB)
-model.cact       the merged, quantised export (14 MB)
-eval-base.json   the base model on the same test split
+metrics.jsonl    the loss curve per reported step; per epoch the losses and every engine grade
+corpus/          the exact corpus trained on, plus fit.jsonl and dev.jsonl (the by-target split)
+epochs/NN/       each epoch's adapter.pkl, model.cact and eval-{dev,test,handwritten}.json
+adapter.pkl      the selected epoch's adapter (8 MB)
+model.cact       its merged, quantised export (14 MB)
+eval-base.json   the base model on the same test split (from the evaluation cache)
 eval-tuned.json  the tuned model
+eval-*-handwritten.json   both, on the hand-written set
 report.md        the human summary; loss.svg the curve; model-card.md the shareable one
 ```
 
-Sizing: a few hundred examples want ten to thirty epochs on a GPU. On CPU a
-step at sequence length 512 and batch 8 costs about 25 seconds, so the
-default (six epochs, ~260 steps) is a two-hour run; `--epochs` overrides.
-Judge a run by the trend of its validation loss, not its level: the target
-is only the reasoning line and the call, and much of the call is boilerplate
-the base model already predicts.
+Sizing: on the 4-core CPU this was built on, a step at sequence length 512
+and batch 8 costs about 16 seconds and grading an epoch (export plus some
+five hundred engine calls) about three minutes, so 2,300 training rows for
+three epochs is a four-hour run; `--epochs` overrides. Judge a run by its
+epoch table — the dev objective against the test objective — rather than by
+the level of its validation loss: the target is only the reasoning line and
+the call, and much of the call is boilerplate the base model already
+predicts.
 
 ## Evaluation and the gate
 
@@ -281,6 +316,33 @@ tolerance in `config.toml`, must pass the critical categories, and must have
 produced no engine errors. `site-needle pipeline` exits non-zero on a failed
 gate; `--promote` copies a passing run into `models/`.
 
+Two more things the evaluator does:
+
+- **The hand-written set.** `evals/handwritten.jsonl` is seventy-odd
+  questions written by a person — a recruiter's, a client's, a curious
+  visitor's, in their own registers, with the traps that matter: famous
+  names, a project name inside an injection, a skill that is not on the
+  CV, "don't" — each with the call it should produce, validated by a test
+  against the same grounding rules as the corpus. It is never generated and
+  never used for selection, so it is the one number with no path back to
+  the templates. `finish` grades the base and tuned models on it beside the
+  test split (`eval-*-handwritten.json`; the report and the model card show
+  both), and `site-needle eval --set evals/handwritten.jsonl` grades any
+  model on it. Reported, not gated, until it has a history.
+- **`site-needle compare base models runs/<a> runs/<b>`** grades any number
+  of models — the base, run directories, the snapshot, `.cact` files — on
+  the *current* corpus's test split and the hand-written set, and writes a
+  side-by-side table by slice, tool and category plus the per-case flips
+  against the first model: fixed, broken, still wrong, with examples. Runs
+  train on different corpora, so their own reports are not comparable;
+  this is (`just model compare …`; output under `runs/compare/`).
+
+Every grading goes through a cache under `runs/eval-cache/`, keyed on the
+model's bytes (the base model by its library version) and the rows' hash,
+so the base model is graded once per test split, an epoch graded during
+training is not graded again by `finish`, and `compare` is instant for
+anything already seen. A partial grading (`--limit`) is never cached.
+
 ## Observability
 
 Three layers, none of which depends on another:
@@ -290,8 +352,9 @@ Three layers, none of which depends on another:
   hashes, timings, the curve, both evaluations, the gate and its reasons.
 - **MLflow**, local by default (`mlruns/mlflow.db`; `just model ui`), or a
   server via `MLFLOW_TRACKING_URI`. Params, the step-level loss, per-epoch
-  validation loss, every evaluation metric for base and tuned, the gate,
-  and the artifacts. Off with `--no-tracking` or
+  validation loss and engine grades (dev, test, hand-written), the selected
+  epoch, every evaluation metric for base and tuned, the gate, and the
+  artifacts. Off with `--no-tracking` or
   `SITE_NEEDLE_NO_TRACKING=1`; the `tracking` extra is optional.
 - **CI summaries**: the training workflow writes the corpus stats, the
   staleness check, and the full report into the job summary, and uploads the
@@ -405,18 +468,24 @@ apps/model/
 │   ├── validate.py       grounding and corpus-level checks
 │   ├── corpus.py         build, splits, manifest, diff
 │   ├── tokens.py         token accounting against Needle's rendering
-│   ├── train.py          fine-tune and export, with metrics capture
-│   ├── evaluate.py       engine-driven grading, aggregates, the gate, probe
-│   ├── report.py         report, model card, loss curve
+│   ├── finetune.py       the LoRA loop on Needle's building blocks: by-target validation, an epoch hook
+│   ├── train.py          the run around it: preflight, per-epoch export and grading, epoch selection
+│   ├── evaluate.py       engine-driven grading, aggregates, the gate, the cache, probe
+│   ├── compare.py        several models on one test split, with the per-case flips
+│   ├── analysis.py       diversity, duplicates, leakage, label drift, clusters, the map
+│   ├── augment.py        LLM paraphrases (Claude Agent SDK / Anthropic API), validated and kept
+│   ├── report.py         report, model card, loss curve, the epoch table
 │   ├── registry.py       releases, Hugging Face, the snapshot
 │   ├── tracking.py       MLflow (optional)
 │   ├── runs.py           the run directory
 │   ├── pipeline.py       all of it in order
 │   └── cli.py            `site-needle`
+├── evals/                the hand-written evaluation set
+├── augment/              kept LLM generations, by provider, model and content hash
 ├── tests/                pytest, on a fixture snapshot
 ├── models/               the committed snapshot of the current model
 ├── data/                 generated: the content snapshot and the corpus (ignored)
-├── runs/                 generated: every training run (ignored)
+├── runs/                 generated: every training run, eval-cache/, compare/ (ignored)
 └── mlruns/               generated: MLflow's local store (ignored)
 ```
 

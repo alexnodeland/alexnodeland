@@ -11,6 +11,8 @@ module makes those things visible before a two-hour run spends the compute:
   bigrams), and **leakage**: a training question that is nearly a test one;
 - **distance from the templates**: does a generated paraphrase say
   something the templates did not, or restate one;
+- **label drift**: a question whose nearest neighbours mostly carry a
+  different label — a mislabel, or an ambiguity the model must learn;
 - **coverage**: entities, enum values, refusal categories and phrasing
   families per split and per source;
 - **clusters** of phrasing with their label purity and source mix, and a
@@ -38,6 +40,8 @@ WORD = re.compile(r"[a-z0-9][a-z0-9'./+#-]*")
 NEAR_DUPLICATE = 0.9
 LEAKAGE = 0.9
 COVERAGE_GAP = 0.35
+LABEL_DRIFT_SIM = 0.3
+LABEL_DRIFT_AGREEMENT = 0.8
 
 # Fixed categorical order (the reference dataviz palette, light surface):
 # identity by hue for the first three, hue plus shape after that.
@@ -208,6 +212,55 @@ def leakage(rows: list[Row], X, threshold: float = LEAKAGE) -> dict:
         "generated_into_test": len(generated),
         "examples": [{"train": rows[i].query, "test": rows[j].query, "sim": s}
                      for i, j, s in sorted(generated, key=lambda p: -p[2])[:6]],
+    }
+
+
+def label_drift(rows: list[Row], X, k: int = 5, min_sim: float = LABEL_DRIFT_SIM,
+                agreement: float = LABEL_DRIFT_AGREEMENT) -> dict:
+    """Questions whose nearest neighbours mostly carry a different label.
+
+    The grounding check proves an argument was copied from the question; it
+    cannot tell whether the question *means* what the target asked for. A
+    generated question that landed among another tool's phrasings is either
+    labelled wrong, or a legitimate ambiguity the model will have to learn
+    — either way it is worth a look. Each row's ``k`` nearest neighbours at
+    cosine ≥ ``min_sim`` vote; a row is flagged when at least ``agreement``
+    of the votes go to one other label."""
+    n = len(rows)
+    empty = {"k": k, "min_sim": min_sim, "agreement": agreement, "n": 0, "share": 0.0,
+             "by_source": {}, "by_pair": {}, "examples": [], "ids": []}
+    if n < k + 1:
+        return empty
+    sim = _dense_sim(X, X)
+    np.fill_diagonal(sim, -1.0)
+    labels = [r.tool for r in rows]
+    flagged: list[dict] = []
+    for i in range(n):
+        order = np.argsort(-sim[i])[:k]
+        near = [(int(j), float(sim[i, j])) for j in order if sim[i, j] >= min_sim]
+        if len(near) < 3:
+            continue
+        votes = Counter(labels[j] for j, _ in near)
+        top, count = votes.most_common(1)[0]
+        if top == labels[i] or count / len(near) < agreement:
+            continue
+        flagged.append({
+            "id": rows[i].id, "query": rows[i].query, "label": labels[i],
+            "neighbour_label": top, "votes": f"{count}/{len(near)}",
+            "source": rows[i].source, "split": rows[i].split,
+            "mean_sim": round(sum(s for _, s in near) / len(near), 3),
+            "neighbours": [{"query": rows[j].query, "tool": labels[j], "source": rows[j].source,
+                            "sim": round(s, 3)} for j, s in near[:3]],
+        })
+    flagged.sort(key=lambda f: -f["mean_sim"])
+    return {
+        **empty,
+        "n": len(flagged), "share": round(len(flagged) / n, 4),
+        "by_source": dict(Counter(f["source"] for f in flagged).most_common()),
+        "by_pair": dict(Counter(f"{f['label']} → {f['neighbour_label']}"
+                                for f in flagged).most_common()),
+        "examples": flagged[:12],
+        "ids": [f["id"] for f in flagged],
     }
 
 
@@ -486,6 +539,7 @@ def analyze(corpus_dir: Path, evaluation: dict | None = None, k: int | None = No
         "duplicates": near_duplicates(rows, X),
         "leakage": leakage(rows, X),
         "template_distance": template_distance(rows, X),
+        "label_drift": label_drift(rows, X),
         "coverage": coverage(rows),
         "clusters": clusters(rows, X, vec, k),
     }
@@ -558,6 +612,19 @@ def render(result: dict, has_map: bool = True) -> str:
             lines.append(f"| {source} | {s['n']} | {_f(s['nearest_template_median'])} | "
                          f"{s['share_novel_under_0.5']:.0%} | "
                          f"{s['share_restating_over_0.8']:.0%} |")
+    ld = result.get("label_drift")
+    if ld:
+        pairs = ", ".join(f"{k} {v}" for k, v in ld["by_pair"].items())
+        sources = ", ".join(f"{k} {v}" for k, v in ld["by_source"].items())
+        lines += ["", "## Label drift", "",
+                  f"{ld['n']} questions ({ld['share']:.1%}) sit among {ld['k']} nearest "
+                  f"neighbours (cosine ≥ {ld['min_sim']}) that mostly carry another label"
+                  + (f": by source {sources}; by pair {pairs}." if ld["n"] else ".")]
+        for f in ld["examples"][:8]:
+            near = "; ".join(f"*{n['query']}* → {n['tool']} ({n['sim']})"
+                             for n in f["neighbours"][:2])
+            lines.append(f"- `{f['id']}` — *{f['query']}* is labelled {f['label']}, "
+                         f"neighbours say {f['neighbour_label']} ({f['votes']}): {near}")
     lines += ["", "## Coverage", "", "| tool | train | test |", "|---|---:|---:|"]
     for tool, c in cov["by_tool"].items():
         lines.append(f"| {tool} | {c.get('train', 0)} | {c.get('test', 0)} |")

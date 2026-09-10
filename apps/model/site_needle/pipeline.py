@@ -55,18 +55,36 @@ def finish(cfg: Config, the_run: Run, tracking: bool = True, baseline: str | Non
         if done % 20 == 0 or done == total:
             log.say("eval", done=f"{done}/{total}", last=case["id"], exact=case["exact"])
 
-    base_result = None
-    if not skip_base_eval:
-        with log.stage("eval base"):
-            base_result = evaluate.evaluate(cfg, the_run.path("corpus"), None,
-                                            the_run.path("eval-base.json"), limit, progress)
-            tracker.metrics(_prefixed("base", base_result["summary"]["overall"]))
-    elif the_run.path("eval-base.json").exists():
-        base_result = the_run.read("eval-base.json")
-    with log.stage("eval tuned"):
-        tuned_result = evaluate.evaluate(cfg, the_run.path("corpus"), the_run.path("model.cact"),
-                                         the_run.path("eval-tuned.json"), limit, progress)
-        tracker.metrics(_prefixed("tuned", tuned_result["summary"]["overall"]))
+    corpus = the_run.path("corpus")
+    weights = the_run.path("model.cact")
+    sets = {"test": evaluate.load_test(corpus, limit)}
+    handwritten = evaluate.load_handwritten(corpus)
+    if handwritten:
+        sets["handwritten"] = handwritten[:limit] if limit else handwritten
+
+    def grade(name: str, rows: list[dict], model: Path | None) -> dict:
+        who = "tuned" if model else "base"
+        suffix = "" if name == "test" else f"-{name}"
+        out = the_run.path(f"eval-{who}{suffix}.json")
+        if model is None and skip_base_eval and out.exists():
+            return the_run.read(out.name)
+        with log.stage(f"eval {who} {name}"):
+            result = evaluate.cached(cfg, rows, model, name, limit=limit, progress=progress,
+                                     corpus_dir=corpus)
+            log.say("graded", set=name, model=who, cached=bool(result.get("cached")),
+                    objective=result["summary"]["overall"]["objective"])
+        out.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
+        if name == "test":
+            tracker.metrics(_prefixed(who, result["summary"]["overall"]))
+        else:
+            tracker.metrics(_prefixed(f"{who}_{name}", result["summary"]["overall"]))
+        return result
+
+    base_result = grade("test", sets["test"], None)
+    tuned_result = grade("test", sets["test"], weights)
+    extra = {name: {"base": grade(name, rows, None)["summary"]["overall"],
+                    "tuned": grade(name, rows, weights)["summary"]["overall"]}
+             for name, rows in sets.items() if name != "test"}
 
     previous = _baseline(baseline, cfg, log)
     verdict = evaluate.gate(tuned_result, base_result, previous, cfg)
@@ -74,6 +92,7 @@ def finish(cfg: Config, the_run: Run, tracking: bool = True, baseline: str | Non
         "base": base_result["summary"]["overall"] if base_result else None,
         "tuned": tuned_result["summary"]["overall"],
         "baseline": previous["summary"]["overall"] if previous else None,
+        **extra,
     })
     tracker.tags({"gate": "pass" if verdict["ok"] else "fail"})
     tracker.metric("gate_ok", 1.0 if verdict["ok"] else 0.0)
@@ -82,8 +101,10 @@ def finish(cfg: Config, the_run: Run, tracking: bool = True, baseline: str | Non
         for path in report.render(the_run, cfg):
             log.say("wrote", path=str(path))
     for name in ("report.md", "model-card.md", "loss.svg", "eval-tuned.json", "eval-base.json",
+                 "eval-tuned-handwritten.json", "eval-base-handwritten.json",
                  "summary.json", "run.json", "events.jsonl"):
-        tracker.artifact(the_run.path(name))
+        if the_run.path(name).exists():
+            tracker.artifact(the_run.path(name))
     tracker.artifact(the_run.path("model.cact"), "model")
     tracker.end("FINISHED" if verdict["ok"] else "FAILED")
 
@@ -92,6 +113,9 @@ def finish(cfg: Config, the_run: Run, tracking: bool = True, baseline: str | Non
         b = base_result["summary"]["overall"]["objective"]
         t = tuned_result["summary"]["overall"]["objective"]
         print(f"\nbase {b:.3f} → tuned {t:.3f} ({'+' if t >= b else ''}{t - b:.3f})")
+    for name, block in extra.items():
+        print(f"{name}: base {block['base']['objective']:.3f} → tuned "
+              f"{block['tuned']['objective']:.3f} ({block['tuned']['n']} cases)")
     print("\nGATE:", "PASS" if verdict["ok"] else "FAIL")
     for reason in verdict["reasons"]:
         print(f"  - {reason}")

@@ -134,6 +134,38 @@ def _failures(tuned: dict, limit: int = 12) -> list[str]:
     return out
 
 
+def _epoch_table(training: dict) -> list[str]:
+    """One row per epoch: the losses, and the engine's grade on the dev
+    rows (what selects the epoch), the test split and the hand-written set
+    (what people read). The selected epoch is marked."""
+    epochs = training["epochs"]
+    graded = any(e.get("dev_objective") is not None or e.get("test_objective") is not None
+                 for e in epochs)
+    chosen = training.get("selected_epoch")
+    if not graded:
+        lines = ["| epoch | loss | val loss |", "|---:|---:|---:|"]
+        for e in epochs:
+            mark = " ◀" if e["epoch"] == chosen else ""
+            lines.append(f"| {e['epoch']}{mark} | {_fmt(e['loss'], 4)} | "
+                         f"{_fmt(e.get('val_loss'), 4)} |")
+        return lines
+    lines = ["| epoch | loss | val loss | dev objective | test objective | "
+             "test critical | hand-written |",
+             "|---:|---:|---:|---:|---:|---:|---:|"]
+    for e in epochs:
+        mark = " ◀" if e["epoch"] == chosen else ""
+        lines.append(
+            f"| {e['epoch']}{mark} | {_fmt(e['loss'], 4)} | {_fmt(e.get('val_loss'), 4)} | "
+            f"{_fmt(e.get('dev_objective'))} | {_fmt(e.get('test_objective'))} | "
+            f"{_fmt(e.get('test_critical_pass'), 2)} | {_fmt(e.get('handwritten_objective'))} |"
+            + (f" {e['grade_error']}" if e.get("grade_error") else ""))
+    if chosen:
+        lines += ["", f"Epoch {chosen} ships: {training.get('selection', '')}. The dev rows are "
+                  "the by-target validation split, held out of fitting; the test split and "
+                  "the hand-written set never inform the choice."]
+    return lines
+
+
 def render(run: Run, cfg: Config) -> list[Path]:
     record = run.record
     base = run.read("eval-base.json")
@@ -168,6 +200,10 @@ def render(run: Run, cfg: Config) -> list[Path]:
         "## Training", "",
     ]
     tc = record.get("train", {})
+    checkpoint = record.get("checkpoint") or {}
+    if checkpoint:
+        lines.append(f"- base checkpoint `{checkpoint.get('file')}` from "
+                     f"`{checkpoint.get('repo')}`, sha256 `{checkpoint.get('sha256', '')[:16]}…`")
     lines += [
         f"- LoRA rank {tc.get('lora_rank')} alpha {tc.get('lora_alpha')}, lr {tc.get('lr')}, "
         f"batch {tc.get('batch_size')}, {tc.get('epochs')} epochs, seed {tc.get('seed')}, "
@@ -179,9 +215,7 @@ def render(run: Run, cfg: Config) -> list[Path]:
         f"{_fmt(training.get('best_val_loss'), 4)}",
     ]
     if training.get("epochs"):
-        lines += ["", "| epoch | loss | val loss |", "|---:|---:|---:|"]
-        for e in training["epochs"]:
-            lines.append(f"| {e['epoch']} | {_fmt(e['loss'], 4)} | {_fmt(e.get('val_loss'), 4)} |")
+        lines += ["", *_epoch_table(training)]
     if svg:
         lines += ["", "![loss curve](loss.svg)"]
     if build:
@@ -197,6 +231,15 @@ def render(run: Run, cfg: Config) -> list[Path]:
         lines += ["", *_breakdown(base, tuned, "by_category", "By category")]
         lines += ["", *_breakdown(base, tuned, "by_tool", "By expected tool")]
         lines += ["", "### Misses", "", *_failures(tuned)]
+    hw_base, hw_tuned = run.read("eval-base-handwritten.json"), \
+        run.read("eval-tuned-handwritten.json")
+    if hw_tuned:
+        lines += ["", "## Hand-written set", "",
+                  f"{hw_tuned['n']} questions written by a person, never generated, "
+                  "never used for selection.", "",
+                  *_metric_table(hw_base, hw_tuned), "",
+                  *_breakdown(hw_base, hw_tuned, "by_category", "By category"),
+                  "", "### Misses", "", *_failures(hw_tuned)]
     if gate:
         lines += ["", "## Gate", "",
                   "**PASS** — the model may ship." if gate["ok"] else "**FAIL**",
@@ -214,11 +257,19 @@ def render(run: Run, cfg: Config) -> list[Path]:
         "corpus_hash": manifest.get("corpus", {}).get("hash"),
         "content_hash": manifest.get("content", {}).get("hash"),
         "train": {k: training.get(k) for k in
-                  ("total_steps", "seq_len", "final_loss", "best_val_loss", "seconds")},
+                  ("total_steps", "seq_len", "final_loss", "best_val_loss", "seconds",
+                   "selected_epoch", "selection")},
+        "epochs": [{k: e.get(k) for k in ("epoch", "loss", "val_loss", "dev_objective",
+                                          "test_objective", "handwritten_objective")}
+                   for e in training.get("epochs", [])],
         "model": record.get("model"),
         "eval": {
             "base": base["summary"]["overall"] if base else None,
             "tuned": tuned["summary"]["overall"] if tuned else None,
+            "handwritten": {
+                "base": hw_base["summary"]["overall"] if hw_base else None,
+                "tuned": hw_tuned["summary"]["overall"] if hw_tuned else None,
+            } if hw_tuned else None,
         },
         "gate": gate,
     }
@@ -277,8 +328,11 @@ def model_card(run: Run, cfg: Config) -> str:
         f"({training.get('total_steps', '?')} steps at sequence length "
         f"{training.get('seq_len', '?')}), quantisation-aware through the checkpoint's 2-bit "
         f"scheme, seed {tc.get('seed')}. Final loss {_fmt(training.get('final_loss'), 4)}, "
-        f"validation {_fmt(training.get('best_val_loss'), 4)}. "
-        f"cactus-needle {env.get('cactus_needle', '?')}, jax {env.get('jax', '?')} on "
+        f"validation {_fmt(training.get('best_val_loss'), 4)}"
+        + (f"; epoch {training['selected_epoch']} of {tc.get('epochs')} selected by "
+           f"{training.get('selection', 'dev objective')}"
+           if training.get("selected_epoch") else "")
+        + f". cactus-needle {env.get('cactus_needle', '?')}, jax {env.get('jax', '?')} on "
         f"{env.get('backend', '?')}.",
     ]
     if tuned:
@@ -286,6 +340,11 @@ def model_card(run: Run, cfg: Config) -> str:
                   f"{tuned['n']} held-out cases through the native engine.", "",
                   *_metric_table(base, tuned), "",
                   *_breakdown(base, tuned, "by_slice", "By slice")]
+    hw_base, hw_tuned = run.read("eval-base-handwritten.json"), \
+        run.read("eval-tuned-handwritten.json")
+    if hw_tuned:
+        lines += ["", f"On {hw_tuned['n']} hand-written questions, never generated and never "
+                  "used for selection:", "", *_metric_table(hw_base, hw_tuned)]
     lines += [
         "",
         "## Limitations",

@@ -9,11 +9,11 @@ default:
 
 # Install with the training stack, tracking, and dev tools
 install:
-    uv sync --extra train --extra tracking --extra dev
+    uv sync --extra train --extra tracking --extra analysis --extra dev
 
 # Install for GPU training (CUDA) on top of the above
 install-gpu:
-    uv sync --extra train --extra gpu --extra tracking --extra dev
+    uv sync --extra train --extra gpu --extra tracking --extra analysis --extra dev
 
 # Export the site's content, then (re)build the corpus and its manifest
 corpus:
@@ -53,6 +53,14 @@ eval-base *args:
 # Grade a tuned model: just model eval runs/<id>/model.cact
 eval weights *args:
     uv run site-needle eval --weights {{weights}} {{args}}
+
+# Several models on the current test split and the hand-written set, side by side. e.g. just model compare base models runs/<id>
+compare *models:
+    uv run site-needle compare {{models}}
+
+# Grade a model on the hand-written set. e.g. just model handwritten runs/<id>/model.cact
+handwritten weights='base':
+    uv run site-needle eval --weights {{weights}} --set evals/handwritten.jsonl
 
 # The whole thing: corpus → train → export → eval → gate → report
 pipeline *args:

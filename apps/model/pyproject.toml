@@ -8,7 +8,7 @@ license = { text = "MIT" }
 dependencies = [
   # Inference and the training entry points. JAX and friends sit behind the
   # `train` extra, so the corpus and evaluation commands install in seconds.
-  "cactus-needle>=2.0.12",
+  "cactus-needle>=2.0.13,<2.1",
   "huggingface_hub>=0.25",
   "pydantic>=2.7",
   # Needle's tokenizer, so the corpus build counts real tokens without JAX.

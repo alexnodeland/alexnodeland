@@ -18,6 +18,9 @@ CORPUS_DIR = DATA_DIR / "corpus"
 RUNS_DIR = APP_DIR / "runs"
 MODELS_DIR = APP_DIR / "models"
 CHECKPOINT_DIR = APP_DIR / "checkpoints"
+EVAL_CACHE_DIR = RUNS_DIR / "eval-cache"
+EVALS_DIR = APP_DIR / "evals"
+HANDWRITTEN_PATH = EVALS_DIR / "handwritten.jsonl"
 CONFIG_PATH = APP_DIR / "config.toml"
 CONTENT_PATH = DATA_DIR / "site-content.json"
 
@@ -52,6 +55,8 @@ class TrainConfig:
     val_split: float = 0.1
     seed: int = 0
     qat_bits: str = "auto"
+    grade_epochs: bool = True
+    select: str = "dev"
 
 
 @dataclass

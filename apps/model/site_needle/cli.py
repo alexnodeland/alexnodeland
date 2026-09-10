@@ -147,7 +147,8 @@ def _train(args) -> int:
 
     cfg = load_config()
     run = train.train(cfg, corpus_dir=Path(args.corpus), runs_dir=Path(args.runs),
-                      epochs=args.epochs, run_id=args.run_id, tracking=_tracking(args))
+                      epochs=args.epochs, run_id=args.run_id, tracking=_tracking(args),
+                      grade_epochs=False if args.no_epoch_grading else None)
     print(run.dir)
     return 0
 
@@ -166,9 +167,41 @@ def _eval(args) -> int:
     cfg = load_config()
     weights = None if args.weights in (None, "base") else Path(args.weights)
     out = Path(args.out) if args.out else None
-    result = evaluate.evaluate(cfg, corpus_dir=Path(args.corpus), weights=weights, out=out,
-                               limit=args.limit)
+    corpus_dir = Path(args.corpus)
+    rows, name = None, "test"
+    if args.set:
+        rows, name = evaluate.load_set(Path(args.set), corpus_dir), Path(args.set).stem
+    result = evaluate.evaluate(cfg, corpus_dir=corpus_dir, weights=weights, out=out,
+                               limit=args.limit, rows=rows, name=name)
     print(evaluate.summary_text(result))
+    return 0
+
+
+def _compare(args) -> int:
+    from . import compare, evaluate
+
+    cfg = load_config()
+    corpus_dir = Path(args.corpus)
+    sets = {"test": evaluate.load_test(corpus_dir)}
+    if not args.no_handwritten:
+        handwritten = evaluate.load_handwritten(corpus_dir)
+        if handwritten:
+            sets["handwritten"] = handwritten
+    for path in args.set or []:
+        sets[Path(path).stem] = evaluate.load_set(Path(path), corpus_dir)
+
+    def progress(label, name):
+        def report(done, total, case):
+            if done % 50 == 0 or done == total:
+                print(f"  {label} on {name}: {done}/{total}", flush=True)
+        return report
+
+    result = compare.compare(cfg, args.models, sets, corpus_dir, limit=args.limit,
+                             progress=progress)
+    text = compare.render(result)
+    print(text)
+    for path in compare.write(result, Path(args.out) if args.out else RUNS_DIR / "compare"):
+        print(path)
     return 0
 
 
@@ -312,6 +345,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--epochs", type=int, default=None, help="override config.toml")
     p.add_argument("--run-id", default=None)
     p.add_argument("--no-tracking", action="store_true", help="skip MLflow")
+    p.add_argument("--no-epoch-grading", action="store_true",
+                   help="save each epoch's adapter but do not export and grade it; "
+                        "the epoch is then chosen by validation loss")
     p.set_defaults(func=_train)
 
     p = sub.add_parser("build", help="export a run's adapter as a .cact")
@@ -323,7 +359,23 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--corpus", default=str(CORPUS_DIR))
     p.add_argument("--out", default=None, help="write eval.json here")
     p.add_argument("--limit", type=int, default=None, help="first N cases only")
+    p.add_argument("--set", default=None,
+                   help="grade a hand-written JSONL set instead of the test split")
     p.set_defaults(func=_eval)
+
+    p = sub.add_parser("compare", help="several models on one test split, side by side, "
+                                        "with the per-case flips between them")
+    p.add_argument("models", nargs="+",
+                   help="'base', run directories, the models/ snapshot, or .cact files; "
+                        "the first is the reference")
+    p.add_argument("--corpus", default=str(CORPUS_DIR), help="whose test split to grade on")
+    p.add_argument("--set", action="append", default=None,
+                   help="an extra hand-written JSONL set (repeatable)")
+    p.add_argument("--no-handwritten", action="store_true",
+                   help="skip evals/handwritten.jsonl")
+    p.add_argument("--limit", type=int, default=None, help="first N cases only (uncached)")
+    p.add_argument("--out", default=None, help="directory for compare.md/.json")
+    p.set_defaults(func=_compare)
 
     p = sub.add_parser("pipeline", help="corpus → train → build → eval → report")
     corpus_args(p)

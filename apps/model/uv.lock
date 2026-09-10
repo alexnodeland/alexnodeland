@@ -4203,7 +4203,7 @@ train = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", marker = "extra == 'augment'", specifier = ">=1.0" },
-    { name = "cactus-needle", specifier = ">=2.0.12" },
+    { name = "cactus-needle", specifier = ">=2.0.13,<2.1" },
     { name = "cactus-needle", extras = ["gpu"], marker = "extra == 'gpu'" },
     { name = "cactus-needle", extras = ["train"], marker = "extra == 'train'" },
     { name = "claude-agent-sdk", marker = "extra == 'augment'", specifier = ">=0.2" },

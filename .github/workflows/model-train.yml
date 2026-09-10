@@ -75,7 +75,7 @@ jobs:
 
       - name: Install the model app with the training stack
         working-directory: apps/model
-        run: uv sync --frozen --extra train --extra dev
+        run: uv sync --frozen --extra train --extra analysis --extra dev
 
       # The 90MB base checkpoint, the tokenizer, and the native engine. Keyed
       # on the lockfile because the engine version follows the package.

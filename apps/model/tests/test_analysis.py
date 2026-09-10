@@ -160,3 +160,34 @@ def test_build_removes_near_duplicates_and_leakage(content, content_path, corpus
     generated = [e for e in built.examples if "augmented" in e.tags]
     assert not any(e.query == held_out.query + "!" for e in generated)
     assert "near-duplicates" in stats["quality"]
+
+
+def test_label_drift_flags_a_planted_mislabel(built):
+    corpus_dir, _ = built
+    rows = analysis.load_rows(corpus_dir)
+    X, _ = analysis.vectorize([r.query for r in rows])
+    clean = analysis.label_drift(rows, X)
+    assert clean["share"] <= 0.2
+    # Plant a mislabel on a row whose neighbourhood is unanimous, so the
+    # verdict cannot depend on the fixture's exact phrasing pool.
+    import numpy as np
+
+    sim = (X @ X.T).toarray()
+    np.fill_diagonal(sim, -1.0)
+    planted = None
+    for i, row in enumerate(rows):
+        near = [int(j) for j in np.argsort(-sim[i])[:5] if sim[i, j] >= 0.3]
+        if len(near) >= 3 and all(rows[j].tool == row.tool for j in near) \
+                and row.tool != "(refusal)":
+            planted = row
+            break
+    assert planted is not None
+    original = planted.tool
+    planted.tool = "(refusal)"
+    drift = analysis.label_drift(rows, X)
+    assert planted.id in drift["ids"]
+    hit = next(e for e in drift["examples"] if e["id"] == planted.id)
+    assert hit["label"] == "(refusal)" and hit["neighbour_label"] == original
+    assert f"(refusal) → {original}" in drift["by_pair"]
+    text = analysis.render({**analysis.analyze(corpus_dir), "label_drift": drift}, has_map=False)
+    assert "## Label drift" in text and planted.query in text
