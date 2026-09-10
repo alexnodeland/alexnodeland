@@ -57,13 +57,18 @@ prefix_regime = "tuned"
 # Metal backend cannot compile (CPU can, at about five times the step cost).
 prefix_grad = false
 # Loss weight of refusal rows relative to tool-call rows. Refusals are the
-# one behaviour that does not survive the engine (see README, "Results so
-# far"); weighting them up is the cheapest lever on that margin.
+# one behaviour that did not survive the engine (see README, "Results so
+# far"). Up on its own it moved little (run 6 at 3.0: test missed refusals
+# 0.90 -> 0.77, hand-written unchanged); under the span target below, down
+# trades a few missed refusals for fewer false ones (run 7 at 1.0: 0.40
+# missed / 0.09 false on test; run 9 at 0.5: 0.43 / 0.04).
 refusal_weight = 1.0
 # The refusal reasoning's shape: "phrase" trains the corpus text ("general
 # knowledge; no site tool answers it"); "span" trains the tool rows' shape,
 # '<query>' -> no tool, so the refuse-or-call decision is made where the
-# tool rows make theirs, after the quoted span.
+# tool rows make theirs, after the quoted span. The shape is what the
+# engine's refusal decision survives on (runs 7 and 9); it also refuses
+# some answerable questions, which is why it is not yet the default.
 refusal_target = "phrase"
 
 [eval]

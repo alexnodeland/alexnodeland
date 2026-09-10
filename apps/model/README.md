@@ -459,12 +459,13 @@ the report is the review.
 ## Results so far
 
 Runs 1–4 on the 4-core machine the pipeline was built on, run 5 on an M3
-Max CPU. Runs 1–3 trained on template corpora and were graded on their own
-held-out split; run 4 is the first on the augmented corpus (2,314 training
-rows, 1,655 of them Claude's paraphrases), with the by-target validation
-split and one graded candidate per epoch; run 5 is the same recipe through
-the cached-prefix trainer, the parity check for it. The base model is
-graded on the same cases as each tuned model.
+Max CPU, runs 6–10 on its GPU. Runs 1–3 trained on template corpora and
+were graded on their own held-out split; run 4 is the first on the
+augmented corpus (2,314 training rows, 1,655 of them Claude's
+paraphrases), with the by-target validation split and one graded candidate
+per epoch; run 5 is the same recipe through the cached-prefix trainer, the
+parity check for it; runs 6–10 change one refusal knob each on run 5's
+recipe. The base model is graded on the same cases as each tuned model.
 
 | run | train rows | LoRA | steps | val loss | base → tuned objective | tool accuracy | false / missed refusals | hand-written (base → tuned) | gate |
 |---|---:|---|---:|---:|---|---:|---|---|---|
@@ -473,6 +474,11 @@ graded on the same cases as each tuned model.
 | 3 | 659 | r32, lr 2e-4, 5 ep | 375 | 0.044 | 0.199 → 0.411 | 0.56 | 0.00 / 0.89 | 0.184 → 0.263 | fail (critical) |
 | 4 | 2,083 + 231 dev | r32, lr 2e-4, 3 ep, epoch 2 selected | 783 | 0.053 | 0.173 → 0.507 | 0.71 | 0.00 / 0.97 | 0.210 → 0.342 | fail (critical) |
 | 5 | 2,083 + 231 dev | as run 4, cached-prefix trainer | 783 | 0.048 | 0.173 → 0.522 | 0.71 | 0.00 / 0.90 | 0.210 → 0.329 | pass (critical advisory) |
+| 6 | 2,083 + 231 dev | as run 5, `refusal_weight` 3, epoch 3 selected | 783 | 0.050 | 0.173 → 0.504 | 0.70 | 0.00 / 0.77 | 0.210 → 0.316 | pass (critical advisory) |
+| 7 | 2,083 + 231 dev | as run 5, `refusal_target` span | 783 | 0.047 | 0.173 → 0.559 | 0.72 | 0.09 / 0.40 | 0.210 → 0.500 | pass |
+| 8 | 2,083 + 231 dev | as run 5, `prefix_regime` base, epoch 3 selected | 783 | 0.052 | 0.173 → 0.452 | 0.58 | 0.00 / 0.90 | 0.210 → 0.303 | fail (objective) |
+| 9 | 2,083 + 231 dev | span, `refusal_weight` 0.5, epoch 3 selected | 783 | 0.052 | 0.173 → 0.581 | 0.75 | 0.04 / 0.43 | 0.210 → 0.526 | pass |
+| 10 | 2,083 + 231 dev | span, `refusal_weight` 0.25, epoch 3 selected | 783 | 0.066 | 0.173 → 0.577 | 0.75 | 0.02 / 0.63 | 0.210 → 0.461 | pass |
 
 Runs 1–3 are graded on the 141-case split of their template corpora, run 4
 on the 272-case split of the augmented corpus; `site-needle compare` puts
@@ -484,19 +490,34 @@ every epoch: dev objective 0.303 → 0.377 → 0.368 across the three, test
 0.456 → 0.507 → 0.511, and epoch 2 ships. Run 5, the same recipe through
 the cached-prefix trainer, lands at 0.522 on that split with the same tool
 accuracy and 0.329 hand-written — inside the gate's 0.02 tolerance both
-ways, which is what a parity check should show. None of the tuned models
-refuses — missed refusals 0.90 to 0.97 against the base model's 0.57 —
-and none reads `search_site` well (0.09 to 0.11). Latency p50 is about
-40 ms per question on an M3 Max and 225 ms on the 4-core runner, peak RAM
-around 280 MB.
+ways, which is what a parity check should show. Runs 4 and 5 do not
+refuse — missed refusals 0.90 to 0.97 against the base model's 0.57 — and
+no run reads `search_site` well (0.09 to 0.11). Runs 6–10 are the refusal
+experiments, graded on the same split: weighting the refusal rows up (run
+6) moved test missed refusals to 0.77 and the hand-written set not at all;
+the base-prefix regime (run 8) cost 0.07 of objective for nothing; the
+span-shaped refusal target (run 7) took missed refusals to 0.40 on test
+and 0.11 hand-written and the critical categories from 0.12 to 1.00, with
+objective up to 0.559 and 0.500, at the price of refusing answerable
+questions (0.09 and 0.21); halving the refusal weight under that shape
+(run 9) kept the refusals and halved the price — 0.581 and 0.526, tool
+accuracy 0.75 and 0.70, false refusals 0.04 and 0.09; quartering it (run
+10) gives half the refusals back (missed 0.63 and 0.47, hand-written
+0.461) for false refusals of 0.02 and 0.05. The weight trades one error
+for the other along one line, and 0.5 has the fewest of both kinds
+together: 23 on test and 9 hand-written, against run 4's 29 and 17.
+Latency p50 is about 40 ms per question on an M3 Max and 225 ms on the
+4-core runner, peak RAM around 280 MB.
 
 Training cost, batch 8: through Needle's own loop at sequence length 512,
 0.87 s per step on the M3 Max GPU (`metal` extra), 4.8 s on its CPU and
 16 s on the 4-core hosted runner; through the cached-prefix trainer, 0.3 s
 on the GPU and 1.1 s on the CPU in isolation, about 1.7 s on the CPU with
 the epoch grading running beside it. Run 5's 783 steps plus three graded
-epochs took 33 minutes on the M3 Max CPU end to end; the GPU figure held
-until the machine's GPU was saturated by something else that afternoon.
+epochs took 33 minutes on the M3 Max CPU end to end, and runs 6–10 about
+nine minutes each on its GPU, `finish` included. (The GPU figure holds
+only while nothing else has the GPU: for an hour that afternoon another
+process held it at 100% and a step took 13 s.)
 
 What the runs have taught, in order:
 
@@ -539,13 +560,37 @@ What the runs have taught, in order:
   adapter in float32 and `needle build` in the checkpoint's float16, so
   about 6% of the 2-bit indices ship differently from what was trained;
   real, but not the cause (JAX decoding the float16 merge also refuses).
+- **The refusal decision survives the engine when it is made where the
+  tool rows make theirs.** Weighting the refusal rows up did little (run
+  6). Rewriting their reasoning from the corpus phrase ("general knowledge;
+  no site tool answers it") to the tool rows' shape — `'<query>' -> no
+  tool`, the quoted span first and the decision after it — is what moved
+  the engine (run 7): missed refusals 0.90 → 0.40 on test and 0.95 → 0.11
+  hand-written, the negation and injection cases from 0.25 to 1.00, and
+  tool accuracy up rather than down. The cost is the opposite error: some
+  answerable questions are refused (0.09 and 0.21 at weight 1, 0.04 and
+  0.09 at 0.5, 0.02 and 0.05 at 0.25, where half the refusals are given
+  back). They cluster on the enum tools, `contact` and
+  `search_site`, where the reasoning has to map a cue to an enum value and
+  the corpus has far fewer rows than the 528 refusals, and on unknown
+  names, where "unrecognised entity, no tool" is a shortcut the span shape
+  makes available (the `novel_entity` slice drops from 0.57 to 0.50).
+  Most of those questions run 4 also got wrong, with the wrong tool
+  instead of no tool: against run 4 on the same split, run 9 loses 3 test
+  questions and 1 hand-written one and gains 16 and 13 refusals. The
+  corpus is where the rest lives — more, and more varied, `contact` and
+  `search_site` rows, and refusal spans shorter than the whole question —
+  and that is the next build.
 
 Missed refusals are therefore treated as a product-layer question — an
 unanswerable question becomes a lookup that returns nothing, and the site's
 chat already refuses off-topic questions on retrieval scores before any
 model is invoked (`apps/web/docs/chat-management.md`) — and the critical
-categories are advisory in the gate; run 4 is the published model. The trainer's `refusal_weight` and the shape of the refusal target
-are the levers being tried empirically, graded through the engine.
+categories are advisory in the gate. Run 4 is the published model; run 9
+is the candidate to replace it, and whether its false refusals are worth
+its refusals is a product call rather than a gate outcome, so the pointer
+has not moved. `refusal_target` and `refusal_weight` in `config.toml` are
+the knobs; the defaults there are the published recipe.
 
 ## Using the model in the site
 
