@@ -420,9 +420,15 @@ each tuned model.
 
 Runs 1–3 are graded on the 141-case split of their template corpora, run 4
 on the 272-case split of the augmented corpus; `site-needle compare` puts
-every model on one split. Latency p50 is about 225 ms per question on this
-CPU at ~220 decode tokens/s with peak RAM around 280 MB (the engine figures
-in run 3's own report are inflated by a job that shared the cores).
+every model on one split. On that split, runs 2 and 3 tie (0.379 against
+0.382 exact; the base model 0.173) and on the hand-written set run 2 is
+ahead (0.329 against 0.263), so the snapshot stays run 2. Both tuned models
+refuse almost nothing — missed refusals 0.90 and 0.93 against the base
+model's 0.57 — and neither reads `search_site` well (0.11 and 0.09). The
+base model's one strength, refusing, is what tuning on templates took
+away. Latency p50 is about 225 ms per question on this CPU at ~220 decode
+tokens/s with peak RAM around 280 MB (the engine figures in run 3's own
+report and in that comparison are inflated by jobs that shared the cores).
 
 What the runs have taught, in order:
 
