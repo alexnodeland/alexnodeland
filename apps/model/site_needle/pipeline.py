@@ -24,10 +24,10 @@ from .tracking import Tracker
 def run(cfg: Config, content: Path = CONTENT_PATH, corpus_dir: Path = CORPUS_DIR,
         runs_dir: Path = RUNS_DIR, epochs: int | None = None, run_id: str | None = None,
         tracking: bool = True, baseline: str | None = None, skip_base_eval: bool = False,
-        limit: int | None = None, promote: bool = False) -> bool:
+        limit: int | None = None, promote: bool = False, augment: dict | None = None) -> bool:
     log = Log()
     with log.stage("corpus"):
-        built = corpus_mod.build(cfg.corpus, content, corpus_dir)
+        built = corpus_mod.build(cfg.corpus, content, corpus_dir, **(augment or {}))
         for line in corpus_mod.summary_lines(built.manifest):
             log.say(line)
 

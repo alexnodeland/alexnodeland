@@ -13,3 +13,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
+
+# Augmentation runs write their log beside the generations; the generations are tracked, the log is not.
+augment/*.log

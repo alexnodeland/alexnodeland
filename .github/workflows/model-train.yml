@@ -118,13 +118,22 @@ jobs:
         if: steps.status.outputs.code != '0' || inputs.force == true
         run: echo "RUN_ID=$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
+      # With an ANTHROPIC_API_KEY secret the corpus also gets LLM-written
+      # paraphrases (tracked under apps/model/augment, regenerated only when
+      # the content changed); without one it trains on the templates alone.
       - name: Train, export, evaluate, gate
         id: pipeline
         if: env.RUN_ID != ''
         working-directory: apps/model
         continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          uv run site-needle pipeline --run-id "$RUN_ID" --no-tracking --promote \
+          augment=""
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            augment="--augment 1200 --natural 150 --provider anthropic"
+          fi
+          uv run site-needle pipeline --run-id "$RUN_ID" --no-tracking --promote $augment \
             ${{ inputs.epochs != '' && format('--epochs {0}', inputs.epochs) || '' }}
 
       - name: Summarise

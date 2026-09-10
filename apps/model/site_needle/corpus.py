@@ -81,9 +81,13 @@ def _percentiles(values: list[int]) -> dict:
     }
 
 
+GENERATED_TAGS = ("augmented", "natural")
+
+
 def template_hash(examples: list[Example]) -> str:
-    """The deterministic part of the corpus: everything but augmentation."""
-    return corpus_hash([e.row() for e in examples if "augmented" not in e.tags])
+    """The deterministic part of the corpus: everything but generated rows."""
+    return corpus_hash([e.row() for e in examples
+                        if not any(tag in e.tags for tag in GENERATED_TAGS)])
 
 
 def corpus_hash(rows: list[dict]) -> str:
@@ -170,18 +174,25 @@ class Built:
 
 
 def build_in_memory(content: Content, content_path: Path, cfg: CorpusConfig,
-                    tokenizer=None, augment: int = 0, augment_model: str | None = None,
+                    tokenizer=None, augment: int = 0, natural: int = 0,
+                    provider: str = "claude-agent", augment_model: str | None = None,
+                    regenerate: bool = False, provider_obj=None,
                     generate_fn=None) -> Built:
     examples = generate(content, cfg)
     examples, dropped = dedupe(examples)
     assign_splits(examples, cfg)
     augmentation = None
-    if augment:
+    if augment or natural:
         from . import augment as augment_mod
 
-        extra, augmentation = augment_mod.augment(
-            examples, augment, model=augment_model or augment_mod.DEFAULT_MODEL,
-            generate=generate_fn)
+        if provider == "openrouter":
+            extra, augmentation = augment_mod.augment_openrouter(
+                examples, augment, model=augment_model, generate=generate_fn)
+        else:
+            prov = provider_obj or augment_mod.provider_for(provider, augment_model)
+            extra, augmentation = augment_mod.augment(
+                examples, content, cfg, augment, natural, provider=prov,
+                regenerate=regenerate, content_hash=content_hash(content_path))
         examples = examples + extra
     lengths = {e.id: count(e.row(), tokenizer) for e in examples}
     # Without the real tokenizer the lengths are estimates, and a pessimistic
@@ -209,10 +220,13 @@ def write(built: Built, out_dir: Path) -> None:
 
 
 def build(cfg: CorpusConfig, content_path: Path = CONTENT_PATH, out_dir: Path = CORPUS_DIR,
-          use_tokenizer: bool = True, augment: int = 0, augment_model: str | None = None) -> Built:
+          use_tokenizer: bool = True, augment: int = 0, natural: int = 0,
+          provider: str = "claude-agent", augment_model: str | None = None,
+          regenerate: bool = False) -> Built:
     content = load_content(content_path)
     tokenizer = try_tokenizer() if use_tokenizer else None
-    built = build_in_memory(content, content_path, cfg, tokenizer, augment, augment_model)
+    built = build_in_memory(content, content_path, cfg, tokenizer, augment, natural, provider,
+                            augment_model, regenerate)
     if built.problems:
         raise CorpusError(built.problems)
     write(built, out_dir)
@@ -270,7 +284,9 @@ def summary_lines(manifest: dict) -> list[str]:
     lines = [
         f"examples: {c['counts']['total']} (train {c['counts']['train']}, test "
         f"{c['counts']['test']}, {c['counts']['dropped_duplicates']} duplicates dropped"
-        + (f", {aug.get('kept', 0)} augmented" if aug.get("requested") else "") + ")",
+        + (f", {aug.get('kept', 0)} augmented" if aug.get("requested") else "")
+        + (f", {aug.get('natural_kept', 0)} natural test" if aug.get("natural_kept") else "")
+        + ")",
         f"content: {manifest['content']['hash'][:19]}  corpus: {c['hash'][:19]}",
         f"refusals: {c['refusal_share_assistant']:.0%} of assistant examples",
         f"length: p50 {length['tokens'].get('p50')} / p95 {length['tokens'].get('p95')} / max "

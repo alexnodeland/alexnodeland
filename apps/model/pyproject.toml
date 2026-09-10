@@ -20,6 +20,10 @@ train = ["cactus-needle[train]"]
 gpu = ["cactus-needle[gpu]"]
 tracking = ["mlflow>=2.15"]
 dev = ["pytest>=8", "ruff>=0.6"]
+augment = [
+    "anthropic>=1.0",
+    "claude-agent-sdk>=0.2",
+]
 
 [project.scripts]
 site-needle = "site_needle.cli:main"

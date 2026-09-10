@@ -147,14 +147,24 @@ with a seeded generator so the same content produces the same bytes:
 - **Extraction** examples from the site's prose, plus passages against the
   wrong schema, which must extract nothing.
 
-**Augmentation (optional).** Templates are the corpus's grounding and its
-ceiling: a phrasing they never approached is one the model never saw.
-`site-needle corpus build --augment 500` runs Needle's own generator (a
-large model over OpenRouter, `OPENROUTER_API_KEY`) against the catalogue
-and keeps only what passes the same checks below. Augmented examples
-always train and never test, so scores stay comparable, and the manifest
-records a `template_hash` for the deterministic part so `corpus check` and
-`corpus status` still know what "the same corpus" means.
+**Augmentation.** Templates are the corpus's grounding and its ceiling: a
+phrasing they never approached is one the model never saw, and that is
+where every template-only run missed. `site-needle corpus build --augment
+1200 --natural 150` has a large model write the *questions* while this code
+writes the *labels*: the pipeline picks each target — a tool with its
+arguments drawn from the site's entities, or a refusal category — and asks
+for natural questions that mean exactly that; the argument value must
+appear verbatim, an enum's cue words must be present, and every question
+passes the same checks below. The large model contributes phrasing and is
+never asked to invent anything about Alex. Generated questions train and
+never test; `--natural` adds a separate held-out slice written the way
+visitors type, for evaluation only. Providers: `claude-agent` (the Claude
+Agent SDK, on the machine's Claude Code login — no key), `anthropic` (the
+Anthropic API, `ANTHROPIC_API_KEY`), `openrouter` (Needle's own generator,
+which also labels; `OPENROUTER_API_KEY`). Generations are kept under
+`augment/` and tracked, so a corpus built from them is reproducible; the
+manifest's `template_hash` covers the deterministic part, which is what
+`corpus check` and `corpus status` compare.
 
 Every example passes `site_needle/validate.py` before the corpus is written:
 arguments only contain spans that appear verbatim in the query, enums stay

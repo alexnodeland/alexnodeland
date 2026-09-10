@@ -120,35 +120,99 @@ def test_corpus_level_checks():
     assert any("no test examples" in p.message for p in problems)
 
 
-def test_augmentation_keeps_only_grounded_novel_rows(content, content_path, corpus_cfg):
+class _FakeProvider:
+    """Answers every prompt from what its target asks for: one grounded
+    question, one ungrounded one, and for natural prompts one casual one."""
+
+    name = "fake"
+    model = "fake-1"
+
+    def __init__(self):
+        self.calls = 0
+
+    def generate(self, prompts, log):
+        from site_needle import augment as augment_mod
+
+        self.calls += 1
+        out = {}
+        for key, prompt in prompts.items():
+            target_key, mode, _ = key.split("\x00")
+            span = None
+            for line in prompt.splitlines():
+                if line.startswith('The text "'):
+                    span = line.split('"')[1]
+                    break
+            if mode == "natural":
+                q = f"{span} tho?" if span else "wait what's this about"
+                out[key] = [{"question": q, "cue": span or "what"}]
+            elif span:
+                out[key] = [{"question": f"yo, has alex touched {span} at all?", "cue": span},
+                            {"question": "tell me about that thing", "cue": "thing"}]
+            elif target_key.startswith("refusal"):
+                out[key] = [{"question": f"[{target_key}] what's the tallest building in Dubai?",
+                             "cue": "tallest"}]
+            else:  # an enum target: the cue must appear in the question
+                out[key] = [{"question": "so what does he do now, job-wise?", "cue": "now"}]
+        assert augment_mod.SCHEMA["required"] == ["questions"]
+        return out
+
+
+def test_augmentation_keeps_only_grounded_novel_rows(content, content_path, corpus_cfg,
+                                                     tmp_path, monkeypatch):
+    from site_needle import augment as augment_mod
+
+    monkeypatch.setattr(augment_mod, "CACHE_DIR", tmp_path)
     plain = corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None)
-    already = next(e for e in plain.examples if e.kind == "assistant" and e.answers)
-    rows = [
-        {"query": "yo, has alex touched kubernetes at all?", "reasoning": "'kubernetes' -> skill",
-         "answers": [{"name": "check_skill", "arguments": {"skill": "kubernetes"}}]},
-        {"query": already.query.upper(), "reasoning": "dup of a template",
-         "answers": already.answers},
-        {"query": "tell me about his time at Google", "reasoning": "ungrounded",
-         "answers": [{"name": "lookup_role", "arguments": {"company": "Alphabet"}}]},
-        {"query": "what's the tallest building in Dubai?", "reasoning": "off-topic",
-         "answers": []},
-    ]
+    provider = _FakeProvider()
     built = corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None,
-                                   augment=4, generate_fn=lambda *a, **k: rows)
-    augmented = [e for e in built.examples if "augmented" in e.tags]
-    assert {e.query for e in augmented} == {
-        "yo, has alex touched kubernetes at all?", "what's the tallest building in Dubai?"}
-    assert all(e.split == "train" for e in augmented)
+                                   augment=40, natural=10, provider_obj=provider)
+    assert provider.calls == 1
+    generated = [e for e in built.examples if "augmented" in e.tags or "natural" in e.tags]
+    assert generated
+    train = [e for e in generated if e.split == "train"]
+    natural = [e for e in generated if e.split == "test"]
+    assert train and natural
+    assert all(e.slice == "natural" for e in natural)
+    assert all(e.tags == ("natural",) for e in natural)
+    # Ungrounded questions were dropped, every kept one passes the checks.
+    assert not any(e.query == "tell me about that thing" for e in generated)
     stats = built.manifest["corpus"]["augmentation"]
-    assert stats["kept"] == 2 and stats["dropped_invalid"] == 1 and stats["dropped_duplicate"] == 1
-    # The deterministic part is unchanged, so the template hash still matches
-    # a build without augmentation, while the corpus hash does not.
+    assert stats["kept"] == len(train) and stats["natural_kept"] == len(natural)
+    assert stats["dropped_invalid"] > 0 and stats["provider"] == "fake"
+    # Refusal targets carry their category and the critical flag where due.
+    refusals = [e for e in train if not e.answers]
+    assert refusals and any(e.critical for e in refusals)
+    # The deterministic part is unchanged; the corpus hash is not.
     assert built.manifest["corpus"]["template_hash"] == plain.manifest["corpus"]["template_hash"]
     assert built.manifest["corpus"]["hash"] != plain.manifest["corpus"]["hash"]
     assert corpus.diff(plain.manifest, built.manifest)["corpus_changed"] is False
+    assert built.problems == []
+
+    # A second build reads the cache: the provider is not called again.
+    again = corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None,
+                                   augment=40, natural=10, provider_obj=provider)
+    assert provider.calls == 1
+    assert again.manifest["corpus"]["hash"] == built.manifest["corpus"]["hash"]
 
 
-def test_augmentation_needs_a_key(content, content_path, corpus_cfg, monkeypatch):
+def test_augment_targets_cover_every_tool(content, corpus_cfg):
+    from site_needle import augment as augment_mod
+    from site_needle.catalogue import TOOL_NAMES
+
+    ts = augment_mod.targets(content, corpus_cfg)
+    named = {a["name"] for t in ts for a in t.answers}
+    assert named == set(TOOL_NAMES)
+    assert {t.category for t in ts if not t.answers} == {
+        f"refusal:{why}" for why in augment_mod.REFUSAL_MEANING}
+    per = augment_mod.allocate(ts, 100)
+    assert sum(per.values()) >= 100 and min(per.values()) >= 2
+    assert per["refusal:general"] > per[ts[0].key]
+    prompt = ts[0].prompt(5)
+    assert "5 distinct" in prompt and "exactly as written" in prompt
+
+
+def test_openrouter_augmentation_needs_a_key(content, content_path, corpus_cfg, monkeypatch):
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
-        corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None, augment=5)
+        corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None, augment=5,
+                               provider="openrouter")

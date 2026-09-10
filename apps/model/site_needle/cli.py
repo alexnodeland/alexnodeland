@@ -44,7 +44,9 @@ def _corpus_build(args) -> int:
         with log.stage("corpus build", content=str(args.content), out=str(args.out)):
             built = corpus.build(cfg, Path(args.content), Path(args.out),
                                  use_tokenizer=not args.no_tokenizer,
-                                 augment=args.augment, augment_model=args.augment_model)
+                                 augment=args.augment, natural=args.natural,
+                                 provider=args.provider, augment_model=args.augment_model,
+                                 regenerate=args.regenerate)
     except corpus.CorpusError as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -177,7 +179,10 @@ def _pipeline(args) -> int:
                       runs_dir=Path(args.runs), epochs=args.epochs, run_id=args.run_id,
                       tracking=_tracking(args), baseline=args.baseline,
                       skip_base_eval=args.skip_base_eval, limit=args.limit,
-                      promote=args.promote)
+                      promote=args.promote,
+                      augment=dict(augment=args.augment, natural=args.natural,
+                                   provider=args.provider, augment_model=args.augment_model,
+                                   regenerate=args.regenerate))
     return 0 if ok else 2
 
 
@@ -248,15 +253,27 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--content", default=str(CONTENT_PATH), help="content snapshot")
         p.add_argument("--out", default=str(CORPUS_DIR), help="corpus directory")
 
+    def augment_args(p):
+        p.add_argument("--augment", type=int, default=0,
+                       help="add about N generated training paraphrases")
+        p.add_argument("--natural", type=int, default=0,
+                       help="add about M generated natural questions to the test split")
+        p.add_argument("--provider", default="claude-agent",
+                       choices=["claude-agent", "anthropic", "openrouter"],
+                       help="who writes them: the Claude Agent SDK (local Claude Code login), "
+                            "the Anthropic API (ANTHROPIC_API_KEY), or Needle's OpenRouter "
+                            "generator (OPENROUTER_API_KEY)")
+        p.add_argument("--augment-model", default=None, help="model id for the provider")
+        p.add_argument("--regenerate", action="store_true",
+                       help="ignore the generations kept under augment/")
+
     c = sub.add_parser("corpus", help="derive the corpus from the site").add_subparsers(
         dest="corpus_command", required=True)
     p = c.add_parser("build", help="(re)build train/test JSONL and the manifest")
     corpus_args(p)
     p.add_argument("--no-tokenizer", action="store_true",
                    help="estimate token lengths instead of loading the tokenizer")
-    p.add_argument("--augment", type=int, default=0,
-                   help="add N generated paraphrases via OpenRouter (needs OPENROUTER_API_KEY)")
-    p.add_argument("--augment-model", default=None, help="OpenRouter model for --augment")
+    augment_args(p)
     p.set_defaults(func=_corpus_build)
     p = c.add_parser("check", help="exit 1 if the corpus on disk is stale")
     corpus_args(p)
@@ -291,6 +308,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("pipeline", help="corpus → train → build → eval → report")
     corpus_args(p)
+    augment_args(p)
     p.add_argument("--corpus", default=str(CORPUS_DIR))
     p.add_argument("--runs", default=str(RUNS_DIR))
     p.add_argument("--epochs", type=int, default=None)
