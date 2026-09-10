@@ -81,6 +81,11 @@ def _percentiles(values: list[int]) -> dict:
     }
 
 
+def template_hash(examples: list[Example]) -> str:
+    """The deterministic part of the corpus: everything but augmentation."""
+    return corpus_hash([e.row() for e in examples if "augmented" not in e.tags])
+
+
 def corpus_hash(rows: list[dict]) -> str:
     digest = hashlib.sha256()
     for row in rows:
@@ -91,7 +96,7 @@ def corpus_hash(rows: list[dict]) -> str:
 
 def manifest_for(examples: list[Example], content: Content, content_path: Path,
                  cfg: CorpusConfig, lengths: dict[str, int], tokenizer_name: str | None,
-                 dropped: int) -> dict:
+                 dropped: int, augmentation: dict | None = None) -> dict:
     rows = [e.row() for e in examples]
     by = lambda key: dict(sorted(_count(examples, key).items()))  # noqa: E731
     assistant = [e for e in examples if e.kind == "assistant"]
@@ -118,6 +123,8 @@ def manifest_for(examples: list[Example], content: Content, content_path: Path,
         },
         "corpus": {
             "hash": corpus_hash(rows),
+            "template_hash": template_hash(examples),
+            "augmentation": augmentation or {"requested": 0},
             "tools": [t["name"] for t in TOOLS],
             "counts": {
                 "total": len(examples),
@@ -163,10 +170,19 @@ class Built:
 
 
 def build_in_memory(content: Content, content_path: Path, cfg: CorpusConfig,
-                    tokenizer=None) -> Built:
+                    tokenizer=None, augment: int = 0, augment_model: str | None = None,
+                    generate_fn=None) -> Built:
     examples = generate(content, cfg)
     examples, dropped = dedupe(examples)
     assign_splits(examples, cfg)
+    augmentation = None
+    if augment:
+        from . import augment as augment_mod
+
+        extra, augmentation = augment_mod.augment(
+            examples, augment, model=augment_model or augment_mod.DEFAULT_MODEL,
+            generate=generate_fn)
+        examples = examples + extra
     lengths = {e.id: count(e.row(), tokenizer) for e in examples}
     # Without the real tokenizer the lengths are estimates, and a pessimistic
     # estimate must not fail a corpus the trainer will measure exactly: the
@@ -175,7 +191,8 @@ def build_in_memory(content: Content, content_path: Path, cfg: CorpusConfig,
     name = None
     if tokenizer is not None:
         name = f"needle2 sentencepiece ({tokenizer.vocab_size} pieces)"
-    manifest = manifest_for(examples, content, content_path, cfg, lengths, name, dropped)
+    manifest = manifest_for(examples, content, content_path, cfg, lengths, name, dropped,
+                            augmentation)
     return Built(examples, manifest, problems)
 
 
@@ -192,10 +209,10 @@ def write(built: Built, out_dir: Path) -> None:
 
 
 def build(cfg: CorpusConfig, content_path: Path = CONTENT_PATH, out_dir: Path = CORPUS_DIR,
-          use_tokenizer: bool = True) -> Built:
+          use_tokenizer: bool = True, augment: int = 0, augment_model: str | None = None) -> Built:
     content = load_content(content_path)
     tokenizer = try_tokenizer() if use_tokenizer else None
-    built = build_in_memory(content, content_path, cfg, tokenizer)
+    built = build_in_memory(content, content_path, cfg, tokenizer, augment, augment_model)
     if built.problems:
         raise CorpusError(built.problems)
     write(built, out_dir)
@@ -229,13 +246,17 @@ def diff(old: dict | None, new: dict) -> dict:
     for category, n in old_counts.items():
         if category not in new["corpus"]["by_category"]:
             counts[category] = {"before": n, "after": 0}
+    # An augmented corpus is not reproducible byte for byte; its template
+    # part is, and that is what "the same corpus" means between two builds.
+    old_key = old.get("corpus", {}).get("template_hash") or old.get("corpus", {}).get("hash")
+    new_key = new["corpus"].get("template_hash") or new["corpus"]["hash"]
     return {
         "baseline": {
             "content_hash": old.get("content", {}).get("hash"),
             "corpus_hash": old.get("corpus", {}).get("hash"),
         },
         "content_changed": old.get("content", {}).get("hash") != new["content"]["hash"],
-        "corpus_changed": old.get("corpus", {}).get("hash") != new["corpus"]["hash"],
+        "corpus_changed": old_key != new_key,
         "added": added,
         "removed": removed,
         "counts": counts,
@@ -245,9 +266,11 @@ def diff(old: dict | None, new: dict) -> dict:
 def summary_lines(manifest: dict) -> list[str]:
     c = manifest["corpus"]
     length = c["length"]
+    aug = c.get("augmentation") or {}
     lines = [
         f"examples: {c['counts']['total']} (train {c['counts']['train']}, test "
-        f"{c['counts']['test']}, {c['counts']['dropped_duplicates']} duplicates dropped)",
+        f"{c['counts']['test']}, {c['counts']['dropped_duplicates']} duplicates dropped"
+        + (f", {aug.get('kept', 0)} augmented" if aug.get("requested") else "") + ")",
         f"content: {manifest['content']['hash'][:19]}  corpus: {c['hash'][:19]}",
         f"refusals: {c['refusal_share_assistant']:.0%} of assistant examples",
         f"length: p50 {length['tokens'].get('p50')} / p95 {length['tokens'].get('p95')} / max "

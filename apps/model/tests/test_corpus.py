@@ -56,6 +56,7 @@ def test_diff_reports_new_sources_and_moved_counts(content, content_path, corpus
     old["content"]["sources"]["posts"] = old["content"]["sources"]["posts"][:-1]
     old["content"]["hash"] = "sha256:old"
     old["corpus"]["hash"] = "sha256:old"
+    old["corpus"]["template_hash"] = "sha256:old"
     old["corpus"]["by_category"]["lookup_project"] -= 2
     d = corpus.diff(old, new)
     assert d["content_changed"] and d["corpus_changed"]
@@ -117,3 +118,37 @@ def test_corpus_level_checks():
     problems = check_corpus([a, b], max_tokens=512, lengths={"a": 10, "b": 10})
     assert any("different answers" in p.message for p in problems)
     assert any("no test examples" in p.message for p in problems)
+
+
+def test_augmentation_keeps_only_grounded_novel_rows(content, content_path, corpus_cfg):
+    plain = corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None)
+    already = next(e for e in plain.examples if e.kind == "assistant" and e.answers)
+    rows = [
+        {"query": "yo, has alex touched kubernetes at all?", "reasoning": "'kubernetes' -> skill",
+         "answers": [{"name": "check_skill", "arguments": {"skill": "kubernetes"}}]},
+        {"query": already.query.upper(), "reasoning": "dup of a template",
+         "answers": already.answers},
+        {"query": "tell me about his time at Google", "reasoning": "ungrounded",
+         "answers": [{"name": "lookup_role", "arguments": {"company": "Alphabet"}}]},
+        {"query": "what's the tallest building in Dubai?", "reasoning": "off-topic",
+         "answers": []},
+    ]
+    built = corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None,
+                                   augment=4, generate_fn=lambda *a, **k: rows)
+    augmented = [e for e in built.examples if "augmented" in e.tags]
+    assert {e.query for e in augmented} == {
+        "yo, has alex touched kubernetes at all?", "what's the tallest building in Dubai?"}
+    assert all(e.split == "train" for e in augmented)
+    stats = built.manifest["corpus"]["augmentation"]
+    assert stats["kept"] == 2 and stats["dropped_invalid"] == 1 and stats["dropped_duplicate"] == 1
+    # The deterministic part is unchanged, so the template hash still matches
+    # a build without augmentation, while the corpus hash does not.
+    assert built.manifest["corpus"]["template_hash"] == plain.manifest["corpus"]["template_hash"]
+    assert built.manifest["corpus"]["hash"] != plain.manifest["corpus"]["hash"]
+    assert corpus.diff(plain.manifest, built.manifest)["corpus_changed"] is False
+
+
+def test_augmentation_needs_a_key(content, content_path, corpus_cfg, monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
+        corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None, augment=5)

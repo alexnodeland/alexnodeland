@@ -36,6 +36,7 @@ the refusal pool.
 - [Observability](#observability)
 - [Releases and the snapshot](#releases-and-the-snapshot)
 - [Keeping the model current](#keeping-the-model-current)
+- [Results so far](#results-so-far)
 - [Using the model in the site](#using-the-model-in-the-site)
 - [Layout](#layout)
 - [Troubleshooting](#troubleshooting)
@@ -145,6 +146,15 @@ with a seeded generator so the same content produces the same bytes:
 - **The site's own sample prompts**, always graded.
 - **Extraction** examples from the site's prose, plus passages against the
   wrong schema, which must extract nothing.
+
+**Augmentation (optional).** Templates are the corpus's grounding and its
+ceiling: a phrasing they never approached is one the model never saw.
+`site-needle corpus build --augment 500` runs Needle's own generator (a
+large model over OpenRouter, `OPENROUTER_API_KEY`) against the catalogue
+and keeps only what passes the same checks below. Augmented examples
+always train and never test, so scores stay comparable, and the manifest
+records a `template_hash` for the deterministic part so `corpus check` and
+`corpus status` still know what "the same corpus" means.
 
 Every example passes `site_needle/validate.py` before the corpus is written:
 arguments only contain spans that appear verbatim in the query, enums stay
@@ -273,6 +283,44 @@ the report is the review. `.github/workflows/model-ci.yml` runs the fast
 half on every pull request that touches the model app or the site's
 content — export, tests, corpus build — and reports whether the published
 model is stale.
+
+## Results so far
+
+Three CPU runs on the 4-core machine the pipeline was built on, each about
+two hours, each graded on the held-out split through the native engine.
+The base model is graded on the same cases.
+
+| run | train examples | LoRA | steps | val loss | base → tuned objective | tool accuracy | false / missed refusals |
+|---|---:|---|---:|---:|---|---:|---|
+| 1 | 391 | r16, lr 1e-4, 6 ep | 264 | 0.35 | 0.188 → 0.250 | 0.35 | 0.01 / 0.85 |
+| 2 | 630 | r32, lr 2e-4, 6 ep | 426 | 0.063 | 0.210 → 0.353 | 0.50 | 0.00 / 0.81 |
+| 3 | 659 | r32, lr 2e-4, 5 ep | 375 | __RUN3_VAL__ | __RUN3_OBJ__ | __RUN3_TOOL__ | __RUN3_REF__ |
+
+Two things worth knowing before the next run:
+
+- **The engine must see the catalogue exactly as trained.** The first
+  evaluation handed the engine every schema with its keys alphabetised (a
+  `sort_keys` dump, re-parsed) and the tuned model's tool choice collapsed
+  to the first tool while its reasoning still read right; graded that way
+  it scored *below* the base model. Same weights, catalogue as written:
+  0.250. The evaluator now builds the agent from the row's own tools
+  object and a test pins it. Anything that consumes the model should pass
+  `tools.json` from the snapshot, unmodified.
+- **Validation loss is not the number.** Run 2's validation loss of 0.06
+  came with an exact-call rate of 0.35 on held-out phrasings. The held-out
+  split is whole phrasing families and whole names the model never saw,
+  and a template corpus generalises to them only as far as the templates
+  reach. The misses are consistent: an unseen phrasing routed to the wrong
+  verbatim-argument tool, a famous name treated as one of Alex's projects,
+  a `search_site` section defaulting to `skills`. Each run since has
+  widened the phrasing pools and the named-entity refusals; the remaining
+  lever is `--augment`, which is what Needle's own guide reaches for at
+  this point, and a GPU, where thirty epochs over a few thousand examples
+  is minutes rather than a day.
+
+The gate currently fails on the critical categories (negation and
+injection, four cases), so the committed snapshot in `models/` was
+promoted by hand as the baseline to iterate from, not by the pipeline.
 
 ## Using the model in the site
 

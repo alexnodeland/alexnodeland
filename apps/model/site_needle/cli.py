@@ -43,7 +43,8 @@ def _corpus_build(args) -> int:
     try:
         with log.stage("corpus build", content=str(args.content), out=str(args.out)):
             built = corpus.build(cfg, Path(args.content), Path(args.out),
-                                 use_tokenizer=not args.no_tokenizer)
+                                 use_tokenizer=not args.no_tokenizer,
+                                 augment=args.augment, augment_model=args.augment_model)
     except corpus.CorpusError as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -81,9 +82,10 @@ def _corpus_check(args) -> int:
     if built.problems:
         print(corpus.CorpusError(built.problems), file=sys.stderr)
         return 1
-    fresh = built.manifest["corpus"]["hash"]
-    if fresh != existing["corpus"]["hash"]:
-        print(f"stale: corpus on disk is {existing['corpus']['hash'][:19]}, content builds "
+    fresh = built.manifest["corpus"]["template_hash"]
+    on_disk = existing["corpus"].get("template_hash") or existing["corpus"]["hash"]
+    if fresh != on_disk:
+        print(f"stale: corpus on disk is {on_disk[:19]}, content builds "
               f"{fresh[:19]}; run `site-needle corpus build`", file=sys.stderr)
         _print_diff(corpus.diff(existing, built.manifest))
         return 1
@@ -252,6 +254,9 @@ def build_parser() -> argparse.ArgumentParser:
     corpus_args(p)
     p.add_argument("--no-tokenizer", action="store_true",
                    help="estimate token lengths instead of loading the tokenizer")
+    p.add_argument("--augment", type=int, default=0,
+                   help="add N generated paraphrases via OpenRouter (needs OPENROUTER_API_KEY)")
+    p.add_argument("--augment-model", default=None, help="OpenRouter model for --augment")
     p.set_defaults(func=_corpus_build)
     p = c.add_parser("check", help="exit 1 if the corpus on disk is stale")
     corpus_args(p)
