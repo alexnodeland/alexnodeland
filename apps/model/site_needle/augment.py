@@ -264,8 +264,10 @@ class ClaudeAgentProvider:
     def generate(self, prompts: dict[str, str], log: Log) -> dict[str, list[dict]]:
         from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
 
+        # Structured output arrives through a tool turn, and the model sometimes
+        # spends one before it; one turn was too tight in about 5% of calls.
         options = ClaudeAgentOptions(
-            model=self.model, max_turns=1, allowed_tools=[], tools=[],
+            model=self.model, max_turns=3, allowed_tools=[], tools=[],
             system_prompt="You write test questions for a website's chat router. Output "
                           "only what the schema asks for.",
             output_format={"type": "json_schema", "schema": SCHEMA})
@@ -379,11 +381,9 @@ def cache_path(provider: str, model: str, content_hash: str, total: int, natural
     return CACHE_DIR / f"{provider}-{stamp.hexdigest()[:12]}.jsonl"
 
 
-def generate_raw(targets_: list[Target], total: int, natural: int, provider,
-                 log: Log) -> list[dict]:
-    """Ask the provider for every target's questions (training and, separately,
-    natural evaluation questions). Returns raw rows: target key, question,
-    cue, natural flag."""
+def prompts_for(targets_: list[Target], total: int, natural: int) -> dict[str, str]:
+    """Every request to make: one per target and batch for training, one per
+    target for the natural slice. Keys join target, mode and batch with NUL."""
     prompts: dict[str, str] = {}
     per = allocate(targets_, total)
     for t in targets_:
@@ -397,8 +397,14 @@ def generate_raw(targets_: list[Target], total: int, natural: int, provider,
         for t in targets_:
             prompts[f"{t.key}\x00natural\x000"] = t.prompt(min(per_natural[t.key], PER_CALL),
                                                             natural=True)
-    log.say("augment: requesting", targets=len(targets_), calls=len(prompts),
-            provider=provider.name, model=provider.model)
+    return prompts
+
+
+def generate_raw(prompts: dict[str, str], provider, log: Log) -> list[dict]:
+    """Ask the provider for the given requests. Returns raw rows: target key,
+    question, cue, natural flag, and the request key they came from."""
+    log.say("augment: requesting", calls=len(prompts), provider=provider.name,
+            model=provider.model)
     generated = provider.generate(prompts, log)
     rows: list[dict] = []
     for prompt_key, questions in generated.items():
@@ -406,7 +412,8 @@ def generate_raw(targets_: list[Target], total: int, natural: int, provider,
         for q in questions:
             if isinstance(q, dict):
                 rows.append({"target": key, "question": str(q.get("question", "")),
-                             "cue": str(q.get("cue", "")), "natural": mode == "natural"})
+                             "cue": str(q.get("cue", "")), "natural": mode == "natural",
+                             "request": prompt_key.replace("\x00", "|")})
     return rows
 
 
@@ -424,14 +431,22 @@ def augment(existing: list[Example], content: Content, cfg: CorpusConfig, total:
     by_key = {t.key: t for t in targets_}
 
     path = cache_path(provider.name, provider.model, content_hash, total, natural)
+    prompts = prompts_for(targets_, total, natural)
+    rows: list[dict] = []
     if path.exists() and not regenerate:
         rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
-        log.say("augment: using cached generations", path=str(path), rows=len(rows))
-    else:
-        rows = generate_raw(targets_, total, natural, provider, log)
+        log.say("augment: using kept generations", path=str(path), rows=len(rows))
+    # Requests with no rows — a failed call, or a target the content gained
+    # since — are made now and appended; everything already kept stays.
+    answered = {r.get("request") or f"{r['target']}|{'natural' if r['natural'] else 'train'}|0"
+                for r in rows}
+    missing = {k: v for k, v in prompts.items() if k.replace("\x00", "|") not in answered}
+    if missing:
+        rows.extend(generate_raw(missing, provider, log))
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
-        log.say("augment: cached generations", path=str(path), rows=len(rows))
+        log.say("augment: kept generations", path=str(path), rows=len(rows),
+                new_requests=len(missing))
 
     seen = {e.query.strip().lower() for e in existing}
     kept: list[Example] = []

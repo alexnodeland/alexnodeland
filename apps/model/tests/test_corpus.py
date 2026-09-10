@@ -188,11 +188,28 @@ def test_augmentation_keeps_only_grounded_novel_rows(content, content_path, corp
     assert corpus.diff(plain.manifest, built.manifest)["corpus_changed"] is False
     assert built.problems == []
 
-    # A second build reads the cache: the provider is not called again.
+    # A second build reads the kept generations: the provider is not called again.
     again = corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None,
                                    augment=40, natural=10, provider_obj=provider)
     assert provider.calls == 1
     assert again.manifest["corpus"]["hash"] == built.manifest["corpus"]["hash"]
+
+    # Drop one request's rows from the kept file: only that request is remade.
+    kept = list(tmp_path.glob("fake-*.jsonl"))[0]
+    rows = [json.loads(line) for line in kept.read_text().splitlines()]
+    victim = rows[0]["request"]
+    kept.write_text("".join(json.dumps(r) + "\n" for r in rows if r["request"] != victim))
+    provider.seen = None
+
+    class _Spy(_FakeProvider):
+        def generate(self, prompts, log):
+            provider.seen = list(prompts)
+            return super().generate(prompts, log)
+
+    spy = _Spy()
+    corpus.build_in_memory(content, content_path, corpus_cfg, tokenizer=None,
+                           augment=40, natural=10, provider_obj=spy)
+    assert [k.replace("\x00", "|") for k in provider.seen] == [victim]
 
 
 def test_augment_targets_cover_every_tool(content, corpus_cfg):
