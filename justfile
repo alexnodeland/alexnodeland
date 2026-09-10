@@ -7,7 +7,7 @@
 #   just --list web       every recipe of one app
 
 mod web 'apps/web'
-mod? model 'apps/model'
+mod model 'apps/model'
 
 # List available recipes (each app's own are under `just --list <app>`)
 default:

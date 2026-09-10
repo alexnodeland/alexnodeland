@@ -16,4 +16,6 @@ learning cantonese 🀄, watching birds 🐦, constructing sounds 🎹
 
 [alexnodeland.com](https://alexnodeland.com) · [alex@ournature.studio](mailto:alex@ournature.studio)
 
+this repo is the site and a small model trained on it: [`apps/web`](apps/web) is the gatsby site, [`apps/model`](apps/model) fine-tunes a 14mb tool-calling model into the intent router behind its chat. `just --list` shows both.
+
 the code here is [mit licensed](LICENSE). the writing, the cv, and the images are mine and are not.

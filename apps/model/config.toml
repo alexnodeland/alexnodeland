@@ -1,0 +1,58 @@
+# The model pipeline's configuration. Versioned on purpose: a change here is
+# a change to what gets trained, and it should show up in a diff and in the
+# run record, not in a shell history.
+
+[corpus]
+seed = 20260910
+# Every rendered example must fit this many tokens. Training pads to the
+# longest example (rounded up to a power of two), so one oversized example
+# doubles the cost of every step. The catalogue alone is ~300 tokens.
+max_tokens = 512
+# Share of query templates held out for the test split. Held-out templates
+# measure generalisation to phrasings the model never saw.
+test_template_fraction = 0.15
+# Entities never seen in training, so the test split also measures
+# generalisation to names the model never saw. Chosen to be ordinary rather
+# than famous: a held-out entity the base model already knows proves less.
+holdout_projects = ["quiver", "resume-crew"]
+holdout_companies = ["Scala Computing"]
+holdout_skills = ["Kubernetes", "Signal Processing"]
+# Refusals as a share of the assistant examples. Needle's own generator
+# produces about one in eight; without them the tuned model calls a tool on
+# everything.
+refusal_share = 0.15
+# Per-generator caps. Roughly 430 training examples at these values; raise
+# them on a GPU, where an epoch is seconds rather than half an hour.
+max_per_project = 3
+max_per_company = 5
+max_skills = 45
+max_search = 70
+max_extraction_paragraphs_per_post = 2
+
+[train]
+epochs = 6
+batch_size = 8
+lr = 1e-4
+lora_rank = 16
+lora_alpha = 32
+val_split = 0.1
+seed = 0
+# "auto" trains through the checkpoint's quantisation scheme so the exported
+# 2-bit weights match what was trained; "none" only for float evaluation.
+qat_bits = "auto"
+
+[eval]
+max_new_tokens = 128
+# The tuned model may trail the previous release's objective by this much
+# before the gate fails the run — run-to-run noise on ~120 test cases.
+tolerance = 0.02
+# Categories a router must not get wrong: a negated or injected request that
+# still fires a call is worse than a missed lookup.
+critical_categories = ["negation", "injection"]
+critical_min_pass = 0.9
+
+[registry]
+github_repo = "alexnodeland/alexnodeland"
+# Releases are tagged <prefix><run id>; the newest such release is "the
+# published model" that corpus status compares the content against.
+release_tag_prefix = "model-"

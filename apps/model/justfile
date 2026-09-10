@@ -1,0 +1,89 @@
+# The model app: Needle 2 fine-tuned into an intent router for the site.
+# Run from anywhere as `just model <recipe>`; the site's own recipes are
+# `just web <recipe>`. Everything runs through uv, so nothing here needs an
+# activated environment.
+
+# List recipes
+default:
+    @just --list
+
+# Install with the training stack, tracking, and dev tools
+install:
+    uv sync --extra train --extra tracking --extra dev
+
+# Install for GPU training (CUDA) on top of the above
+install-gpu:
+    uv sync --extra train --extra gpu --extra tracking --extra dev
+
+# Export the site's content, then (re)build the corpus and its manifest
+corpus:
+    cd ../web && npm run build:content
+    uv run site-needle corpus build
+
+# Exit 1 if the corpus on disk is stale against the current content
+corpus-check:
+    uv run site-needle corpus check
+
+# Is the published model trained on the content the site has now?
+status:
+    cd ../web && npm run build:content
+    uv run site-needle corpus status
+
+# LoRA fine-tune into runs/<id>. e.g. just model train --epochs 10
+train *args:
+    uv run site-needle train {{args}}
+
+# Merge a run's adapter into the base and export model.cact
+build run:
+    uv run site-needle build {{run}}
+
+# Grade the base model on the test split
+eval-base *args:
+    uv run site-needle eval --weights base {{args}}
+
+# Grade a tuned model: just model eval runs/<id>/model.cact
+eval weights *args:
+    uv run site-needle eval --weights {{weights}} {{args}}
+
+# The whole thing: corpus → train → export → eval → gate → report
+pipeline *args:
+    cd ../web && npm run build:content
+    uv run site-needle pipeline {{args}}
+
+# Export, evaluate, gate and report a run whose training finished
+finish run *args:
+    uv run site-needle finish {{run}} {{args}}
+
+# Re-render a run's report and model card
+report run:
+    uv run site-needle report {{run}}
+
+# Ask a model one question. e.g. just model probe "what is fugue?" models/site-needle.cact
+probe query weights='base':
+    uv run site-needle probe "{{query}}" --weights {{weights}}
+
+# Copy a passing run into models/ (the committed snapshot)
+promote run:
+    uv run site-needle publish {{run}} --snapshot
+
+# Create a GitHub release for a run (needs GITHUB_TOKEN)
+release run:
+    uv run site-needle publish {{run}} --github
+
+# Download the latest published model into models/
+pull:
+    uv run site-needle pull
+
+# Browse every local run in MLflow
+ui:
+    uv run site-needle ui
+
+# Lint and tests
+test:
+    uv run ruff check .
+    uv run pytest -q
+
+# Format
+fmt:
+    uv run ruff check --fix .
+    uv run ruff format .

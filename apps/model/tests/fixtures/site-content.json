@@ -1,0 +1,393 @@
+{
+  "schema": 1,
+  "site": {
+    "name": "alex nodeland",
+    "url": "https://alexnodeland.com",
+    "description": "ai engineer and mathematician. agent systems, distributed infrastructure, and audio dsp. previously ceo of a supercomputing startup.",
+    "author": "alex nodeland",
+    "contact": {
+      "email": "alex@ournature.studio",
+      "location": "upstate, new york, usa",
+      "website": "alexnodeland.com"
+    },
+    "social": {
+      "linkedin": "https://linkedin.com/in/alexnodeland",
+      "github": "https://github.com/alexnodeland"
+    },
+    "services": {
+      "calendar": "https://calendar.app.google/7oLHq1BcGKtaU8Sn9"
+    },
+    "navigation": [
+      {
+        "name": "blog",
+        "href": "/blog"
+      },
+      {
+        "name": "projects",
+        "href": "/projects"
+      },
+      {
+        "name": "cv",
+        "href": "/cv"
+      }
+    ]
+  },
+  "homepage": {
+    "hero": {
+      "title": "alex nodeland",
+      "subtitle": "math \u2192 audio dsp \u2192 distributed systems \u2192 ai"
+    },
+    "about": [
+      "i build ai systems, mostly the infrastructure: agent orchestration, evaluation loops, and the data model everything else depends on. currently senior ai engineer at perch insights.",
+      "before that i co-founded archanan in singapore and ran it as ceo for four years. we built cloud emulators of supercomputers so people could develop at scale without waiting for time on the real machine. i also led engineering at musiio, a music-ml company that soundcloud later acquired. before any of that i worked on wavelet bases for audio compression at stony brook, and wrote firmware for guitar pedals.",
+      "i write rust on weekends, mostly audio synthesis and probabilistic programming. the backgrounds on this site are simulations running in your browser, not video. the landscape icon in the corner opens their controls."
+    ],
+    "consulting": {
+      "title": "consulting",
+      "description": "i take on a few consulting engagements a year, and they tend to be one of two things. sometimes a team has an llm prototype that demos well and breaks in production, and wants help finding out why. in my experience the problem is rarely the model. it is usually the data model, the evals, or how failures are handled. other times a team is earlier than that, and wants a second opinion on whether ai belongs in their product before they commit to building it."
+    },
+    "expertise": [
+      {
+        "title": "ai systems",
+        "description": "agent orchestration, structured context, constrained generation, observability and auditability"
+      },
+      {
+        "title": "infrastructure",
+        "description": "aws, container orchestration, infrastructure as code, and ci/cd"
+      },
+      {
+        "title": "data engineering",
+        "description": "pipelines, semantic models, and data lineage"
+      },
+      {
+        "title": "evaluation & observability",
+        "description": "eval sets, feedback loops, and monitoring for regressions"
+      },
+      {
+        "title": "technical strategy",
+        "description": "architecture review, build-vs-buy, and roadmap planning"
+      },
+      {
+        "title": "creative technology",
+        "description": "audio dsp, synthesis, and generative visuals"
+      }
+    ]
+  },
+  "cv": {
+    "personal": {
+      "name": "Alex Nodeland",
+      "title": "Senior AI Engineer",
+      "email": "alex@ournature.studio",
+      "location": "Upstate, New York, USA",
+      "website": "alexnodeland.com",
+      "summary": "Engineer and mathematician working on AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Interested in problems that need both mathematics and production engineering."
+    },
+    "experience": [
+      {
+        "title": "Senior AI Engineer",
+        "company": "Perch Insights",
+        "location": "Remote, NY",
+        "duration": "2024 - Present",
+        "description": "",
+        "achievements": [
+          "Built a DAG-based orchestration framework that lets autonomous agents carry out multi-step data analysis end to end",
+          "Designed a DSL that non-technical users write analysis workflows in, mixing LLM agents with conventional ML models in the same pipeline",
+          "Extended the semantic data model with ontological abstractions and higher-order business concepts, which automated root-cause analysis and data discovery are built on",
+          "Built a feedback loop that turns user corrections into evaluation data and few-shot examples, so the system improves without retraining",
+          "Wrote tabular insight agents on Jinja templates with full lineage and provenance, so every generated number can be traced back to its source",
+          "Ran a fault-tolerant distributed worker fleet on AWS (ECS/SNS/SQS) with dead-letter queue handling and zero-downtime deploys",
+          "Lead AI engineering for the analytics product, automating analyst workflows that were previously manual"
+        ],
+        "skills": [
+          "Python",
+          "AWS",
+          "Docker",
+          "Kubernetes",
+          "Machine Learning",
+          "LLMs",
+          "Data Engineering"
+        ]
+      },
+      {
+        "title": "Head of AI",
+        "company": "Influize",
+        "location": "Remote, NY",
+        "duration": "2023 - 2024",
+        "description": "",
+        "achievements": [
+          "Started the AI function and shipped its first systems to production",
+          "Built the RAG pipeline behind the product's generated responses, covering retrieval, chunking, and grounding",
+          "Designed the Postgres schema and backend on Supabase, including authentication and access control",
+          "Designed the API layer in front of the AI pipelines, improving latency and throughput",
+          "Moved infrastructure to CloudFormation and CI/CD to GitHub Actions",
+          "Added monitoring across the AI pipelines to catch quality regressions",
+          "Built ontological models to give the data model a consistent vocabulary",
+          "Restructured the Postgres schema as the access patterns became clear and load grew",
+          "Coordinated with external development teams on platform integration, and ran project management out of GitHub"
+        ],
+        "skills": [
+          "Python",
+          "PostgreSQL",
+          "Supabase",
+          "AWS",
+          "RAG",
+          "LLMs",
+          "Infrastructure as Code"
+        ]
+      },
+      {
+        "title": "Technical Strategy Consultant",
+        "company": "Freelance",
+        "location": "Remote, NY",
+        "duration": "2022 - Present",
+        "description": "",
+        "achievements": [
+          "Advise startups and established companies on where AI fits in their stack",
+          "Delivered a keynote on ChatGPT to a room of CIOs and founders",
+          "Advised a blockchain unicorn on engineering process and operational flow",
+          "Run technology assessments and build-versus-buy analysis for teams committing to an AI direction",
+          "Led migrations onto AI-integrated systems that reduced cost and manual work",
+          "Consulted on personal knowledge management systems built around LLMs",
+          "Help early-stage startups choose a technology stack that will last"
+        ],
+        "skills": [
+          "Strategic Planning",
+          "AI Consulting",
+          "Technology Assessment",
+          "Business Development"
+        ]
+      },
+      {
+        "title": "Tech Lead",
+        "company": "Musiio (acquired by SoundCloud)",
+        "location": "Singapore",
+        "duration": "2021 - 2022",
+        "description": "",
+        "achievements": [
+          "Led a cross-functional engineering team, working alongside the music, research, and sales sides of the company",
+          "Ran GCP infrastructure: Kubernetes and Istio, monitored with Grafana and Prometheus",
+          "Rebuilt CI/CD on Jenkins with Cypress end-to-end coverage",
+          "Built a custom data ingestion pipeline and automated the manual steps around it",
+          "Introduced Scrum and the planning practices around it",
+          "Set technical direction against customer and partner requirements, planning releases with the founders",
+          "Mentored engineers and ran training sessions based on operational reviews"
+        ],
+        "skills": [
+          "Python",
+          "GCP",
+          "Kubernetes",
+          "Docker",
+          "Jenkins",
+          "Cypress",
+          "Agile",
+          "Team Leadership"
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "Doctor of Philosophy (Ph.D.), Computational Applied Mathematics",
+        "institution": "Stony Brook University",
+        "location": "Stony Brook, NY",
+        "duration": "2016 - (Incomplete)",
+        "description": "Left before advancing to candidacy to start a company.",
+        "coursework": [
+          "Numerical Analysis",
+          "Numerical Partial Differential Equations",
+          "Numerical Linear Algebra",
+          "Data Analysis",
+          "Applied Real Analysis",
+          "Applied Complex Analysis",
+          "Parallel Computing"
+        ],
+        "achievements": [
+          "Research at the Center of Excellence in Wireless Information Technology (CEWIT) and the SUNY Research Foundation, on audio compression and signal analysis"
+        ]
+      }
+    ],
+    "certifications": [
+      {
+        "name": "AWS Business Professional",
+        "issuer": "Amazon Web Services",
+        "date": "2018"
+      },
+      {
+        "name": "AWS TCO and Cloud Economics",
+        "issuer": "Amazon Web Services",
+        "date": "2018"
+      }
+    ],
+    "skills": {
+      "technical": [
+        "Python",
+        "JavaScript/TypeScript",
+        "React",
+        "Node.js",
+        "AWS",
+        "GCP",
+        "Docker",
+        "Kubernetes"
+      ]
+    }
+  },
+  "projects": {
+    "subtitle": "open source projects, tools, and experiments.",
+    "categories": [
+      {
+        "id": "ai",
+        "title": "ai"
+      },
+      {
+        "id": "math",
+        "title": "math"
+      },
+      {
+        "id": "audio-dsp",
+        "title": "audio dsp"
+      },
+      {
+        "id": "distributed-systems",
+        "title": "distributed systems"
+      },
+      {
+        "id": "misc",
+        "title": "misc"
+      }
+    ],
+    "projects": [
+      {
+        "name": "fugue",
+        "description": "a type-safe, monadic probabilistic programming library for rust.",
+        "language": "Rust",
+        "tags": [
+          "featured",
+          "library",
+          "ppl",
+          "probabilistic-programming"
+        ],
+        "url": "https://github.com/alexnodeland/fugue",
+        "site": "https://fugue.run/",
+        "stars": 12,
+        "category": "math"
+      },
+      {
+        "name": "fugue-evo",
+        "description": "a probabilistic genetic algorithm library for rust: evolution as inference.",
+        "language": "Rust",
+        "tags": [
+          "library",
+          "evolutionary-algorithms",
+          "inference"
+        ],
+        "url": "https://github.com/alexnodeland/fugue-evo",
+        "site": "https://evo.fugue.run/",
+        "stars": 2,
+        "category": "math"
+      },
+      {
+        "name": "bentokaze",
+        "description": "a linear programming calculator that minimizes bento cost while meeting nutritional requirements.",
+        "language": "Python",
+        "tags": [
+          "experiment",
+          "linear-programming",
+          "optimization"
+        ],
+        "url": "https://github.com/alexnodeland/bentokaze",
+        "site": "",
+        "stars": 2,
+        "category": "math"
+      },
+      {
+        "name": "quiver",
+        "description": "a modular audio synthesis library using arrow-style combinators and graph-based patching.",
+        "language": "Rust",
+        "tags": [
+          "featured",
+          "library",
+          "category-theory",
+          "modular-synthesizers"
+        ],
+        "url": "https://github.com/alexnodeland/quiver",
+        "site": "https://quiver-dsp.com/",
+        "stars": 3,
+        "category": "audio-dsp"
+      },
+      {
+        "name": "auracle",
+        "description": "a synthesizer that evolves patches toward the ones you prefer, built on fugue-evo and quiver.",
+        "language": "Rust",
+        "tags": [
+          "app",
+          "synthesis",
+          "preference-learning"
+        ],
+        "url": "https://github.com/alexnodeland/auracle",
+        "site": "https://alexnodeland.github.io/auracle/",
+        "stars": 1,
+        "category": "audio-dsp"
+      }
+    ]
+  },
+  "posts": [
+    {
+      "slug": "151111_future-of-sound",
+      "url": "/blog/151111_future-of-sound",
+      "title": "The Future of Sound",
+      "date": "2015-11-11",
+      "description": "The Stony Brook Press on the intelligent synthesizers I was building as an undergraduate \u2014 pitch-tracking bass synthesis and convolution reverb.",
+      "category": "Press",
+      "wordCount": 216,
+      "paragraphs": [
+        "the stony brook press came to talk to me about synthesizers that listen back. i was twenty and halfway through an applied maths degree, building pedals that tried to work out what a player was doing rather than waiting to be told.",
+        "two of them made the article. a bass synthesizer that tracks the pitch of whatever it hears and calculates the harmonically correct lower note in real time, so it stays in key and in time without being configured. and a convolution reverb, which takes an impulse response of a room and lets you play as though you were standing in it \u2014 carnegie hall, or the basement venue down the road, from a recording of the space."
+      ]
+    },
+    {
+      "slug": "160201_hpc-audio-research",
+      "url": "/blog/160201_hpc-audio-research",
+      "title": "Supercomputers For Audio Research and Development",
+      "date": "2016-02-01",
+      "description": "CEWIT's newsletter on my use of Stony Brook's supercomputing time for audio synthesis and modelling.",
+      "category": "Press",
+      "wordCount": 144,
+      "paragraphs": [
+        "cewit's newsletter ran a short piece on what i was doing with the university's supercomputing allocation: audio synthesis and modelling at a scale that does not fit on a desktop.",
+        "having that much compute changes which questions you can ask. a lot of audio engineering is choosing a filter design or a basis function on the strength of experience and then tuning it until it sounds right. with a cluster you can search the space instead \u2014 evaluate thousands of candidates against a real corpus and find out whether the conventional choice was ever the best one."
+      ]
+    },
+    {
+      "slug": "161101_optimal-wavelet-bases",
+      "url": "/blog/161101_optimal-wavelet-bases",
+      "title": "Optimal Wavelet Bases For Audio Compression",
+      "date": "2016-11-01",
+      "description": "Searching for a general procedure to pick the best wavelet basis for a class of audio, rather than choosing one by taste. Run on the IACS supercomputers.",
+      "category": "Press",
+      "wordCount": 161,
+      "paragraphs": [
+        "jpeg 2000 swapped the discrete cosine transform for wavelets and got visibly better images at the same bitrate, with none of the block artefacts that give away ordinary jpeg. the obvious question is why the same move is not standard for audio.",
+        "part of the answer is that nobody agrees on which wavelet to use. unlike the dct, which is one fixed transform, \"wavelet\" is a family \u2014 and the right member depends on the signal you are compressing. in practice people pick one that has worked before and tune around it."
+      ]
+    },
+    {
+      "slug": "190301_hpc-accessibility",
+      "url": "/blog/190301_hpc-accessibility",
+      "title": "Supercomputing Shouldn't Be Rocket Science",
+      "date": "2019-03-01",
+      "description": "A piece for Asian Scientist arguing that the hard part of supercomputing is not the computing \u2014 it is the gap between a working laptop simulation and code that survives at scale.",
+      "category": "Press",
+      "wordCount": 164,
+      "paragraphs": [
+        "a piece for asian scientist, written while running archanan, arguing that the hard part of supercomputing is not the computing.",
+        "picture a researcher with a simulation that works on their laptop and an allocation on a national machine. between those two things sits weeks of work that has nothing to do with their science: mpi topologies, schedulers, queue etiquette, and the first genuinely large run is usually also the first time anyone finds out whether the code scales. that run is expensive, and when it fails it usually fails for a reason that has nothing to do with the physics."
+      ]
+    }
+  ],
+  "chat": {
+    "samplePrompts": [
+      "what's Alex's current role?",
+      "what has he written about supercomputing?",
+      "what open source projects has he built?"
+    ]
+  }
+}

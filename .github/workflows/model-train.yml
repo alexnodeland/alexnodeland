@@ -1,0 +1,181 @@
+name: Train site model
+
+# The slow half: fine-tune, export, evaluate, gate, publish. Weekly, and on
+# demand. On the schedule it trains only when the site's content has changed
+# since the published model — `corpus status` exits 3 when it is stale.
+#
+# GitHub's hosted runners have no GPU, so this runs on CPU: a few hundred
+# steps at sequence length 512 is on the order of two hours. On a Mac with
+# the metal extra the same run is minutes; see apps/model/README.md.
+on:
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      epochs:
+        description: 'Epochs (blank = config.toml)'
+        required: false
+        default: ''
+      force:
+        description: 'Train even if the published model is current'
+        type: boolean
+        default: false
+      publish:
+        description: 'Create a release when the gate passes'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: train-site-model
+  cancel-in-progress: false
+
+env:
+  # Needle's anonymous telemetry is off in CI by its own rule; be explicit.
+  NEEDLE_TELEMETRY: '0'
+  # MLflow's local store is pointless on a runner; the run directory is the record.
+  SITE_NEEDLE_NO_TRACKING: '1'
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install the site
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Export the site's content
+        working-directory: apps/web
+        run: npm run build:content
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/model/uv.lock
+
+      - name: Install the model app with the training stack
+        working-directory: apps/model
+        run: uv sync --frozen --extra train --extra dev
+
+      # The 90MB base checkpoint, the tokenizer, and the native engine. Keyed
+      # on the lockfile because the engine version follows the package.
+      - name: Restore the base model and engine
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/model/checkpoints
+            ~/.cache/cactus-needle
+            ~/.cache/huggingface
+          key: needle-base-${{ hashFiles('apps/model/uv.lock') }}
+
+      - name: Build the corpus
+        working-directory: apps/model
+        run: uv run site-needle corpus build
+
+      - name: Is the published model current?
+        id: status
+        working-directory: apps/model
+        run: |
+          set +e
+          uv run site-needle corpus status | tee status.txt
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          {
+            echo '## Published model'
+            echo
+            echo '```'
+            cat status.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" != "0" ] && [ "$code" != "3" ]; then exit "$code"; fi
+
+      - name: Nothing to do
+        if: steps.status.outputs.code == '0' && inputs.force != true
+        run: echo "The published model is current with the site's content; not training." | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Name the run
+        if: steps.status.outputs.code != '0' || inputs.force == true
+        run: echo "RUN_ID=$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Train, export, evaluate, gate
+        id: pipeline
+        if: env.RUN_ID != ''
+        working-directory: apps/model
+        continue-on-error: true
+        run: |
+          uv run site-needle pipeline --run-id "$RUN_ID" --no-tracking --promote \
+            ${{ inputs.epochs != '' && format('--epochs {0}', inputs.epochs) || '' }}
+
+      - name: Summarise
+        if: env.RUN_ID != ''
+        working-directory: apps/model
+        run: |
+          if [ -f "runs/$RUN_ID/report.md" ]; then
+            cat "runs/$RUN_ID/report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "The run produced no report; see the job log." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Everything the run wrote, whether or not it passed: the adapter, the
+      # export, both evaluations, the curve. Thirty days is enough to compare
+      # against the next one.
+      - name: Upload the run
+        if: env.RUN_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-${{ env.RUN_ID }}
+          path: apps/model/runs/${{ env.RUN_ID }}
+          retention-days: 30
+
+      - name: Publish a release
+        if: env.RUN_ID != '' && steps.pipeline.outcome == 'success' && inputs.publish != false
+        working-directory: apps/model
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          # Optional: set the NEEDLE_HF_REPO variable and HF_TOKEN secret to
+          # mirror the model to Hugging Face.
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          NEEDLE_HF_REPO: ${{ vars.NEEDLE_HF_REPO }}
+        run: uv run site-needle publish "runs/$RUN_ID" --github | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # The committed snapshot in apps/model/models/ is what the site can
+      # build against without touching the registry. A passing run proposes
+      # the new one as a pull request rather than pushing it: promoting a
+      # model to the site is a decision, and the report is in the PR body.
+      - name: Propose the new snapshot
+        if: env.RUN_ID != '' && steps.pipeline.outcome == 'success' && inputs.publish != false
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: model/snapshot-${{ env.RUN_ID }}
+          title: 'Promote site model ${{ env.RUN_ID }}'
+          commit-message: 'Promote site model ${{ env.RUN_ID }}'
+          body-path: apps/model/runs/${{ env.RUN_ID }}/model-card.md
+          add-paths: apps/model/models
+          labels: model
+
+      - name: Fail the job if the gate failed
+        if: env.RUN_ID != '' && steps.pipeline.outcome != 'success'
+        run: |
+          echo "The pipeline did not pass its gate; see the report above." >&2
+          exit 1
