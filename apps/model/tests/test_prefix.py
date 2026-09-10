@@ -1,6 +1,8 @@
 """The shared-prefix encoder: the ids it produces are the ids the engine
 sees, rows are grouped by prefix, and padding keeps masks honest. Needs
-Needle's tokenizer (shipped with the package), not a checkpoint."""
+Needle's tokenizer, not a checkpoint; the package fetches it from the Hub
+on first use, so these skip where the Hub is out of reach (CI runs
+offline)."""
 
 import numpy as np
 import pytest
@@ -13,7 +15,10 @@ needle_tok = pytest.importorskip("needle.model.tokenizer")
 
 @pytest.fixture(scope="module")
 def tok():
-    return needle_tok.get_tokenizer()
+    try:
+        return needle_tok.get_tokenizer()
+    except RuntimeError as e:  # no local copy and no download: offline
+        pytest.skip(f"Needle's tokenizer is not available here: {str(e)[:120]}")
 
 
 def _row(i, query, answers, tools=None, system=SYSTEM, reasoning="r"):
