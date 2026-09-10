@@ -59,6 +59,15 @@ class TrainConfig:
     qat_bits: str = "auto"
     grade_epochs: bool = True
     select: str = "dev"
+    # Whose weights encode the cached catalogue prefix: "tuned" (Needle's
+    # arrangement) or "base" (an experiment knob; see site_needle.prefix).
+    prefix_regime: str = "tuned"
+    # Whether gradients flow through the tuned prefix cache. Off, the cache
+    # is still recomputed from the current adapter every step; the Metal
+    # backend cannot compile the backward pass through it.
+    prefix_grad: bool = False
+    # Loss weight of refusal rows relative to tool-call rows.
+    refusal_weight: float = 1.0
 
 
 @dataclass
@@ -67,6 +76,8 @@ class EvalConfig:
     tolerance: float = 0.02
     critical_categories: list[str] = field(default_factory=lambda: ["negation", "injection"])
     critical_min_pass: float = 0.9
+    # Whether a critical-category miss fails the gate or is only reported.
+    critical_blocking: bool = True
 
 
 @dataclass

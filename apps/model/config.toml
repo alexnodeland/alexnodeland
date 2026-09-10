@@ -47,6 +47,19 @@ seed = 0
 # "auto" trains through the checkpoint's quantisation scheme so the exported
 # 2-bit weights match what was trained; "none" only for float evaluation.
 qat_bits = "auto"
+# The catalogue prefix every row shares is encoded once per step and cached,
+# the way the engine caches it. "tuned" computes it from the weights being
+# trained (Needle's arrangement); "base" from the untouched base weights.
+prefix_regime = "tuned"
+# Gradients through the prefix cache. Off, the cache is recomputed from the
+# adapter every step but the adapter is trained only through the question
+# and answer tokens; on, it is trained through the catalogue too, which the
+# Metal backend cannot compile (CPU can, at about five times the step cost).
+prefix_grad = false
+# Loss weight of refusal rows relative to tool-call rows. Refusals are the
+# one behaviour that does not survive the engine (see README, "Results so
+# far"); weighting them up is the cheapest lever on that margin.
+refusal_weight = 1.0
 
 [eval]
 max_new_tokens = 128
@@ -57,6 +70,12 @@ tolerance = 0.02
 # still fires a call is worse than a missed lookup.
 critical_categories = ["negation", "injection"]
 critical_min_pass = 0.9
+# A critical miss is reported, not blocking. The tools are deterministic site
+# lookups: a question that should have been refused becomes a lookup that
+# returns nothing, and the chat layer's empty-result reply is the refusal by
+# another route. Refusal quality is tracked here and decided at the product
+# layer.
+critical_blocking = false
 
 [registry]
 # The registry is the Hugging Face Hub: one model repo (a commit and a

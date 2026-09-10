@@ -2,14 +2,18 @@
 
 Needle's ``finetune_local`` is one function: load, encode, split, train,
 save once at the end. This is the same loop — the same checkpoint loader,
-encoder, LoRA targets, QAT numerics, schedule, optimiser and loss — opened
-up in the two places a run on a CPU budget needs:
+template, LoRA targets, QAT numerics, schedule, optimiser and loss — opened
+up in the places a run on a laptop budget needs:
 
 - the validation rows are chosen by the caller (``fit_path`` and
   ``dev_path``), so they can be held out by *target* rather than at random
   and paraphrases of one target do not sit on both sides;
 - an ``on_epoch`` hook sees the adapter after every epoch and can save it,
-  so one run yields one candidate per epoch instead of one at the end.
+  so one run yields one candidate per epoch instead of one at the end;
+- the catalogue prefix every row shares is encoded once and cached, the way
+  the engine caches it, so a step processes the question and the answer
+  rather than 512 tokens per row (``site_needle.prefix``);
+- refusal rows can be weighted in the loss (``refusal_weight``).
 
 Everything else is imported from ``needle.model``; the version range in
 ``pyproject.toml`` is what keeps that honest.
@@ -17,16 +21,20 @@ Everything else is imported from ``needle.model``; the version range in
 
 from __future__ import annotations
 
+import json
 import pickle
 import time
 from pathlib import Path
 
 import numpy as np
 
+from .prefix import Encoded, SharedPrefixModel, encode_groups, fit_seq_len, pad_to
+
 
 def save_adapter(path: Path, lora, scale: float, base: str, rank: int, qat_bits,
-                 qat_bits_map, seed: int) -> None:
-    """Needle's adapter pickle, byte-for-byte the shape ``build_main`` reads."""
+                 qat_bits_map, seed: int, extra: dict | None = None) -> None:
+    """Needle's adapter pickle, byte-for-byte the shape ``build_main`` reads,
+    plus whatever ``extra`` records about how it was trained."""
     payload = {
         "lora": {"/".join(p): {"A": np.asarray(v["A"]), "B": np.asarray(v["B"])}
                  for p, v in lora.items()},
@@ -37,14 +45,36 @@ def save_adapter(path: Path, lora, scale: float, base: str, rank: int, qat_bits,
         "qat_bits_map": qat_bits_map,
         "seed": seed,
     }
+    payload.update(extra or {})
     with open(path, "wb") as handle:
         pickle.dump(payload, handle)
 
 
+def _read_rows(path: str | None) -> list[dict]:
+    if not path:
+        return []
+    rows = []
+    with open(path) as handle:
+        for line in handle:
+            line = line.strip()
+            if line:
+                row = json.loads(line)
+                if "query" in row:
+                    rows.append(row)
+    return rows
+
+
+def _row_weights(rows: list[dict], refusal_weight: float) -> np.ndarray:
+    return np.asarray([refusal_weight if not row.get("answers") else 1.0 for row in rows],
+                      np.float32)
+
+
 def finetune(args, progress=None, on_epoch=None) -> dict:
-    """``args`` carries: checkpoint, fit_path, dev_path (or None), length_path
-    (the file the sequence length is fitted over), epochs, batch_size, lr,
-    lora_rank, lora_alpha, max_len, seed, qat_bits, out.
+    """``args`` carries: checkpoint, fit_path, dev_path (or None), epochs,
+    batch_size, lr, lora_rank, lora_alpha, max_len, seed, qat_bits, out, and
+    optionally prefix_regime ("tuned" or "base"), prefix_grad (False: the
+    tuned prefix cache is recomputed every step but not trained through,
+    which is what the Metal backend can compile) and refusal_weight (1.0).
 
     ``progress(line)`` receives the same lines ``needle finetune`` prints.
     ``on_epoch(epoch, record, save)`` runs after each epoch's validation
@@ -54,12 +84,9 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
     import jax
     import jax.numpy as jnp
     import optax
-    from needle.model.architecture import SimpleAttentionNetwork
     from needle.model.finetune import (
         _training_rng,
-        fit_max_len,
         init_lora,
-        load_jsonl,
         lora_target_paths,
         merge_lora,
     )
@@ -77,31 +104,38 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
         if progress:
             progress(msg)
 
+    prefix_regime = str(getattr(args, "prefix_regime", "tuned") or "tuned")
+    if prefix_regime not in ("tuned", "base"):
+        raise ValueError("prefix_regime must be 'tuned' or 'base'")
+    refusal_weight = float(getattr(args, "refusal_weight", 1.0) or 1.0)
+    prefix_grad = bool(getattr(args, "prefix_grad", False))
+
     base_path = str(args.checkpoint)
     params, config = load_checkpoint(base_path)
     config.dtype = "float32"
     params = jax.tree.map(lambda a: np.asarray(a).astype(np.float32), params)
     backend = jax.default_backend().lower()
-    if backend == "metal":
-        config.flash = False
-        config.remat = False
-        config.scan_unroll = config.num_layers
     params = jax.device_put(params)
     emit(f"  {'backend':<9} {backend}  float32")
 
     tokenizer = get_tokenizer(config.vocab_size)
-    max_len = fit_max_len(str(args.length_path), tokenizer, args.max_len)
-    seqs, masks = load_jsonl(str(args.fit_path), tokenizer, max_len)
-    if len(seqs) == 0:
+    fit_rows = _read_rows(str(args.fit_path))
+    if not fit_rows:
         raise SystemExit(f"no usable examples in {args.fit_path}")
-    if args.dev_path:
-        val_seqs, val_masks = load_jsonl(str(args.dev_path), tokenizer, max_len)
-    else:
-        val_seqs, val_masks = np.zeros((0, max_len), np.int32), np.zeros((0, max_len), np.float32)
-    n_val = len(val_seqs)
-    emit(f"  {'data':<9} {len(seqs) + n_val} examples  seq_len {max_len}  cap {args.max_len}")
+    dev_rows = _read_rows(args.dev_path)
+    # One group per distinct prefix (the catalogue, plus one per extraction
+    # schema); each group has its own cache and its own compiled step.
+    fit_groups = [pad_to(g, min(fit_seq_len(g), args.max_len))
+                  for g in encode_groups(fit_rows, tokenizer, max_len=args.max_len)]
+    dev_groups = [pad_to(g, min(fit_seq_len(g), args.max_len))
+                  for g in encode_groups(dev_rows, tokenizer, max_len=args.max_len)]
+    n_val = len(dev_rows)
+    fit_weights = _row_weights(fit_rows, refusal_weight)
+    main = fit_groups[0]
+    emit(f"  {'data':<9} {len(fit_rows) + n_val} examples  prefix {main.prefix_len} tokens (cached)"
+         f"  turn+target {main.seq_len}  cap {args.max_len}"
+         + (f"  +{len(fit_groups) - 1} extraction prefix(es)" if len(fit_groups) > 1 else ""))
 
-    model = SimpleAttentionNetwork(config)
     qat_mode = "none" if args.qat_bits is None else str(args.qat_bits).lower()
     qat_bits = None
     qat_bits_map = None
@@ -125,6 +159,14 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
     else:
         emit(f"  {'numerics':<9} full precision")
 
+    def quantised(tree):
+        if qat_bits_map is not None:
+            bits_map, default_bits = parsed_bits_map
+            return cq_ste_mixed_params(tree, bits_map, default_bits)
+        if qat_bits is not None:
+            return cq_ste_params(tree, qat_bits)
+        return tree
+
     paths = lora_target_paths(params)
     scale = args.lora_alpha / args.lora_rank
     seed = int(args.seed)
@@ -132,11 +174,19 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
     lora = init_lora(params, paths, args.lora_rank, jax.random.PRNGKey(seed))
     emit(f"  {'lora':<9} rank {args.lora_rank}  alpha {args.lora_alpha:g}  "
          f"{len(paths)} weight groups")
+    if prefix_regime == "base":
+        emit(f"  {'prefix':<9} cached from the base weights (engine regime)")
+    elif prefix_grad:
+        emit(f"  {'prefix':<9} from the tuned weights, recomputed each step, trained through")
+    else:
+        emit(f"  {'prefix':<9} from the tuned weights, recomputed each step, not trained through")
     if n_val:
         emit(f"  {'holdout':<9} {n_val} examples for validation (by target)")
+    if refusal_weight != 1.0:
+        emit(f"  {'weights':<9} refusal rows x{refusal_weight:g} in the loss")
 
-    batch, count = args.batch_size, len(seqs)
-    steps_per_epoch = -(-count // batch)
+    batch, count = args.batch_size, len(fit_rows)
+    steps_per_epoch = sum(-(-len(g.rows) // batch) for g in fit_groups)
     total_steps = args.epochs * steps_per_epoch
     warmup = min(max(1, total_steps // 20), total_steps - 1)
     schedule = optax.warmup_cosine_decay_schedule(
@@ -146,51 +196,90 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
     emit(f"  {'schedule':<9} {total_steps} steps  warmup {warmup}  cosine decay  clip 1.0  "
          "(compiling...)")
 
-    def loss_fn(lora, ids, mask):
-        merged = merge_lora(params, lora, scale)
-        if qat_bits_map is not None:
-            bits_map, default_bits = parsed_bits_map
-            merged = cq_ste_mixed_params(merged, bits_map, default_bits)
-        elif qat_bits is not None:
-            merged = cq_ste_params(merged, qat_bits)
-        logits = model.apply({"params": merged}, ids, quant=qat_enabled)
-        logits, targets, mask = logits[:, :-1], ids[:, 1:], mask[:, 1:]
-        ce = optax.softmax_cross_entropy_with_integer_labels(logits, targets)
-        return (ce * mask).sum() / jnp.maximum(mask.sum(), 1.0)
+    class _Group:
+        """A prefix group's model, cache and compiled steps."""
 
-    @jax.jit
-    def train_step(lora, opt_state, ids, mask):
-        loss, grads = jax.value_and_grad(loss_fn)(lora, ids, mask)
-        updates, opt_state = optimizer.update(grads, opt_state, lora)
-        return optax.apply_updates(lora, updates), opt_state, loss
+        def __init__(self, enc: Encoded):
+            self.enc = enc
+            self.model = SharedPrefixModel(config, enc.prefix_len, enc.seq_len, quant=qat_enabled)
+            self.prefix_ids = jnp.asarray(enc.prefix)
+            self.base_cache = None
+            if prefix_regime == "base":
+                self.base_cache = jax.jit(
+                    lambda p: self.model.prefix_cache(p, self.prefix_ids))(quantised(params))
+            self.train_step = jax.jit(self._train_step)
+            self.eval_step = jax.jit(self._loss)
 
-    eval_step = jax.jit(loss_fn)
+        def _loss(self, lora, tokens, mask, valid, weights):
+            merged = quantised(merge_lora(params, lora, scale))
+            if self.base_cache is not None:
+                cache = self.base_cache
+            else:
+                cache = self.model.prefix_cache(merged, self.prefix_ids)
+                if not prefix_grad:
+                    cache = jax.lax.stop_gradient(cache)
+            logits = self.model.logits(merged, cache, self.prefix_ids, tokens, valid)
+            logits, targets = logits[:, :-1], tokens[:, 1:]
+            mask = mask[:, 1:] * weights[:, None]
+            ce = optax.softmax_cross_entropy_with_integer_labels(logits, targets)
+            return (ce * mask).sum() / jnp.maximum(mask.sum(), 1.0)
+
+        def _train_step(self, lora, opt_state, tokens, mask, valid, weights):
+            loss, grads = jax.value_and_grad(self._loss)(lora, tokens, mask, valid, weights)
+            updates, opt_state = optimizer.update(grads, opt_state, lora)
+            return optax.apply_updates(lora, updates), opt_state, loss
+
+        def batch(self, idx, weights=None):
+            """``idx`` indexes this group's rows; the batch is padded to the
+            batch size by repeating rows, with their loss masked out."""
+            enc = self.enc
+            full = np.zeros(batch, np.int64)
+            full[:len(idx)] = idx
+            keep = (np.arange(batch) < len(idx)).astype(np.float32)
+            w = np.ones(batch, np.float32) if weights is None else weights[enc.rows[full]]
+            return (jnp.asarray(enc.tokens[full]), jnp.asarray(enc.mask[full] * keep[:, None]),
+                    jnp.asarray(enc.valid[full]), jnp.asarray(w))
+
+    groups = [_Group(g) for g in fit_groups]
+    val_groups = [_Group(g) for g in dev_groups]
+
+    trained_with = {"prefix_regime": prefix_regime, "prefix_grad": prefix_grad,
+                    "refusal_weight": refusal_weight,
+                    "prefix_len": main.prefix_len, "seq_len": main.seq_len,
+                    "prefixes": len(fit_groups)}
 
     def save(path: Path) -> None:
         save_adapter(Path(path), lora, scale, base_path, args.lora_rank, qat_bits,
-                     qat_bits_map, seed)
+                     qat_bits_map, seed, extra={"site_needle": trained_with})
 
     every = max(1, total_steps // 50)
     step_i = 0
     records: list[dict] = []
     started = time.time()
     for epoch in range(args.epochs):
-        order = rng.permutation(count)
+        batches = []
+        for group in groups:
+            order = rng.permutation(len(group.enc.rows))
+            batches += [(group, order[i:i + batch]) for i in range(0, len(order), batch)]
+        rng.shuffle(batches)
         last = 0.0
-        for start in range(0, count, batch):
-            idx = order[start:start + batch]
-            lora, opt_state, loss = train_step(lora, opt_state, jnp.asarray(seqs[idx]),
-                                               jnp.asarray(masks[idx]))
+        for group, idx in batches:
+            lora, opt_state, loss = group.train_step(
+                lora, opt_state, *group.batch(idx, fit_weights))
             last = float(loss)
             step_i += 1
             if step_i % every == 0:
                 emit(f"  {'step':<9} {step_i}/{total_steps}  loss {last:.4f}")
         val = None
-        if n_val > 0:
-            val = float(np.mean([
-                float(eval_step(lora, jnp.asarray(val_seqs[i:i + batch]),
-                                jnp.asarray(val_masks[i:i + batch])))
-                for i in range(0, n_val, batch)]))
+        if val_groups:
+            losses, sizes = [], []
+            for group in val_groups:
+                n = len(group.enc.rows)
+                for i in range(0, n, batch):
+                    idx = np.arange(i, min(i + batch, n))
+                    losses.append(float(group.eval_step(lora, *group.batch(idx))))
+                    sizes.append(len(idx))
+            val = float(np.average(losses, weights=sizes))
         record = {"epoch": epoch + 1, "loss": last, "val_loss": val,
                   "elapsed_s": round(time.time() - started, 1)}
         if on_epoch:
@@ -207,7 +296,12 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
         "examples": count + n_val,
         "fit_examples": count,
         "val_examples": n_val,
-        "seq_len": max_len,
+        "prefix_len": main.prefix_len,
+        "seq_len": main.seq_len,
+        "prefixes": len(fit_groups),
+        "prefix_regime": prefix_regime,
+        "prefix_grad": prefix_grad,
+        "refusal_weight": refusal_weight,
         "total_steps": total_steps,
         "warmup_steps": warmup,
         "lora_groups": len(paths),

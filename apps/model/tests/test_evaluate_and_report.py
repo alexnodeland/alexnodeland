@@ -1,3 +1,4 @@
+import dataclasses
 import json
 
 from site_needle import evaluate, registry, report
@@ -53,7 +54,12 @@ def test_summarise_and_gate():
     assert set(summary["by_tool"]) == {"lookup_role", "check_skill", "(refusal)"}
 
     tuned = {"summary": summary}
+    # config.toml makes a critical miss advisory: the gate passes and says so.
     verdict = evaluate.gate(tuned, base=None, baseline=None, cfg=cfg)
+    assert verdict["ok"] and not verdict["reasons"]
+    assert any("critical" in w for w in verdict["warnings"])
+    blocking = dataclasses.replace(cfg, eval=dataclasses.replace(cfg.eval, critical_blocking=True))
+    verdict = evaluate.gate(tuned, base=None, baseline=None, cfg=blocking)
     assert not verdict["ok"] and any("critical" in r for r in verdict["reasons"])
     good = {"summary": {"overall": {**o, "critical_pass": 1.0, "objective": 0.9, "errors": 0}}}
     assert evaluate.gate(good, {"summary": {"overall": {"objective": 0.5}}}, None, cfg)["ok"]

@@ -243,7 +243,8 @@ def render(run: Run, cfg: Config) -> list[Path]:
     if gate:
         lines += ["", "## Gate", "",
                   "**PASS** — the model may ship." if gate["ok"] else "**FAIL**",
-                  *[f"- {r}" for r in gate.get("reasons", [])]]
+                  *[f"- {r}" for r in gate.get("reasons", [])],
+                  *[f"- advisory: {w}" for w in gate.get("warnings", [])]]
     run.path("report.md").write_text("\n".join(lines) + "\n")
     written.append(run.path("report.md"))
 

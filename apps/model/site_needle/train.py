@@ -41,7 +41,8 @@ from .tracking import Tracker
 
 _STEP = re.compile(r"step\s+(\d+)/(\d+)\s+loss\s+([\d.]+)")
 _EPOCH = re.compile(r"epoch\s+(\d+)/(\d+)\s+loss\s+([\d.]+)(?:\s+val\s+([\d.]+))?")
-_DATA = re.compile(r"data\s+(\d+) examples\s+seq_len (\d+)")
+_DATA = re.compile(
+    r"data\s+(\d+) examples\s+(?:seq_len|prefix \d+ tokens \(cached\)\s+turn\+target) (\d+)")
 _SCHEDULE = re.compile(r"schedule\s+(\d+) steps")
 
 EPOCH_METRICS = ("loss", "val_loss", "dev_objective", "dev_tool_accuracy",
@@ -363,7 +364,6 @@ def train(cfg: Config, corpus_dir: Path = CORPUS_DIR, runs_dir: Path = RUNS_DIR,
             checkpoint=str(checkpoint),
             fit_path=str(run.path("corpus/fit.jsonl")),
             dev_path=str(run.path("corpus/dev.jsonl")) if dev else None,
-            length_path=str(run.path("corpus/train.jsonl")),
             epochs=epochs,
             batch_size=tc.batch_size,
             lr=tc.lr,
@@ -372,10 +372,14 @@ def train(cfg: Config, corpus_dir: Path = CORPUS_DIR, runs_dir: Path = RUNS_DIR,
             max_len=cfg.corpus.max_tokens,
             seed=tc.seed,
             qat_bits=tc.qat_bits,
+            prefix_regime=tc.prefix_regime,
+            prefix_grad=tc.prefix_grad,
+            refusal_weight=tc.refusal_weight,
             out=None,
         )
         with log.stage("train", epochs=epochs, batch_size=tc.batch_size, lr=tc.lr,
-                       grade_epochs=grade):
+                       grade_epochs=grade, prefix_regime=tc.prefix_regime,
+                       refusal_weight=tc.refusal_weight):
             shape = finetune(args, progress=progress, on_epoch=grader)
         summary = progress.summary()
         summary.update({k: v for k, v in shape.items() if k != "epochs"})

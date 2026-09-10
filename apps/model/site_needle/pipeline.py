@@ -119,6 +119,8 @@ def finish(cfg: Config, the_run: Run, tracking: bool = True, baseline: str | Non
     print("\nGATE:", "PASS" if verdict["ok"] else "FAIL")
     for reason in verdict["reasons"]:
         print(f"  - {reason}")
+    for warning in verdict.get("warnings", []):
+        print(f"  - (advisory) {warning}")
     if verdict["ok"] and promote:
         with log.stage("promote"):
             result = registry.promote(the_run.dir, cfg.registry)

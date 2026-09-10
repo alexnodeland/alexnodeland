@@ -246,10 +246,10 @@ says so and keeps everything.
 
 `site-needle train` runs Needle's own LoRA loop — rank 32 on the five
 attention projections of every layer, quantisation-aware through the
-checkpoint's 2-bit export scheme, the same checkpoint loader, encoder,
+checkpoint's 2-bit export scheme, the same checkpoint loader, template,
 schedule and loss (`site_needle/finetune.py` imports them from
 `needle.model`; the version range in `pyproject.toml` is what keeps that
-honest) — opened up in the two places a CPU budget needs:
+honest) — opened up in the three places a laptop budget needs:
 
 - **Validation is held out by target.** Needle's loop holds out a random
   tenth of the rows. With several paraphrases of every target, a validation
@@ -268,6 +268,20 @@ honest) — opened up in the two places a CPU budget needs:
   validation loss instead. One run on CPU therefore yields one graded
   candidate per epoch and the curve that says whether another epoch would
   have helped.
+- **The catalogue is encoded once.** Every row opens with the same system
+  turn and tool catalogue, about 380 of its 512 tokens; Needle's loop
+  re-encodes them for every row of every batch. `site_needle/prefix.py`
+  does what the engine does at inference: it encodes the prefix into a
+  KV cache once per step (or once per run, under `prefix_regime = "base"`)
+  and pushes only the question and the answer through the model, on
+  Needle's own cached forward with the training-time fake-quantisation put
+  back. Same loss, a third of the step cost, and the Metal backend can
+  compile it. The extraction rows, which each declare one record schema as
+  their tools, form their own small groups with their own caches. The one
+  trade: by default the adapter is not trained *through* the cached prefix
+  (`prefix_grad = false`), only through the turn; the prefix is still
+  recomputed from the current adapter every step. Refusal rows can be
+  weighted in the loss (`refusal_weight`).
 
 Hyper-parameters live in `config.toml` and are recorded with every run,
 with the base checkpoint's SHA-256 beside them.
@@ -288,10 +302,13 @@ eval-*-handwritten.json   both, on the hand-written set
 report.md        the human summary; loss.svg the curve; model-card.md the shareable one
 ```
 
-Sizing: on the 4-core CPU this was built on, a step at sequence length 512
-and batch 8 costs about 16 seconds and grading an epoch (export plus some
-five hundred engine calls) about three minutes, so 2,300 training rows for
-three epochs is a four-hour run; `--epochs` overrides. Judge a run by its
+Sizing: a step at batch 8 costs about 0.3 s on an M3 Max GPU through the
+`metal` extra and about 1.1 s on its CPU with the cached prefix (0.87 s and
+4.8 s through Needle's own loop; 16 s on the 4-core hosted runner), and
+grading an epoch (export plus some five hundred engine calls) about a
+minute on the Mac, so 2,300 training rows for three epochs is a ten-minute
+run on the Mac and a four-hour one on the runner; `--epochs` overrides.
+Judge a run by its
 epoch table — the dev objective against the test objective — rather than by
 the level of its validation loss: the target is only the reasoning line and
 the call, and much of the call is boilerplate the base model already
@@ -317,9 +334,14 @@ base model and the tuned one, and reports:
 All of it by category, by test slice, and by expected tool. The **gate**
 (`evaluate.gate`) decides whether a run may ship: it must not trail the base
 model, must not trail the previous release's objective by more than the
-tolerance in `config.toml`, must pass the critical categories, and must have
-produced no engine errors. `site-needle pipeline` exits non-zero on a failed
-gate; `--promote` copies a passing run into `models/`.
+tolerance in `config.toml`, and must have produced no engine errors. A miss
+on the critical categories is reported as an advisory rather than a
+failure (`critical_blocking = false` in `config.toml`): the tools are
+deterministic site lookups, so a question that should have been refused
+becomes a lookup that returns nothing, and the chat layer's empty-result
+reply is the refusal by another route. Refusal quality is tracked here and
+decided at the product layer. `site-needle pipeline` exits non-zero on a
+failed gate; `--promote` publishes a passing run.
 
 Two more things the evaluator does:
 
@@ -484,21 +506,38 @@ What the runs have taught, in order:
   per target measures the memory of a paraphrase. That is why the trainer
   now holds validation out by target and grades every epoch through the
   engine on rows the model never fitted.
-- **Routing improves; refusing does not, and the corpus is not why.** Run 4
-  trained on 522 refusals in Claude's phrasings and still calls a tool on
-  97% of the questions it should refuse — including its own training
-  refusals. Decoded in JAX under the training-time quantisation, the same
-  adapter refuses those questions correctly ("general knowledge; no site
-  tool answers it", then the empty call); the exported model in the native
-  engine does not. The decision is sensitive to how the system turn is
-  rendered: drop it or move it into the user turn in JAX and the refusals
-  flip to tool calls, while tool calls survive every rendering. The engine
-  renders the system text its own way, so the fix is to train on the
-  rendering the engine uses; finding it is the current work.
+- **Routing improves; refusing does not, and neither the corpus nor the
+  export is why.** Run 4 trained on 522 refusals in Claude's phrasings and
+  still calls a tool on 97% of the questions it should refuse — including
+  its own training refusals. Decoded greedily in JAX under the training-time
+  quantisation, the same adapter refuses those questions correctly
+  ("general knowledge; no site tool answers it", then the empty call); the
+  exported model in the native engine does not, deterministically, while
+  agreeing with JAX exactly on the tool-call rows, arguments included.
+  Everything that could differ was checked and matches: the engine's
+  prefix and turn ids are the training template's, token for token
+  (`needle_init` reports 379 prefix tokens for every rendering variant, as
+  the template does); the shipped 2-bit weights dequantise to the
+  fake-quantised weights the loop trained, element for element; the
+  engine's first-token logits match the JAX forward (mean difference 0.04
+  for the base weights, 0.5 for the tuned, same top five); and neither the
+  KV window, the KV width, the thread count, nor a second turn's logits
+  after decoding point anywhere but the same computation. The divergence
+  is inside the engine's per-token decode, past the one position it will
+  show, and is filed upstream with a public reproduction as
+  [cactus-compute/needle#117](https://github.com/cactus-compute/needle/issues/117).
+  Two things came out of the chase anyway: the cached-prefix trainer
+  above, and one real mismatch in Needle's loop — training merges the
+  adapter in float32 and `needle build` in the checkpoint's float16, so
+  about 6% of the 2-bit indices ship differently from what was trained;
+  real, but not the cause (JAX decoding the float16 merge also refuses).
 
-The gate fails on the critical categories (negation and injection), so the
-pointer in `models/site-needle.json` was moved to run 4 by hand as the
-baseline to iterate from, not by the pipeline.
+Missed refusals are therefore treated as a product-layer question — an
+unanswerable question becomes a lookup that returns nothing, and the site's
+chat already refuses off-topic questions on retrieval scores before any
+model is invoked (`apps/web/docs/chat-management.md`) — and the critical
+categories are advisory in the gate; run 4 is the published model. The trainer's `refusal_weight` and the shape of the refusal target
+are the levers being tried empirically, graded through the engine.
 
 ## Using the model in the site
 

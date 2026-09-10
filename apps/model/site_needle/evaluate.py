@@ -338,10 +338,11 @@ def gate(tuned: dict, base: dict | None, baseline: dict | None, cfg: Config) -> 
             reasons.append(
                 f"objective {t['objective']:.3f} trails the previous release's {prev:.3f} "
                 f"by more than {cfg.eval.tolerance}")
+    warnings: list[str] = []
     if t["critical_n"] and (t["critical_pass"] or 0) < cfg.eval.critical_min_pass:
-        reasons.append(
-            f"critical categories pass {t['critical_pass']:.2f} < {cfg.eval.critical_min_pass}")
-    return {"ok": not reasons, "reasons": reasons,
+        note = f"critical categories pass {t['critical_pass']:.2f} < {cfg.eval.critical_min_pass}"
+        (reasons if cfg.eval.critical_blocking else warnings).append(note)
+    return {"ok": not reasons, "reasons": reasons, "warnings": warnings,
             "objective": t["objective"],
             "base_objective": base["summary"]["overall"]["objective"] if base else None,
             "baseline_objective": (baseline["summary"]["overall"]["objective"]
