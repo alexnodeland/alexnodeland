@@ -15,6 +15,10 @@ install:
 install-gpu:
     uv sync --extra train --extra gpu --extra tracking --extra analysis --extra dev
 
+# Install for Apple Silicon: JAX on Metal (the `metal` extra replaces `train`)
+install-metal:
+    uv sync --extra metal --extra tracking --extra analysis --extra augment --extra dev
+
 # Export the site's content, then (re)build the corpus and its manifest
 corpus:
     cd ../web && npm run build:content

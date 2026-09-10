@@ -109,12 +109,13 @@ and the native engine (14 MB) download from Hugging Face on first use into
 `checkpoints/` and `~/.cache/cactus-needle/`.
 
 GPU: `uv sync --extra train --extra gpu` on an NVIDIA machine. On Apple
-Silicon, train on the CPU: Needle's `metal` extra pins JAX 0.4.38, which the
-lock's flax cannot import against, and the `jax-metal` plugin fails on the
-first operation under the JAX the lock does carry (`Invalid memory kind:
-device`), so it is not a supported path here. An M3 Max does a step at
-batch 8 and sequence length 512 in about 5 seconds against 16 on a 4-core
-hosted runner, and grades an epoch through the engine in about a minute.
+Silicon, `just model install-metal` — the `metal` extra instead of `train`.
+It pins JAX 0.4.38 for the `jax-metal` plugin with a flax and optax old
+enough to import against it; the two extras are declared as conflicting, so
+one lockfile carries both resolutions and `uv sync` never mixes them (the
+plugin fails on its first operation under a newer JAX, which is what an
+install beside the lock gets you). Verified end to end on an M3 Max: the
+same losses as the CPU run, step for step.
 
 ## The corpus
 

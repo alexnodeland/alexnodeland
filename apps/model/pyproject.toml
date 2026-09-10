@@ -18,6 +18,11 @@ dependencies = [
 [project.optional-dependencies]
 train = ["cactus-needle[train]"]
 gpu = ["cactus-needle[gpu]"]
+# Apple GPU: Needle's metal extra pins JAX 0.4.38 for the jax-metal plugin,
+# and flax and optax have to be old enough to import against it. This
+# extra conflicts with `train` (declared below), so one lockfile carries
+# both resolutions: `--extra train` on Linux, `--extra metal` on a Mac.
+metal = ["cactus-needle[metal]", "flax==0.10.2", "optax==0.2.4"]
 tracking = ["mlflow>=2.15"]
 dev = ["pytest>=8", "ruff>=0.6"]
 augment = [
@@ -31,6 +36,9 @@ analysis = [
 
 [project.scripts]
 site-needle = "site_needle.cli:main"
+
+[tool.uv]
+conflicts = [[{ extra = "train" }, { extra = "metal" }], [{ extra = "gpu" }, { extra = "metal" }]]
 
 [build-system]
 requires = ["hatchling"]
