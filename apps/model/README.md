@@ -277,8 +277,9 @@ honest) — opened up in the three places a laptop budget needs:
   Needle's own cached forward with the training-time fake-quantisation put
   back. Same loss, a third of the step cost, and the Metal backend can
   compile it. The extraction rows, which each declare one record schema as
-  their tools, form their own small groups with their own caches. The one
-  trade: by default the adapter is not trained *through* the cached prefix
+  their tools, form one further group with per-row prefixes, left-padded
+  and masked, so a run compiles two shapes rather than one per schema. The
+  one trade: by default the adapter is not trained *through* the cached prefix
   (`prefix_grad = false`), only through the turn; the prefix is still
   recomputed from the current adapter every step. Refusal rows can be
   weighted in the loss (`refusal_weight`).
@@ -457,12 +458,13 @@ the report is the review.
 
 ## Results so far
 
-Four CPU runs on the 4-core machine the pipeline was built on. Runs 1–3
-trained on template corpora and were graded on their own held-out split;
-run 4 is the first on the augmented corpus (2,314 training rows, 1,655 of
-them Claude's paraphrases), with the by-target validation split and one
-graded candidate per epoch. The base model is graded on the same cases as
-each tuned model.
+Runs 1–4 on the 4-core machine the pipeline was built on, run 5 on an M3
+Max CPU. Runs 1–3 trained on template corpora and were graded on their own
+held-out split; run 4 is the first on the augmented corpus (2,314 training
+rows, 1,655 of them Claude's paraphrases), with the by-target validation
+split and one graded candidate per epoch; run 5 is the same recipe through
+the cached-prefix trainer, the parity check for it. The base model is
+graded on the same cases as each tuned model.
 
 | run | train rows | LoRA | steps | val loss | base → tuned objective | tool accuracy | false / missed refusals | hand-written (base → tuned) | gate |
 |---|---:|---|---:|---:|---|---:|---|---|---|
@@ -470,6 +472,7 @@ each tuned model.
 | 2 | 630 | r32, lr 2e-4, 6 ep | 426 | 0.063 | 0.210 → 0.353 | 0.50 | 0.00 / 0.81 | – | fail (critical) |
 | 3 | 659 | r32, lr 2e-4, 5 ep | 375 | 0.044 | 0.199 → 0.411 | 0.56 | 0.00 / 0.89 | 0.184 → 0.263 | fail (critical) |
 | 4 | 2,083 + 231 dev | r32, lr 2e-4, 3 ep, epoch 2 selected | 783 | 0.053 | 0.173 → 0.507 | 0.71 | 0.00 / 0.97 | 0.210 → 0.342 | fail (critical) |
+| 5 | 2,083 + 231 dev | as run 4, cached-prefix trainer | 783 | 0.048 | 0.173 → 0.522 | 0.71 | 0.00 / 0.90 | 0.210 → 0.329 | pass (critical advisory) |
 
 Runs 1–3 are graded on the 141-case split of their template corpora, run 4
 on the 272-case split of the augmented corpus; `site-needle compare` puts
@@ -478,17 +481,22 @@ every model on one split. On that split the base model scores 0.173, runs
 0.71 (0.342 against run 2's 0.329 on the hand-written set), so run 4 is
 the published model. Its epoch table is the reason the trainer grades
 every epoch: dev objective 0.303 → 0.377 → 0.368 across the three, test
-0.456 → 0.507 → 0.511, and epoch 2 ships. None of the tuned models
+0.456 → 0.507 → 0.511, and epoch 2 ships. Run 5, the same recipe through
+the cached-prefix trainer, lands at 0.522 on that split with the same tool
+accuracy and 0.329 hand-written — inside the gate's 0.02 tolerance both
+ways, which is what a parity check should show. None of the tuned models
 refuses — missed refusals 0.90 to 0.97 against the base model's 0.57 —
 and none reads `search_site` well (0.09 to 0.11). Latency p50 is about
-45 ms per question on an M3 Max and 225 ms on the 4-core runner, peak RAM
+40 ms per question on an M3 Max and 225 ms on the 4-core runner, peak RAM
 around 280 MB.
 
-Training cost, batch 8 at sequence length 512: 0.87 s per step on the M3
-Max GPU through the `metal` extra, 4.8 s on its CPU, 16 s on the 4-core
-hosted runner. Run 4's 783 steps are eleven minutes, an hour and a quarter,
-and three and a half hours respectively; grading an epoch is under a minute
-on the Mac.
+Training cost, batch 8: through Needle's own loop at sequence length 512,
+0.87 s per step on the M3 Max GPU (`metal` extra), 4.8 s on its CPU and
+16 s on the 4-core hosted runner; through the cached-prefix trainer, 0.3 s
+on the GPU and 1.1 s on the CPU in isolation, about 1.7 s on the CPU with
+the epoch grading running beside it. Run 5's 783 steps plus three graded
+epochs took 33 minutes on the M3 Max CPU end to end; the GPU figure held
+until the machine's GPU was saturated by something else that afternoon.
 
 What the runs have taught, in order:
 
