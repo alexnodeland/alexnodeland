@@ -1,0 +1,130 @@
+name: Model pipeline checks
+
+# The fast half of the model app's CI: does the content still export, does
+# the corpus still build from it, do the generators still pass their own
+# checks. No training here — that is model-train.yml, on a schedule.
+on:
+  pull_request:
+    paths:
+      - 'apps/model/**'
+      - 'apps/web/scripts/export-site-content.mjs'
+      - 'apps/web/scripts/lib/chat-corpus.mjs'
+      - 'apps/web/src/content/**'
+      - 'apps/web/src/config/**'
+      - '.github/workflows/model-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/model/**'
+      - 'apps/web/scripts/export-site-content.mjs'
+      - 'apps/web/scripts/lib/chat-corpus.mjs'
+      - 'apps/web/src/content/**'
+      - 'apps/web/src/config/**'
+      - '.github/workflows/model-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  corpus:
+    name: Corpus and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install the site
+        working-directory: apps/web
+        run: npm ci
+
+      # The seam between the two apps: the site's content as one JSON file.
+      - name: Export the site's content
+        working-directory: apps/web
+        run: npm run build:content
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/model/uv.lock
+
+      # No training extra: the corpus and its tests need neither JAX nor the
+      # engine, and installing them would triple this job's time. The
+      # tokenizer is a base dependency, so token budgets are still exact.
+      - name: Install the model app
+        working-directory: apps/model
+        run: uv sync --frozen --extra dev --extra analysis
+
+      - name: Lint
+        working-directory: apps/model
+        run: uv run ruff check .
+
+      - name: Test
+        working-directory: apps/model
+        run: uv run pytest -q
+
+      - name: Build the corpus
+        working-directory: apps/model
+        run: |
+          uv run site-needle corpus build | tee corpus.txt
+          {
+            echo '## Corpus'
+            echo
+            echo '```'
+            cat corpus.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Diversity, duplicates, leakage, coverage and clusters of the corpus,
+      # in the job summary. The build already removed what fails the quality
+      # rules; this is the picture of what remains.
+      - name: Analyse the corpus
+        working-directory: apps/model
+        run: |
+          uv run site-needle analyze
+          {
+            echo '## Corpus analysis'
+            echo
+            sed 's/!\[map\](map.svg)//' data/corpus/analysis/analysis.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Is the published model still trained on this content? Informational
+      # on a pull request; the scheduled workflow acts on it.
+      - name: Compare against the published model
+        working-directory: apps/model
+        continue-on-error: true
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          uv run site-needle corpus status | tee status.txt || true
+          {
+            echo '## Published model'
+            echo
+            echo '```'
+            cat status.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the corpus
+        uses: actions/upload-artifact@v4
+        with:
+          name: corpus-${{ github.sha }}
+          path: apps/model/data/corpus/
+          retention-days: 7

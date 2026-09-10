@@ -1,0 +1,114 @@
+# The model app: Needle 2 fine-tuned into an intent router for the site.
+# Run from anywhere as `just model <recipe>`; the site's own recipes are
+# `just web <recipe>`. Everything runs through uv, so nothing here needs an
+# activated environment.
+
+# List recipes
+default:
+    @just --list
+
+# Install with the training stack, tracking, and dev tools
+install:
+    uv sync --extra train --extra tracking --extra analysis --extra dev
+
+# Install for GPU training (CUDA) on top of the above
+install-gpu:
+    uv sync --extra train --extra gpu --extra tracking --extra analysis --extra dev
+
+# Install for Apple Silicon: JAX on Metal (the `metal` extra replaces `train`)
+install-metal:
+    uv sync --extra metal --extra tracking --extra analysis --extra augment --extra dev
+
+# Export the site's content, then (re)build the corpus and its manifest
+corpus:
+    cd ../web && npm run build:content
+    uv run site-needle corpus build
+
+# Corpus plus LLM paraphrases (Claude Agent SDK on your Claude Code login)
+augment n='1600' natural='150':
+    cd ../web && npm run build:content
+    uv run site-needle corpus build --augment {{n}} --natural {{natural}} --provider claude-agent
+
+# What is in the corpus: diversity, duplicates, coverage, clusters, a map. e.g. just model analyze runs/<id>/eval-tuned.json
+analyze eval='':
+    uv run site-needle analyze {{ if eval != '' { '--eval ' + eval } else { '' } }}
+
+# Exit 1 if the corpus on disk is stale against the current content
+corpus-check:
+    uv run site-needle corpus check
+
+# Is the published model trained on the content the site has now?
+status:
+    cd ../web && npm run build:content
+    uv run site-needle corpus status
+
+# LoRA fine-tune into runs/<id>. e.g. just model train --epochs 10
+train *args:
+    uv run site-needle train {{args}}
+
+# Merge a run's adapter into the base and export model.cact
+build run:
+    uv run site-needle build {{run}}
+
+# Grade the base model on the test split
+eval-base *args:
+    uv run site-needle eval --weights base {{args}}
+
+# Grade a tuned model: just model eval runs/<id>/model.cact
+eval weights *args:
+    uv run site-needle eval --weights {{weights}} {{args}}
+
+# Several models on the current test split and the hand-written set, side by side. e.g. just model compare base models runs/<id>
+compare *models:
+    uv run site-needle compare {{models}}
+
+# Grade a model on the hand-written set. e.g. just model handwritten runs/<id>/model.cact
+handwritten weights='base':
+    uv run site-needle eval --weights {{weights}} --set evals/handwritten.jsonl
+
+# The whole thing: corpus → train → export → eval → gate → report
+pipeline *args:
+    cd ../web && npm run build:content
+    uv run site-needle pipeline {{args}}
+
+# Export, evaluate, gate and report a run whose training finished
+finish run *args:
+    uv run site-needle finish {{run}} {{args}}
+
+# Re-render a run's report and model card
+report run:
+    uv run site-needle report {{run}}
+
+# Ask a model one question. e.g. just model probe "what is fugue?" models/site-needle.cact
+probe query weights='base':
+    uv run site-needle probe "{{query}}" --weights {{weights}}
+
+# Publish a run to the Hub and point the site at it (models/site-needle.json); needs HF_TOKEN
+promote run:
+    uv run site-needle promote {{run}}
+
+# Publish a run (and its corpus) to the Hub without moving the pointer
+publish run:
+    uv run site-needle publish {{run}}
+
+# Publish the current corpus, its analysis, the hand-written set and the kept generations
+publish-corpus:
+    uv run site-needle corpus publish
+
+# Materialise the published model (the pointer's revision) into models/
+pull:
+    uv run site-needle pull
+
+# Browse every local run in MLflow
+ui:
+    uv run site-needle ui
+
+# Lint and tests
+test:
+    uv run ruff check .
+    uv run pytest -q
+
+# Format
+fmt:
+    uv run ruff check --fix .
+    uv run ruff format .

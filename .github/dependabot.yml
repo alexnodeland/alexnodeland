@@ -4,7 +4,26 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    directory: /
+    directory: /apps/web
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/New_York
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    labels:
+      - dependencies
+
+  # The model app is a uv project; its lockfile is apps/model/uv.lock. The
+  # training stack (jax, flax, cactus-needle) moves fast and a bump can
+  # change numerics, so majors arrive alone here too.
+  - package-ecosystem: uv
+    directory: /apps/model
     schedule:
       interval: weekly
       day: monday

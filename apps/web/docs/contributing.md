@@ -36,7 +36,7 @@ This project follows a code of conduct that we expect all contributors to follow
 
    ```bash
    git clone https://github.com/yourusername/alexnodeland.git
-   cd alexnodeland
+   cd alexnodeland/apps/web
    ```
 
 3. **Add upstream remote**:

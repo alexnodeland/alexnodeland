@@ -1,0 +1,99 @@
+# The model pipeline's configuration. Versioned on purpose: a change here is
+# a change to what gets trained, and it should show up in a diff and in the
+# run record, not in a shell history.
+
+[corpus]
+seed = 20260910
+# Every rendered example must fit this many tokens. Training pads to the
+# longest example (rounded up to a power of two), so one oversized example
+# doubles the cost of every step. The catalogue alone is ~300 tokens.
+max_tokens = 512
+# Share of query templates held out for the test split. Held-out templates
+# measure generalisation to phrasings the model never saw.
+test_template_fraction = 0.15
+# Entities never seen in training, so the test split also measures
+# generalisation to names the model never saw. Chosen to be ordinary rather
+# than famous: a held-out entity the base model already knows proves less.
+holdout_projects = ["quiver", "resume-crew"]
+holdout_companies = ["Scala Computing"]
+holdout_skills = ["Kubernetes", "Signal Processing"]
+# Refusals as a share of the assistant examples. Needle's own generator
+# produces about one in eight, and at that share the first run still called
+# a tool on five of six off-topic questions, and the second — at a fifth —
+# on four of five; the pool is sized for about three in ten.
+refusal_share = 0.30
+# Per-generator caps. Roughly 600 training examples at these values — each
+# phrasing has to recur across many names before the model tells the three
+# verbatim-argument tools apart. Raise them on a GPU, where an epoch is
+# seconds rather than half an hour.
+max_per_project = 6
+max_per_company = 6
+max_skills = 60
+max_per_skill = 2
+max_search = 110
+max_extraction_paragraphs_per_post = 2
+
+[train]
+epochs = 5
+batch_size = 8
+# Twice Needle's defaults for the learning rate and the rank: a CPU run is a
+# few hundred steps, and the first run at 1e-4 / rank 16 learned the
+# reasoning format but not the tool boundaries.
+lr = 2e-4
+lora_rank = 32
+lora_alpha = 64
+val_split = 0.1
+seed = 0
+# "auto" trains through the checkpoint's quantisation scheme so the exported
+# 2-bit weights match what was trained; "none" only for float evaluation.
+qat_bits = "auto"
+# The catalogue prefix every row shares is encoded once per step and cached,
+# the way the engine caches it. "tuned" computes it from the weights being
+# trained (Needle's arrangement); "base" from the untouched base weights.
+prefix_regime = "tuned"
+# Gradients through the prefix cache. Off, the cache is recomputed from the
+# adapter every step but the adapter is trained only through the question
+# and answer tokens; on, it is trained through the catalogue too, which the
+# Metal backend cannot compile (CPU can, at about five times the step cost).
+prefix_grad = false
+# Loss weight of refusal rows relative to tool-call rows. Refusals are the
+# one behaviour that did not survive the engine (see README, "Results so
+# far"). Up on its own it moved little (run 6 at 3.0: test missed refusals
+# 0.90 -> 0.77, hand-written unchanged); under the span target below, down
+# trades a few missed refusals for fewer false ones (run 7 at 1.0: 0.40
+# missed / 0.09 false on test; run 9 at 0.5: 0.43 / 0.04; run 10 at 0.25:
+# 0.63 / 0.02, half the refusals given back). 0.5 is the published recipe.
+refusal_weight = 0.5
+# The refusal reasoning's shape: "phrase" trains the corpus text ("general
+# knowledge; no site tool answers it"); "span" trains the tool rows' shape,
+# '<query>' -> no tool, so the refuse-or-call decision is made where the
+# tool rows make theirs, after the quoted span. The shape is what the
+# engine's refusal decision survives on (runs 7 and 9); it also refuses
+# some answerable questions (run 9: 0.04 on test, 0.09 hand-written), the
+# trade the published model makes.
+refusal_target = "span"
+
+[eval]
+max_new_tokens = 128
+# The tuned model may trail the previous release's objective by this much
+# before the gate fails the run — run-to-run noise on ~120 test cases.
+tolerance = 0.02
+# Categories a router must not get wrong: a negated or injected request that
+# still fires a call is worse than a missed lookup.
+critical_categories = ["negation", "injection"]
+critical_min_pass = 0.9
+# A critical miss is reported, not blocking. The tools are deterministic site
+# lookups: a question that should have been refused becomes a lookup that
+# returns nothing, and the chat layer's empty-result reply is the refusal by
+# another route. Refusal quality is tracked here and decided at the product
+# layer.
+critical_blocking = false
+
+[registry]
+# The registry is the Hugging Face Hub: one model repo (a commit and a
+# `run-<id>` tag per shipped run) and one dataset repo (a commit and a
+# `corpus-<hash>` tag per corpus build). models/site-needle.json pins the
+# revision the site builds against.
+hf_model_repo = "alexnodeland/site-needle"
+hf_dataset_repo = "alexnodeland/site-needle-corpus"
+hf_private = false

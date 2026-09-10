@@ -1,20 +1,10 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Repository-wide ignores. Each app keeps its own .gitignore beside its
+# toolchain: apps/web/.gitignore for the site, apps/model/.gitignore for the
+# model pipeline — git reads nested ignore files relative to their directory.
 
-# Production builds
-public/
-.cache/
-dist/
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
@@ -22,81 +12,10 @@ dist/
 *.swp
 *.swo
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage/
-
-# Test artifacts
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-
-# Dependency directories
-jspm_packages/
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
+# Local environment
 .env
-
-# Gatsby files
-.cache/
-public/
-
-.scratch/
-
-# Generated chat worker bundle (produced by `npm run build:worker`, which runs
-# before every build/develop). Regenerated deterministically from source.
-static/worker.js
-static/worker.js.LICENSE.txt
-static/*.mjs
-static/*.mjs.LICENSE.txt
-static/*.wasm
-# Chat retrieval index, embedded from src/ by `npm run build:index`. Generated
-# at build time like the worker bundle and the CV PDFs, so the base64 vector
-# blob does not churn in diffs on every content edit.
-static/chat-index.json
-
-# Eval run artifacts. Scored JSON per run, used by --baseline for regression
-# gating and by any automated search over prompts or configs. Machine output,
-# not source; the committed reference is whatever you choose to promote.
-.eval/
+.env.*
+!.env.example
 
 # Playwright MCP artifacts and ad-hoc screenshots
 .playwright-mcp/
-
-# Local copies of third-party press articles. Kept on disk as personal
-# reference copies but deliberately not committed — they are someone else's
-# copyrighted work. Regenerate with `just archive-press`. The README stays
-# tracked because it holds the original and Wayback URLs, which is the part
-# worth version-controlling.
-archive/press/*
-!archive/press/README.md
-
-# CV artifacts, typeset from src/config/cv.ts by `just cv` and by the deploy
-# workflow before gatsby build. Generated, so not committed — which also means
-# they are never stale relative to the data they came from.
-static/cv/

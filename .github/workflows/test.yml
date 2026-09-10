@@ -3,8 +3,14 @@ name: Test Suite
 on:
   push:
     branches: [main, develop]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/test.yml'
   pull_request:
     branches: [main, develop]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/test.yml'
 
 # Cancel previous runs if a new commit is pushed
 concurrency:
@@ -15,6 +21,11 @@ concurrency:
 # whole job.
 permissions:
   contents: read
+
+# The site is one app in a monorepo; every `run` step executes inside it.
+defaults:
+  run:
+    working-directory: apps/web
 
 jobs:
   test:
@@ -35,6 +46,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -55,7 +67,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage/lcov.info
+          file: ./apps/web/coverage/lcov.info
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -74,6 +86,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -96,5 +109,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report/
+          path: apps/web/playwright-report/
           retention-days: 7
