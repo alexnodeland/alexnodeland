@@ -554,7 +554,8 @@ What the runs have taught, in order:
   after decoding point anywhere but the same computation. The divergence
   is inside the engine's per-token decode, past the one position it will
   show; `scripts/engine_vs_jax.py` reproduces it from the Hub artefacts in
-  a minute.
+  a minute, and `docs/engine-divergence.md` keeps the full checklist so it
+  is not redone.
   Two things came out of the chase anyway: the cached-prefix trainer
   above, and one real mismatch in Needle's loop — training merges the
   adapter in float32 and `needle build` in the checkpoint's float16, so
@@ -584,7 +585,8 @@ What the runs have taught, in order:
   1 hand-written one and gains 16 and 13 refusals. The corpus is where the
   rest lives — more, and more varied, `contact` and `search_site` rows,
   and refusal spans shorter than the whole question — and that is the
-  next build.
+  next build. How these runs were set
+  up, and what to decide before the next one, is in `docs/experiments.md`.
 
 Missed refusals are therefore treated as a product-layer question — an
 unanswerable question becomes a lookup that returns nothing, and the site's
@@ -639,6 +641,7 @@ apps/model/
 │   ├── pipeline.py       all of it in order
 │   └── cli.py            `site-needle`
 ├── evals/                the hand-written evaluation set
+├── docs/                 experiments.md (running a one-knob run, costs, Metal notes), engine-divergence.md
 ├── augment/              kept LLM generations, by provider, model and content hash (ignored; lives in the dataset repo)
 ├── tests/                pytest, on a fixture snapshot
 ├── models/               site-needle.json, the pointer to the published model (the rest is `pull`ed, ignored)
