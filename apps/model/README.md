@@ -480,8 +480,8 @@ recipe. The base model is graded on the same cases as each tuned model.
 | 9 | 2,083 + 231 dev | span, `refusal_weight` 0.5, epoch 3 selected | 783 | 0.052 | 0.173 → 0.581 | 0.75 | 0.04 / 0.43 | 0.210 → 0.526 | pass |
 | 10 | 2,083 + 231 dev | span, `refusal_weight` 0.25, epoch 3 selected | 783 | 0.066 | 0.173 → 0.577 | 0.75 | 0.02 / 0.63 | 0.210 → 0.461 | pass |
 
-Runs 1–3 are graded on the 141-case split of their template corpora, run 4
-on the 272-case split of the augmented corpus; `site-needle compare` puts
+Runs 1–3 are graded on the 141-case split of their template corpora, runs
+4–10 on the 272-case split of the augmented corpus; `site-needle compare` puts
 every model on one split. On that split the base model scores 0.173, runs
 2 and 3 tie at 0.379 and 0.382, and run 4 reaches 0.507 with tool accuracy
 0.71 (0.342 against run 2's 0.329 on the hand-written set), so run 4 is
@@ -570,17 +570,21 @@ What the runs have taught, in order:
   tool accuracy up rather than down. The cost is the opposite error: some
   answerable questions are refused (0.09 and 0.21 at weight 1, 0.04 and
   0.09 at 0.5, 0.02 and 0.05 at 0.25, where half the refusals are given
-  back). They cluster on the enum tools, `contact` and
-  `search_site`, where the reasoning has to map a cue to an enum value and
-  the corpus has far fewer rows than the 528 refusals, and on unknown
-  names, where "unrecognised entity, no tool" is a shortcut the span shape
-  makes available (the `novel_entity` slice drops from 0.57 to 0.50).
-  Most of those questions run 4 also got wrong, with the wrong tool
-  instead of no tool: against run 4 on the same split, run 9 loses 3 test
-  questions and 1 hand-written one and gains 16 and 13 refusals. The
-  corpus is where the rest lives — more, and more varied, `contact` and
-  `search_site` rows, and refusal spans shorter than the whole question —
-  and that is the next build.
+  back). At weight 1 they include unknown names — "give me the rundown on
+  resume-crew", "what about Signal Processing?" — the shortcut
+  "unrecognised entity, no tool" that the span shape makes available; at
+  0.5 those are gone and what remains sits on the enum tools, `contact`
+  and `search_site` ("Can I book a call with Alex?", "which companies has
+  he worked at?"), where the reasoning has to map a cue to an enum value
+  and the corpus has far fewer rows than the 522 refusals. (Three of run
+  9's ten test cases counted as false refusals are extraction passages
+  where the engine emitted no call at all, not span refusals.) Most of
+  those questions run 4 also got wrong, with the wrong tool instead of no
+  tool: against run 4 on the same split, run 9 loses 3 test questions and
+  1 hand-written one and gains 16 and 13 refusals. The corpus is where the
+  rest lives — more, and more varied, `contact` and `search_site` rows,
+  and refusal spans shorter than the whole question — and that is the
+  next build.
 
 Missed refusals are therefore treated as a product-layer question — an
 unanswerable question becomes a lookup that returns nothing, and the site's
