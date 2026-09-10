@@ -1,9 +1,14 @@
 name: Deploy Gatsby site to Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes targeting the default branch — but only when the site
+  # itself changed. The model app lives beside it in this repo and has its
+  # own workflows; a retrain should not redeploy an unchanged site.
   push:
     branches: [main]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/deploy.yml'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -25,9 +30,13 @@ concurrency:
   group: 'pages'
   cancel-in-progress: false
 
+# The site is one app in a monorepo. Every `run` step below executes inside
+# it; action inputs that take paths (caches, the artifact) are relative to
+# the repository root and spell the prefix out.
 defaults:
   run:
     shell: bash
+    working-directory: apps/web
 
 jobs:
   # Build job
@@ -45,6 +54,7 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+          cache-dependency-path: apps/web/package-lock.json
 
       - name: Setup Pages
         id: pages
@@ -60,10 +70,10 @@ jobs:
       - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: .cache
-          key: ${{ runner.os }}-gatsby-build-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'gatsby-*.ts', 'gatsby-*.js') }}
+          path: apps/web/.cache
+          key: ${{ runner.os }}-gatsby-build-${{ hashFiles('apps/web/package-lock.json') }}-${{ hashFiles('apps/web/src/**', 'apps/web/gatsby-*.ts', 'apps/web/gatsby-*.js') }}
           restore-keys: |
-            ${{ runner.os }}-gatsby-build-${{ hashFiles('package-lock.json') }}-
+            ${{ runner.os }}-gatsby-build-${{ hashFiles('apps/web/package-lock.json') }}-
             ${{ runner.os }}-gatsby-build-
 
       - name: Install dependencies
@@ -80,8 +90,8 @@ jobs:
         id: cv-pdfs
         uses: actions/cache@v4
         with:
-          path: static/cv
-          key: ${{ runner.os }}-cv-pdfs-${{ hashFiles('src/config/cv.ts', 'templates/cv/**', 'scripts/build-cv.js') }}
+          path: apps/web/static/cv
+          key: ${{ runner.os }}-cv-pdfs-${{ hashFiles('apps/web/src/config/cv.ts', 'apps/web/templates/cv/**', 'apps/web/scripts/build-cv.js') }}
 
       # These packages cover what templates/cv/resume.tex.js uses (geometry,
       # titlesec, enumitem, hyperref, xcolor, microtype, charter) without
@@ -125,7 +135,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./public
+          path: ./apps/web/public
 
   # Deployment job
   deploy:

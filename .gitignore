@@ -1,0 +1,21 @@
+# Repository-wide ignores. Each app keeps its own .gitignore beside its
+# toolchain: apps/web/.gitignore for the site, apps/model/.gitignore for the
+# model pipeline — git reads nested ignore files relative to their directory.
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Playwright MCP artifacts and ad-hoc screenshots
+.playwright-mcp/

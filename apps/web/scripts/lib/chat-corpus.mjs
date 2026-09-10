@@ -29,7 +29,7 @@ require('@babel/register')({
 
 /** Markdown → plain prose. Retrieval scores punctuation as noise, and a 350M
  *  model reading a passage does better without link syntax in the way. */
-function stripMarkdown(md) {
+export function stripMarkdown(md) {
   return md
     .replace(/```[\s\S]*?```/g, ' ') // fenced code
     .replace(/`([^`]+)`/g, '$1') // inline code
@@ -48,7 +48,7 @@ function stripMarkdown(md) {
  * splitting a paragraph. Oversized paragraphs are broken on sentence
  * boundaries so a single wall-of-text paragraph can't blow the context budget.
  */
-function packParagraphs(text, target = 900) {
+export function packParagraphs(text, target = 900) {
   const paras = text
     .split(/\n{2,}/)
     .map(p => p.replace(/\n/g, ' ').trim())

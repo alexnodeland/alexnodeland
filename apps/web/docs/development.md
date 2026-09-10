@@ -26,7 +26,8 @@ How the site is built, where things live, and what to run before you push.
 
 ```bash
 git clone https://github.com/alexnodeland/alexnodeland.git
-cd alexnodeland
+# The repo is a monorepo; the site is one app in it.
+cd alexnodeland/apps/web
 npm install
 
 # Builds the chat worker and the retrieval index, then starts Gatsby
@@ -38,6 +39,10 @@ downloads the sentence-embedding model used to index the site for the chat,
 so it takes a minute longer than later ones.
 
 ## 📁 Project Structure
+
+Everything below is relative to `apps/web`. The repository root holds only
+what is shared across apps: the workflows, the licence, and a `justfile`
+whose `web` and `model` modules forward to each app's own.
 
 ```text
 src/
