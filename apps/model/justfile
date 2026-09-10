@@ -79,15 +79,19 @@ report run:
 probe query weights='base':
     uv run site-needle probe "{{query}}" --weights {{weights}}
 
-# Copy a passing run into models/ (the committed snapshot)
+# Publish a run to the Hub and point the site at it (models/site-needle.json); needs HF_TOKEN
 promote run:
-    uv run site-needle publish {{run}} --snapshot
+    uv run site-needle promote {{run}}
 
-# Create a GitHub release for a run (needs GITHUB_TOKEN)
-release run:
-    uv run site-needle publish {{run}} --github
+# Publish a run (and its corpus) to the Hub without moving the pointer
+publish run:
+    uv run site-needle publish {{run}}
 
-# Download the latest published model into models/
+# Publish the current corpus, its analysis, the hand-written set and the kept generations
+publish-corpus:
+    uv run site-needle corpus publish
+
+# Materialise the published model (the pointer's revision) into models/
 pull:
     uv run site-needle pull
 

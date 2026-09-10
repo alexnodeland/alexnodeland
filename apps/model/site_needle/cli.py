@@ -9,7 +9,7 @@
     pipeline                         corpus → train → build → eval → report, one run
     report                           re-render a run's report and model card
     probe                            ask a model one question
-    publish / pull                   push a run's artifacts out, or fetch the latest release
+    publish / promote / pull         the Hugging Face registry and the pointer the site uses
     ui                               open MLflow over the local runs
 
 Heavy imports (JAX, MLflow, the engine) happen inside the command that
@@ -127,19 +127,34 @@ def _corpus_status(args) -> int:
     if new is None:
         print(f"no corpus at {args.out}; run `site-needle corpus build`", file=sys.stderr)
         return 1
-    latest = registry.latest_release(cfg.registry)
-    if latest is None:
-        print("no published model yet; everything is new")
+    pointer = registry.read_pointer()
+    if pointer is None:
+        print(f"no published model yet ({registry.POINTER_PATH.name} is missing); "
+              "everything is new")
         return 3
-    old = registry.release_manifest(latest)
+    old = registry.published_manifest(cfg.registry, pointer)
+    if old is None:
+        print(f"cannot read manifest.json from {pointer['repo']}@{pointer['revision'][:12]}; "
+              "is the repo reachable?", file=sys.stderr)
+        return 1
     changes = corpus.diff(old, new)
-    print(f"published: {latest['tag']} ({latest.get('published_at', '')[:10]})")
+    print(f"published: {pointer['repo']}@{pointer['tag']} "
+          f"(run {pointer['run_id']}, {pointer.get('published_at', '')[:10]})")
     if not changes["corpus_changed"]:
         print("current: the published model was trained on this exact corpus")
         return 0
     print("stale: the site's content has changed since the published model was trained")
     _print_diff(changes)
     return 3
+
+
+def _corpus_publish(args) -> int:
+    from . import registry
+
+    cfg = load_config()
+    result = registry.publish_dataset(Path(args.out), cfg.registry)
+    print(f"dataset: {result['url']}  ({result['revision'][:12]})")
+    return 0
 
 
 def _train(args) -> int:
@@ -269,12 +284,27 @@ def _probe(args) -> int:
 
 
 def _publish(args) -> int:
-    from . import registry, train
+    from . import registry
 
     cfg = load_config()
-    run = train.Run.open(Path(args.run))
-    print(registry.publish(run, cfg.registry, hf_repo=args.hf_repo, github=args.github,
-                           snapshot=args.snapshot))
+    if args.promote:
+        result = registry.promote(Path(args.source), cfg.registry, dataset=not args.no_dataset)
+    else:
+        model = registry.publish_model(Path(args.source), cfg.registry)
+        result = {"model": model, "dataset": None}
+        if not args.no_dataset and (Path(args.source) / "corpus" / "manifest.json").exists():
+            result["dataset"] = registry.publish_dataset(Path(args.source) / "corpus",
+                                                         cfg.registry)
+    print(registry.describe(result))
+    return 0
+
+
+def _promote(args) -> int:
+    from . import registry
+
+    cfg = load_config()
+    result = registry.promote(Path(args.source), cfg.registry, dataset=not args.no_dataset)
+    print(registry.describe(result))
     return 0
 
 
@@ -282,8 +312,7 @@ def _pull(args) -> int:
     from . import registry
 
     cfg = load_config()
-    path = registry.pull(cfg.registry, Path(args.out), tag=args.tag)
-    print(path)
+    print(registry.pull(cfg.registry, Path(args.out), revision=args.revision))
     return 0
 
 
@@ -338,6 +367,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = c.add_parser("status", help="is the published model current? (exit 3 when stale)")
     corpus_args(p)
     p.set_defaults(func=_corpus_status)
+
+    p = c.add_parser("publish", help="push the corpus, its analysis, the hand-written set and "
+                                     "the kept generations to the dataset repo (needs HF_TOKEN)")
+    corpus_args(p)
+    p.set_defaults(func=_corpus_publish)
 
     p = sub.add_parser("train", help="LoRA fine-tune into a new run directory")
     p.add_argument("--corpus", default=str(CORPUS_DIR))
@@ -421,18 +455,25 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--corpus", default=str(CORPUS_DIR))
     p.set_defaults(func=_probe)
 
-    p = sub.add_parser("publish", help="publish a run's artifacts")
-    p.add_argument("run")
-    p.add_argument("--hf-repo", default=None, help="Hugging Face repo to upload the .cact to")
-    p.add_argument("--github", action="store_true",
-                   help="create a GitHub release (needs GITHUB_TOKEN)")
-    p.add_argument("--snapshot", action="store_true",
-                   help=f"copy the model snapshot into {MODELS_DIR.name}/")
+    p = sub.add_parser("publish", help="push a run (or a snapshot) to the model repo on the "
+                                       "Hub, tagged run-<id>; needs HF_TOKEN")
+    p.add_argument("source", help="run directory, or a snapshot directory with site-needle.cact")
+    p.add_argument("--no-dataset", action="store_true",
+                   help="do not also publish the run's corpus to the dataset repo")
+    p.add_argument("--promote", action="store_true",
+                   help=f"also move {MODELS_DIR.name}/site-needle.json to the new revision")
     p.set_defaults(func=_publish)
 
-    p = sub.add_parser("pull", help="download the latest published model")
+    p = sub.add_parser("promote", help="publish a run and point the site at it "
+                                       f"({MODELS_DIR.name}/site-needle.json)")
+    p.add_argument("source", help="run directory, or a snapshot directory with site-needle.cact")
+    p.add_argument("--no-dataset", action="store_true")
+    p.set_defaults(func=_promote)
+
+    p = sub.add_parser("pull", help="materialise the published model (the pointer's revision) "
+                                    f"into {MODELS_DIR.name}/")
     p.add_argument("--out", default=str(MODELS_DIR))
-    p.add_argument("--tag", default=None)
+    p.add_argument("--revision", default=None, help="a commit, tag or branch instead")
     p.set_defaults(func=_pull)
 
     p = sub.add_parser("ui", help="MLflow UI over the local runs")

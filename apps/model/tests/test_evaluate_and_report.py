@@ -140,35 +140,10 @@ def test_report_renders_from_a_run_dir(tmp_path, content, content_path, corpus_c
     text = run.path("report.md").read_text()
     assert "PASS" in text and "By slice" in text and "objective (exact call)" in text
     assert "site-needle.cact" in run.path("model-card.md").read_text()
-    files = registry.write_snapshot(run, tmp_path / "models")
-    assert {p.name for p in files} >= {"model-card.md", "eval.json", "manifest.json", "tools.json"}
-
-
-def test_latest_release_picks_newest_model_tag(monkeypatch):
-    from site_needle.paths import RegistryConfig
-
-    releases = [
-        {"tag_name": "v1.0", "published_at": "2026-01-01T00:00:00Z", "assets": []},
-        {"tag_name": "model-20260101-000000-abc", "published_at": "2026-01-02T00:00:00Z",
-         "assets": [{"name": "manifest.json", "browser_download_url": "u1"}]},
-        {"tag_name": "model-20260201-000000-def", "published_at": "2026-02-02T00:00:00Z",
-         "assets": [{"name": "manifest.json", "browser_download_url": "u2"}],
-         "html_url": "h"},
-        {"tag_name": "model-draft", "draft": True, "published_at": "2026-03-02T00:00:00Z",
-         "assets": []},
-    ]
-    monkeypatch.setattr(registry, "_get_json", lambda url, token=None: releases)
-    latest = registry.latest_release(RegistryConfig())
-    assert latest["tag"] == "model-20260201-000000-def"
-    assert latest["assets"]["manifest.json"] == "u2"
-    by_tag = registry.latest_release(RegistryConfig(), tag="model-20260101-000000-abc")
-    assert by_tag["tag"].endswith("abc")
-
-    def unreachable(url, token=None):
-        raise TimeoutError()
-
-    monkeypatch.setattr(registry, "_get_json", unreachable)
-    assert registry.latest_release(RegistryConfig()) is None
+    run.path("model.cact").write_bytes(b"cact")
+    files = registry.model_files(run.dir)
+    assert {"site-needle.cact", "model-card.md", "eval.json", "manifest.json", "tools.json",
+            "summary.json"} <= set(files)
 
 
 def test_cli_parses_every_command():
@@ -178,7 +153,9 @@ def test_cli_parses_every_command():
     for argv in (["corpus", "build"], ["corpus", "check"], ["corpus", "status"],
                  ["corpus", "diff", "--against", "x"], ["train", "--epochs", "1"],
                  ["build", "r"], ["eval", "--weights", "base"], ["pipeline", "--promote"],
-                 ["report", "r"], ["probe", "hi"], ["publish", "r", "--github"], ["pull"],
+                 ["report", "r"], ["probe", "hi"], ["publish", "r", "--promote"], ["pull"],
+                 ["promote", "r", "--no-dataset"], ["corpus", "publish"],
+                 ["pull", "--revision", "run-x"],
                  ["finish", "r", "--promote"], ["ui"], ["compare", "base", "runs/x"],
                  ["eval", "--weights", "base", "--set", "evals/handwritten.jsonl"],
                  ["train", "--no-epoch-grading"], ["analyze", "--eval", "e.json"]):

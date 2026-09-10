@@ -120,8 +120,12 @@ def finish(cfg: Config, the_run: Run, tracking: bool = True, baseline: str | Non
     for reason in verdict["reasons"]:
         print(f"  - {reason}")
     if verdict["ok"] and promote:
-        for path in registry.write_snapshot(the_run):
-            log.say("snapshot", path=str(path))
+        with log.stage("promote"):
+            result = registry.promote(the_run.dir, cfg.registry)
+            log.say("published", model=result["model"]["url"],
+                    dataset=(result["dataset"] or {}).get("url"),
+                    pointer=result["pointer_path"])
+        print(registry.describe(result))
     print(f"\nrun: {the_run.dir}")
     return verdict["ok"]
 
@@ -131,17 +135,19 @@ def _prefixed(prefix: str, block: dict) -> dict:
 
 
 def _baseline(path: str | None, cfg: Config, log: Log) -> dict | None:
-    """The evaluation to gate against: a file if given, else the latest
-    release's, else nothing (a first run has no history to regress from)."""
+    """The evaluation to gate against: a file if given, else the published
+    model's (the one the pointer names), else nothing — a first run has no
+    history to regress from."""
     if path:
         return json.loads(Path(path).read_text())
-    release = registry.latest_release(cfg.registry)
-    if release is None:
-        log.say("no published release to gate against")
+    pointer = registry.read_pointer()
+    if pointer is None:
+        log.say("no published model to gate against")
         return None
-    previous = registry.release_eval(release)
+    previous = registry.published_eval(cfg.registry, pointer)
     if previous is None:
-        log.say("published release carries no eval.json; not gating against it", tag=release["tag"])
+        log.say("cannot read the published model's eval.json; not gating against it",
+                repo=pointer["repo"], tag=pointer["tag"])
     else:
-        log.say("gating against the published release", tag=release["tag"])
+        log.say("gating against the published model", repo=pointer["repo"], tag=pointer["tag"])
     return previous

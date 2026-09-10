@@ -420,6 +420,31 @@ def _example(target: Target, i: int, question: str, cue: str, natural: bool) -> 
 CACHE_DIR = APP_DIR / "augment"
 
 
+def fetch_kept(path: Path, log: Log | None = None) -> bool:
+    """The kept generations for this content live in the dataset repo too
+    (``augment/<name>`` at its latest revision). A machine without the
+    local file fetches them before generating, so a rebuild anywhere is
+    free and asks the LLM only for what is new."""
+    from .paths import load_config
+
+    repo = load_config().registry.hf_dataset_repo
+    try:
+        from huggingface_hub import hf_hub_download
+
+        fetched = hf_hub_download(repo, f"augment/{path.name}", repo_type="dataset",
+                                  token=os.environ.get("HF_TOKEN"))
+    except Exception as exc:  # no repo, no file, no network: generate instead
+        if log:
+            log.say("augment: no kept generations to fetch", repo=repo, file=path.name,
+                    why=type(exc).__name__)
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(Path(fetched).read_bytes())
+    if log:
+        log.say("augment: fetched kept generations", repo=repo, file=path.name)
+    return True
+
+
 def cache_path(provider: str, model: str, content_hash: str) -> Path:
     """One file per provider, model and content version; budgets top it up."""
     stamp = hashlib.sha256(f"{provider}:{model}:{content_hash}".encode())
@@ -530,6 +555,8 @@ def augment(existing: list[Example], content: Content, cfg: CorpusConfig, total:
 
     path = cache_path(provider.name, provider.model, content_hash)
     rows: list[dict] = []
+    if not path.exists() and not regenerate and fetch_kept(path, log):
+        pass
     if path.exists() and not regenerate:
         rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
         log.say("augment: using kept generations", path=str(path), rows=len(rows))

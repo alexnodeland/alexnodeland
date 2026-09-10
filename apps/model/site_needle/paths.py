@@ -17,6 +17,8 @@ DATA_DIR = APP_DIR / "data"
 CORPUS_DIR = DATA_DIR / "corpus"
 RUNS_DIR = APP_DIR / "runs"
 MODELS_DIR = APP_DIR / "models"
+POINTER_PATH = MODELS_DIR / "site-needle.json"
+AUGMENT_DIR = APP_DIR / "augment"
 CHECKPOINT_DIR = APP_DIR / "checkpoints"
 EVAL_CACHE_DIR = RUNS_DIR / "eval-cache"
 EVALS_DIR = APP_DIR / "evals"
@@ -69,8 +71,9 @@ class EvalConfig:
 
 @dataclass
 class RegistryConfig:
-    github_repo: str = "alexnodeland/alexnodeland"
-    release_tag_prefix: str = "model-"
+    hf_model_repo: str = "alexnodeland/site-needle"
+    hf_dataset_repo: str = "alexnodeland/site-needle-corpus"
+    hf_private: bool = False
 
 
 @dataclass

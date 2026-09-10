@@ -59,7 +59,10 @@ critical_categories = ["negation", "injection"]
 critical_min_pass = 0.9
 
 [registry]
-github_repo = "alexnodeland/alexnodeland"
-# Releases are tagged <prefix><run id>; the newest such release is "the
-# published model" that corpus status compares the content against.
-release_tag_prefix = "model-"
+# The registry is the Hugging Face Hub: one model repo (a commit and a
+# `run-<id>` tag per shipped run) and one dataset repo (a commit and a
+# `corpus-<hash>` tag per corpus build). models/site-needle.json pins the
+# revision the site builds against.
+hf_model_repo = "alexnodeland/site-needle"
+hf_dataset_repo = "alexnodeland/site-needle-corpus"
+hf_private = false

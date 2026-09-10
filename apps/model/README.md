@@ -365,42 +365,68 @@ content hash, the counts per generator, the refusal share, and the token
 length distribution, and `corpus diff --against <manifest>` names the posts
 and projects that appeared or vanished and the counts that moved.
 
-## Releases and the snapshot
+## The registry: Hugging Face
 
-Two places a model lives:
+Models and corpora live on the Hub, in two repositories named in
+`config.toml`:
 
-- **GitHub releases** are the registry. `site-needle publish <run> --github`
-  creates one immutable release per run, tagged `model-<run id>`, with the
-  `.cact`, `tools.json`, `system.txt`, the manifest, both evaluations, the
-  model card, the run record, the curve, and the report as assets. No
-  credentials are needed to read it, which is what lets `corpus status` on
-  any machine answer whether the published model is current, and lets the
-  site fetch the model it wants. `--hf-repo <you>/<model>` (or
-  `NEEDLE_HF_REPO`) mirrors it to Hugging Face.
-- **`models/`** is the committed snapshot: the current `site-needle.cact`,
-  its `tools.json` and `system.txt`, `model-card.md`, `eval.json`,
-  `manifest.json`, `summary.json`. It is what the site can build against
-  without touching the registry. `just model promote <run>` refreshes it;
-  `just model pull` fetches the latest release into it.
+- **The model repo** (`alexnodeland/site-needle`) takes one commit per
+  shipped run, tagged `run-<id>`: `site-needle.cact`, `tools.json`,
+  `system.txt`, the corpus manifest, every evaluation (test split and
+  hand-written set, base and tuned), the run record, the curve, the report,
+  and the model card as its README with the evaluation in the front matter
+  so the numbers show on the repo page.
+- **The dataset repo** (`alexnodeland/site-needle-corpus`) takes one commit
+  per corpus build, tagged `corpus-<hash>`: `train.jsonl`, `test.jsonl`
+  (and a run's `fit.jsonl`/`dev.jsonl`), the manifest, the catalogue, the
+  analysis, the hand-written set, and the kept LLM generations under
+  `augment/`. A build on any machine fetches those generations before it
+  asks an LLM for anything, so a rebuild is free and only what is new is
+  generated.
+
+In git there is one small file, **`models/site-needle.json`**: the pointer
+to the model the site builds against — repo, revision, tag, SHA-256, corpus
+and content hashes, the two objectives, and the `resolve/` URL prefix the
+browser can fetch the files from. Nothing binary is committed.
+
+- `just model promote runs/<id>` publishes the run and its corpus and moves
+  the pointer (`site-needle promote`; `publish` does the same without
+  moving it; `corpus publish` pushes the current corpus alone). Needs
+  `HF_TOKEN`.
+- `just model pull` materialises the pointer's revision into `models/`
+  (ignored by git) for anything that wants the files on disk.
+- `corpus status` reads the manifest at the pointer's revision and says
+  whether the published model was trained on the content the site has now.
+  Reading a public repo needs no token.
+- The gate's "previous release" is the pointer's model: a run must not
+  trail it by more than the tolerance.
 
 ## Keeping the model current
 
-The scheduled workflow (`.github/workflows/model-train.yml`, Mondays, and on
-demand) is the loop:
+Training is a decision, not a schedule: a run is minutes on Apple Silicon
+with Needle's metal extra and a few hours on a hosted runner's CPU, so
+nothing retrains on its own. Three workflows share the work:
 
-1. export the site's content and rebuild the corpus;
-2. `corpus status`: compare the corpus against the manifest the latest
-   release carries. Exit 0 means the published model was trained on this
-   exact content — nothing to do. Exit 3 means stale;
-3. when stale (or `force`), run the pipeline on CPU, gate it, upload the run;
-4. on a passing gate, publish a release and open a pull request that
-   promotes the new snapshot into `models/`, with the model card as its body.
+- `.github/workflows/model-ci.yml`, on every pull request that touches the
+  model app or the site's content: export, tests, corpus build, analysis,
+  and whether the published model is stale, in the job summary.
+- `.github/workflows/model-status.yml`, Mondays and on demand, in about
+  three minutes: export, corpus build, `corpus status`. When the content
+  has moved past the published model it opens (or updates) one issue
+  labelled `model-stale` with the diff and the commands to retrain, and
+  closes it once the model is current again.
+- `.github/workflows/model-train.yml`, on demand only, for when no machine
+  is at hand: the same staleness guard (or `force`), then the pipeline on
+  the runner's CPU with LLM paraphrases when an `ANTHROPIC_API_KEY` secret
+  exists, every epoch graded, the gate, and on a pass a publish to the Hub
+  (`HF_TOKEN` secret) and a pull request that moves
+  `models/site-needle.json`. The run directory is uploaded as an artifact
+  either way.
 
+The local loop is the primary one: `just model augment` (or `just corpus`)
+then `just model pipeline --promote`, and a pull request with the pointer.
 Promotion into the site is a pull request rather than a push on purpose:
-the report is the review. `.github/workflows/model-ci.yml` runs the fast
-half on every pull request that touches the model app or the site's
-content — export, tests, corpus build — and reports whether the published
-model is stale.
+the report is the review.
 
 ## Results so far
 
@@ -500,9 +526,9 @@ apps/model/
 │   ├── pipeline.py       all of it in order
 │   └── cli.py            `site-needle`
 ├── evals/                the hand-written evaluation set
-├── augment/              kept LLM generations, by provider, model and content hash
+├── augment/              kept LLM generations, by provider, model and content hash (mirrored to the dataset repo)
 ├── tests/                pytest, on a fixture snapshot
-├── models/               the committed snapshot of the current model
+├── models/               site-needle.json, the pointer to the published model (the rest is `pull`ed, ignored)
 ├── data/                 generated: the content snapshot and the corpus (ignored)
 ├── runs/                 generated: every training run, eval-cache/, compare/ (ignored)
 └── mlruns/               generated: MLflow's local store (ignored)

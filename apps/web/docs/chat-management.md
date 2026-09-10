@@ -861,9 +861,11 @@ Where it is meant to fit, once wired in:
 
 The corpus is derived from this site's content by
 `scripts/export-site-content.mjs`, so the router tracks the site the way the
-retrieval index does. The current model, its tool catalogue and system facts
-are in `apps/model/models/`; Needle publishes a WASM build of its engine for
-the browser. See [`apps/model/README.md`](../../model/README.md).
+retrieval index does. The current model lives on the Hugging Face Hub;
+`apps/model/models/site-needle.json` pins the revision (repo, tag, SHA-256)
+and the `resolve/` URL its `site-needle.cact`, `tools.json` and `system.txt`
+can be fetched from. Needle publishes a WASM build of its engine for the
+browser. See [`apps/model/README.md`](../../model/README.md).
 
 ## 🚨 Troubleshooting
 

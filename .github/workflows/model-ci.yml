@@ -110,6 +110,8 @@ jobs:
       - name: Compare against the published model
         working-directory: apps/model
         continue-on-error: true
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           uv run site-needle corpus status | tee status.txt || true
           {
