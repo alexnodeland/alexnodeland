@@ -233,7 +233,7 @@ def test_augment_targets_cover_every_tool(content, corpus_cfg):
     # budget adds batches that continue the numbering.
     covered = {(t.key, "train"): 999 for t in ts} | {(t.key, "natural"): 999 for t in ts}
     assert augment_mod.prompts_for(ts, 10, 12, covered)[0] == {}
-    more, _ = augment_mod.prompts_for(ts, 400, 0, {(ts[0].key, "train"): 2},
+    more, _ = augment_mod.prompts_for(ts, 4000, 0, {(ts[0].key, "train"): 2},
                                       {(ts[0].key, "train"): 1})
     assert any(k.startswith(ts[0].key + "\x00train\x001") for k in more)
     prompt = ts[0].prompt(5)

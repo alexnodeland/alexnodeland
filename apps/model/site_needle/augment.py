@@ -58,8 +58,9 @@ NATURAL_PER_TARGET = 2  # the natural slice samples targets rather than covering
 # targets check_skill has (every topic is one), and splitting by target gave
 # it half the paraphrases while lookup_project and contact starved.
 TOOL_SHARE = {
-    "lookup_role": 0.15, "lookup_project": 0.15, "check_skill": 0.15, "search_site": 0.20,
-    "contact": 0.05, "parallel": 0.05, "refusal": 0.25,
+    "lookup_role": 0.14, "lookup_project": 0.14, "check_skill": 0.14,
+    "search_site": 0.12, "search_site_topic": 0.10,
+    "contact": 0.05, "parallel": 0.05, "refusal": 0.26,
 }
 
 SITE_CONTEXT = (
@@ -224,7 +225,7 @@ def targets(content: Content, cfg: CorpusConfig) -> list[Target]:
         out.append(Target(
             key=f"search_site:{section}", category="search_site",
             answers=(call("search_site", section=section),), enums={"section": section},
-            ask=f"read about {meaning}", weight=8))
+            ask=f"read about {meaning}"))
     by_section = topics(content)
     for section in ("writing", "projects", "press"):
         for topic in by_section.get(section, []):
@@ -256,7 +257,14 @@ def targets(content: Content, cfg: CorpusConfig) -> list[Target]:
 
 
 def group_of(target: Target) -> str:
-    return "refusal" if target.category.startswith("refusal") else target.category
+    """The budget group: a tool, except that a search with a topic is its own
+    group — there are tens of topics and eight sections, and the sections
+    are the intents the router had to learn."""
+    if target.category.startswith("refusal"):
+        return "refusal"
+    if target.category == "search_site" and target.verbatim:
+        return "search_site_topic"
+    return target.category
 
 
 def allocate(targets_: list[Target], total: int) -> dict[str, int]:

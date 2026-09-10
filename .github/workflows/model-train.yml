@@ -131,7 +131,7 @@ jobs:
         run: |
           augment=""
           if [ -n "$ANTHROPIC_API_KEY" ]; then
-            augment="--augment 1200 --natural 150 --provider anthropic"
+            augment="--augment 1600 --natural 150 --provider anthropic"
           fi
           uv run site-needle pipeline --run-id "$RUN_ID" --no-tracking --promote $augment \
             ${{ inputs.epochs != '' && format('--epochs {0}', inputs.epochs) || '' }}

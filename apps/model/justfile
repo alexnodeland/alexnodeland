@@ -21,7 +21,7 @@ corpus:
     uv run site-needle corpus build
 
 # Corpus plus LLM paraphrases (Claude Agent SDK on your Claude Code login)
-augment n='1200' natural='150':
+augment n='1600' natural='150':
     cd ../web && npm run build:content
     uv run site-needle corpus build --augment {{n}} --natural {{natural}} --provider claude-agent
 

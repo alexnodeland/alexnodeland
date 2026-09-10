@@ -151,7 +151,7 @@ with a seeded generator so the same content produces the same bytes:
 **Augmentation.** Templates are the corpus's grounding and its ceiling: a
 phrasing they never approached is one the model never saw, and that is
 where every template-only run missed. `site-needle corpus build --augment
-1200 --natural 150` has a large model write the *questions* while this code
+1600 --natural 150` has a large model write the *questions* while this code
 writes the *labels*: the pipeline picks each target — a tool with its
 arguments drawn from the site's entities, or a refusal category — and asks
 for natural questions that mean exactly that; the argument value must
