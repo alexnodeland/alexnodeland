@@ -19,9 +19,9 @@ holdout_companies = ["Scala Computing"]
 holdout_skills = ["Kubernetes", "Signal Processing"]
 # Refusals as a share of the assistant examples. Needle's own generator
 # produces about one in eight, and at that share the first run still called
-# a tool on five of six off-topic questions; the pool is sized for about
-# one in five.
-refusal_share = 0.22
+# a tool on five of six off-topic questions, and the second — at a fifth —
+# on four of five; the pool is sized for about three in ten.
+refusal_share = 0.30
 # Per-generator caps. Roughly 600 training examples at these values — each
 # phrasing has to recur across many names before the model tells the three
 # verbatim-argument tools apart. Raise them on a GPU, where an epoch is
@@ -34,7 +34,7 @@ max_search = 110
 max_extraction_paragraphs_per_post = 2
 
 [train]
-epochs = 6
+epochs = 5
 batch_size = 8
 # Twice Needle's defaults for the learning rate and the rank: a CPU run is a
 # few hundred steps, and the first run at 1e-4 / rank 16 learned the
