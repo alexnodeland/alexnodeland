@@ -21,9 +21,11 @@ type, held out, never trained on.
 Providers: ``claude-agent`` (the Claude Agent SDK, which runs on the
 local Claude Code login), ``anthropic`` (the Anthropic API, needs
 ``ANTHROPIC_API_KEY``), and ``openrouter`` (Needle's own generator, needs
-``OPENROUTER_API_KEY``). Generations are kept under ``augment/`` — tracked
-in git, because they are not reproducible and the corpus built from them
-should be — so a rebuild does not regenerate.
+``OPENROUTER_API_KEY``). Generations are kept under ``augment/`` and
+published to the dataset repo with the corpus, because they are not
+reproducible and the corpus built from them should be: a build fetches
+them from the Hub before it asks for anything, so a rebuild does not
+regenerate.
 """
 
 from __future__ import annotations

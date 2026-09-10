@@ -166,7 +166,9 @@ visitors type, for evaluation only. Providers: `claude-agent` (the Claude
 Agent SDK, on the machine's Claude Code login — no key), `anthropic` (the
 Anthropic API, `ANTHROPIC_API_KEY`), `openrouter` (Needle's own generator,
 which also labels; `OPENROUTER_API_KEY`). Generations are kept under
-`augment/` and tracked, so a corpus built from them is reproducible; the
+`augment/` (ignored by git) and published with the corpus to the dataset
+repo, from which a build on any machine fetches them first, so a corpus
+built from them is reproducible without asking the LLM again; the
 manifest's `template_hash` covers the deterministic part, which is what
 `corpus check` and `corpus status` compare.
 
@@ -528,7 +530,7 @@ apps/model/
 │   ├── pipeline.py       all of it in order
 │   └── cli.py            `site-needle`
 ├── evals/                the hand-written evaluation set
-├── augment/              kept LLM generations, by provider, model and content hash (mirrored to the dataset repo)
+├── augment/              kept LLM generations, by provider, model and content hash (ignored; lives in the dataset repo)
 ├── tests/                pytest, on a fixture snapshot
 ├── models/               site-needle.json, the pointer to the published model (the rest is `pull`ed, ignored)
 ├── data/                 generated: the content snapshot and the corpus (ignored)

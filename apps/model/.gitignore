@@ -18,5 +18,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# Augmentation runs write their log beside the generations; the generations are tracked, the log is not.
-augment/*.log
+# Kept LLM generations and their log. The generations live in the dataset
+# repo on the Hub (`corpus publish`), and a build fetches them from there.
+augment/
