@@ -524,8 +524,8 @@ What the runs have taught, in order:
   KV window, the KV width, the thread count, nor a second turn's logits
   after decoding point anywhere but the same computation. The divergence
   is inside the engine's per-token decode, past the one position it will
-  show, and is filed upstream with a public reproduction as
-  [cactus-compute/needle#117](https://github.com/cactus-compute/needle/issues/117).
+  show; `scripts/engine_vs_jax.py` reproduces it from the Hub artefacts in
+  a minute.
   Two things came out of the chase anyway: the cached-prefix trainer
   above, and one real mismatch in Needle's loop — training merges the
   adapter in float32 and `needle build` in the checkpoint's float16, so
