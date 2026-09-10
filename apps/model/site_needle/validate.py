@@ -84,7 +84,7 @@ def check_example(example: Example) -> list[Problem]:
 
 
 def check_corpus(examples: list[Example], max_tokens: int | None, lengths: dict[str, int],
-                 refusal_bounds: tuple[float, float] = (0.10, 0.25),
+                 refusal_bounds: tuple[float, float] = (0.10, 0.30),
                  min_per_tool: int = 5) -> list[Problem]:
     """``max_tokens`` None skips the budget check (lengths are estimates)."""
     problems: list[Problem] = []

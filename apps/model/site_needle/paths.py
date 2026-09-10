@@ -37,6 +37,7 @@ class CorpusConfig:
     max_per_project: int = 3
     max_per_company: int = 5
     max_skills: int = 45
+    max_per_skill: int = 1
     max_search: int = 70
     max_extraction_paragraphs_per_post: int = 2
 

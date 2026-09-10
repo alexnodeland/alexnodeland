@@ -47,7 +47,7 @@ TOOLS: list[dict] = [
     },
     {
         "name": "lookup_project",
-        "description": "One of Alex's open-source projects, by name.",
+        "description": "One of Alex's open-source projects, by name: what is X, tell me about X.",
         "parameters": {
             "type": "object",
             "properties": {"name": {"type": "string"}},
@@ -56,7 +56,7 @@ TOOLS: list[dict] = [
     },
     {
         "name": "check_skill",
-        "description": "Whether a skill or technology is on Alex's CV.",
+        "description": "Whether a skill, language or tool is on Alex's CV: does he know X.",
         "parameters": {
             "type": "object",
             "properties": {"skill": {"type": "string"}},

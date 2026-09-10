@@ -73,15 +73,19 @@ def run_cases(rows: list[dict], weights: Path | None, max_new_tokens: int,
     """One engine call per case, grouped by tool surface so an agent is built
     once per distinct catalogue. Tuned weights run in Needle's worker
     process; the base model runs in this one."""
+    # Grouped on the exact serialisation, and the agent is built from the
+    # row's own tools object — never from a re-parsed key. The model was
+    # trained on the catalogue in one key order; hand the engine another
+    # (a sorted-keys dump, say) and tool selection quietly degrades while
+    # the reasoning still reads right. That cost one full evaluation.
     groups: dict[str, list[dict]] = defaultdict(list)
     for row in rows:
-        key = json.dumps({"tools": row["tools"], "system": row.get("system")}, sort_keys=True)
+        key = json.dumps({"tools": row["tools"], "system": row.get("system")})
         groups[key].append(row)
     results: list[dict] = []
     done = 0
-    for key, group in groups.items():
-        spec = json.loads(key)
-        agent = _agent(spec["tools"], spec["system"], weights)
+    for group in groups.values():
+        agent = _agent(group[0]["tools"], group[0].get("system"), weights)
         try:
             for row in group:
                 agent.reset()

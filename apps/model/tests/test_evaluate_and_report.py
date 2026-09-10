@@ -65,6 +65,45 @@ def test_summarise_and_gate():
     assert within["ok"]
 
 
+class _StubAgent:
+    """Records what the evaluator hands the engine."""
+
+    built: list[tuple] = []
+
+    def __init__(self, tools, system, weights):
+        _StubAgent.built.append((json.dumps(tools), system, weights))
+
+    def reset(self):
+        pass
+
+    def complete(self, query, max_new_tokens=256):
+        return {"function_calls": [], "reasoning": "stub"}
+
+    def close(self):
+        pass
+
+
+def test_run_cases_hands_the_engine_the_tools_verbatim(monkeypatch):
+    monkeypatch.setattr(evaluate, "_agent", lambda tools, system, weights: _StubAgent(
+        tools, system, weights))
+    _StubAgent.built.clear()
+    tools = [{"name": "z_tool", "description": "d",
+              "parameters": {"type": "object", "properties": {"b": {"type": "string"},
+                                                              "a": {"type": "string"}}}}]
+    rows = [
+        {"id": "1", "category": "c", "query": "q1", "tools": tools, "system": "s", "answers": []},
+        {"id": "2", "category": "c", "query": "q2", "tools": tools, "system": "s", "answers": []},
+        {"id": "3", "category": "c", "query": "q3", "tools": tools, "system": None, "answers": []},
+    ]
+    results = evaluate.run_cases(rows, None, 64)
+    assert len(results) == 3 and all(r["exact"] for r in results)
+    # One agent per distinct surface, built from the rows' own objects: key
+    # order exactly as written, never alphabetised.
+    assert [b[1] for b in _StubAgent.built] == ["s", None]
+    assert all(b[0] == json.dumps(tools) for b in _StubAgent.built)
+    assert '"name": "z_tool", "description"' in _StubAgent.built[0][0]
+
+
 def test_loss_svg_draws_both_series():
     metrics = [{"step": 5, "loss": 1.0}, {"step": 10, "loss": 0.8},
                {"epoch": 1, "loss": 0.8, "val_loss": 0.85}]
