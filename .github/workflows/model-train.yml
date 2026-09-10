@@ -48,10 +48,10 @@ jobs:
     timeout-minutes: 350
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -66,12 +66,12 @@ jobs:
         run: npm run build:content
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: apps/model/uv.lock
@@ -83,7 +83,7 @@ jobs:
       # The 90MB base checkpoint, the tokenizer, and the native engine. Keyed
       # on the lockfile because the engine version follows the package.
       - name: Restore the base model and engine
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             apps/model/checkpoints
@@ -162,7 +162,7 @@ jobs:
       # days is enough to compare against the next one.
       - name: Upload the run
         if: env.RUN_ID != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: run-${{ env.RUN_ID }}
           path: apps/model/runs/${{ env.RUN_ID }}
@@ -172,7 +172,7 @@ jobs:
       # the pull request body: the pointer moves by review, never by push.
       - name: Propose the new pointer
         if: env.RUN_ID != '' && steps.pipeline.outcome == 'success' && inputs.promote != false
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: model/run-${{ env.RUN_ID }}
           title: 'Promote site model ${{ env.RUN_ID }}'
