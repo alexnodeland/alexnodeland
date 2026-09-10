@@ -4177,6 +4177,11 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+analysis = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "scikit-learn" },
+]
 augment = [
     { name = "anthropic" },
     { name = "claude-agent-sdk" },
@@ -4204,12 +4209,14 @@ requires-dist = [
     { name = "claude-agent-sdk", marker = "extra == 'augment'", specifier = ">=0.2" },
     { name = "huggingface-hub", specifier = ">=0.25" },
     { name = "mlflow", marker = "extra == 'tracking'", specifier = ">=2.15" },
+    { name = "numpy", marker = "extra == 'analysis'", specifier = ">=1.26" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
+    { name = "scikit-learn", marker = "extra == 'analysis'", specifier = ">=1.5" },
     { name = "sentencepiece", specifier = ">=0.2" },
 ]
-provides-extras = ["train", "gpu", "tracking", "dev", "augment"]
+provides-extras = ["train", "gpu", "tracking", "dev", "augment", "analysis"]
 
 [[package]]
 name = "six"

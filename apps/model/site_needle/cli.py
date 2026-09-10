@@ -5,6 +5,7 @@
     build                            merge the adapter into the base and export a .cact
     finish                           export, evaluate, gate, report a trained run
     eval                             grade a model (base or tuned) on the test split
+    analyze                          diversity, duplicates, coverage, clusters, misses
     pipeline                         corpus → train → build → eval → report, one run
     report                           re-render a run's report and model card
     probe                            ask a model one question
@@ -197,6 +198,24 @@ def _finish(args) -> int:
     return 0 if ok else 2
 
 
+def _analyze(args) -> int:
+    from . import analysis
+
+    evaluation = json.loads(Path(args.eval).read_text()) if args.eval else None
+    corpus_dir = Path(args.corpus)
+    result = analysis.analyze(corpus_dir, evaluation, args.clusters)
+    out = Path(args.out) if args.out else corpus_dir / "analysis"
+    for path in analysis.write(result, out):
+        print(path)
+    d, lk = result["duplicates"], result["leakage"]
+    print(f"{result['n']} questions; near-duplicate pairs {d['near_pairs']}, leakage pairs "
+          f"{lk.get('pairs', 0)}; clusters k={result['clusters']['k']} with "
+          f"{result['clusters']['mixed']} mixed")
+    if result.get("diagnosis"):
+        print("misses:", result["diagnosis"]["by_verdict"])
+    return 0
+
+
 def _report(args) -> int:
     from . import report, train
 
@@ -331,6 +350,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--promote", action="store_true")
     p.set_defaults(func=_finish)
+
+    p = sub.add_parser("analyze", help="diversity, duplicates, coverage, clusters, a map, "
+                                        "and a diagnosis of an evaluation's misses")
+    p.add_argument("--corpus", default=str(CORPUS_DIR), help="corpus directory (or a run's)")
+    p.add_argument("--eval", default=None, help="an eval.json to diagnose misses from")
+    p.add_argument("--out", default=None, help="output directory (default: <corpus>/analysis)")
+    p.add_argument("--clusters", type=int, default=None, help="number of clusters")
+    p.set_defaults(func=_analyze)
 
     p = sub.add_parser("report", help="re-render a run's report and model card")
     p.add_argument("run")

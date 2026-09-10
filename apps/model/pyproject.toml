@@ -24,6 +24,10 @@ augment = [
     "anthropic>=1.0",
     "claude-agent-sdk>=0.2",
 ]
+analysis = [
+    "numpy>=1.26",
+    "scikit-learn>=1.5",
+]
 
 [project.scripts]
 site-needle = "site_needle.cli:main"

@@ -31,6 +31,7 @@ the refusal pool.
 - [The tool catalogue](#the-tool-catalogue)
 - [Quick start](#quick-start)
 - [The corpus](#the-corpus)
+- [Analysing the corpus](#analysing-the-corpus)
 - [Training](#training)
 - [Evaluation and the gate](#evaluation-and-the-gate)
 - [Observability](#observability)
@@ -182,6 +183,50 @@ rounded up to a power of two. The catalogue alone is about 300 tokens, so
 examples sit in the 512 bucket; `max_tokens` in `config.toml` is a hard
 ceiling and `site-needle train` re-counts with the real tokenizer before it
 spends any compute.
+
+## Analysing the corpus
+
+The corpus is the model: every miss so far traced back to phrasing the
+training set did not have, a name it treated like one of Alex's, or two
+sources of questions overlapping in a way the split did not intend.
+`site-needle analyze` (`just model analyze`) makes those visible before a
+run spends the compute, and writes `analysis.md`, `analysis.json` and
+`map.svg` next to the corpus:
+
+- **diversity** per source and per tool: vocabulary, type-token ratio,
+  distinct bigram and trigram ratios, length, and how concentrated the
+  openings are (a corpus where half the questions start with "what" is
+  telling you something);
+- **duplicates and near-duplicates** (TF-IDF cosine over word uni- and
+  bigrams at 0.9), including pairs that carry different labels, and
+  **leakage**: training questions that are nearly a test question, by
+  source — between templates that is the paraphrase design; from a
+  generated training row into the test split it is a leak;
+- **distance from the templates**: for each generated question, its
+  nearest template, so you can see whether augmentation added phrasings or
+  restated the ones you had;
+- **coverage**: examples per tool and per source in each split, entities
+  per tool, enum values seen in training, refusal categories, phrasing
+  families, and the test entities never seen in training;
+- **clusters** of phrasing (k-means on TF-IDF) with their majority label,
+  purity and source mix, flagging the ones that mix labels (two intents
+  sharing wording) and the ones only templates or only generated questions
+  reach;
+- a **map**: every question on two SVD components, identity by hue and
+  shape, held-out questions hollow;
+- with `--eval runs/<id>/eval-tuned.json`, a **diagnosis** of every miss by
+  its nearest training questions: a *coverage gap* (nothing near it), a
+  *phrasing conflict* (its neighbours carry a different label), or a
+  *model error* (its neighbours agree with the expected call).
+
+The same machinery runs inside the build. Generated rows within the
+near-duplicate threshold of anything earlier are dropped, generated
+training rows within the leakage threshold of any test row are dropped
+(the test row wins), and both counts land in the manifest. The
+augmentation budget is split per tool rather than per target, and the kept
+generations are topped up incrementally when a budget grows or a call
+failed. Needs the `analysis` extra (scikit-learn); without it the build
+says so and keeps everything.
 
 ## Training
 

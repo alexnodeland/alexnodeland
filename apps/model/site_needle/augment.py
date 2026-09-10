@@ -52,8 +52,14 @@ from .validate import check_example
 
 DEFAULT_MODEL = "claude-opus-5"
 PER_CALL = 12  # questions per request; more and the model starts repeating itself
-REFUSAL_WEIGHT = 8  # a refusal category is worth this many entity targets
 NATURAL_PER_TARGET = 2  # the natural slice samples targets rather than covering them
+# The budget is split by tool, not by target: search_site has ten times the
+# targets check_skill has (every topic is one), and splitting by target gave
+# it half the paraphrases while lookup_project and contact starved.
+TOOL_SHARE = {
+    "lookup_role": 0.15, "lookup_project": 0.15, "check_skill": 0.15, "search_site": 0.20,
+    "contact": 0.05, "parallel": 0.05, "refusal": 0.25,
+}
 
 SITE_CONTEXT = (
     "Alex Nodeland's personal website (alexnodeland.com) has his CV — employers, "
@@ -240,14 +246,28 @@ def targets(content: Content, cfg: CorpusConfig) -> list[Target]:
     for why, meaning in REFUSAL_MEANING.items():
         out.append(Target(
             key=f"refusal:{why}", category=f"refusal:{why}", answers=(),
-            ask=meaning, reasoning=REFUSALS[why][0], weight=REFUSAL_WEIGHT))
+            ask=meaning, reasoning=REFUSALS[why][0]))
     return out
 
 
+def group_of(target: Target) -> str:
+    return "refusal" if target.category.startswith("refusal") else target.category
+
+
 def allocate(targets_: list[Target], total: int) -> dict[str, int]:
-    """Questions per target from a total budget, by weight, at least two each."""
-    weight = sum(t.weight for t in targets_) or 1
-    return {t.key: max(2, round(total * t.weight / weight)) for t in targets_}
+    """Questions per target from a total budget: each tool gets its share of
+    the budget, split evenly (by weight) over that tool's targets, at least
+    two per target."""
+    by_group: dict[str, list[Target]] = {}
+    for t in targets_:
+        by_group.setdefault(group_of(t), []).append(t)
+    out: dict[str, int] = {}
+    for group, members in by_group.items():
+        budget = total * TOOL_SHARE.get(group, 0.05)
+        weight = sum(t.weight for t in members) or 1
+        for t in members:
+            out[t.key] = max(2, round(budget * t.weight / weight))
+    return out
 
 
 # --- providers ----------------------------------------------------------------
@@ -377,41 +397,78 @@ def _example(target: Target, i: int, question: str, cue: str, natural: bool) -> 
 CACHE_DIR = APP_DIR / "augment"
 
 
-def cache_path(provider: str, model: str, content_hash: str, total: int, natural: int) -> Path:
-    stamp = hashlib.sha256(f"{provider}:{model}:{content_hash}:{total}:{natural}".encode())
+def cache_path(provider: str, model: str, content_hash: str) -> Path:
+    """One file per provider, model and content version; budgets top it up."""
+    stamp = hashlib.sha256(f"{provider}:{model}:{content_hash}".encode())
     return CACHE_DIR / f"{provider}-{stamp.hexdigest()[:12]}.jsonl"
 
 
-def prompts_for(targets_: list[Target], total: int, natural: int) -> dict[str, str]:
-    """Every request to make: one per target and batch for training, one per
-    target for the natural slice. Keys join target, mode and batch with NUL."""
-    prompts: dict[str, str] = {}
-    per = allocate(targets_, total)
-    for t in targets_:
-        k, batch = per[t.key], 0
-        while k > 0:
-            prompts[f"{t.key}\x00train\x00{batch}"] = t.prompt(min(k, PER_CALL))
-            k -= PER_CALL
-            batch += 1
+def desired(targets_: list[Target], total: int, natural: int) -> dict[tuple[str, str], int]:
+    """How many questions each (target, mode) should have."""
+    out: dict[tuple[str, str], int] = {}
+    if total > 0:
+        for key, k in allocate(targets_, total).items():
+            out[(key, "train")] = k
     for t in spread(targets_, natural // NATURAL_PER_TARGET):
-        prompts[f"{t.key}\x00natural\x000"] = t.prompt(NATURAL_PER_TARGET, natural=True)
-    return prompts
+        out[(t.key, "natural")] = NATURAL_PER_TARGET
+    return out
+
+
+def prompts_for(targets_: list[Target], total: int, natural: int,
+                asked: dict[tuple[str, str], int] | None = None,
+                next_batch: dict[tuple[str, str], int] | None = None
+                ) -> tuple[dict[str, str], dict[str, int]]:
+    """The requests to make so every (target, mode) reaches its desired
+    count, given how many questions were already asked for. Keys join
+    target, mode and batch with NUL; batches continue from the highest one
+    kept. Returns the prompts and how many questions each asks for — what
+    was *asked* is what counts as covered, so a model that returns ten of
+    twelve does not get asked again on every build."""
+    by_key = {t.key: t for t in targets_}
+    asked = asked or {}
+    next_batch = next_batch or {}
+    prompts: dict[str, str] = {}
+    counts: dict[str, int] = {}
+    for (key, mode), want in desired(targets_, total, natural).items():
+        short = want - asked.get((key, mode), 0)
+        batch = next_batch.get((key, mode), 0)
+        while short > 0:
+            n = min(short, PER_CALL)
+            request = f"{key}\x00{mode}\x00{batch}"
+            prompts[request] = by_key[key].prompt(n, natural=mode == "natural")
+            counts[request] = n
+            short -= n
+            batch += 1
+    return prompts, counts
 
 
 def spread(targets_: list[Target], count: int) -> list[Target]:
-    """``count`` targets taken evenly across the list, which is grouped by
-    tool, so every tool and refusal category is represented."""
+    """``count`` targets taken round-robin across the tools and refusal
+    categories, so the slice is balanced by tool rather than by how many
+    targets a tool happens to have."""
     if count <= 0:
         return []
     if count >= len(targets_):
         return list(targets_)
-    step = len(targets_) / count
-    return [targets_[int(i * step)] for i in range(count)]
+    groups: dict[str, list[Target]] = {}
+    for t in targets_:
+        groups.setdefault(group_of(t), []).append(t)
+    queues = {g: list(members) for g, members in groups.items()}
+    picked: list[Target] = []
+    while len(picked) < count and any(queues.values()):
+        for g in list(queues):
+            if queues[g] and len(picked) < count:
+                # Take from the middle out so a tool's first targets are not
+                # always the ones held out.
+                picked.append(queues[g].pop(len(queues[g]) // 2))
+    return picked
 
 
-def generate_raw(prompts: dict[str, str], provider, log: Log) -> list[dict]:
+def generate_raw(prompts: dict[str, str], counts: dict[str, int], provider,
+                 log: Log) -> list[dict]:
     """Ask the provider for the given requests. Returns raw rows: target key,
-    question, cue, natural flag, and the request key they came from."""
+    question, cue, natural flag, the request they came from, and how many
+    that request asked for."""
     log.say("augment: requesting", calls=len(prompts), provider=provider.name,
             model=provider.model)
     generated = provider.generate(prompts, log)
@@ -422,7 +479,8 @@ def generate_raw(prompts: dict[str, str], provider, log: Log) -> list[dict]:
             if isinstance(q, dict):
                 rows.append({"target": key, "question": str(q.get("question", "")),
                              "cue": str(q.get("cue", "")), "natural": mode == "natural",
-                             "request": prompt_key.replace("\x00", "|")})
+                             "request": prompt_key.replace("\x00", "|"),
+                             "asked": counts.get(prompt_key, len(questions))})
     return rows
 
 
@@ -439,28 +497,58 @@ def augment(existing: list[Example], content: Content, cfg: CorpusConfig, total:
     targets_ = targets(content, cfg)
     by_key = {t.key: t for t in targets_}
 
-    path = cache_path(provider.name, provider.model, content_hash, total, natural)
-    prompts = prompts_for(targets_, total, natural)
+    path = cache_path(provider.name, provider.model, content_hash)
     rows: list[dict] = []
     if path.exists() and not regenerate:
         rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
         log.say("augment: using kept generations", path=str(path), rows=len(rows))
-    # Requests with no rows — a failed call, or a target the content gained
-    # since — are made now and appended; everything already kept stays, and
-    # rows for requests the current settings no longer make are ignored.
-    def request_of(row: dict) -> str:
-        return row.get("request") or f"{row['target']}|{'natural' if row['natural'] else 'train'}|0"
 
-    wanted = {k.replace("\x00", "|") for k in prompts}
-    answered = {request_of(r) for r in rows}
-    missing = {k: v for k, v in prompts.items() if k.replace("\x00", "|") not in answered}
+    # What is kept, per (target, mode), and the next batch number for each;
+    # then the requests that top every (target, mode) up to its desired
+    # count. A bigger budget adds batches, a failed call is retried, a target
+    # the content gained is filled in, and everything already kept stays.
+    def mode_of(row: dict) -> str:
+        return "natural" if row.get("natural") else "train"
+
+    def batch_of(row: dict) -> int:
+        request = row.get("request")
+        return int(request.split("|")[-1]) if request else 0
+
+    asked: dict[tuple[str, str], int] = {}
+    next_batch: dict[tuple[str, str], int] = {}
+    seen_requests: dict[tuple[str, str], set[str]] = {}
+    for r in rows:
+        slot = (r["target"], mode_of(r))
+        request = r.get("request") or f"{r['target']}|{mode_of(r)}|0"
+        requests = seen_requests.setdefault(slot, set())
+        if request not in requests:
+            requests.add(request)
+            # Rows kept before the count was recorded count one each.
+            asked[slot] = asked.get(slot, 0) + int(r.get("asked") or 0)
+        if not r.get("asked"):
+            asked[slot] = asked.get(slot, 0) + 1
+        next_batch[slot] = max(next_batch.get(slot, 0), batch_of(r) + 1)
+    missing, counts = prompts_for(targets_, total, natural, asked, next_batch)
     if missing:
-        rows.extend(generate_raw(missing, provider, log))
+        rows.extend(generate_raw(missing, counts, provider, log))
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
         log.say("augment: kept generations", path=str(path), rows=len(rows),
                 new_requests=len(missing))
-    rows = [r for r in rows if request_of(r) in wanted]
+    # Only the (target, mode) slots the current settings ask for are used,
+    # and a natural slot contributes at most its desired count.
+    want = desired(targets_, total, natural)
+    used: dict[tuple[str, str], int] = {}
+    selected: list[dict] = []
+    for r in rows:
+        slot = (r["target"], mode_of(r))
+        if slot not in want:
+            continue
+        if slot[1] == "natural" and used.get(slot, 0) >= want[slot]:
+            continue
+        used[slot] = used.get(slot, 0) + 1
+        selected.append(r)
+    rows = selected
 
     seen = {e.query.strip().lower() for e in existing}
     kept: list[Example] = []

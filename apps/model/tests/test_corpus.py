@@ -226,8 +226,16 @@ def test_augment_targets_cover_every_tool(content, corpus_cfg):
     assert per["refusal:general"] > per[ts[0].key]
     picked = augment_mod.spread(ts, 6)
     assert len(picked) == 6 and len({t.category for t in picked}) >= 3
-    natural_prompts = [k for k in augment_mod.prompts_for(ts, 10, 12) if "natural" in k]
-    assert len(natural_prompts) == 6
+    prompts, counts = augment_mod.prompts_for(ts, 10, 12)
+    natural_prompts = [k for k in prompts if "natural" in k]
+    assert len(natural_prompts) == 6 and all(counts[k] == 2 for k in natural_prompts)
+    # Asking again with everything covered makes no requests; a bigger
+    # budget adds batches that continue the numbering.
+    covered = {(t.key, "train"): 999 for t in ts} | {(t.key, "natural"): 999 for t in ts}
+    assert augment_mod.prompts_for(ts, 10, 12, covered)[0] == {}
+    more, _ = augment_mod.prompts_for(ts, 400, 0, {(ts[0].key, "train"): 2},
+                                      {(ts[0].key, "train"): 1})
+    assert any(k.startswith(ts[0].key + "\x00train\x001") for k in more)
     prompt = ts[0].prompt(5)
     assert "5 distinct" in prompt and "exactly as written" in prompt
 

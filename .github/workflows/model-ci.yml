@@ -70,7 +70,7 @@ jobs:
       # tokenizer is a base dependency, so token budgets are still exact.
       - name: Install the model app
         working-directory: apps/model
-        run: uv sync --frozen --extra dev
+        run: uv sync --frozen --extra dev --extra analysis
 
       - name: Lint
         working-directory: apps/model
@@ -90,6 +90,19 @@ jobs:
             echo '```'
             cat corpus.txt
             echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Diversity, duplicates, leakage, coverage and clusters of the corpus,
+      # in the job summary. The build already removed what fails the quality
+      # rules; this is the picture of what remains.
+      - name: Analyse the corpus
+        working-directory: apps/model
+        run: |
+          uv run site-needle analyze
+          {
+            echo '## Corpus analysis'
+            echo
+            sed 's/!\[map\](map.svg)//' data/corpus/analysis/analysis.md
           } >> "$GITHUB_STEP_SUMMARY"
 
       # Is the published model still trained on this content? Informational

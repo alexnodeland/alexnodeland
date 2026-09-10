@@ -194,6 +194,8 @@ def build_in_memory(content: Content, content_path: Path, cfg: CorpusConfig,
                 examples, content, cfg, augment, natural, provider=prov,
                 regenerate=regenerate, content_hash=content_hash(content_path))
         examples = examples + extra
+    if augmentation is not None:
+        examples = _quality(examples, augmentation)
     lengths = {e.id: count(e.row(), tokenizer) for e in examples}
     # A generated question over the budget is dropped, not a build failure:
     # the large model does not know the token budget, and one long question
@@ -215,6 +217,58 @@ def build_in_memory(content: Content, content_path: Path, cfg: CorpusConfig,
     manifest = manifest_for(examples, content, content_path, cfg, lengths, name, dropped,
                             augmentation)
     return Built(examples, manifest, problems)
+
+
+def _quality(examples: list[Example], stats: dict) -> list[Example]:
+    """Two things a generator does that the split must not absorb: restate a
+    question it (or a template) already wrote, and write a training question
+    that is nearly a held-out one. Generated rows within the near-duplicate
+    threshold of any earlier row are dropped, and generated training rows
+    within the leakage threshold of any test row are dropped — the test row
+    wins. Needs the analysis extra; without it the build says so and keeps
+    everything."""
+    try:
+        from . import analysis
+    except ImportError:
+        stats["quality"] = "skipped (scikit-learn not installed)"
+        return examples
+    try:
+        X, _ = analysis.vectorize([e.query for e in examples])
+    except RuntimeError as exc:
+        stats["quality"] = f"skipped ({exc})"
+        return examples
+    import numpy as np
+
+    generated = [i for i, e in enumerate(examples) if any(t in e.tags for t in GENERATED_TAGS)]
+    if not generated:
+        return examples
+    sim = (X[generated] @ X.T).toarray()
+    is_test = np.array([e.split == "test" for e in examples])
+    drop: set[int] = set()
+    near = leak = 0
+    for a, i in enumerate(generated):
+        row = sim[a].copy()
+        row[i] = 0.0
+        # A training row that restates any held-out question is a leak,
+        # whichever was generated first: the held-out question wins.
+        if examples[i].split == "train":
+            over_test = np.where(is_test, row, 0.0)
+            if over_test.size and over_test.max() >= analysis.LEAKAGE:
+                drop.add(i)
+                leak += 1
+                continue
+        # Otherwise a near-duplicate of anything earlier in the corpus
+        # (templates come first, so they always win a tie).
+        earlier = row[:i]
+        if earlier.size and earlier.max() >= analysis.NEAR_DUPLICATE:
+            if int(earlier.argmax()) not in drop:
+                drop.add(i)
+                near += 1
+    stats["dropped_near_duplicate"] = near
+    stats["dropped_leakage"] = leak
+    stats["quality"] = (f"near-duplicates ≥ {analysis.NEAR_DUPLICATE} and leakage ≥ "
+                        f"{analysis.LEAKAGE} removed from generated rows")
+    return [e for i, e in enumerate(examples) if i not in drop]
 
 
 def write(built: Built, out_dir: Path) -> None:

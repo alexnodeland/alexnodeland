@@ -25,6 +25,10 @@ augment n='1200' natural='150':
     cd ../web && npm run build:content
     uv run site-needle corpus build --augment {{n}} --natural {{natural}} --provider claude-agent
 
+# What is in the corpus: diversity, duplicates, coverage, clusters, a map. e.g. just model analyze runs/<id>/eval-tuned.json
+analyze eval='':
+    uv run site-needle analyze {{ if eval != '' { '--eval ' + eval } else { '' } }}
+
 # Exit 1 if the corpus on disk is stale against the current content
 corpus-check:
     uv run site-needle corpus check
