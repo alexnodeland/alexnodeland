@@ -82,3 +82,35 @@ def test_pad_to_and_fit_seq_len(tok):
     assert not padded.valid[:, enc.seq_len:].any()
     assert padded.mask.sum() == enc.mask.sum()
     assert prefix.pad_to(enc, 4) is enc  # never truncates
+
+
+def test_encode_groups_merges_the_rest_into_one_left_padded_group(tok):
+    from needle.model.tokenizer import BOS_ID, PAD_ID
+
+    def schema(name):
+        return [{"name": name, "description": "d",
+                 "parameters": {"type": "object", "properties": {"t": {"type": "string"}},
+                                "required": ["t"]}}]
+
+    rows = [_row(0, "a", []), _row(1, "b", []), _row(2, "c", []),
+            _row(3, "passage one", [], tools=schema("role_record")),
+            _row(4, "passage two", [], tools=schema("role_record")),
+            _row(5, "passage three", [], tools=schema("a_much_longer_record_name"))]
+    main, rest = prefix.encode_groups(rows, tok)
+    assert main.shared and main.rows.tolist() == [0, 1, 2]
+    assert not rest.shared and sorted(rest.rows.tolist()) == [3, 4, 5]
+    assert rest.prefix.shape == (3, rest.prefix_len)
+    assert rest.prefix_valid.shape == rest.prefix.shape
+    for i, row_index in enumerate(rest.rows):
+        head, _, _ = prefix.split_prompt(rows[row_index])
+        ids = [BOS_ID] + tok.encode(head)
+        n = rest.prefix_valid[i].sum()
+        assert n == len(ids)
+        assert rest.prefix[i, -n:].tolist() == ids  # right-aligned
+        assert (rest.prefix[i, :rest.prefix_len - n] == PAD_ID).all()
+        assert not rest.prefix_valid[i, :rest.prefix_len - n].any()
+    # The longest prefix is not padded at all.
+    assert rest.prefix_valid.sum(1).max() == rest.prefix_len
+    assert rest.mask.sum() > 0
+    # Without merging, every prefix is its own shared group.
+    assert [g.shared for g in prefix.encode_groups(rows, tok, merge_rest=False)] == [True] * 3

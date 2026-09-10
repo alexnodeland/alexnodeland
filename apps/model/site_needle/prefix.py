@@ -40,15 +40,20 @@ import numpy as np
 class Encoded:
     """Rows that share one prefix, encoded for the shared-prefix forward."""
 
-    prefix: np.ndarray  # (P,) the ids every row shares, BOS first
+    prefix: np.ndarray  # (P,) the ids every row shares, BOS first; or (N, P) per row
     tokens: np.ndarray  # (N, S) turn + target ids, right-padded
     mask: np.ndarray  # (N, S) 1.0 where the token is a supervised target
     valid: np.ndarray  # (N, S) True where tokens[i, j] is a real token
     rows: np.ndarray | None = None  # (N,) indices into the rows that were encoded
+    prefix_valid: np.ndarray | None = None  # (N, P) when prefixes are per row, left-padded
+
+    @property
+    def shared(self) -> bool:
+        return self.prefix.ndim == 1
 
     @property
     def prefix_len(self) -> int:
-        return int(self.prefix.shape[0])
+        return int(self.prefix.shape[-1])
 
     @property
     def seq_len(self) -> int:
@@ -106,12 +111,16 @@ def encode_rows(rows: list[dict], tokenizer, max_len: int | None = None,
     return Encoded(np.asarray(shared, np.int32), tokens, mask, valid)
 
 
-def encode_groups(rows: list[dict], tokenizer, max_len: int | None = None) -> list[Encoded]:
+def encode_groups(rows: list[dict], tokenizer, max_len: int | None = None,
+                  merge_rest: bool = True) -> list[Encoded]:
     """Encode a corpus whose rows carry more than one prefix (the extraction
-    rows each declare a single record schema as their tools) as one
-    ``Encoded`` per distinct prefix, largest group first. ``rows`` on each
-    group indexes back into the input."""
-    from needle.model.tokenizer import BOS_ID
+    rows each declare a single record schema as their tools). The largest
+    prefix gets a shared group; with ``merge_rest`` every other row lands in
+    one group whose prefixes are per row, left-padded to the longest and
+    masked, so a corpus compiles two shapes rather than one per schema.
+    Left padding keeps every relative position, which is all RoPE and the
+    engram n-grams read. ``rows`` on each group indexes back into the input."""
+    from needle.model.tokenizer import BOS_ID, PAD_ID
 
     by_prefix: dict[tuple[int, ...], list[int]] = {}
     for i, row in enumerate(rows):
@@ -124,7 +133,29 @@ def encode_groups(rows: list[dict], tokenizer, max_len: int | None = None) -> li
                           prefix=np.asarray(key, np.int32))
         enc.rows = np.asarray(idx, np.int64)
         groups.append(enc)
-    return groups
+    if not merge_rest or len(groups) <= 2:
+        return groups
+    rest = groups[1:]
+    p = max(g.prefix_len for g in rest)
+    s = max(g.seq_len for g in rest)
+    n = sum(len(g.rows) for g in rest)
+    prefixes = np.full((n, p), PAD_ID, np.int32)
+    prefix_valid = np.zeros((n, p), bool)
+    tokens = np.full((n, s), PAD_ID, np.int32)
+    mask = np.zeros((n, s), np.float32)
+    valid = np.zeros((n, s), bool)
+    index = np.zeros(n, np.int64)
+    at = 0
+    for g in rest:
+        k, m = len(g.rows), g.prefix_len
+        prefixes[at:at + k, p - m:] = g.prefix[None]
+        prefix_valid[at:at + k, p - m:] = True
+        tokens[at:at + k, :g.seq_len] = g.tokens
+        mask[at:at + k, :g.seq_len] = g.mask
+        valid[at:at + k, :g.seq_len] = g.valid
+        index[at:at + k] = g.rows
+        at += k
+    return [groups[0], Encoded(prefixes, tokens, mask, valid, index, prefix_valid)]
 
 
 def fit_seq_len(encoded: Encoded, bucket: int = 32) -> int:
@@ -144,7 +175,7 @@ def pad_to(encoded: Encoded, seq_len: int) -> Encoded:
     mask[:, :s] = encoded.mask
     valid = np.zeros((n, seq_len), bool)
     valid[:, :s] = encoded.valid
-    return Encoded(encoded.prefix, tokens, mask, valid, encoded.rows)
+    return Encoded(encoded.prefix, tokens, mask, valid, encoded.rows, encoded.prefix_valid)
 
 
 def _attn(x, lp, k_cache_l, v_cache_l, pos, cos_s, sin_s, cfg, key_valid, quant):
@@ -322,35 +353,49 @@ class SharedPrefixModel:
         self.cos, self.sin = precompute_rope_freqs(head_dim, self.max_len, config.rope_theta)
         self.cfg = decode_cfg(config, kv_window=0)
 
-    def prefix_cache(self, params, prefix_ids):
+    def prefix_cache(self, params, prefix_ids, prefix_valid=None):
         """Keys and values for the prefix under ``params``: ``(k, v)`` with
-        shape ``(layers, 1, kv_heads, max_len, head_dim)``. Differentiable, so
-        under the ``tuned`` regime it can sit inside the loss."""
+        shape ``(layers, B, kv_heads, max_len, head_dim)``, where B is 1 for
+        a shared prefix (``prefix_ids`` of shape (P,)) and the batch size for
+        per-row prefixes ((B, P), left-padded, with ``prefix_valid`` marking
+        the real tokens). Differentiable, so under the ``tuned`` regime it
+        can sit inside the loss."""
         import jax.numpy as jnp
         from needle.model.decode import init_kv_cache
 
-        kc, vc = init_kv_cache(self.config, 1, self.max_len)
-        ids = jnp.asarray(prefix_ids, jnp.int32)[None]
-        hist = jnp.zeros((1, self.max_len), jnp.int32).at[:, :self.prefix_len].set(ids)
-        valid = jnp.zeros((1, self.max_len), bool).at[:, :self.prefix_len].set(True)
+        ids = jnp.asarray(prefix_ids, jnp.int32)
+        if ids.ndim == 1:
+            ids = ids[None]
+        b = ids.shape[0]
+        ok = (jnp.ones((b, self.prefix_len), bool) if prefix_valid is None
+              else jnp.asarray(prefix_valid, bool))
+        kc, vc = init_kv_cache(self.config, b, self.max_len)
+        hist = jnp.zeros((b, self.max_len), jnp.int32).at[:, :self.prefix_len].set(ids)
+        valid = jnp.zeros((b, self.max_len), bool).at[:, :self.prefix_len].set(ok)
         _, kc, vc = forward(params, self.cfg, ids, kc, vc, jnp.asarray(0, jnp.int32),
                             self.cos, self.sin, valid, hist, self.quant)
         return kc, vc
 
-    def logits(self, params, cache, prefix_ids, tokens, valid):
+    def logits(self, params, cache, prefix_ids, tokens, valid, prefix_valid=None):
         """Logits for ``tokens`` (B, S) after the cached prefix.
 
         ``valid`` (B, S) marks real tokens; padding is masked out of the keys
-        so a short row is not attending to its own padding."""
+        so a short row is not attending to its own padding. A shared cache
+        (batch 1) is broadcast over the rows."""
         import jax.numpy as jnp
 
         kc, vc = cache
         b, s = tokens.shape
-        kc = jnp.broadcast_to(kc, (kc.shape[0], b) + kc.shape[2:])
-        vc = jnp.broadcast_to(vc, (vc.shape[0], b) + vc.shape[2:])
-        prefix = jnp.broadcast_to(jnp.asarray(prefix_ids, jnp.int32)[None], (b, self.prefix_len))
+        if kc.shape[1] == 1:
+            kc = jnp.broadcast_to(kc, (kc.shape[0], b) + kc.shape[2:])
+            vc = jnp.broadcast_to(vc, (vc.shape[0], b) + vc.shape[2:])
+        prefix = jnp.asarray(prefix_ids, jnp.int32)
+        if prefix.ndim == 1:
+            prefix = jnp.broadcast_to(prefix[None], (b, self.prefix_len))
+        ok = (jnp.ones((b, self.prefix_len), bool) if prefix_valid is None
+              else jnp.asarray(prefix_valid, bool))
         hist = jnp.concatenate([prefix, tokens], axis=1)
-        key_valid = jnp.concatenate([jnp.ones((b, self.prefix_len), bool), valid], axis=1)
+        key_valid = jnp.concatenate([ok, valid], axis=1)
         pad = self.max_len - hist.shape[1]
         if pad:
             hist = jnp.pad(hist, ((0, 0), (0, pad)))

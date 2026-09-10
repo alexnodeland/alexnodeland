@@ -157,9 +157,10 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
     n_val = len(dev_rows)
     fit_weights = _row_weights(fit_rows, refusal_weight)
     main = fit_groups[0]
+    extra = sum(len(g.rows) for g in fit_groups[1:])
     emit(f"  {'data':<9} {len(fit_rows) + n_val} examples  prefix {main.prefix_len} tokens (cached)"
          f"  turn+target {main.seq_len}  cap {args.max_len}"
-         + (f"  +{len(fit_groups) - 1} extraction prefix(es)" if len(fit_groups) > 1 else ""))
+         + (f"  +{extra} rows with their own prefixes" if extra else ""))
 
     qat_mode = "none" if args.qat_bits is None else str(args.qat_bits).lower()
     qat_bits = None
@@ -229,30 +230,33 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
         def __init__(self, enc: Encoded):
             self.enc = enc
             self.model = SharedPrefixModel(config, enc.prefix_len, enc.seq_len, quant=qat_enabled)
-            self.prefix_ids = jnp.asarray(enc.prefix)
+            self.prefix_ids = jnp.asarray(enc.prefix) if enc.shared else None
+            self.base_params = quantised(params) if prefix_regime == "base" else None
             self.base_cache = None
-            if prefix_regime == "base":
+            if enc.shared and self.base_params is not None:
                 self.base_cache = jax.jit(
-                    lambda p: self.model.prefix_cache(p, self.prefix_ids))(quantised(params))
+                    lambda p: self.model.prefix_cache(p, self.prefix_ids))(self.base_params)
             self.train_step = jax.jit(self._train_step)
             self.eval_step = jax.jit(self._loss)
 
-        def _loss(self, lora, tokens, mask, valid, weights):
+        def _loss(self, lora, tokens, mask, valid, weights, prefix, prefix_valid):
             merged = quantised(merge_lora(params, lora, scale))
-            if self.base_cache is not None:
+            if self.base_cache is not None:  # shared prefix, base regime: computed once
                 cache = self.base_cache
+            elif self.base_params is not None:  # per-row prefixes, base regime
+                cache = self.model.prefix_cache(self.base_params, prefix, prefix_valid)
             else:
-                cache = self.model.prefix_cache(merged, self.prefix_ids)
+                cache = self.model.prefix_cache(merged, prefix, prefix_valid)
                 if not prefix_grad:
                     cache = jax.lax.stop_gradient(cache)
-            logits = self.model.logits(merged, cache, self.prefix_ids, tokens, valid)
+            logits = self.model.logits(merged, cache, prefix, tokens, valid, prefix_valid)
             logits, targets = logits[:, :-1], tokens[:, 1:]
             mask = mask[:, 1:] * weights[:, None]
             ce = optax.softmax_cross_entropy_with_integer_labels(logits, targets)
             return (ce * mask).sum() / jnp.maximum(mask.sum(), 1.0)
 
-        def _train_step(self, lora, opt_state, tokens, mask, valid, weights):
-            loss, grads = jax.value_and_grad(self._loss)(lora, tokens, mask, valid, weights)
+        def _train_step(self, lora, opt_state, *batch_args):
+            loss, grads = jax.value_and_grad(self._loss)(lora, *batch_args)
             updates, opt_state = optimizer.update(grads, opt_state, lora)
             return optax.apply_updates(lora, updates), opt_state, loss
 
@@ -264,8 +268,13 @@ def finetune(args, progress=None, on_epoch=None) -> dict:
             full[:len(idx)] = idx
             keep = (np.arange(batch) < len(idx)).astype(np.float32)
             w = np.ones(batch, np.float32) if weights is None else weights[enc.rows[full]]
+            if enc.shared:
+                prefix, prefix_valid = self.prefix_ids, None
+            else:
+                prefix = jnp.asarray(enc.prefix[full])
+                prefix_valid = jnp.asarray(enc.prefix_valid[full])
             return (jnp.asarray(enc.tokens[full]), jnp.asarray(enc.mask[full] * keep[:, None]),
-                    jnp.asarray(enc.valid[full]), jnp.asarray(w))
+                    jnp.asarray(enc.valid[full]), jnp.asarray(w), prefix, prefix_valid)
 
     groups = [_Group(g) for g in fit_groups]
     val_groups = [_Group(g) for g in dev_groups]
