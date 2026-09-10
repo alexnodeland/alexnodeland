@@ -404,17 +404,27 @@ model is stale.
 
 ## Results so far
 
-Three CPU runs on the 4-core machine the pipeline was built on, each about
-two hours, each graded on the held-out split through the native engine.
-The base model is graded on the same cases.
+Four CPU runs on the 4-core machine the pipeline was built on. Runs 1–3
+trained on template corpora and were graded on their own held-out split;
+run 4 is the first on the augmented corpus (2,314 training rows, 1,655 of
+them Claude's paraphrases), with the by-target validation split and one
+graded candidate per epoch. The base model is graded on the same cases as
+each tuned model.
 
-| run | train examples | LoRA | steps | val loss | base → tuned objective | tool accuracy | false / missed refusals |
-|---|---:|---|---:|---:|---|---:|---|
-| 1 | 391 | r16, lr 1e-4, 6 ep | 264 | 0.35 | 0.188 → 0.250 | 0.35 | 0.01 / 0.85 |
-| 2 | 630 | r32, lr 2e-4, 6 ep | 426 | 0.063 | 0.210 → 0.353 | 0.50 | 0.00 / 0.81 |
-| 3 | 659 | r32, lr 2e-4, 5 ep | 375 | __RUN3_VAL__ | __RUN3_OBJ__ | __RUN3_TOOL__ | __RUN3_REF__ |
+| run | train rows | LoRA | steps | val loss | base → tuned objective | tool accuracy | false / missed refusals | hand-written (base → tuned) | gate |
+|---|---:|---|---:|---:|---|---:|---|---|---|
+| 1 | 391 | r16, lr 1e-4, 6 ep | 264 | 0.35 | 0.188 → 0.250 | 0.35 | 0.01 / 0.85 | – | fail (critical) |
+| 2 | 630 | r32, lr 2e-4, 6 ep | 426 | 0.063 | 0.210 → 0.353 | 0.50 | 0.00 / 0.81 | – | fail (critical) |
+| 3 | 659 | r32, lr 2e-4, 5 ep | 375 | 0.044 | 0.199 → 0.411 | 0.56 | 0.00 / 0.89 | 0.184 → 0.263 | fail (critical) |
+| 4 | 2,083 + 231 dev | r32, lr 2e-4, 3 ep, best epoch | 783 | in progress | | | | | |
 
-Two things worth knowing before the next run:
+Runs 1–3 are graded on the 141-case split of their template corpora, run 4
+on the 272-case split of the augmented corpus; `site-needle compare` puts
+every model on one split. Latency p50 is about 225 ms per question on this
+CPU at ~220 decode tokens/s with peak RAM around 280 MB (the engine figures
+in run 3's own report are inflated by a job that shared the cores).
+
+What the runs have taught, in order:
 
 - **The engine must see the catalogue exactly as trained.** The first
   evaluation handed the engine every schema with its keys alphabetised (a
@@ -425,20 +435,23 @@ Two things worth knowing before the next run:
   object and a test pins it. Anything that consumes the model should pass
   `tools.json` from the snapshot, unmodified.
 - **Validation loss is not the number.** Run 2's validation loss of 0.06
-  came with an exact-call rate of 0.35 on held-out phrasings. The held-out
-  split is whole phrasing families and whole names the model never saw,
-  and a template corpus generalises to them only as far as the templates
-  reach. The misses are consistent: an unseen phrasing routed to the wrong
-  verbatim-argument tool, a famous name treated as one of Alex's projects,
-  a `search_site` section defaulting to `skills`. Each run since has
-  widened the phrasing pools and the named-entity refusals; the remaining
-  lever is `--augment`, which is what Needle's own guide reaches for at
-  this point, and a GPU, where thirty epochs over a few thousand examples
-  is minutes rather than a day.
+  came with an exact-call rate of 0.35 on held-out phrasings; run 3's 0.04
+  with 0.41. A random validation split of a corpus with several phrasings
+  per target measures the memory of a paraphrase. That is why the trainer
+  now holds validation out by target and grades every epoch through the
+  engine on rows the model never fitted.
+- **Routing improves on templates; refusing does not.** Run 3 sends 56% of
+  held-out questions to the right tool and never refuses an answerable
+  one, but it calls a tool on nine of ten questions it should refuse — on
+  the test split and on the hand-written set alike. The template corpora
+  carried about a hundred refusals in a handful of shapes against five
+  hundred tool calls; the augmented corpus carries 522, in Claude's
+  phrasings, at 22% of the assistant rows. Run 4 is the test of whether
+  that is the lever.
 
-The gate currently fails on the critical categories (negation and
-injection, four cases), so the committed snapshot in `models/` was
-promoted by hand as the baseline to iterate from, not by the pipeline.
+The gate fails on the critical categories (negation and injection), so the
+committed snapshot in `models/` was promoted by hand as the baseline to
+iterate from, not by the pipeline.
 
 ## Using the model in the site
 
