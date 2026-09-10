@@ -484,8 +484,8 @@ Runs 1–3 are graded on the 141-case split of their template corpora, runs
 4–10 on the 272-case split of the augmented corpus; `site-needle compare` puts
 every model on one split. On that split the base model scores 0.173, runs
 2 and 3 tie at 0.379 and 0.382, and run 4 reaches 0.507 with tool accuracy
-0.71 (0.342 against run 2's 0.329 on the hand-written set), so run 4 is
-the published model. Its epoch table is the reason the trainer grades
+0.71 (0.342 against run 2's 0.329 on the hand-written set), so run 4 was
+the published model until run 9. Its epoch table is the reason the trainer grades
 every epoch: dev objective 0.303 → 0.377 → 0.368 across the three, test
 0.456 → 0.507 → 0.511, and epoch 2 ships. Run 5, the same recipe through
 the cached-prefix trainer, lands at 0.522 on that split with the same tool
@@ -590,11 +590,13 @@ Missed refusals are therefore treated as a product-layer question — an
 unanswerable question becomes a lookup that returns nothing, and the site's
 chat already refuses off-topic questions on retrieval scores before any
 model is invoked (`apps/web/docs/chat-management.md`) — and the critical
-categories are advisory in the gate. Run 4 is the published model; run 9
-is the candidate to replace it, and whether its false refusals are worth
-its refusals is a product call rather than a gate outcome, so the pointer
-has not moved. `refusal_target` and `refusal_weight` in `config.toml` are
-the knobs; the defaults there are the published recipe.
+categories are advisory in the gate. Run 9 is the published model. Its
+false refusals were weighed against its refusals as a product call rather
+than a gate outcome: nothing on the site calls the model yet, so they cost
+nothing today, and the chat integration's gate is the empty call, which
+run 4 never produced. `refusal_target = "span"` and `refusal_weight =
+0.5` in `config.toml` are the published recipe; run 4 stays on the Hub
+under its tag.
 
 ## Using the model in the site
 

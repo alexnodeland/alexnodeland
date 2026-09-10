@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "repo": "alexnodeland/site-needle",
-  "revision": "05a94b7f69cba704fe10f17dd84de98feca1af67",
-  "tag": "run-20260910-151420-f6806a4",
-  "run_id": "20260910-151420-f6806a4",
-  "published_at": "2026-09-10T16:32:48+00:00",
-  "sha256": "d2fcb8db6cc0d13705cd23a0314e99e2afaed492431c35dbc03eb269c37a0486",
+  "revision": "452474431837e4a0ad16255d0372a912c2eadce8",
+  "tag": "run-20260910-204035-3618393",
+  "run_id": "20260910-204035-3618393",
+  "published_at": "2026-09-10T21:20:09+00:00",
+  "sha256": "6cfb17f25088ab82229c9ad41839d53a66ec322d38126c246dd64ce79c297208",
   "bytes": 13737807,
   "corpus_hash": "sha256:a33cb2275939c289b1842b75587c46e76f2f2cf54bee90eedd0956fb38389953",
   "content_hash": "sha256:05401f9493d993caf6278d390949c4c46c48916f5920d3e8331b4dfb3741bec0",
-  "objective": 0.5074,
-  "handwritten_objective": 0.3421,
+  "objective": 0.5809,
+  "handwritten_objective": 0.5263,
   "dataset": {
     "repo": "alexnodeland/site-needle-corpus",
-    "revision": "d9048fffc624ca007ea050f5dbbafd2cce6f02a5",
+    "revision": "6abab955a23c48eafe077a373ce04ba6ea3e3154",
     "tag": "corpus-a33cb2275939"
   },
   "files": {
@@ -23,5 +23,5 @@
     "manifest": "manifest.json",
     "eval": "eval.json"
   },
-  "resolve": "https://huggingface.co/alexnodeland/site-needle/resolve/05a94b7f69cba704fe10f17dd84de98feca1af67/"
+  "resolve": "https://huggingface.co/alexnodeland/site-needle/resolve/452474431837e4a0ad16255d0372a912c2eadce8/"
 }
