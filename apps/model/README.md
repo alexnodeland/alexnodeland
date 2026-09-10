@@ -447,19 +447,26 @@ each tuned model.
 | 1 | 391 | r16, lr 1e-4, 6 ep | 264 | 0.35 | 0.188 → 0.250 | 0.35 | 0.01 / 0.85 | – | fail (critical) |
 | 2 | 630 | r32, lr 2e-4, 6 ep | 426 | 0.063 | 0.210 → 0.353 | 0.50 | 0.00 / 0.81 | – | fail (critical) |
 | 3 | 659 | r32, lr 2e-4, 5 ep | 375 | 0.044 | 0.199 → 0.411 | 0.56 | 0.00 / 0.89 | 0.184 → 0.263 | fail (critical) |
-| 4 | 2,083 + 231 dev | r32, lr 2e-4, 3 ep, best epoch | 783 | in progress | | | | | |
+| 4 | 2,083 + 231 dev | r32, lr 2e-4, 3 ep, epoch 2 selected | 783 | 0.053 | 0.173 → 0.507 | 0.71 | 0.00 / 0.97 | 0.210 → 0.342 | fail (critical) |
 
 Runs 1–3 are graded on the 141-case split of their template corpora, run 4
 on the 272-case split of the augmented corpus; `site-needle compare` puts
-every model on one split. On that split, runs 2 and 3 tie (0.379 against
-0.382 exact; the base model 0.173) and on the hand-written set run 2 is
-ahead (0.329 against 0.263), so the snapshot stays run 2. Both tuned models
-refuse almost nothing — missed refusals 0.90 and 0.93 against the base
-model's 0.57 — and neither reads `search_site` well (0.11 and 0.09). The
-base model's one strength, refusing, is what tuning on templates took
-away. Latency p50 is about 225 ms per question on this CPU at ~220 decode
-tokens/s with peak RAM around 280 MB (the engine figures in run 3's own
-report and in that comparison are inflated by jobs that shared the cores).
+every model on one split. On that split the base model scores 0.173, runs
+2 and 3 tie at 0.379 and 0.382, and run 4 reaches 0.507 with tool accuracy
+0.71 (0.342 against run 2's 0.329 on the hand-written set), so run 4 is
+the published model. Its epoch table is the reason the trainer grades
+every epoch: dev objective 0.303 → 0.377 → 0.368 across the three, test
+0.456 → 0.507 → 0.511, and epoch 2 ships. None of the tuned models
+refuses — missed refusals 0.90 to 0.97 against the base model's 0.57 —
+and none reads `search_site` well (0.09 to 0.11). Latency p50 is about
+45 ms per question on an M3 Max and 225 ms on the 4-core runner, peak RAM
+around 280 MB.
+
+Training cost, batch 8 at sequence length 512: 0.87 s per step on the M3
+Max GPU through the `metal` extra, 4.8 s on its CPU, 16 s on the 4-core
+hosted runner. Run 4's 783 steps are eleven minutes, an hour and a quarter,
+and three and a half hours respectively; grading an epoch is under a minute
+on the Mac.
 
 What the runs have taught, in order:
 
@@ -477,18 +484,21 @@ What the runs have taught, in order:
   per target measures the memory of a paraphrase. That is why the trainer
   now holds validation out by target and grades every epoch through the
   engine on rows the model never fitted.
-- **Routing improves on templates; refusing does not.** Run 3 sends 56% of
-  held-out questions to the right tool and never refuses an answerable
-  one, but it calls a tool on nine of ten questions it should refuse — on
-  the test split and on the hand-written set alike. The template corpora
-  carried about a hundred refusals in a handful of shapes against five
-  hundred tool calls; the augmented corpus carries 522, in Claude's
-  phrasings, at 22% of the assistant rows. Run 4 is the test of whether
-  that is the lever.
+- **Routing improves; refusing does not, and the corpus is not why.** Run 4
+  trained on 522 refusals in Claude's phrasings and still calls a tool on
+  97% of the questions it should refuse — including its own training
+  refusals. Decoded in JAX under the training-time quantisation, the same
+  adapter refuses those questions correctly ("general knowledge; no site
+  tool answers it", then the empty call); the exported model in the native
+  engine does not. The decision is sensitive to how the system turn is
+  rendered: drop it or move it into the user turn in JAX and the refusals
+  flip to tool calls, while tool calls survive every rendering. The engine
+  renders the system text its own way, so the fix is to train on the
+  rendering the engine uses; finding it is the current work.
 
 The gate fails on the critical categories (negation and injection), so the
-committed snapshot in `models/` was promoted by hand as the baseline to
-iterate from, not by the pipeline.
+pointer in `models/site-needle.json` was moved to run 4 by hand as the
+baseline to iterate from, not by the pipeline.
 
 ## Using the model in the site
 
