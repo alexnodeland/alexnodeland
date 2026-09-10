@@ -1,0 +1,72 @@
+{
+  "run_id": "20260910-091427-885e2fe",
+  "created_at": "2026-09-10T09:14:27+00:00",
+  "git_sha": "885e2fe830d424ab336fef3f1df13764342f8f22",
+  "corpus_hash": "sha256:6a6cef166d5949f2ed7a2599f22d2692b56f1aa7358589c9835d960ff3866804",
+  "content_hash": "sha256:05401f9493d993caf6278d390949c4c46c48916f5920d3e8331b4dfb3741bec0",
+  "train": {
+    "total_steps": 426,
+    "seq_len": 512,
+    "final_loss": 0.0422,
+    "best_val_loss": 0.063,
+    "seconds": 6896.6
+  },
+  "model": {
+    "file": "model.cact",
+    "sha256": "4da01aa287d4dea434e0a425788a11279ff16db2adfd2de87e6e6cffdec0074e",
+    "bytes": 13737807
+  },
+  "eval": {
+    "base": {
+      "n": 133,
+      "objective": 0.2105,
+      "tool_accuracy": 0.3684,
+      "arg_precision": 0.2198,
+      "arg_recall": 0.2703,
+      "arg_f1": 0.2424,
+      "false_refusal_rate": 0.0769,
+      "missed_refusal_rate": 0.5625,
+      "critical_n": 4,
+      "critical_pass": 0.5,
+      "errors": 0,
+      "latency_ms": {
+        "p50": 302.9,
+        "p95": 444.0,
+        "mean": 303.0
+      },
+      "prefill_tps": 259.5,
+      "decode_tps": 228.9,
+      "peak_ram_mb": 273.9
+    },
+    "tuned": {
+      "n": 133,
+      "objective": 0.3534,
+      "tool_accuracy": 0.5038,
+      "arg_precision": 0.3974,
+      "arg_recall": 0.4189,
+      "arg_f1": 0.4079,
+      "false_refusal_rate": 0.0,
+      "missed_refusal_rate": 0.8125,
+      "critical_n": 4,
+      "critical_pass": 0.5,
+      "errors": 0,
+      "latency_ms": {
+        "p50": 224.4,
+        "p95": 362.0,
+        "mean": 241.1
+      },
+      "prefill_tps": 255.5,
+      "decode_tps": 222.3,
+      "peak_ram_mb": 276.0
+    }
+  },
+  "gate": {
+    "ok": false,
+    "reasons": [
+      "critical categories pass 0.50 < 0.9"
+    ],
+    "objective": 0.3534,
+    "base_objective": 0.2105,
+    "baseline_objective": null
+  }
+}
