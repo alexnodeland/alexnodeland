@@ -195,6 +195,16 @@ def build_in_memory(content: Content, content_path: Path, cfg: CorpusConfig,
                 regenerate=regenerate, content_hash=content_hash(content_path))
         examples = examples + extra
     lengths = {e.id: count(e.row(), tokenizer) for e in examples}
+    # A generated question over the budget is dropped, not a build failure:
+    # the large model does not know the token budget, and one long question
+    # about a long employer name should not stop the corpus.
+    if tokenizer is not None and augmentation is not None:
+        over = {e.id for e in examples
+                if any(t in e.tags for t in GENERATED_TAGS) and lengths[e.id] > cfg.max_tokens}
+        if over:
+            examples = [e for e in examples if e.id not in over]
+            lengths = {k: v for k, v in lengths.items() if k not in over}
+            augmentation["dropped_over_budget"] = len(over)
     # Without the real tokenizer the lengths are estimates, and a pessimistic
     # estimate must not fail a corpus the trainer will measure exactly: the
     # budget check waits for `site-needle train`'s preflight in that case.

@@ -224,6 +224,10 @@ def test_augment_targets_cover_every_tool(content, corpus_cfg):
     per = augment_mod.allocate(ts, 100)
     assert sum(per.values()) >= 100 and min(per.values()) >= 2
     assert per["refusal:general"] > per[ts[0].key]
+    picked = augment_mod.spread(ts, 6)
+    assert len(picked) == 6 and len({t.category for t in picked}) >= 3
+    natural_prompts = [k for k in augment_mod.prompts_for(ts, 10, 12) if "natural" in k]
+    assert len(natural_prompts) == 6
     prompt = ts[0].prompt(5)
     assert "5 distinct" in prompt and "exactly as written" in prompt
 

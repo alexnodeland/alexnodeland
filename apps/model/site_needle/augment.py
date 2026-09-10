@@ -53,6 +53,7 @@ from .validate import check_example
 DEFAULT_MODEL = "claude-opus-5"
 PER_CALL = 12  # questions per request; more and the model starts repeating itself
 REFUSAL_WEIGHT = 8  # a refusal category is worth this many entity targets
+NATURAL_PER_TARGET = 2  # the natural slice samples targets rather than covering them
 
 SITE_CONTEXT = (
     "Alex Nodeland's personal website (alexnodeland.com) has his CV — employers, "
@@ -392,12 +393,20 @@ def prompts_for(targets_: list[Target], total: int, natural: int) -> dict[str, s
             prompts[f"{t.key}\x00train\x00{batch}"] = t.prompt(min(k, PER_CALL))
             k -= PER_CALL
             batch += 1
-    if natural:
-        per_natural = allocate(targets_, natural)
-        for t in targets_:
-            prompts[f"{t.key}\x00natural\x000"] = t.prompt(min(per_natural[t.key], PER_CALL),
-                                                            natural=True)
+    for t in spread(targets_, natural // NATURAL_PER_TARGET):
+        prompts[f"{t.key}\x00natural\x000"] = t.prompt(NATURAL_PER_TARGET, natural=True)
     return prompts
+
+
+def spread(targets_: list[Target], count: int) -> list[Target]:
+    """``count`` targets taken evenly across the list, which is grouped by
+    tool, so every tool and refusal category is represented."""
+    if count <= 0:
+        return []
+    if count >= len(targets_):
+        return list(targets_)
+    step = len(targets_) / count
+    return [targets_[int(i * step)] for i in range(count)]
 
 
 def generate_raw(prompts: dict[str, str], provider, log: Log) -> list[dict]:
@@ -437,9 +446,13 @@ def augment(existing: list[Example], content: Content, cfg: CorpusConfig, total:
         rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
         log.say("augment: using kept generations", path=str(path), rows=len(rows))
     # Requests with no rows — a failed call, or a target the content gained
-    # since — are made now and appended; everything already kept stays.
-    answered = {r.get("request") or f"{r['target']}|{'natural' if r['natural'] else 'train'}|0"
-                for r in rows}
+    # since — are made now and appended; everything already kept stays, and
+    # rows for requests the current settings no longer make are ignored.
+    def request_of(row: dict) -> str:
+        return row.get("request") or f"{row['target']}|{'natural' if row['natural'] else 'train'}|0"
+
+    wanted = {k.replace("\x00", "|") for k in prompts}
+    answered = {request_of(r) for r in rows}
     missing = {k: v for k, v in prompts.items() if k.replace("\x00", "|") not in answered}
     if missing:
         rows.extend(generate_raw(missing, provider, log))
@@ -447,6 +460,7 @@ def augment(existing: list[Example], content: Content, cfg: CorpusConfig, total:
         path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
         log.say("augment: kept generations", path=str(path), rows=len(rows),
                 new_requests=len(missing))
+    rows = [r for r in rows if request_of(r) in wanted]
 
     seen = {e.query.strip().lower() for e in existing}
     kept: list[Example] = []
