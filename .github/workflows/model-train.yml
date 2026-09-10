@@ -1,7 +1,7 @@
 name: Train site model
 
-# On demand only. Training is a decision: a run is minutes on a Mac with
-# Needle's metal extra and a few hours on a hosted runner's CPU, so the
+# On demand only. Training is a decision: a run is about an hour on an
+# Apple Silicon laptop and about four on a hosted runner's CPU, so the
 # schedule (`model-status.yml`) only reports staleness, and this workflow is
 # for when no machine is at hand. It exports the content, rebuilds the
 # corpus (with LLM paraphrases when an ANTHROPIC_API_KEY secret exists),

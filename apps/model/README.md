@@ -92,7 +92,7 @@ corpus and what teaches the model to copy values rather than invent them.
 # from the repo root
 just install            # both apps; the model app with the training stack
 just corpus             # export the site's content, build the corpus
-just model train        # LoRA fine-tune (CPU: ~2h; Apple GPU: minutes)
+just model train        # LoRA fine-tune (Apple Silicon: ~1h; a 4-core runner: ~4h)
 just model build runs/<id>
 just model eval runs/<id>/model.cact
 just model compare base models runs/<id>      # one test split, side by side, with the flips
@@ -109,10 +109,12 @@ and the native engine (14 MB) download from Hugging Face on first use into
 `checkpoints/` and `~/.cache/cactus-needle/`.
 
 GPU: `uv sync --extra train --extra gpu` on an NVIDIA machine. On Apple
-Silicon, Needle's `metal` extra pins an older JAX that conflicts with the
-default lock, so install it beside the project: `uv pip install
-"cactus-needle[metal]"` after `just model install`. Needle measured 0.71
-s/step on an M5 Max against 2.9 on CPU at the same shape.
+Silicon, train on the CPU: Needle's `metal` extra pins JAX 0.4.38, which the
+lock's flax cannot import against, and the `jax-metal` plugin fails on the
+first operation under the JAX the lock does carry (`Invalid memory kind:
+device`), so it is not a supported path here. An M3 Max does a step at
+batch 8 and sequence length 512 in about 5 seconds against 16 on a 4-core
+hosted runner, and grades an epoch through the engine in about a minute.
 
 ## The corpus
 
@@ -403,8 +405,8 @@ browser can fetch the files from. Nothing binary is committed.
 
 ## Keeping the model current
 
-Training is a decision, not a schedule: a run is minutes on Apple Silicon
-with Needle's metal extra and a few hours on a hosted runner's CPU, so
+Training is a decision, not a schedule: a three-epoch run is about an hour
+on an Apple Silicon laptop and about four on a hosted runner's CPU, so
 nothing retrains on its own. Three workflows share the work:
 
 - `.github/workflows/model-ci.yml`, on every pull request that touches the

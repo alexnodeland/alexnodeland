@@ -5,8 +5,8 @@ name: Site model status
 # manifest the published model carries (models/site-needle.json names the
 # revision on the Hub). When it is stale, one issue labelled `model-stale`
 # says what changed and how to retrain; when it is current again, the
-# issue is closed. This never trains: a run is minutes on a Mac and hours
-# on a hosted runner, so training is a decision — `just model pipeline`
+# issue is closed. This never trains: a run is about an hour on a Mac and
+# about four on a hosted runner, so training is a decision — `just model pipeline`
 # locally, or the "Train site model" workflow on demand.
 on:
   schedule:
@@ -112,7 +112,7 @@ jobs:
               status,
               '```',
               '',
-              'To retrain, locally (minutes on Apple Silicon with the metal extra, a few hours on CPU):',
+              'To retrain, locally (about an hour on an Apple Silicon laptop, about four on a hosted runner):',
               '',
               '```sh',
               'just model augment            # or: just corpus, for templates only',
