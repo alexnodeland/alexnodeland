@@ -24,6 +24,6 @@ entrepreneur first runs its singapore program in cohorts, and each one ends with
 
 supercomputers solve problems that nothing else can, from aircraft design to the behavior of a single cell, and almost nobody can use them. what stops people is the development loop. you book a slot on the machine months ahead, write your code on a laptop while you wait, and find out on the day that it does not run at scale. the only place to develop code for a supercomputer is on a supercomputer, and leaving one switched on costs tens of thousands of dollars a day.
 
-so we proposed a machine in the cloud that looks and behaves like the one you are targeting, at a tenth of the cost, with the tools built for it and nothing to install beyond a browser. by then that meant pilots with research groups in singapore, a deal in progress with a supercomputing center, and john gustafson advising. the ask was a million dollars.
+so we proposed a machine in the cloud that looks and behaves like the one you are targeting, at a tenth of the cost, with the tools built for it and nothing to install beyond a browser. by then that meant pilots with research groups in singapore, a deal in progress with a supercomputing center, and john gustafson advising.
 
 [watch the pitch](https://www.youtube.com/watch?v=svnD72vdk18) · [ef's photos from the day](https://medium.com/entrepreneurs-first/behind-the-scenes-at-efsg3-investor-day-b665dd21ec27)
