@@ -1,11 +1,11 @@
 ---
 title: 'Supercomputers For Audio Research and Development'
 date: '2016-02-01'
-description: "CEWIT's newsletter on my use of Stony Brook's supercomputing time for audio synthesis and modelling."
+description: "CEWIT's newsletter on my use of Stony Brook's supercomputing time for audio synthesis and modeling."
 category: 'Press'
 ---
 
-cewit's newsletter ran a short piece on what i was doing with the university's supercomputing allocation: audio synthesis and modelling at a scale that does not fit on a desktop.
+cewit's newsletter ran a short piece on what i was doing with the university's supercomputing allocation: audio synthesis and modeling at a scale that does not fit on a desktop.
 
 having that much compute changes which questions you can ask. a lot of audio engineering is choosing a filter design or a basis function on the strength of experience and then tuning it until it sounds right. with a cluster you can search the space instead — evaluate thousands of candidates against a real corpus and find out whether the conventional choice was ever the best one.
 

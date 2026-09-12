@@ -21,6 +21,7 @@
  * Usage: node scripts/cache-prefix-probe.mjs
  */
 import { AutoTokenizer } from '@huggingface/transformers';
+import './lib/transformers-env.mjs';
 import { buildSystemPrompt, buildGroundedTurn } from '../src/lib/chat/prompt.mjs';
 
 const MODEL_ID = 'LiquidAI/LFM2.5-1.2B-Instruct-ONNX';

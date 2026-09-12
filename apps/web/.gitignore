@@ -96,6 +96,12 @@ static/chat-index.json
 archive/press/*
 !archive/press/README.md
 
+# The embedding model Transformers.js downloads, parked outside node_modules
+# so CI can cache it across runs (HF_TRANSFORMERS_CACHE; see
+# scripts/lib/transformers-env.mjs). Only CI sets that variable, so this
+# directory does not normally exist locally at all.
+.hf-cache/
+
 # CV artifacts, typeset from src/config/cv.ts by `just cv` and by the deploy
 # workflow before gatsby build. Generated, so not committed — which also means
 # they are never stale relative to the data they came from.

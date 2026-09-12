@@ -322,11 +322,40 @@
     @include text-link;
   }
 
+  // An image in the prose is a panel like any other, so it takes the card
+  // radius rather than the tighter one the insets use.
   img {
     max-width: 100%;
     height: auto;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     margin: var(--space-6) 0;
+  }
+
+  // A photograph in the prose. The image carries the card's own corner and
+  // hairline so it reads as one more panel rather than a hole cut in the
+  // page, and the caption sits under it in the meta voice the post header
+  // already uses. The figure owns the vertical gap, so the image inside it
+  // gives its own margin back.
+  figure {
+    // Held to a measure narrower than the prose and centred. At the card's
+    // full width a 3:2 photograph stands taller than every paragraph around
+    // it and stops being an illustration; inset, it reads as one.
+    margin: var(--space-6) auto;
+    max-width: 40rem;
+
+    img {
+      display: block;
+      width: 100%;
+      margin: 0;
+      border: 1px solid var(--hairline-interior);
+    }
+
+    figcaption {
+      margin-top: var(--space-3);
+      font-size: var(--text-small);
+      color: var(--text-secondary);
+      line-height: var(--leading-prose);
+    }
   }
 
   // Interior rules inside an outlined card: white-alpha, or they are drawn in

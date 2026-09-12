@@ -22,6 +22,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { pipeline } from '@huggingface/transformers';
+import './lib/transformers-env.mjs';
 import {
   hydrateIndex,
   retrieve,

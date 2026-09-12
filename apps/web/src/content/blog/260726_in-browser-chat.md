@@ -48,7 +48,7 @@ two other arrangements measure worse. keeping every turn's passages in the promp
 
 **smaller is not faster.** a model with half the parameters ran two to four times slower, because it wrote several hundred words where the larger one writes forty. decoding cost is per token, so verbosity dominates parameter count.
 
-**the fast one fabricates.** a 230m model loads in nine seconds instead of twenty-one and answers in under a second, but asked whether i know a language that appears nowhere in my skills list, with that list in its context, it says yes. asked whether i worked at a company i never worked at, it says yes to that too. few-shot examples showing it declining exactly that kind of question, two hundred tokens above the point of use, did not change the behaviour. at this size the model accepts the premise of whatever it is asked.
+**the fast one fabricates.** a 230m model loads in nine seconds instead of twenty-one and answers in under a second, but asked whether i know a language that appears nowhere in my skills list, with that list in its context, it says yes. asked whether i worked at a company i never worked at, it says yes to that too. few-shot examples showing it declining exactly that kind of question, two hundred tokens above the point of use, did not change the behavior. at this size the model accepts the premise of whatever it is asked.
 
 the same examples degraded the larger model. one of them mentioned musiio, and that was enough for musiio to start appearing in unrelated answers.
 
