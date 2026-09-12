@@ -5,16 +5,17 @@ because several of these publications are small or defunct-adjacent and the
 links are already 7-11 years old. `sbpress.com` in particular is a student
 newspaper with no institutional guarantee of staying up.
 
-Retrieved 2026-07-25. Each item has the original page (`.html`/`.pdf`) and, for
-HTML, a plain-text extraction (`.txt`) so the words survive even if the markup
-or its assets do not.
+Retrieved 2026-07-25, plus the 2018 pitch video on 2026-09-12. Each item has
+the original page (`.html`/`.pdf`/`.mp4`) and a plain-text extraction (`.txt`)
+so the words survive even if the markup, its assets or the host platform do
+not.
 
 **Not published, and not committed.** Gatsby only sources `src/pages`,
 `src/content/blog` and `src/images`, so nothing here reaches the built site; and
 `.gitignore` excludes everything in this directory except this README. Both are
-deliberate — these are third-party copyrighted articles, fine to keep as
-personal reference copies, not to republish or redistribute. If you ever want an
-excerpt on the site, quote a paragraph and link out rather than mirroring the
+deliberate — these are third-party copyrighted articles and video, fine to keep
+as personal reference copies, not to republish or redistribute. If you ever want
+an excerpt on the site, quote a paragraph and link out rather than mirroring the
 page.
 
 The files therefore live only on this machine. This README is tracked because
@@ -30,6 +31,7 @@ it survives even if the local copies are lost.
 | Supercomputing Shouldn't Be Rocket Science (Asian Scientist, 2019-03)         | https://www.asianscientist.com/2019/03/features/supercomputing-shouldnt-be-rocket-science/ | https://web.archive.org/web/20260218032240/https://www.asianscientist.com/2019/03/features/supercomputing-shouldnt-be-rocket-science/ |
 | Singapore Startup Hatches At-Scale HPC Dev Cloud (HPCwire, 2019-04-26)        | https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/                | https://web.archive.org/web/20250722110011/https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/                |
 | Try Before You Buy? Test Driving a Supercomputer System (HPCwire, 2019-10-07) | https://www.hpcwire.com/2019/10/07/try-before-you-buy-test-driving-a-supercomputer-system/ | https://web.archive.org/web/20220124003030/https://www.hpcwire.com/2019/10/07/try-before-you-buy-test-driving-a-supercomputer-system/ |
+| Archanan at EF Singapore Investor Day (Entrepreneurs First, 2018-07-24)       | https://www.youtube.com/watch?v=svnD72vdk18                                                | none — Wayback does not capture YouTube media; see Notes                                                                              |
 
 ## Notes
 
@@ -39,6 +41,21 @@ it survives even if the local copies are lost.
   working it falls back to the Wayback snapshot automatically.
 - The CEWIT items are whole newsletters, not standalone articles. The relevant
   pieces are inside the PDFs.
+- The EF investor day item is a video, so it is outside `archive-press.sh` —
+  that script curls HTML and would only ever save YouTube's player shell.
+  Wayback has no snapshot of the watch page, and would not hold the video if
+  it did, so the local copy is the only safeguard. Fetch it with yt-dlp:
+
+  ```sh
+  yt-dlp -f 'bv*[ext=mp4]+ba[ext=m4a]/b' --merge-output-format mp4 \
+    --write-auto-subs --sub-langs 'en.*' --convert-subs srt \
+    -o '2018-07_ef-investor-day-archanan.%(ext)s' \
+    'https://www.youtube.com/watch?v=svnD72vdk18'
+  ```
+
+  The `.txt` beside it is the caption track flattened into prose. YouTube's
+  auto-captions mishear the company name throughout, so read it as a rough
+  index into the video rather than a transcript of record.
 
 ## Re-running
 
