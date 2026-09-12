@@ -5,10 +5,10 @@ because several of these publications are small or defunct-adjacent and the
 links are already 7-11 years old. `sbpress.com` in particular is a student
 newspaper with no institutional guarantee of staying up.
 
-Retrieved 2026-07-25, plus the 2018 pitch video on 2026-09-12. Each item has
-the original page (`.html`/`.pdf`/`.mp4`) and a plain-text extraction (`.txt`)
-so the words survive even if the markup, its assets or the host platform do
-not.
+Retrieved 2026-07-25, plus the 2018 pitch video and the 2022 SoundCloud press
+release on 2026-09-12. Each item has the original page (`.html`/`.pdf`/`.mp4`)
+and a plain-text extraction (`.txt`) so the words survive even if the markup,
+its assets or the host platform do not.
 
 **Not published, and not committed.** Gatsby only sources `src/pages`,
 `src/content/blog` and `src/images`, so nothing here reaches the built site; and
@@ -23,15 +23,16 @@ the table below — original URLs paired with Wayback snapshots — is the part
 worth version-controlling: it is what lets you rebuild the archive anywhere, and
 it survives even if the local copies are lost.
 
-| Article                                                                       | Original                                                                                   | Wayback snapshot                                                                                                                      |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| The Future of Sound (The Stony Brook Press, 2015-11-11)                       | https://sbpress.com/2015/11/the-future-of-sound/                                           | https://web.archive.org/web/20260120052756/https://sbpress.com/2015/11/the-future-of-sound/                                           |
-| Supercomputers For Audio Research (CEWIT Newsletter, 2016-02)                 | https://www.cewit.org/programs/_documents/CEWITNewsletter_FEB2016.pdf                      | https://web.archive.org/web/20230723115756/https://www.cewit.org/programs/_documents/CEWITNewsletter_FEB2016.pdf                      |
-| Optimal Wavelet Bases (CEWIT Newsletter, 2016-11)                             | https://www.cewit.org/programs/_documents/CEWITNewsletter_NOV2016.pdf                      | https://web.archive.org/web/20230723115819/https://www.cewit.org/programs/_documents/CEWITNewsletter_NOV2016.pdf                      |
-| Supercomputing Shouldn't Be Rocket Science (Asian Scientist, 2019-03)         | https://www.asianscientist.com/2019/03/features/supercomputing-shouldnt-be-rocket-science/ | https://web.archive.org/web/20260218032240/https://www.asianscientist.com/2019/03/features/supercomputing-shouldnt-be-rocket-science/ |
-| Singapore Startup Hatches At-Scale HPC Dev Cloud (HPCwire, 2019-04-26)        | https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/                | https://web.archive.org/web/20250722110011/https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/                |
-| Try Before You Buy? Test Driving a Supercomputer System (HPCwire, 2019-10-07) | https://www.hpcwire.com/2019/10/07/try-before-you-buy-test-driving-a-supercomputer-system/ | https://web.archive.org/web/20220124003030/https://www.hpcwire.com/2019/10/07/try-before-you-buy-test-driving-a-supercomputer-system/ |
-| Archanan at EF Singapore Investor Day (Entrepreneur First, 2018-07-24)        | https://www.youtube.com/watch?v=svnD72vdk18                                                | none, since Wayback does not capture YouTube media; see Notes                                                                         |
+| Article                                                                       | Original                                                                                    | Wayback snapshot                                                                                                                       |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| The Future of Sound (The Stony Brook Press, 2015-11-11)                       | https://sbpress.com/2015/11/the-future-of-sound/                                            | https://web.archive.org/web/20260120052756/https://sbpress.com/2015/11/the-future-of-sound/                                            |
+| Supercomputers For Audio Research (CEWIT Newsletter, 2016-02)                 | https://www.cewit.org/programs/_documents/CEWITNewsletter_FEB2016.pdf                       | https://web.archive.org/web/20230723115756/https://www.cewit.org/programs/_documents/CEWITNewsletter_FEB2016.pdf                       |
+| Optimal Wavelet Bases (CEWIT Newsletter, 2016-11)                             | https://www.cewit.org/programs/_documents/CEWITNewsletter_NOV2016.pdf                       | https://web.archive.org/web/20230723115819/https://www.cewit.org/programs/_documents/CEWITNewsletter_NOV2016.pdf                       |
+| Supercomputing Shouldn't Be Rocket Science (Asian Scientist, 2019-03)         | https://www.asianscientist.com/2019/03/features/supercomputing-shouldnt-be-rocket-science/  | https://web.archive.org/web/20260218032240/https://www.asianscientist.com/2019/03/features/supercomputing-shouldnt-be-rocket-science/  |
+| Singapore Startup Hatches At-Scale HPC Dev Cloud (HPCwire, 2019-04-26)        | https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/                 | https://web.archive.org/web/20250722110011/https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/                 |
+| Try Before You Buy? Test Driving a Supercomputer System (HPCwire, 2019-10-07) | https://www.hpcwire.com/2019/10/07/try-before-you-buy-test-driving-a-supercomputer-system/  | https://web.archive.org/web/20220124003030/https://www.hpcwire.com/2019/10/07/try-before-you-buy-test-driving-a-supercomputer-system/  |
+| Archanan at EF Singapore Investor Day (Entrepreneur First, 2018-07-24)        | https://www.youtube.com/watch?v=svnD72vdk18                                                 | none, since Wayback does not capture YouTube media; see Notes                                                                          |
+| SoundCloud Acquires Musiio (SoundCloud Newsroom, 2022-05-03)                  | http://press.soundcloud.com/213899-soundcloud-acquires-cutting-edge-music-ai-company-musiio | https://web.archive.org/web/20220503150256/http://press.soundcloud.com/213899-soundcloud-acquires-cutting-edge-music-ai-company-musiio |
 
 ## Notes
 
@@ -41,6 +42,12 @@ it survives even if the local copies are lost.
   working it falls back to the Wayback snapshot automatically.
 - The CEWIT items are whole newsletters, not standalone articles. The relevant
   pieces are inside the PDFs.
+- The SoundCloud press release is the one entry whose original is already gone.
+  `press.soundcloud.com` retired its per-release pages and now 301s every one
+  of them to the generic newsroom, which means a fetch of the original URL
+  succeeds and returns the wrong page instead of failing. Its row in
+  `archive-press.sh` therefore points at the Wayback snapshot directly, and the
+  Original column above is kept only as the citation.
 - The EF investor day item is a video, so it is outside `archive-press.sh`,
   which curls HTML and would only ever save YouTube's player shell.
   Wayback has no snapshot of the watch page, and would not hold the video if
