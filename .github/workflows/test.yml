@@ -97,8 +97,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: apps/web/package-lock.json
 
+      # --prefer-offline reads the setup-node cache instead of refetching what
+      # it already has; the audit and funding passes are network round trips
+      # whose output nothing here reads.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --fund=false
 
       - name: Run type check
         run: npm run type-check
@@ -142,8 +145,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: apps/web/package-lock.json
 
+      # --prefer-offline reads the setup-node cache instead of refetching what
+      # it already has; the audit and funding passes are network round trips
+      # whose output nothing here reads.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --fund=false
 
       # The embedding model the chat index is built with: ~34MB fetched from
       # Hugging Face, who rate-limit. Uncached, a 429 fails `build:index`,
