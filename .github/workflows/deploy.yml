@@ -51,12 +51,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # npm, plainly — package-lock.json is committed. The sample workflow's
       # yarn-detection dance guarded a choice this repo made long ago.
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -64,7 +64,7 @@ jobs:
 
       - name: Setup Pages
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       # Only .cache is restored, never public. Restoring a previous public/
       # lets Gatsby keep a stale index.html that references an old
@@ -74,7 +74,7 @@ jobs:
       # .cache holds the expensive work (transforms, image processing) and is
       # keyed on lockfile + source so it invalidates correctly on its own.
       - name: Restore cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: apps/web/.cache
           key: ${{ runner.os }}-gatsby-build-${{ hashFiles('apps/web/package-lock.json') }}-${{ hashFiles('apps/web/src/**', 'apps/web/gatsby-*.ts', 'apps/web/gatsby-*.js') }}
@@ -94,7 +94,7 @@ jobs:
       # PDFs, so anything short of exact rebuilds them.
       - name: Restore CV PDFs
         id: cv-pdfs
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: apps/web/static/cv
           key: ${{ runner.os }}-cv-pdfs-${{ hashFiles('apps/web/src/config/cv.ts', 'apps/web/templates/cv/**', 'apps/web/scripts/build-cv.js') }}
@@ -105,7 +105,7 @@ jobs:
       # commit. Keyed on what decides which files are fetched: the model id
       # lives in the config, the dtype in the build script.
       - name: Restore the embedding model
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: apps/web/.hf-cache
           key: hf-${{ hashFiles('apps/web/src/config/retrieval.mjs', 'apps/web/scripts/build-chat-index.mjs') }}
@@ -151,7 +151,7 @@ jobs:
         run: npm run build
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ./apps/web/public
 
@@ -166,4 +166,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
