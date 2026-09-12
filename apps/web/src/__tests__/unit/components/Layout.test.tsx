@@ -281,7 +281,12 @@ describe('Layout Component', () => {
     });
 
     it.each([
-      ['/blog', '.blog-header', 'blog', 'built, played, and written about.'],
+      [
+        '/blog',
+        '.blog-header',
+        'blog',
+        'things built, played, and written about.',
+      ],
       [
         '/projects',
         '.projects-header',
