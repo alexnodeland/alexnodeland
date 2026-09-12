@@ -5,7 +5,7 @@ description: 'Playing bass guitar and double bass for the Latino re-conception o
 category: 'Music'
 ---
 
-new haarlem arts theatre staged [sweet charity](https://en.wikipedia.org/wiki/Sweet_Charity) at aaron davis hall in the summer of 2012, and i played bass guitar and double bass in a band led by my friend brett pontecorvo.
+new haarlem arts theatre staged [sweet charity](https://en.wikipedia.org/wiki/Sweet_Charity) at aaron davis hall in the summer of 2012, and i played bass guitar and double bass in a band led by my friend brett pontecorvo. we were onstage in costume and worked with the cast through the show.
 
 <figure>
   <img
