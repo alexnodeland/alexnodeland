@@ -1,11 +1,11 @@
 ---
 title: 'Archanan at EF Singapore Investor Day'
 date: '2018-07-24'
-description: "The three-minute Archanan pitch that closed Entrepreneurs First's third Singapore cohort, arguing that access to a supercomputer is a developer tooling problem."
+description: "The three-minute Archanan pitch that closed Entrepreneur First's third Singapore cohort, arguing that access to a supercomputer is a developer tooling problem."
 category: 'Press'
 ---
 
-entrepreneurs first runs its singapore programme in cohorts, and each one ends with an investor day. twenty-three companies pitched at the end of efsg3 on 17 july 2018, all of them built from scratch since the cohort opened in january. this is the three minutes archanan got.
+entrepreneur first runs its singapore programme in cohorts, and each one ends with an investor day. twenty-three companies pitched at the end of efsg3 on 17 july 2018, all of them built from scratch since the cohort opened in january. this is the three minutes archanan got.
 
 <figure>
   <img
@@ -18,7 +18,7 @@ entrepreneurs first runs its singapore programme in cohorts, and each one ends w
   />
   <figcaption>
     backstage, waiting to go on. photo by
-    <a href="https://medium.com/entrepreneurs-first/behind-the-scenes-at-efsg3-investor-day-b665dd21ec27">entrepreneurs first</a>.
+    <a href="https://medium.com/entrepreneurs-first/behind-the-scenes-at-efsg3-investor-day-b665dd21ec27">entrepreneur first</a>.
   </figcaption>
 </figure>
 

@@ -31,7 +31,7 @@ it survives even if the local copies are lost.
 | Supercomputing Shouldn't Be Rocket Science (Asian Scientist, 2019-03)         | https://www.asianscientist.com/2019/03/features/supercomputing-shouldnt-be-rocket-science/ | https://web.archive.org/web/20260218032240/https://www.asianscientist.com/2019/03/features/supercomputing-shouldnt-be-rocket-science/ |
 | Singapore Startup Hatches At-Scale HPC Dev Cloud (HPCwire, 2019-04-26)        | https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/                | https://web.archive.org/web/20250722110011/https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/                |
 | Try Before You Buy? Test Driving a Supercomputer System (HPCwire, 2019-10-07) | https://www.hpcwire.com/2019/10/07/try-before-you-buy-test-driving-a-supercomputer-system/ | https://web.archive.org/web/20220124003030/https://www.hpcwire.com/2019/10/07/try-before-you-buy-test-driving-a-supercomputer-system/ |
-| Archanan at EF Singapore Investor Day (Entrepreneurs First, 2018-07-24)       | https://www.youtube.com/watch?v=svnD72vdk18                                                | none — Wayback does not capture YouTube media; see Notes                                                                              |
+| Archanan at EF Singapore Investor Day (Entrepreneur First, 2018-07-24)        | https://www.youtube.com/watch?v=svnD72vdk18                                                | none — Wayback does not capture YouTube media; see Notes                                                                              |
 
 ## Notes
 
