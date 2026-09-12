@@ -43,6 +43,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    env:
+      # Transformers.js otherwise caches inside its own installed package,
+      # which `npm ci` deletes. See apps/web/scripts/lib/transformers-env.mjs.
+      HF_TRANSFORMERS_CACHE: ${{ github.workspace }}/apps/web/.hf-cache
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -92,6 +98,18 @@ jobs:
         with:
           path: apps/web/static/cv
           key: ${{ runner.os }}-cv-pdfs-${{ hashFiles('apps/web/src/config/cv.ts', 'apps/web/templates/cv/**', 'apps/web/scripts/build-cv.js') }}
+
+      # The embedding model `npm run build` feeds the chat indexer: ~34MB from
+      # Hugging Face, who rate-limit. Uncached, a 429 fails the build and the
+      # site does not ship, for a reason that has nothing to do with the
+      # commit. Keyed on what decides which files are fetched: the model id
+      # lives in the config, the dtype in the build script.
+      - name: Restore the embedding model
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.hf-cache
+          key: hf-${{ hashFiles('apps/web/src/config/retrieval.mjs', 'apps/web/scripts/build-chat-index.mjs') }}
+          restore-keys: hf-
 
       # These packages cover what templates/cv/resume.tex.js uses (geometry,
       # titlesec, enumitem, hyperref, xcolor, microtype, charter) without

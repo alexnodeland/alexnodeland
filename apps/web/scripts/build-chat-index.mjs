@@ -19,6 +19,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { pipeline } from '@huggingface/transformers';
+import './lib/transformers-env.mjs';
 import { buildCorpus } from './lib/chat-corpus.mjs';
 import { quantize } from '../src/lib/chat/retrieval.mjs';
 import { EMBEDDING_MODEL, EMBEDDING_DIM } from '../src/config/retrieval.mjs';

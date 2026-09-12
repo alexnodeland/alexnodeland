@@ -1,16 +1,28 @@
 name: Test Suite
 
+# The site is one app in a monorepo, so the model app's churn does not run the
+# site's tests. Two directories under the site are excluded as well: `docs/` is
+# written for people and `archive/` is local reference copies that Gatsby never
+# sources, so neither can change what the suites below assert. Blog markdown is
+# deliberately *not* excluded: a post is content the e2e suite renders, and a
+# malformed one should fail here rather than in production.
 on:
   push:
     branches: [main, develop]
     paths:
       - 'apps/web/**'
       - '.github/workflows/test.yml'
+      - '!apps/web/docs/**'
+      - '!apps/web/archive/**'
+      - '!apps/web/*.md'
   pull_request:
     branches: [main, develop]
     paths:
       - 'apps/web/**'
       - '.github/workflows/test.yml'
+      - '!apps/web/docs/**'
+      - '!apps/web/archive/**'
+      - '!apps/web/*.md'
 
 # Cancel previous runs if a new commit is pushed
 concurrency:
@@ -23,13 +35,50 @@ permissions:
   contents: read
 
 # The site is one app in a monorepo; every `run` step executes inside it.
+# Action inputs that take paths (the caches, the artifact) are relative to the
+# repository root instead, and spell the prefix out.
 defaults:
   run:
     working-directory: apps/web
 
 jobs:
+  # Which of the two suites a change can actually reach. The e2e suite renders
+  # the real site, so everything that ships matters to it and it always runs.
+  # tsc, eslint and jest only ever read code: eslint globs .ts/.tsx/.js/.jsx,
+  # tsc has no opinion on markdown, and jest excludes `src/content` from
+  # coverage outright. A blog post or an image has nothing to say to them, and
+  # on a content-only change the whole job is skipped rather than spending two
+  # minutes proving it.
+  changes:
+    name: What changed
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # The filter diffs against the base commit, which a shallow clone
+          # does not have on a push event.
+          fetch-depth: 0
+
+      - name: Sort the changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/web/**'
+              - '!apps/web/src/content/**'
+              - '!apps/web/static/images/**'
+              - '.github/workflows/test.yml'
+
   test:
     name: Run Tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -67,7 +116,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./apps/web/coverage/lcov.info
+          files: ./apps/web/coverage/lcov.info
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -76,6 +125,11 @@ jobs:
     name: End-to-end
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    env:
+      # Transformers.js otherwise caches inside its own installed package,
+      # which `npm ci` deletes. See scripts/lib/transformers-env.mjs.
+      HF_TRANSFORMERS_CACHE: ${{ github.workspace }}/apps/web/.hf-cache
 
     steps:
       - name: Checkout code
@@ -91,10 +145,37 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The embedding model the chat index is built with: ~34MB fetched from
+      # Hugging Face, who rate-limit. Uncached, a 429 fails `build:index`,
+      # which fails `npm run develop`, which fails the webServer below before
+      # a single spec has run, a red suite that says nothing about the site.
+      # Keyed on what decides which files are fetched: the model id lives in
+      # the config, the dtype in the build script.
+      - name: Cache the embedding model
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.hf-cache
+          key: hf-${{ hashFiles('apps/web/src/config/retrieval.mjs', 'apps/web/scripts/build-chat-index.mjs') }}
+          restore-keys: hf-
+
+      # Chromium is ~150MB per run otherwise. Keyed on the resolved Playwright
+      # version rather than the lockfile, which moves every time any dependency
+      # does while the browser build does not.
+      - name: Resolve the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       # One browser download covers both projects below — Desktop Chrome and
       # Mobile Chrome are the same chromium under two viewports. Firefox and
       # WebKit stay local-only: their installs cost more than the coverage
-      # they add to a site this size.
+      # they add to a site this size. The browser may come from the cache
+      # above; the system libraries `--with-deps` installs never do.
       - name: Install Playwright chromium
         run: npx playwright install --with-deps chromium
 
