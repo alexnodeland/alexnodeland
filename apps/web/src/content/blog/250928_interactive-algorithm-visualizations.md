@@ -22,9 +22,9 @@ six of them, in cycle order:
 
 ## <a id="cellular-automata"></a>cellular automaton
 
-a grid of cells, a rule, and a state buffer stepped one generation at a time. each cell counts its eight neighbours on a wrapping torus, then lives, dies, or is born according to the rule — conway's b3/s23 by default, with highlife, maze, coral, day & night and seeds in the dropdown.
+a grid of cells, a rule, and a state buffer stepped one generation at a time. each cell counts its eight neighbors on a wrapping torus, then lives, dies, or is born according to the rule — conway's b3/s23 by default, with highlife, maze, coral, day & night and seeds in the dropdown.
 
-the shader only draws; the rule runs on a real buffer. newborn cells take the newborn colour and shift toward the established colour the longer they survive, and links are drawn between live neighbours — the same eight-cell neighbourhood the rule is evaluated over.
+the shader only draws; the rule runs on a real buffer. newborn cells take the newborn color and shift toward the established color the longer they survive, and links are drawn between live neighbors — the same eight-cell neighborhood the rule is evaluated over.
 
 random soup under conway settles into still lifes and period-two oscillators within a couple of hundred generations, which is too static for a background. `perturbation rate` flips a small fraction of cells each step to keep things moving. set it to zero to watch it stall.
 
@@ -32,7 +32,7 @@ random soup under conway settles into still lifes and period-two oscillators wit
 
 ## <a id="wave-interference"></a>simple waves
 
-three sine waves summed in a shader. one runs along x, one along y at 0.8× the frequency, one diagonally at 0.6×, each drifting at a different rate. colour maps amplitude: bright where they reinforce, dark where they cancel.
+three sine waves summed in a shader. one runs along x, one along y at 0.8× the frequency, one diagonally at 0.6×, each drifting at a different rate. color maps amplitude: bright where they reinforce, dark where they cancel.
 
 it is nothing but superposition. interference is the mechanism behind a great deal of signal processing, and it takes three lines of arithmetic. i spent a couple of years on wavelet bases for audio compression at stony brook, and what stayed with me is how little machinery the underlying physics needs.
 
@@ -46,7 +46,7 @@ the most interesting one, and the worst named.
 
 it builds a clustered graph: nodes grouped into tight clusters with dense, high-bandwidth links inside each cluster and sparse, high-latency links between them. roughly the shape of a real datacenter. then it searches for the subgraph of size _n_ with the highest total conductivity — the best-connected group of that size.
 
-that search is simulated annealing with an exponential cooling schedule. it proposes a swap, accepts it outright if it scores better, and accepts it with a temperature-dependent probability if it scores worse. early on, while it is hot, it takes bad trades freely and wanders. as the temperature drops it stops accepting losses and settles. the two highlight colours are separate things: one is the candidate set it is considering right now, the other is the best set it has found so far. early on they diverge constantly. near the end they lock together.
+that search is simulated annealing with an exponential cooling schedule. it proposes a swap, accepts it outright if it scores better, and accepts it with a temperature-dependent probability if it scores worse. early on, while it is hot, it takes bad trades freely and wanders. as the temperature drops it stops accepting losses and settles. the two highlight colors are separate things: one is the candidate set it is considering right now, the other is the best set it has found so far. early on they diverge constantly. near the end they lock together.
 
 the layout is force-directed and running at the same time, so the graph is still settling while the search runs over it.
 
@@ -64,7 +64,7 @@ push `vco 1 fm amount` up slowly and watch the sidebands appear in pairs either 
 
 it makes sound. hold the speaker button in the settings panel.
 
-i built synthesizers as artist in residence at cewit for a year, mostly analogue.
+i built synthesizers as artist in residence at cewit for a year, mostly analog.
 
 ---
 
@@ -86,7 +86,7 @@ turn `steps per second` down to about 5 to watch the frontier expand node by nod
 
 ## <a id="pde-solver"></a>pde solver
 
-explicit finite differences on a grid, solving either the heat equation `∂u/∂t = α∇²u` or the wave equation `∂²u/∂t² = c²∇²u`. the laplacian is a five-point stencil; heat uses forward-time centred-space, wave uses a centred second difference in time. grid runs at 64², 128² or 256².
+explicit finite differences on a grid, solving either the heat equation `∂u/∂t = α∇²u` or the wave equation `∂²u/∂t² = c²∇²u`. the laplacian is a five-point stencil; heat uses forward-time centered-space, wave uses a centered second difference in time. grid runs at 64², 128² or 256².
 
 the parameters that change the physics rather than the look are `boundary condition` and `initial condition`. dirichlet fixes the edge value, so waves reflect inverted. neumann sets the edge derivative to zero, so they reflect upright. periodic wraps, so anything leaving the right edge arrives at the left. pick a gaussian pulse on the wave equation and switch between the three — the difference in reflection is immediate. it is the clearest demonstration of boundary conditions i know of.
 
