@@ -5,7 +5,7 @@ description: 'Searching for a general procedure to pick the best wavelet basis f
 category: 'Press'
 ---
 
-jpeg 2000 swapped the discrete cosine transform for wavelets and got visibly better images at the same bitrate, with none of the block artefacts that give away ordinary jpeg. the obvious question is why the same move is not standard for audio.
+jpeg 2000 swapped the discrete cosine transform for wavelets and got visibly better images at the same bitrate, with none of the block artifacts that give away ordinary jpeg. the obvious question is why the same move is not standard for audio.
 
 part of the answer is that nobody agrees on which wavelet to use. unlike the dct, which is one fixed transform, "wavelet" is a family — and the right member depends on the signal you are compressing. in practice people pick one that has worked before and tune around it.
 
