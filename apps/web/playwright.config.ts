@@ -11,7 +11,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
+  /* One worker on CI. Two was tried and cost more than it bought: the suite
+     went from 1 flaky test to 5, with fourteen timeouts across four spec
+     files including a plain homepage load. Both projects drive a single
+     Gatsby dev server, and the dev server compiles on demand on one thread,
+     so a second worker mostly queues behind the first. Real parallelism here
+     means serving a static build instead, not raising this number. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'html',
