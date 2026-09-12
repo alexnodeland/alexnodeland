@@ -322,10 +322,12 @@
     @include text-link;
   }
 
+  // An image in the prose is a panel like any other, so it takes the card
+  // radius rather than the tighter one the insets use.
   img {
     max-width: 100%;
     height: auto;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     margin: var(--space-6) 0;
   }
 
