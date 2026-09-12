@@ -89,7 +89,7 @@ const HEROES: Record<string, () => React.ReactNode> = {
   '/blog': () => (
     <header className="blog-header">
       {crumbTitle('blog')}
-      <p>notes and press.</p>
+      <p>things built, played, and written about.</p>
     </header>
   ),
   '/projects': () => (
