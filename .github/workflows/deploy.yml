@@ -99,6 +99,17 @@ jobs:
           path: apps/web/static/cv
           key: ${{ runner.os }}-cv-pdfs-${{ hashFiles('apps/web/src/config/cv.ts', 'apps/web/templates/cv/**', 'apps/web/scripts/build-cv.js') }}
 
+      # And the same for the posts, on a key of its own: the two sets are
+      # typeset from different sources and change on different days, so a
+      # content edit should not re-run the CV and a CV edit should not
+      # re-typeset twenty-six posts.
+      - name: Restore post PDFs
+        id: post-pdfs
+        uses: actions/cache@v6
+        with:
+          path: apps/web/static/timeline
+          key: ${{ runner.os }}-post-pdfs-${{ hashFiles('apps/web/src/content/blog/**', 'apps/web/templates/timeline/**', 'apps/web/scripts/build-post-pdfs.js') }}
+
       # The embedding model `npm run build` feeds the chat indexer: ~34MB from
       # Hugging Face, who rate-limit. Uncached, a 429 fails the build and the
       # site does not ship, for a reason that has nothing to do with the
@@ -111,19 +122,24 @@ jobs:
           key: hf-${{ hashFiles('apps/web/src/config/retrieval.mjs', 'apps/web/scripts/build-chat-index.mjs') }}
           restore-keys: hf-
 
-      # These packages cover what templates/cv/resume.tex.js uses (geometry,
-      # titlesec, enumitem, hyperref, xcolor, microtype, charter) without
-      # pulling the whole of TeX Live. Without them the build still succeeds,
-      # but /cv/*.pdf ships as a 404.
+      # These packages cover what templates/cv/resume.tex.js and
+      # templates/timeline/post.tex.js use (geometry, titlesec, enumitem,
+      # hyperref, xcolor, microtype, caption, tabularx, graphicx, charter)
+      # without pulling the whole of TeX Live. Without them the build still
+      # succeeds, but /cv/*.pdf and /timeline/pdf/*.pdf ship as 404s.
+      #
+      # webp is for the posts alone: their photographs are webp, which no TeX
+      # engine reads, so dwebp decodes each one on the way into a figure.
       - name: Install LaTeX
-        if: steps.cv-pdfs.outputs.cache-hit != 'true'
+        if: steps.cv-pdfs.outputs.cache-hit != 'true' || steps.post-pdfs.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             texlive-latex-base \
             texlive-latex-recommended \
             texlive-latex-extra \
-            texlive-fonts-recommended
+            texlive-fonts-recommended \
+            webp
 
       # The only step either token is exposed to, and it runs exactly one
       # script. `npm run build` below drives Gatsby, its plugins, the chat

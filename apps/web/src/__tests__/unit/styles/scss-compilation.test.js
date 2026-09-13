@@ -9,7 +9,7 @@ describe('SCSS Compilation', () => {
     const files = [
       'global.scss',
       'index.scss',
-      'blog.scss',
+      'timeline.scss',
       'cv.scss',
       'variables.scss',
       'mixins.scss',

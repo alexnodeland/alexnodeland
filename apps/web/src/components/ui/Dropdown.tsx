@@ -8,7 +8,20 @@ export interface DropdownOption {
 
 export interface DropdownProps {
   /** Visible text on the trigger — the current value, or a verb for an action menu. */
-  triggerLabel: string;
+  triggerLabel?: string;
+  /**
+   * A mark in place of that text, for a menu whose verb is a picture: the
+   * download tray. The trigger keeps its caret, so it still reads as something
+   * that opens rather than something that fires, and `ariaLabel` is doing the
+   * naming either way.
+   */
+  triggerIcon?: React.ReactNode;
+  /**
+   * Whether the action the menu last fired is still running. It reaches the
+   * trigger as `aria-busy` and as a class the stylesheet pulses, which is the
+   * only progress an icon trigger can report.
+   */
+  busy?: boolean;
   /** What the control is, for screen readers; the trigger's visible text is only half the story. */
   ariaLabel: string;
   options: DropdownOption[];
@@ -43,6 +56,8 @@ export interface DropdownProps {
  */
 const Dropdown: React.FC<DropdownProps> = ({
   triggerLabel,
+  triggerIcon,
+  busy = false,
   ariaLabel,
   options,
   value,
@@ -181,17 +196,22 @@ const Dropdown: React.FC<DropdownProps> = ({
       <button
         ref={triggerRef}
         type="button"
-        className={`ui-dropdown-trigger ${isOpen ? 'is-open' : ''}`}
+        className={`ui-dropdown-trigger ${isOpen ? 'is-open' : ''} ${
+          triggerIcon ? 'is-icon' : ''
+        } ${busy ? 'is-busy' : ''}`.trim()}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? listId : undefined}
         aria-label={ariaLabel}
+        aria-busy={busy || undefined}
         onClick={() =>
           isOpen ? close(false) : open(selectedIndex >= 0 ? selectedIndex : 0)
         }
         onKeyDown={handleTriggerKeyDown}
       >
-        <span className="ui-dropdown-value">{triggerLabel}</span>
+        {triggerIcon ?? (
+          <span className="ui-dropdown-value">{triggerLabel}</span>
+        )}
         <span className="ui-dropdown-caret" aria-hidden="true">
           ▾
         </span>

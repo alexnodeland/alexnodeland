@@ -53,6 +53,27 @@
     @include control-active;
   }
 
+  // A trigger whose verb is a mark rather than a word: the padding the label
+  // needed comes off, and the glyph is set to the size every other chip's is.
+  &.is-icon {
+    padding-inline: 0.55rem;
+    gap: var(--space-1);
+
+    svg {
+      display: block;
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  // The action it fired is still running. An icon has no word to swap for
+  // "generating...", so the mark itself says so by breathing. Status rather
+  // than decoration, which is why it stays under reduced motion — the same
+  // rule the chat's two status loops are kept by (see animations.scss).
+  &.is-busy svg {
+    animation: chip-busy 1.2s ease-in-out infinite;
+  }
+
   .ui-dropdown-caret {
     font-size: 0.7em;
     line-height: 1;

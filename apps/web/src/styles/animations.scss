@@ -139,6 +139,19 @@
   }
 }
 
+// A chip whose action is still running — the CV's download mark while the
+// DOCX is being assembled. Status, like the two above, so it also stays under
+// reduced motion.
+@keyframes chip-busy {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 @keyframes thinking-dots {
   0%,
   80%,

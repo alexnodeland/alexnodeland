@@ -461,13 +461,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             (!isMobile || descriptionOpen) && (
               <div className="blog-post-link-container">
                 <a
-                  href={`/blog/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`}
+                  href={`/timeline/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`}
                   className="blog-post-link"
                   onClick={e => {
                     e.preventDefault();
                     // Navigate using Gatsby's navigate to maintain state persistence
                     navigate(
-                      `/blog/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`
+                      `/timeline/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`
                     );
                   }}
                 >

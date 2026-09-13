@@ -252,7 +252,7 @@ const ActivityPanel: React.FC = () => {
             className="activity-link"
           >
             <GitHubIcon />
-            <span>all repositories on github</span>
+            <span>all repos</span>
           </a>
         </div>
       </div>

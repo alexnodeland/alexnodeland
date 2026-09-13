@@ -81,8 +81,8 @@ test.describe('navigation stability', () => {
     await scrollToEnd(page);
     const loaded = await foldedRow(page);
 
-    await goTo(page, '/blog');
-    await page.waitForURL(/\/blog\/?$/);
+    await goTo(page, '/timeline');
+    await page.waitForURL(/\/timeline\/?$/);
     await page.waitForTimeout(900);
     await goHome(page);
     await page.waitForURL(/\/$/);
@@ -97,7 +97,7 @@ test.describe('navigation stability', () => {
   }) => {
     // Sixteen page loads and twelve navigations, each with a settle of its own.
     test.setTimeout(300_000);
-    const pages = ['/', '/blog', '/projects', '/cv'];
+    const pages = ['/', '/timeline', '/projects', '/cv'];
     const loaded: Record<string, unknown> = {};
     for (const path of pages) {
       await page.goto(path);
@@ -144,7 +144,7 @@ test.describe('navigation stability', () => {
     // occupies — which is exact, but the folded height it lands on is a token
     // sum that a hero with a taller tagline would legitimately move. A pixel
     // is a long way inside the regression this is here to catch.
-    await goTo(page, '/blog');
+    await goTo(page, '/timeline');
     for (let sample = 0; sample < 8; sample += 1) {
       await page.waitForTimeout(60);
       const [top, height] = await windowBox();
@@ -196,7 +196,7 @@ test.describe('navigation stability', () => {
     // region — and the ghost is its sibling, not its child. Without a copy it
     // spent its whole exit snapped back to the resting, centred layout: the
     // one thing it exists to avoid.
-    await goTo(page, '/blog');
+    await goTo(page, '/timeline');
     const ghost = await page.evaluate(async () => {
       for (let tries = 0; tries < 40; tries += 1) {
         const el = document.querySelector('.hero-ghost h1');
@@ -225,8 +225,8 @@ test.describe('navigation stability', () => {
     // "something is focused" as "someone else will handle this" left the
     // window unscrollable from the keyboard until a click put focus back in
     // it. Only a field or a scroller of its own owns these keys.
-    await goTo(page, '/blog');
-    await page.waitForURL(/\/blog\/?$/);
+    await goTo(page, '/timeline');
+    await page.waitForURL(/\/timeline\/?$/);
     await page.waitForTimeout(900);
 
     const scrollTop = () =>
@@ -242,7 +242,7 @@ test.describe('navigation stability', () => {
     // A field still keeps its own keys. The search box is folded away behind
     // the chip in the control row until it is asked for.
     await page.click('.ui-search-toggle');
-    await page.click('#blog-search .search-input');
+    await page.click('#timeline-search .search-input');
     const parked = await scrollTop();
     await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(200);

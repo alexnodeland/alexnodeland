@@ -18,7 +18,7 @@ jest.mock('../../../config', () => ({
       main: [
         { name: 'Home', href: '/' },
         { name: 'About', href: '/about' },
-        { name: 'Blog', href: '/blog' },
+        { name: 'Timeline', href: '/timeline' },
         { name: 'CV', href: '/cv' },
       ],
     },
@@ -110,7 +110,7 @@ describe('Layout Component', () => {
 
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('About')).toBeInTheDocument();
-    expect(screen.getByText('Blog')).toBeInTheDocument();
+    expect(screen.getByText('Timeline')).toBeInTheDocument();
     expect(screen.getByText('CV')).toBeInTheDocument();
   });
 
@@ -119,7 +119,7 @@ describe('Layout Component', () => {
 
     expect(screen.getByText('Home')).toHaveAttribute('href', '/');
     expect(screen.getByText('About')).toHaveAttribute('href', '/about');
-    expect(screen.getByText('Blog')).toHaveAttribute('href', '/blog');
+    expect(screen.getByText('Timeline')).toHaveAttribute('href', '/timeline');
     expect(screen.getByText('CV')).toHaveAttribute('href', '/cv');
   });
 
@@ -282,9 +282,9 @@ describe('Layout Component', () => {
 
     it.each([
       [
-        '/blog',
-        '.blog-header',
-        'blog',
+        '/timeline',
+        '.timeline-header',
+        'timeline',
         'things built, played, and written about.',
       ],
       [
@@ -315,12 +315,12 @@ describe('Layout Component', () => {
     );
 
     it('should tolerate a trailing slash', () => {
-      render(<TestWrapper pathname="/blog/">{mockChildren}</TestWrapper>);
+      render(<TestWrapper pathname="/timeline/">{mockChildren}</TestWrapper>);
 
-      expect(document.querySelector('.blog-header')).not.toBeNull();
+      expect(document.querySelector('.timeline-header')).not.toBeNull();
     });
 
-    it.each([['/blog/some-post'], ['/not-a-page']])(
+    it.each([['/timeline/some-post'], ['/not-a-page']])(
       'should wear the brand alone, pinned folded, on %s',
       pathname => {
         render(<TestWrapper pathname={pathname}>{mockChildren}</TestWrapper>);
@@ -342,7 +342,7 @@ describe('Layout Component', () => {
     );
 
     it('should mark every real hero collapsible', () => {
-      ['/', '/blog', '/projects', '/cv'].forEach(pathname => {
+      ['/', '/timeline', '/projects', '/cv'].forEach(pathname => {
         const { unmount } = render(
           <TestWrapper pathname={pathname}>{mockChildren}</TestWrapper>
         );
@@ -355,7 +355,7 @@ describe('Layout Component', () => {
   });
 
   it('should nest the hero and the window in one stage', () => {
-    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+    render(<TestWrapper pathname="/timeline">{mockChildren}</TestWrapper>);
 
     const stage = document.querySelector('.stage') as HTMLElement;
     expect(stage).not.toBeNull();
@@ -397,20 +397,24 @@ describe('Layout Component', () => {
     );
 
     it('should swap the hero when the path changes', () => {
-      const { rerender } = render(<Shell pathname="/blog" label="blog" />);
-      expect(document.querySelector('.blog-header')).not.toBeNull();
+      const { rerender } = render(
+        <Shell pathname="/timeline" label="timeline" />
+      );
+      expect(document.querySelector('.timeline-header')).not.toBeNull();
 
       act(() => {
         rerender(<Shell pathname="/cv" label="cv" />);
       });
 
-      expect(document.querySelector('.blog-header')).toBeNull();
+      expect(document.querySelector('.timeline-header')).toBeNull();
       expect(document.querySelector('.cv-page-header')).not.toBeNull();
       expect(screen.getByTestId('page')).toHaveTextContent('cv');
     });
 
     it('should keep the shell itself across a navigation', () => {
-      const { rerender } = render(<Shell pathname="/blog" label="blog" />);
+      const { rerender } = render(
+        <Shell pathname="/timeline" label="timeline" />
+      );
       const windowPanel = document.querySelector('.layout');
       const nav = document.querySelector('.nav');
 
@@ -425,7 +429,9 @@ describe('Layout Component', () => {
     });
 
     it('should put the window back to the top on a new path', () => {
-      const { rerender } = render(<Shell pathname="/blog" label="blog" />);
+      const { rerender } = render(
+        <Shell pathname="/timeline" label="timeline" />
+      );
       const windowPanel = document.querySelector('.layout') as HTMLElement;
       windowPanel.scrollTop = 400;
 
@@ -457,7 +463,9 @@ describe('Layout Component', () => {
       });
 
       it('should keep the outgoing hero on screen while the new one arrives', () => {
-        const { rerender } = render(<Shell pathname="/blog" label="blog" />);
+        const { rerender } = render(
+          <Shell pathname="/timeline" label="timeline" />
+        );
 
         act(() => {
           rerender(<Shell pathname="/cv" label="cv" />);
@@ -468,7 +476,7 @@ describe('Layout Component', () => {
         // with no hero at all.
         const ghost = document.querySelector('.hero-ghost') as HTMLElement;
         expect(ghost).not.toBeNull();
-        expect(ghost.querySelector('.blog-header')).not.toBeNull();
+        expect(ghost.querySelector('.timeline-header')).not.toBeNull();
         expect(
           document.querySelector('.site-hero:not(.hero-ghost)')
         ).toContainElement(document.querySelector('.cv-page-header'));
@@ -491,7 +499,9 @@ describe('Layout Component', () => {
           cancel: jest.fn(),
         }));
 
-        const { rerender } = render(<Shell pathname="/blog" label="blog" />);
+        const { rerender } = render(
+          <Shell pathname="/timeline" label="timeline" />
+        );
         act(() => {
           rerender(<Shell pathname="/cv" label="cv" />);
         });
@@ -506,7 +516,7 @@ describe('Layout Component', () => {
 
       it('should ghost the pinned brand, folded, when leaving a post', () => {
         const { rerender } = render(
-          <Shell pathname="/blog/a-post" label="post" />
+          <Shell pathname="/timeline/a-post" label="post" />
         );
 
         act(() => {
@@ -569,7 +579,7 @@ describe('Layout Component', () => {
   describe('the hero fold', () => {
     it('should mark the stage on a page whose hero folds, and not on a post', () => {
       const { unmount } = render(
-        <TestWrapper pathname="/blog">{mockChildren}</TestWrapper>
+        <TestWrapper pathname="/timeline">{mockChildren}</TestWrapper>
       );
       expect(document.querySelector('.stage')).toHaveClass('has-fold');
       // The window is three layers plus the band the content starts under.
@@ -581,7 +591,9 @@ describe('Layout Component', () => {
       unmount();
 
       // A post wears the brand pinned folded: the stage folds, and says so.
-      render(<TestWrapper pathname="/blog/a-post">{mockChildren}</TestWrapper>);
+      render(
+        <TestWrapper pathname="/timeline/a-post">{mockChildren}</TestWrapper>
+      );
       expect(document.querySelector('.stage')).toHaveClass('has-fold');
       expect(document.querySelector('.stage')).toHaveClass('is-pinned');
     });
@@ -590,7 +602,7 @@ describe('Layout Component', () => {
     // that cannot run the fold off the scroll timeline get the progress
     // written once per frame, on the three elements that read it.
     it('should publish the scroll progress across the band on the fallback path', () => {
-      render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+      render(<TestWrapper pathname="/timeline">{mockChildren}</TestWrapper>);
 
       const stage = document.querySelector('.stage') as HTMLElement;
       const region = document.querySelector('.site-hero') as HTMLElement;
@@ -759,7 +771,9 @@ describe('Layout Component', () => {
     });
 
     it('should measure the pinned brand too, for the row it sits on', () => {
-      render(<TestWrapper pathname="/blog/a-post">{mockChildren}</TestWrapper>);
+      render(
+        <TestWrapper pathname="/timeline/a-post">{mockChildren}</TestWrapper>
+      );
 
       const heroRegion = document.querySelector('.site-hero') as HTMLElement;
       // The brand folds onto the same line the crumb heroes do, from the
@@ -910,7 +924,7 @@ describe('scrolling the window from the field', () => {
   const mockChildren = <div>Test Content</div>;
 
   it('forwards a wheel turned outside the window to the window', () => {
-    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+    render(<TestWrapper pathname="/timeline">{mockChildren}</TestWrapper>);
     const panel = document.querySelector('.layout') as HTMLElement;
     panel.scrollTop = 0;
 
@@ -923,7 +937,7 @@ describe('scrolling the window from the field', () => {
   });
 
   it('leaves a wheel turned inside the window to the browser', () => {
-    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+    render(<TestWrapper pathname="/timeline">{mockChildren}</TestWrapper>);
     const panel = document.querySelector('.layout') as HTMLElement;
     panel.scrollTop = 0;
 
@@ -936,7 +950,7 @@ describe('scrolling the window from the field', () => {
   });
 
   it('scrolls the window on PageDown when nothing has focus', () => {
-    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+    render(<TestWrapper pathname="/timeline">{mockChildren}</TestWrapper>);
     const panel = document.querySelector('.layout') as HTMLElement;
     panel.scrollTop = 0;
     Object.defineProperty(panel, 'clientHeight', {
@@ -954,7 +968,7 @@ describe('scrolling the window from the field', () => {
   });
 
   it('is focusable, so a click inside hands it the keyboard', () => {
-    render(<TestWrapper pathname="/blog">{mockChildren}</TestWrapper>);
+    render(<TestWrapper pathname="/timeline">{mockChildren}</TestWrapper>);
     expect(document.querySelector('.layout')).toHaveAttribute('tabindex', '-1');
   });
 });

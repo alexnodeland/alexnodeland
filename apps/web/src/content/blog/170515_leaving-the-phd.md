@@ -7,7 +7,7 @@ category: 'Notes'
 
 i left the computational applied mathematics phd at stony brook in may 2017, a little over a year after starting a company out of it.
 
-yuefan deng was my advisor. the research i was there for was [optimal wavelet bases for audio compression](/blog/161101_optimal-wavelet-bases/), but he kept pointing me at a different problem: take what you know about graph theory and aim it at networks. resource allocation. task management in job scheduling.
+yuefan deng was my advisor. the research i was there for was [optimal wavelet bases for audio compression](/timeline/161101_optimal-wavelet-bases/), but he kept pointing me at a different problem: take what you know about graph theory and aim it at networks. resource allocation. task management in job scheduling.
 
 the interconnect topology can be modeled as a graph. in a distributed system the connectivity and latency between nodes are not uniform, and job sizes and durations keep changing, so the scheduler is balancing fairness, dynamicity and utilization all at once, while trying to place jobs on high-conductance subgraphs of the network, which matters most when the workload is network-intensive.
 

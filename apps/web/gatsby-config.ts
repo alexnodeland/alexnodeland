@@ -82,12 +82,18 @@ const config: import('gatsby').GatsbyConfig = {
               };
             }) =>
               allMarkdownRemark.nodes.map(node => {
-                const url = `${site.siteMetadata.siteUrl}/blog${node.fields.slug}`;
+                const url = `${site.siteMetadata.siteUrl}/timeline${node.fields.slug}`;
                 return {
                   title: node.frontmatter.title,
                   description: node.frontmatter.description,
                   date: node.frontmatter.date,
                   url,
+                  // The guid follows the address rather than being pinned to
+                  // an older spelling of it. The move from /blog to /timeline
+                  // therefore gives every item a new identity once, and a
+                  // subscriber sees the back catalogue again on the deploy
+                  // that carries it. Known, and accepted, rather than carried
+                  // as a dead URL in the feed for good.
                   guid: url,
                   custom_elements: [{ 'content:encoded': node.html }],
                 };

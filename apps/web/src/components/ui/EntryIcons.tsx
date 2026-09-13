@@ -43,6 +43,19 @@ export const LinkIcon: React.FC = () => (
   </svg>
 );
 
+/**
+ * An arrow into a tray: take this away with you. The one download mark on the
+ * site — the CV's menu wears it and so does the typeset copy of a post — so
+ * the two never drift into being two different glyphs for one idea.
+ */
+export const DownloadIcon: React.FC = () => (
+  <svg {...iconProps}>
+    <path d="M12 4v10" />
+    <path d="m8 11 4 4 4-4" />
+    <path d="M5 20h14" />
+  </svg>
+);
+
 /** The octocat, in outline: the way out to a repo on github. */
 export const GitHubIcon: React.FC = () => (
   <svg {...iconProps}>

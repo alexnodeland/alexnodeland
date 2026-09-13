@@ -11,7 +11,7 @@ import { homepageConfig, projectsConfig } from '../config';
  * thing being replaced. Instead the heroes live here, keyed by path, and
  * Layout resolves its own from `location.pathname`.
  *
- * Class names are unchanged (`hero`, `blog-header`, `projects-header`,
+ * Class names still key the choreography (`hero`, `timeline-header`, `projects-header`,
  * `cv-page-header`, `hero-crumb`, `data-brand-anchor`): the collapse
  * choreography, the split measurement and the brand FLIP all key off them.
  */
@@ -36,7 +36,7 @@ export interface ResolvedHero {
   pinned: boolean;
 }
 
-// The way home lives in the title: "alex → blog". The crumb is a real link and
+// The way home lives in the title: "alex → timeline". The crumb is a real link and
 // carries the brand anchor, so it is the thing the FLIP lands on.
 //
 // Everything after the crumb is wrapped rather than left as loose nodes: on a
@@ -50,7 +50,7 @@ const crumbTitle = (label: string) => (
     </Link>
     {/* The space lives between the two boxes, not inside the second: leading
         whitespace at the start of an inline-block collapses, which is how the
-        title used to render as "alex→ blog". */}{' '}
+        title used to render as "alex→ timeline". */}{' '}
     <span className="hero-crumb-rest">
       <span className="hero-crumb-sep">→ </span>
       {label}
@@ -86,9 +86,9 @@ const HEROES: Record<string, () => React.ReactNode> = {
       </p>
     </section>
   ),
-  '/blog': () => (
-    <header className="blog-header">
-      {crumbTitle('blog')}
+  '/timeline': () => (
+    <header className="timeline-header">
+      {crumbTitle('timeline')}
       <p>things built, played, and written about.</p>
     </header>
   ),
@@ -133,7 +133,7 @@ const brandHero = () => (
 );
 
 /**
- * Trailing-slash tolerant exact match. Gatsby serves `/blog` and `/blog/` as
+ * Trailing-slash tolerant exact match. Gatsby serves `/timeline` and `/timeline/` as
  * the same page and hands whichever one the link was written with to
  * `location.pathname`, so the lookup has to see one spelling.
  */
