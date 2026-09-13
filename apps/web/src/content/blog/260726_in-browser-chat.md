@@ -5,7 +5,7 @@ description: 'A 1.2B model runs in your browser and answers questions from this 
 category: 'Projects'
 ---
 
-there is a chat box on this site. when you open it, your browser downloads a 760mb language model and runs it on your gpu. nothing is sent anywhere — there is no server to send it to. it answers questions about me from the pages you are already reading.
+there is a chat box on this site. when you open it, your browser downloads a 760mb language model and runs it on your gpu. nothing is sent anywhere, because there is no server to send it to. it answers questions about me from the pages you are already reading.
 
 this is how it works, and what the numbers look like.
 
@@ -13,7 +13,7 @@ this is how it works, and what the numbers look like.
 
 the first version put my entire cv, about 4,500 tokens, in front of every question. it also ran two throwaway yes/no generations before each answer, to decide whether the question was on-topic at all. three model calls per question, and it knew nothing about the blog or the projects page.
 
-now the site is chunked into 95 passages at build time and embedded into a 111kb file that ships with the page. your browser embeds only your question — one forward pass over about fifteen tokens, roughly two milliseconds — and searches that index.
+now the site is chunked into 95 passages at build time and embedded into a 111kb file that ships with the page. your browser embeds only your question, one forward pass over about fifteen tokens and roughly two milliseconds, then searches that index.
 
 the search is hybrid, and it needs to be. this corpus is one person's life, so everything in it is semantically adjacent to everything else; a 384-dimension vector cannot reliably separate "musiio" from "influize". exact term matching carries the proper nouns, embeddings carry the paraphrases ("where did he go to school"), and reciprocal rank fusion combines them without needing the two score scales to be comparable, which they are not.
 
@@ -38,7 +38,7 @@ prefill dominates decode here, about 2:1. tokens per second is the number usuall
 
 the instruction block is identical on every turn, so it is run through the model once at load and its key-value cache is reused. that is worth about 420ms a turn, a quarter of the total.
 
-the cached part was 975 tokens and stayed 975 tokens no matter how long the conversation ran, so the _share_ of each prompt it covered went down as you talked — 55%, then 51%. a cache that stops growing matters less the longer the conversation runs.
+the cached part was 975 tokens and stayed 975 tokens no matter how long the conversation ran, so the _share_ of each prompt it covered went down as you talked, from 55% to 51%. a cache that stops growing matters less the longer the conversation runs.
 
 a cache can only skip a prefix that matches token for token, so what it can cover is decided by the order the prompt is assembled in. more of the prompt is fixed than it first appears: earlier questions have their retrieved passages stripped out, and earlier answers have their citation markers removed, and both of those edits happen exactly once, when a turn stops being the current one. after that the history is frozen, so it can all be carried forward, and the cached region grows by one exchange per turn instead of standing still. seven turns in it covers 1,290 tokens rather than 975, and the conversation is prefilling about a quarter fewer tokens than it was.
 
@@ -68,7 +68,7 @@ it currently scores 55/68. the remaining failures are dates it gets wrong, gibbe
 
 ## what it still gets wrong
 
-ask it "archanan?" — just the word — and it recites where that company sits in my timeline instead of telling you what it was. the answer is coming from the career summary that sits in every prompt, and suppressing it breaks the follow-up questions the summary is there to serve.
+ask it "archanan?", just the word, and it recites where that company sits in my timeline instead of telling you what it was. the answer is coming from the career summary that sits in every prompt, and suppressing it breaks the follow-up questions the summary is there to serve.
 
 if your browser has no webgpu, it does not work at all, and it says so. it can't fall back to your cpu, and the reason is narrower than "too slow", though it is also too slow. every compressed version of this model stores its vocabulary in a format the cpu engine cannot read. the gpu engine can, which is why one works and the other does not. a faster cpu engine would not fix it either: the best one available runs a model this size at two to five words a second.
 
