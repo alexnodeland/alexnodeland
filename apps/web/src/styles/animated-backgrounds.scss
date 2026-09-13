@@ -119,11 +119,30 @@
 // mark that asked for it but never allowed past the panel's own edges.
 .setting-note {
   @include floating-panel;
-  // Opaque, where every other floating thing on the site is a scrim over a
-  // blur. This one lands on the panel rather than on the field, and a scrim
-  // over a surface that is already a scrim is not a surface — the select and
-  // the reset button under it read straight through the sentence.
-  background: var(--bg-floating);
+  // The material every current thing on the site wears, because that is what
+  // this is: the panel's own scrim with the active wash over it and the lit
+  // hairline that goes with it, exactly as a chosen category tab or an open
+  // chip is marked. It was a slab of --bg-floating for a while, which read as
+  // a hole cut in the panel rather than as a part of it.
+  //
+  // The blur is the chip's rather than the panel's. What passes under this is
+  // a control with ink of its own, and the heavier blur is what smears that
+  // into a wash instead of letting it read up through the sentence — the same
+  // reasoning the frosted chips are built on.
+  // The window's own scrim, laid on until it is a surface: four coats of the
+  // one colour every panel on the site is made of, and then the wash. A
+  // backdrop filter inside a surface that already carries one has nothing left
+  // to blur — the sheet is its own backdrop root — so the depth has to come
+  // from the scrim, and at the panel's own two coats the select underneath
+  // read up through the sentence.
+  background-image:
+    linear-gradient(var(--window-scrim), var(--window-scrim)),
+    linear-gradient(var(--window-scrim), var(--window-scrim)),
+    linear-gradient(var(--window-scrim), var(--window-scrim)),
+    linear-gradient(var(--wash-active), var(--wash-active));
+  backdrop-filter: blur(var(--blur-chip));
+  -webkit-backdrop-filter: blur(var(--blur-chip));
+  border-color: var(--hairline-lit);
   box-shadow: var(--shadow-panel);
   border-radius: var(--radius-sm);
   position: absolute;

@@ -5,6 +5,14 @@
 // window's content at a different x from the hero and the nav above it.
 .timeline-page {
   position: relative;
+
+  // The rail's gutter: where the line sits, measured from the column's own left
+  // edge, and the air between it and the cards. Declared here rather than on
+  // the list because the control row above it is indented by the same distance
+  // — the row's ends are measured against the cards, not against the column the
+  // rail hangs in (see .timeline-control-bar).
+  --rail-line: 0.5rem;
+  --rail-gap: var(--space-4);
 }
 
 // The page hero, rendered on the field above the window — see .site-hero in
@@ -38,6 +46,19 @@
 // shared default too, so the three list pages start at the same line.
 .timeline-control-bar {
   @include sticky-control-row;
+
+  // Aligned with the cards, not with the column the rail hangs in. The list
+  // is indented by the rail's line and its gap (see .posts-list), and the row
+  // was not — so at the left end the chips overhung the panels passing under
+  // them by the whole gutter while the right end sat on their edge, and the
+  // draw-in that is meant to read as one measure either side read as a gap on
+  // one side and nothing on the other. The panels' edge is what the row's ends
+  // are measured from now, and the rail keeps its gutter to itself.
+  //
+  // The same two tokens the list reads, declared once on .timeline-page above,
+  // so the two cannot drift. A phone has no rail and so takes none of it (the
+  // block at the foot of this file).
+  padding-left: calc(var(--rail-line) + var(--rail-gap));
 }
 
 // The page adds no space of its own below the list: the window's own bottom
@@ -65,10 +86,8 @@
 // in the column (see .year-break below), so the gutter holds no text at any
 // width and is only as wide as a dot needs.
 .posts-list {
-  // Where the line sits, measured from the list's own left edge, and the air
-  // between it and the cards.
-  --rail-line: 0.5rem;
-  --rail-gap: var(--space-4);
+  // The rail's own distances are on .timeline-page, which the control row above
+  // this reads them from too.
   // Down to the middle of a card's title line, which is what a dot points at.
   --dot-top: 1.75rem;
 
@@ -686,6 +705,11 @@
     &::before {
       display: none;
     }
+  }
+
+  // The row follows the cards, and on a phone they have the full measure.
+  .timeline-control-bar {
+    padding-left: 0;
   }
 
   .post-preview::before {
