@@ -112,6 +112,45 @@
   }
 }
 
+// The note a `?` opens: one box for the whole panel, laid over it rather than
+// inside the list, because the list scrolls and clipped every tooltip that used
+// to live in a row. It is placed by the panel (see openHelp in
+// SettingsPanel.tsx) in the panel's own coordinates, and it is centred on the
+// mark that asked for it but never allowed past the panel's own edges.
+.setting-note {
+  @include floating-panel;
+  // Opaque, where every other floating thing on the site is a scrim over a
+  // blur. This one lands on the panel rather than on the field, and a scrim
+  // over a surface that is already a scrim is not a surface — the select and
+  // the reset button under it read straight through the sentence.
+  background: var(--bg-floating);
+  box-shadow: var(--shadow-panel);
+  border-radius: var(--radius-sm);
+  position: absolute;
+  z-index: 30;
+  // A band across the panel at the mark's line rather than a bubble centred on
+  // it. The mark can be two characters from either edge — a centred bubble
+  // there hangs half of itself off the panel, and clamping one needs its width
+  // before it has been laid out. The panel is narrow enough that a band is the
+  // same thing without the arithmetic, and what it is pointing at is said by
+  // the mark, which wears the open state while the note is up.
+  left: var(--space-4);
+  right: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  // Anchored to whichever edge it grows away from, and capped at the room it
+  // has there (both written by the panel), so it cannot run off either end.
+  // The cap is far past any note the set carries; the scroll is the last
+  // resort, not the plan.
+  overflow-y: auto;
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  line-height: var(--leading-chrome);
+  text-transform: none;
+  text-align: left;
+  pointer-events: none;
+  animation: reveal var(--transition-fast);
+}
+
 // The oscillator's "audio playing" indicator: a pill on the field like the
 // others, bottom-centre, sitting above the `?` hint's line rather than on it.
 // The dot is the site's live green — a sound coming out of the speakers is a
@@ -205,13 +244,22 @@
     }
   }
 
+  // On a desktop it is simply there; the phone's block below turns it into a
+  // disclosure.
+  .background-info {
+    display: contents;
+  }
+
   .background-description {
     color: var(--text-secondary);
     font-size: var(--text-small);
     line-height: var(--leading-chrome);
-    margin-bottom: var(--space-3);
+    margin-bottom: 0;
   }
 
+  // The one measure above and below: the link sits between the description it
+  // belongs to and whatever follows, and it used to stand twice as far from the
+  // second as from the first.
   .blog-post-link-container {
     margin-top: var(--space-3);
     margin-bottom: var(--space-3);
@@ -425,39 +473,10 @@
       }
 
       // The floating-panel material, like every tooltip on the site.
-      .setting-tooltip {
-        @include floating-panel;
-        border-radius: var(--radius-sm);
-        position: absolute;
-        bottom: calc(100% + var(--space-2));
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 10;
-        width: max-content;
-        max-width: 15rem;
-        padding: var(--space-2) var(--space-3);
-        color: var(--text-primary);
-        font-size: var(--text-xs);
-        line-height: var(--leading-chrome);
-        text-transform: none;
-        text-align: left;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity var(--transition-fast);
-        pointer-events: none;
-      }
-
-      // Flipped below the icon when there is not enough room above inside the
-      // scrolling list; the class is set on hover/focus by positionTooltip.
-      &.flip .setting-tooltip {
-        bottom: auto;
-        top: calc(100% + var(--space-2));
-      }
-
-      &:hover .setting-tooltip,
-      &:focus-visible .setting-tooltip {
-        opacity: 1;
-        visibility: visible;
+      // Open is a real state and it is marked like every other one on the
+      // site: the white wash and the brighter hairline.
+      &.is-open {
+        @include control-active;
       }
     }
 
@@ -701,11 +720,15 @@
       flex: 0 0 auto;
     }
 
+    // Its own height and no more. It used to be allowed 45vh of a 60vh sheet
+    // and to scroll inside that, which is three quarters of the sheet spent on
+    // a paragraph, a second scrollbar inside the first, and the settings
+    // themselves squeezed into a twenty-pixel slit under it. The descriptions
+    // are short enough now to sit here whole (see each background's config),
+    // and what the header takes, it takes once.
     .sidebar-header {
       padding: var(--space-4) var(--space-4) var(--space-3);
       border-bottom: none;
-      max-height: 45vh;
-      overflow-y: auto;
     }
 
     .settings-content {
@@ -777,35 +800,36 @@
         }
       }
 
-      // There is no hover on touch and a tap does not satisfy :focus-visible,
-      // so plain :focus is what actually reveals a control's description here
-      // — the one place on the site it is the right pseudo-class.
+      // A thumb's target rather than a pointer's.
       .setting-help {
-        position: static; // Hand the tooltip's containing block to the row
         width: 1.25rem;
         height: 1.25rem;
-
-        &:focus {
-          outline: none;
-          color: var(--text-primary);
-          border-color: var(--hairline-lit);
-        }
-
-        &:focus .setting-tooltip {
-          opacity: 1;
-          visibility: visible;
-        }
       }
+    }
 
-      // Centring on the help dot pushes the bubble off-screen whenever the
-      // label is short; spanning the row keeps it in view wherever the dot is.
-      .setting-help .setting-tooltip {
-        left: 0;
-        right: 0;
-        transform: none;
-        width: auto;
-        max-width: none;
-        white-space: normal;
+    // The description, behind the header's `i`. A disclosure rather than a
+    // mount, so it eases open and shut — and so that the first scroll of the
+    // settings under it can put it away again (see SettingsPanel.tsx), which is
+    // what gives the controls the sheet back without the reader having to go
+    // find the `i` a second time.
+    //
+    // The ceiling is well past any description the set carries; it is there so
+    // there is something to ease to, not to clamp anything.
+    .background-info {
+      // A box of its own here, where the desktop lets its children stand in
+      // the header directly: `display: contents` generates none, and a box
+      // that does not exist cannot be given a height to ease.
+      display: block;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition:
+        max-height var(--transition-normal),
+        opacity var(--transition-fast);
+
+      &.is-open {
+        max-height: 24rem;
+        opacity: 1;
       }
     }
 
@@ -840,8 +864,6 @@
     .background-description {
       margin-top: var(--space-3);
       font-size: var(--text-xs);
-      max-height: 30vh;
-      overflow-y: auto;
     }
 
     // Flat, horizontally scrolling category strip — replaces the desktop's

@@ -341,13 +341,10 @@ export const pdeSolverConfig = createBackgroundConfig({
   name: 'PDE Solver: Heat & Wave Equations',
   shortName: 'pde solver',
   description:
-    'Explicit finite differences on a grid, solving the heat equation (∂u/∂t = α∇²u) or the wave equation ' +
-    '(∂²u/∂t² = c²∇²u). The Laplacian is a five-point stencil; heat uses FTCS, wave a centered second difference in time. ' +
-    'Boundary Condition and Initial Condition are the settings that change the physics rather than the look — Dirichlet ' +
-    'fixes the edge value so waves reflect inverted, Neumann zeroes the edge derivative so they reflect upright, and ' +
-    'Periodic wraps. Try a Gaussian pulse on the wave equation and switch between the three. You cannot make it diverge: ' +
-    'explicit schemes are only conditionally stable, so the timestep is clamped to the CFL limit before every step and ' +
-    'pushing diffusivity too far slows the simulation instead.',
+    'Explicit finite differences on a grid: the heat equation or the wave equation, both on a ' +
+    'five-point Laplacian. Boundary Condition and Initial Condition change the physics rather ' +
+    'than the look — Dirichlet reflects inverted, Neumann upright, Periodic wraps. It cannot ' +
+    'diverge; the timestep is clamped to the CFL limit.',
   component: PDESolverBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

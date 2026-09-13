@@ -239,7 +239,10 @@ export const cellularAutomatonConfig = createBackgroundConfig({
   name: 'Cellular Automaton',
   shortName: 'automaton',
   description:
-    'A real Life-like cellular automaton: a grid of cells, a rule in B/S notation, and a state buffer stepped one generation at a time. Each cell counts its eight neighbors on a wrapping torus, then lives, dies, or is born according to Rule. Newborn cells take the newborn color, cells that have survived a while shift toward the long-lived color, and links are drawn between live neighbors. Random soup under Conway settles into still lifes and oscillators within a couple of hundred generations, so Perturbation Rate flips a small fraction of cells each step to keep it from freezing — turn it to zero to watch it stall on its own.',
+    'A grid of cells stepped one generation at a time: each counts its eight neighbours on a ' +
+    "wrapping torus, then lives, dies or is born by Rule. Conway's soup settles within a few " +
+    'hundred generations, so Perturbation Rate flips a few cells each step — set it to zero ' +
+    'to watch it stall.',
   component: CellularAutomatonBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
