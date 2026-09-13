@@ -7,7 +7,7 @@ category: 'Press'
 
 on 3 may 2022 soundcloud acquired musiio. i was in the office the day the papers were signed.
 
-musiio's ai listens to music. that is the whole trick, and a harder one than it sounds: audio reference search, automated tagging, playlisting, aimed at catalogues holding more tracks than any person will ever get through. hazel savage and aron pettersson founded it in june 2018, out of [entrepreneur first's third singapore cohort](/blog/180724_ef-investor-day/) — the same cohort archanan came out of, pitching at the same investor day. i had been leading the engineering team there for about a year when the deal closed.
+musiio's ai listens to music. that is the whole trick, and a harder one than it sounds: audio reference search, automated tagging, playlisting, aimed at catalogues holding more tracks than any person will ever get through. hazel savage and aron pettersson founded it in june 2018, out of [entrepreneur first's third singapore cohort](/blog/180724_ef-investor-day/) — the same cohort archanan came out of, pitching at the same investor day. i had been tech lead there for about a year when the deal closed.
 
 <figure>
   <img
