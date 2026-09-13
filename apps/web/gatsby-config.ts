@@ -88,14 +88,13 @@ const config: import('gatsby').GatsbyConfig = {
                   description: node.frontmatter.description,
                   date: node.frontmatter.date,
                   url,
-                  // The guid is an identity, not an address, and it is pinned
-                  // to the address these posts were first published at. The
-                  // list moved from /blog to /timeline; a guid that moved with
-                  // it would be a new identity for every post in the feed, and
-                  // every subscriber would be handed all of them again as
-                  // unread. It stays spelled this way for good — the item's
-                  // `url` above is the link that actually goes anywhere.
-                  guid: `${site.siteMetadata.siteUrl}/blog${node.fields.slug}`,
+                  // The guid follows the address rather than being pinned to
+                  // an older spelling of it. The move from /blog to /timeline
+                  // therefore gives every item a new identity once, and a
+                  // subscriber sees the back catalogue again on the deploy
+                  // that carries it. Known, and accepted, rather than carried
+                  // as a dead URL in the feed for good.
+                  guid: url,
                   custom_elements: [{ 'content:encoded': node.html }],
                 };
               }),
