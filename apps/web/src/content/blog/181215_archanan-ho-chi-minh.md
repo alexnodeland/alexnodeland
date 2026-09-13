@@ -1,13 +1,13 @@
 ---
 title: 'Archanan in Ho Chi Minh City'
 date: '2018-12-15'
-description: 'Opening an Archanan engineering office at The Hive in District 3, five months after the EF investor day, and flying down every month until covid closed the borders.'
+description: 'Opening an Archanan engineering office at The Hive in Thảo Điền, five months after the EF investor day, and flying down every month until covid closed the borders.'
 category: 'Notes'
 ---
 
-archanan opened an office in ho chi minh city on 15 december 2018, at the hive in district 3, five months after [the investor day](/blog/180724_ef-investor-day/).
+archanan opened an office in ho chi minh city in december 2018, five months after [the investor day](/blog/180724_ef-investor-day/), and after a few other spots settled at [the hive in thảo điền](https://thehive.com.vn/).
 
-we built the team out to four or five engineers. every month i flew down and worked from the office with them rather than managing it from singapore, and that held until covid closed the borders.
+we built the team out to five engineers. every month i flew down and worked from the office with them rather than managing it from singapore, and that held until covid closed the borders.
 
 <figure>
   <img
