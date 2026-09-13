@@ -1,7 +1,7 @@
 ---
 title: 'InfiniCortex'
-date: '2015-11-16'
-description: "Stony Brook was one of the sites on InfiniCortex, A*STAR's attempt to stretch InfiniBand around the planet. I went to SC15 in Austin on an IACS travel award for the unveiling of our addition to it."
+date: '2016-11-14'
+description: "Stony Brook was one of four subnets on InfiniCortex, A*STAR's InfiniBand fabric stretched around the planet. I went to SC16 in Salt Lake City on an IACS travel award for the unveiling of our end of it."
 category: 'Notes'
 ---
 
@@ -24,10 +24,10 @@ infiniband is the interconnect inside a supercomputer: short range, one subnet, 
   </figcaption>
 </figure>
 
-marek michalewicz, who ran a\*star's computational resource centre, [gave the talk on it at iacs](https://iacs.stonybrook.edu/_archived/event/seminars/infinicortex-another-path-to-reach-exascale-supercomputing.html) on 27 august 2015. stony brook became one of the sites on the fabric, and our end of it was mine to look after.
+marek michalewicz, who ran a\*star's computational resource centre, [gave the talk on it at iacs](https://iacs.stonybrook.edu/_archived/event/seminars/infinicortex-another-path-to-reach-exascale-supercomputing.html) on 27 august 2015. stony brook became one of the sites on the fabric, and the work was mine to do, with the support of my advisor yuefan deng.
 
 that meant dealing with obsidian directly to get the longbow and crossbow units to us on loan. i took delivery myself and carried the package over to the iacs supercomputing center to be installed.
 
-that november i went to sc15 in austin on an iacs travel award, for the unveiling of stony brook's addition to the network. 2015 was the year the ring actually closed, when a new link running london east to singapore completed the circumnavigation. the demonstrations ran out of the a\*star and obsidian booths from the 16th to the 19th.
+in november 2016 i went to sc16 in salt lake city on an iacs travel award, for the unveiling of stony brook's addition to the network. the fabric ran as four subnets that year and stony brook was one of them, with five longbow units tying the show floor back to a\*crc in singapore at fifty gigabits.
 
 [infinicortex, from proof-of-concept to production](https://superfri.org/index.php/superfri/article/view/139) · [iacs](https://iacs.stonybrook.edu/)
