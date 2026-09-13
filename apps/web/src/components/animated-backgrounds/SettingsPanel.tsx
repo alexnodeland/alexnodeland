@@ -1,5 +1,11 @@
 import { navigate } from 'gatsby';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   BackgroundSettings,
   SettingsSchema,
@@ -107,6 +113,24 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+
+  // What a `?` beside a setting has to say, and where on the panel to say it.
+  //
+  // A popover rather than a tooltip inside the row, because the row is inside
+  // the list and the list scrolls: anchored there it was clipped by its own
+  // scroller for every control that was not in the middle of the visible band,
+  // and on a phone — where the visible band can be a couple of rows — that was
+  // all of them. It also could not be opened at all by touch, being shown on
+  // hover. So it is one box, a sibling of the scroller rather than a descendant
+  // of it, placed against the mark that asked for it.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [help, setHelp] = useState<{
+    key: string;
+    text: string;
+    below: boolean;
+    offset: number;
+    room: number;
+  } | null>(null);
 
   // Switching backgrounds swaps the whole category set out from under us.
   useEffect(() => {
@@ -267,22 +291,105 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
   };
 
-  // Render setting input based on type
-  // The settings list scrolls, so a tooltip anchored above its icon is clipped
-  // for any control near the top of the viewport. Measure the room actually
-  // available and flip it below when there isn't enough.
-  const positionTooltip = useCallback(
-    (event: React.SyntheticEvent<HTMLSpanElement>) => {
-      const help = event.currentTarget;
-      const tooltip = help.querySelector<HTMLElement>('.setting-tooltip');
-      const scroller = help.closest('.settings-content');
-      if (!tooltip || !scroller) return;
-      const roomAbove =
-        help.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-      help.classList.toggle('flip', roomAbove < tooltip.offsetHeight + 8);
-    },
-    []
-  );
+  // Open the note for one setting, measured against the panel it lands on.
+  //
+  // Both numbers are in the panel's own coordinates, since that is what the
+  // popover is positioned in — the sheet carries a backdrop filter, which makes
+  // it the containing block for anything fixed inside it anyway. It goes above
+  // the mark where there is room above and below it where there is not, so it
+  // is never the thing that runs off the panel.
+  const openHelp = useCallback((key: string, text: string, mark: Element) => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    setHelp(current => {
+      if (current?.key === key) return null;
+      const box = mark.getBoundingClientRect();
+      const frame = panel.getBoundingClientRect();
+      const above = box.top - frame.top;
+      const under = frame.bottom - box.bottom;
+      const below = under > above;
+      // Anchored to the edge it grows away from — `top` when it hangs below the
+      // mark, `bottom` when it stands above it — so the note can only ever run
+      // out of room in the one direction the cap covers. Positioning it by one
+      // edge and translating it the other way needs its height, which does not
+      // exist until it has been laid out.
+      return {
+        key,
+        text,
+        below,
+        offset: below ? box.bottom - frame.top + 8 : frame.bottom - box.top + 8,
+        room: (below ? under : above) - 16,
+      };
+    });
+  }, []);
+
+  const closeHelp = useCallback(() => setHelp(null), []);
+
+  // Everything that means "not that any more": another background, the panel
+  // closing, a key, or a tap anywhere that is not the note or the mark that
+  // opened it. The list scrolling counts too — the mark it is pointing at has
+  // moved out from under it.
+  useEffect(() => {
+    if (!help) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      // The note is the innermost thing open, so Escape is its. Without this
+      // the key went straight past it to the shell's own handler and shut the
+      // whole panel — one press, two things dismissed, and the reader back on
+      // the field wondering what happened. A second press still closes the
+      // panel, which is what a second press should do.
+      event.stopPropagation();
+      closeHelp();
+    };
+    const onPointer = (event: Event) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest('.setting-help, .setting-note')
+      )
+        return;
+      closeHelp();
+    };
+    const scroller = panelRef.current?.querySelector('.settings-content');
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointer, true);
+    // On the next frame, not this one: opening the note changes the panel's
+    // layout, and a list whose box has just changed can emit a scroll of its
+    // own — which would have closed the note in the frame it opened in.
+    const armed = requestAnimationFrame(() =>
+      scroller?.addEventListener('scroll', closeHelp, { passive: true })
+    );
+    return () => {
+      cancelAnimationFrame(armed);
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPointer, true);
+      scroller?.removeEventListener('scroll', closeHelp);
+    };
+  }, [help, closeHelp]);
+
+  useEffect(() => {
+    setHelp(null);
+  }, [currentBackgroundId, activeCategory]);
+
+  // The description gets out of the way the moment the reader goes looking for
+  // a setting. It is the longest thing in the sheet and it is read once; the
+  // controls under it are the reason the sheet is open at all.
+  useEffect(() => {
+    if (!descriptionOpen) return;
+    const scroller = panelRef.current?.querySelector('.settings-content');
+    if (!scroller) return;
+    const close = () => setDescriptionOpen(false);
+    // The gesture rather than the scroll it causes. Opening the description
+    // takes height away from the list under it, and a list that has just been
+    // resized emits a scroll on its own — which closed the description in the
+    // frame it opened in. A finger and a wheel are only ever the reader.
+    scroller.addEventListener('wheel', close, { passive: true });
+    scroller.addEventListener('touchmove', close, { passive: true });
+    return () => {
+      scroller.removeEventListener('wheel', close);
+      scroller.removeEventListener('touchmove', close);
+    };
+  }, [descriptionOpen]);
 
   const renderSettingInput = (setting: SettingsSchema) => {
     const value = getNestedValue(settings, setting.key);
@@ -391,19 +498,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <label className="setting-label">
         {setting.label?.toLowerCase?.() || ''}
         {setting.description && (
-          <span
-            className="setting-help"
-            tabIndex={0}
-            role="note"
-            aria-label={setting.description}
-            onMouseEnter={positionTooltip}
-            onFocus={positionTooltip}
+          <button
+            type="button"
+            className={`setting-help${help?.key === setting.key ? ' is-open' : ''}`}
+            aria-label={`about ${setting.label ?? setting.key}`}
+            aria-expanded={help?.key === setting.key}
+            onClick={event =>
+              openHelp(setting.key, setting.description!, event.currentTarget)
+            }
           >
             ?
-            <span className="setting-tooltip" role="tooltip">
-              {setting.description}
-            </span>
-          </span>
+          </button>
         )}
       </label>
       {renderSettingInput(setting)}
@@ -414,6 +519,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   return (
     <div
+      ref={panelRef}
       className={[
         'settings-sidebar',
         isMobile && 'settings-sheet',
@@ -453,12 +559,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <CloseIcon />
             </button>
           </div>
-          {(!isMobile || descriptionOpen) && (
+          {/* Always in the tree rather than mounted on demand: on a phone this
+              is a disclosure, and a thing that is not there cannot be eased
+              open. Shut, it is zero-height and out of the accessibility tree
+              (see .background-info in animated-backgrounds.scss). */}
+          <div
+            className={`background-info${!isMobile || descriptionOpen ? ' is-open' : ''}`}
+            aria-hidden={isMobile && !descriptionOpen}
+          >
             <div className="background-description">{description}</div>
-          )}
 
-          {currentBackgroundBlogPostSection &&
-            (!isMobile || descriptionOpen) && (
+            {currentBackgroundBlogPostSection && (
               <div className="blog-post-link-container">
                 <a
                   href={`/timeline/250928_interactive-algorithm-visualizations/${currentBackgroundBlogPostSection}`}
@@ -490,6 +601,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </a>
               </div>
             )}
+          </div>
 
           {currentBackgroundId === 'spectrogram-oscilloscope' && (
             <div className="special-hotkeys">
@@ -664,6 +776,25 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           reset to defaults
         </button>
       </div>
+
+      {/* The note a `?` opens: one box for the whole panel, placed over
+          whichever mark asked for it. It is here, outside the scrolling list,
+          because inside it the list's own overflow clipped it — which on a
+          phone, where the list can be two rows tall, meant it was never
+          visible at all. */}
+      {help && (
+        <div
+          className={`setting-note${help.below ? ' is-below' : ''}`}
+          role="tooltip"
+          style={
+            help.below
+              ? { top: help.offset, maxHeight: help.room }
+              : { bottom: help.offset, maxHeight: help.room }
+          }
+        >
+          {help.text}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { CVData } from '../../config/cv';
 import type { CVVariant } from '../../lib/utils/export/docx';
+import ControlRow from '../ui/ControlRow';
 import Dropdown, { DropdownOption } from '../ui/Dropdown';
 import { DownloadIcon } from '../ui/EntryIcons';
 import SearchToggle from '../ui/SearchToggle';
@@ -54,7 +55,7 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
     VIEW_OPTIONS.find(option => option.value === view)?.label ?? 'full cv';
 
   return (
-    <div className={`cv-control-bar ${className}`.trim()}>
+    <ControlRow className={`cv-control-bar ${className}`.trim()}>
       <Dropdown
         ariaLabel="Choose CV length"
         triggerLabel={viewLabel}
@@ -86,7 +87,7 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
           controls="cv-search"
         />
       )}
-    </div>
+    </ControlRow>
   );
 };
 

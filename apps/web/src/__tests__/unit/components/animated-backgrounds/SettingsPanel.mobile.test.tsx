@@ -82,20 +82,49 @@ describe('SettingsPanel on mobile', () => {
     expect(screen.queryByText('wave speed')).not.toBeInTheDocument();
   });
 
+  // A disclosure rather than a mount: the block stays in the tree so it can be
+  // eased open and shut, and shut it is zero-height and hidden from assistive
+  // tech rather than absent (see .background-info in animated-backgrounds.scss).
   it('keeps the description behind a toggle so the sheet opens onto controls', () => {
-    renderPanel();
+    const { container } = renderPanel();
+    const info = () => container.querySelector('.background-info')!;
 
-    const description = 'a long description of the background';
-    expect(screen.queryByText(description)).not.toBeInTheDocument();
+    expect(info()).toHaveAttribute('aria-hidden', 'true');
+    expect(info().className).not.toContain('is-open');
 
     fireEvent.click(
       screen.getByRole('button', { name: /show background description/i })
     );
-    expect(screen.getByText(description)).toBeInTheDocument();
+    expect(info()).toHaveAttribute('aria-hidden', 'false');
+    expect(info().className).toContain('is-open');
+    expect(
+      screen.getByText('a long description of the background')
+    ).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole('button', { name: /hide background description/i })
     );
-    expect(screen.queryByText(description)).not.toBeInTheDocument();
+    expect(info()).toHaveAttribute('aria-hidden', 'true');
+    expect(info().className).not.toContain('is-open');
+  });
+
+  // The controls are the reason the sheet is open; the description is read
+  // once. Going looking for a setting puts it away.
+  it('folds the description away as soon as the settings are scrolled', () => {
+    const { container } = renderPanel();
+    fireEvent.click(
+      screen.getByRole('button', { name: /show background description/i })
+    );
+    expect(container.querySelector('.background-info')!.className).toContain(
+      'is-open'
+    );
+
+    // The gesture, not the scroll it causes: opening the description resizes
+    // the list under it, and a list that has just been resized emits a scroll
+    // on its own (see SettingsPanel.tsx).
+    fireEvent.wheel(container.querySelector('.settings-content')!);
+    expect(
+      container.querySelector('.background-info')!.className
+    ).not.toContain('is-open');
   });
 });

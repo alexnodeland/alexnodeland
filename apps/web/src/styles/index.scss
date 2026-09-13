@@ -60,8 +60,15 @@
 
 // Plain prose on the scrim — the owner pulled the outline off this one and
 // consulting below; the boxes now belong to the expertise cards alone.
+// The air between one section and the next, which is also the air above the
+// heading that opens the next one — so it is the same measure that sits under
+// that heading, and a title ends up evenly spaced between the text above it
+// and the text below. It was a step and a half wider, which left every heading
+// on the page hanging much closer to its own paragraph than to the section it
+// had just closed. The measure is the prose rhythm's own (see `p` below): the
+// heading does the dividing, and it does not need a moat to do it in.
 .about {
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-5);
   position: relative;
 
   p {
@@ -86,9 +93,10 @@
 // semantic-colour rule is spent entirely on the buttons — that is the
 // conversion path, and it is the only thing here that needs to be found.
 .consulting {
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-5);
   position: relative;
 
+  // Above and below alike — see the note on .about.
   h2 {
     margin-bottom: var(--space-5);
   }
@@ -120,12 +128,13 @@
 }
 
 .expertise {
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-5);
 
   // A section title inside the window, like the CV's and the projects page's:
-  // the halo, since the simulation runs behind the scrim it sits on.
+  // the halo, since the simulation runs behind the scrim it sits on. Its air is
+  // the same above and below — see the note on .about.
   h2 {
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-5);
     @include over-background;
   }
 }

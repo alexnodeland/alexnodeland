@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { graphql, Link } from 'gatsby';
+import ControlRow from '../components/ui/ControlRow';
 import Dropdown from '../components/ui/Dropdown';
 import { ArrowOutIcon } from '../components/ui/EntryIcons';
 import FeedLink from '../components/ui/FeedLink';
@@ -272,7 +273,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
             at the far end: the one row every list page carries (see the cv
             and projects). Each picker resets itself through its own "all" or
             default option, so there is no separate reset. */}
-        <div className="timeline-control-bar">
+        <ControlRow className="timeline-control-bar">
           <Dropdown
             ariaLabel="Filter posts by tag"
             triggerLabel={tagLabel}
@@ -301,7 +302,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
             onToggle={toggleSearch}
             controls="timeline-search"
           />
-        </div>
+        </ControlRow>
 
         {/* Somewhere to type rather than a piece of chrome, so it keeps its
             own panel below the row, folded away behind the chip above until

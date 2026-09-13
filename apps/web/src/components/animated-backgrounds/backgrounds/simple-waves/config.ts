@@ -109,7 +109,9 @@ export const simpleWaveConfig = createBackgroundConfig({
   name: 'Simple Sine Waves',
   shortName: 'waves',
   description:
-    'Three sine waves summed: one along x, one along y at 0.8x the frequency, one diagonal at 0.6x, each drifting at a different rate. Color maps the resulting amplitude — bright where the components reinforce, dark where they cancel. Nothing but superposition. Interference underpins most of signal processing, and it takes three lines of arithmetic.',
+    'Three sine waves summed: one along x, one along y at 0.8x the frequency, one diagonal at ' +
+    '0.6x, each drifting at its own rate. Colour maps the amplitude — bright where they ' +
+    'reinforce, dark where they cancel. Nothing but superposition.',
   component: SimpleWaveBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

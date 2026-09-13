@@ -181,7 +181,10 @@ export const graphTopologyConfig = createBackgroundConfig({
   name: 'Job Scheduling',
   shortName: 'scheduling',
   description:
-    'Simulated annealing over a clustered graph. The topology is built like a datacenter: dense high-bandwidth links inside each cluster, sparse high-latency links between them. The search looks for the subgraph of the requested size with the highest total conductivity, proposing swaps and accepting worse ones with a temperature-dependent probability that decays on an exponential cooling schedule. Gold is the candidate set under consideration right now; cyan is the best set found so far. Early on they diverge constantly, then lock together as the temperature drops. Layout is force-directed and still settling while the search runs.',
+    'Simulated annealing over a graph built like a datacenter: dense links inside each ' +
+    'cluster, sparse ones between. It hunts the best-connected subgraph of the size you ask ' +
+    'for, taking worse swaps less often as the temperature drops. Gold is the current ' +
+    'candidate, cyan the best so far.',
   component: GraphTopologyBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
