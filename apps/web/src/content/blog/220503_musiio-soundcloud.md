@@ -28,4 +28,6 @@ musiio's ai listens to music. that is the whole trick, and a harder one than it 
 
 hazel and aron went across as vp of music intelligence and vp of ai and machine learning, and soundcloud kept the team on. i went over to the soundcloud office in the states as incoming director of engineering for music intelligence. four years from a desk in a cohort room to this. congratulations to hazel, to aron, and to everyone who built it.
 
+berlin was next for the team. i did not go, and left that november.
+
 [soundcloud's announcement](https://web.archive.org/web/20220503150256/http://press.soundcloud.com/213899-soundcloud-acquires-cutting-edge-music-ai-company-musiio) · [soundcloud](https://soundcloud.com/) · [musiio, while it was still musiio](https://web.archive.org/web/20220128123732/https://musiio.com/) — the domain points at soundcloud now
