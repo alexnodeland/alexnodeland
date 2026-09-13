@@ -1,7 +1,7 @@
 ---
 title: 'What Is Running Behind This Page'
 date: '2025-09-28'
-description: "Six simulations render the backgrounds on this site — Conway's Life, a simulated-annealing graph search, an FM synthesizer, A*, and a finite-difference PDE solver. What each one computes and what the controls do."
+description: "Six simulations render the backgrounds on this site: Conway's Life, a simulated-annealing graph search, an FM synthesizer, A*, and a finite-difference PDE solver. What each one computes and what the controls do."
 category: 'Projects'
 ---
 
@@ -22,9 +22,9 @@ six of them, in cycle order:
 
 ## <a id="cellular-automata"></a>cellular automaton
 
-a grid of cells, a rule, and a state buffer stepped one generation at a time. each cell counts its eight neighbors on a wrapping torus, then lives, dies, or is born according to the rule — conway's b3/s23 by default, with highlife, maze, coral, day & night and seeds in the dropdown.
+a grid of cells, a rule, and a state buffer stepped one generation at a time. each cell counts its eight neighbors on a wrapping torus, then lives, dies, or is born according to the rule, which is conway's b3/s23 by default, with highlife, maze, coral, day & night and seeds in the dropdown.
 
-the shader only draws; the rule runs on a real buffer. newborn cells take the newborn color and shift toward the established color the longer they survive, and links are drawn between live neighbors — the same eight-cell neighborhood the rule is evaluated over.
+the shader only draws; the rule runs on a real buffer. newborn cells take the newborn color and shift toward the established color the longer they survive, and links are drawn between live neighbors, the same eight-cell neighborhood the rule is evaluated over.
 
 random soup under conway settles into still lifes and period-two oscillators within a couple of hundred generations, which is too static for a background. `perturbation rate` flips a small fraction of cells each step to keep things moving. set it to zero to watch it stall.
 
@@ -44,7 +44,7 @@ turn `wave frequency` up and `wave speed` down to freeze the interference patter
 
 the most interesting one, and the worst named.
 
-it builds a clustered graph: nodes grouped into tight clusters with dense, high-bandwidth links inside each cluster and sparse, high-latency links between them. roughly the shape of a real datacenter. then it searches for the subgraph of size _n_ with the highest total conductivity — the best-connected group of that size.
+it builds a clustered graph: nodes grouped into tight clusters with dense, high-bandwidth links inside each cluster and sparse, high-latency links between them. roughly the shape of a real datacenter. then it searches for the subgraph of size _n_ with the highest total conductivity, the best-connected group of that size.
 
 that search is simulated annealing with an exponential cooling schedule. it proposes a swap, accepts it outright if it scores better, and accepts it with a temperature-dependent probability if it scores worse. early on, while it is hot, it takes bad trades freely and wanders. as the temperature drops it stops accepting losses and settles. the two highlight colors are separate things: one is the candidate set it is considering right now, the other is the best set it has found so far. early on they diverge constantly. near the end they lock together.
 
@@ -74,9 +74,9 @@ seeded random graph, real priority frontier, and one slider that changes which a
 
 `heuristic weight` scales the heuristic term in `f = g + w·h`:
 
-- **w = 0** — the heuristic vanishes and it is dijkstra. explores outward in every direction equally. always finds the optimal path, looks at far more of the graph than it needed to.
-- **w = 1** — a\*. the heuristic is admissible, so the path is still optimal, but exploration stretches toward the goal instead of spreading evenly.
-- **w > 1** — greedy. it over-trusts the heuristic, drives almost straight at the goal, and gives up the optimality guarantee to do it.
+- **w = 0**: the heuristic vanishes and it is dijkstra. explores outward in every direction equally. always finds the optimal path, looks at far more of the graph than it needed to.
+- **w = 1**: a\*. the heuristic is admissible, so the path is still optimal, but exploration stretches toward the goal instead of spreading evenly.
+- **w > 1**: greedy. it over-trusts the heuristic, drives almost straight at the goal, and gives up the optimality guarantee to do it.
 
 watch the shape of the explored region: a circle, then an ellipse, then a corridor. that is the optimality-versus-effort tradeoff drawn as a shape, and it is why i kept this one in the rotation.
 
@@ -88,9 +88,9 @@ turn `steps per second` down to about 5 to watch the frontier expand node by nod
 
 explicit finite differences on a grid, solving either the heat equation `∂u/∂t = α∇²u` or the wave equation `∂²u/∂t² = c²∇²u`. the laplacian is a five-point stencil; heat uses forward-time centered-space, wave uses a centered second difference in time. grid runs at 64², 128² or 256².
 
-the parameters that change the physics rather than the look are `boundary condition` and `initial condition`. dirichlet fixes the edge value, so waves reflect inverted. neumann sets the edge derivative to zero, so they reflect upright. periodic wraps, so anything leaving the right edge arrives at the left. pick a gaussian pulse on the wave equation and switch between the three — the difference in reflection is immediate. it is the clearest demonstration of boundary conditions i know of.
+the parameters that change the physics rather than the look are `boundary condition` and `initial condition`. dirichlet fixes the edge value, so waves reflect inverted. neumann sets the edge derivative to zero, so they reflect upright. periodic wraps, so anything leaving the right edge arrives at the left. pick a gaussian pulse on the wave equation and switch between the three. the difference in reflection is immediate. it is the clearest demonstration of boundary conditions i know of.
 
-you cannot make it explode. explicit schemes are only conditionally stable — heat needs `α·dt·(1/dx² + 1/dy²) ≤ 0.5`, wave needs the cfl condition `c·dt·√(1/dx² + 1/dy²) ≤ 1` — so the timestep is clamped to the stable maximum before every step. push thermal diffusivity to its limit and the simulation slows down rather than diverging.
+you cannot make it explode. explicit schemes are only conditionally stable. heat needs `α·dt·(1/dx² + 1/dy²) ≤ 0.5` and wave needs the cfl condition `c·dt·√(1/dx² + 1/dy²) ≤ 1`, so the timestep is clamped to the stable maximum before every step. push thermal diffusivity to its limit and the simulation slows down rather than diverging.
 
 ---
 

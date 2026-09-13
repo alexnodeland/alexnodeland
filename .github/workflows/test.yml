@@ -68,6 +68,12 @@ jobs:
         uses: dorny/paths-filter@v4
         id: filter
         with:
+          # Load-bearing, not a default worth leaving alone. Under 'some', a
+          # file counts if it matches any one rule -- and a negated rule matches
+          # everything it does not name, so both exclusions below were inert and
+          # `code` came out true for every change under apps/web, a lone blog
+          # post included. This quantifier is what makes them subtract.
+          predicate-quantifier: 'some-with-excludes'
           filters: |
             code:
               - 'apps/web/**'

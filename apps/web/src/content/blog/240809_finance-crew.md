@@ -1,7 +1,7 @@
 ---
 title: 'Finance Crew: AI-Powered Financial Analysis'
 date: '2024-08-09'
-description: 'A CrewAI system for market analysis — agents that pull data, develop a strategy, and separately assess the risk of running it.'
+description: 'A CrewAI system for market analysis: agents that pull data, develop a strategy, and separately assess the risk of running it.'
 category: 'Projects'
 ---
 

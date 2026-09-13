@@ -1,7 +1,7 @@
 ---
 title: "Supercomputing Shouldn't Be Rocket Science"
 date: '2019-03-01'
-description: 'A piece for Asian Scientist arguing that the hard part of supercomputing is not the computing — it is the gap between a working laptop simulation and code that survives at scale.'
+description: 'A piece for Asian Scientist arguing that the hard part of supercomputing is not the computing but the gap between a working laptop simulation and code that survives at scale.'
 category: 'Press'
 ---
 
