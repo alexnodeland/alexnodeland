@@ -32,7 +32,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  animation: pill-in-left var(--transition-slow) forwards;
+  animation: pill-in var(--transition-slow) forwards;
 }
 
 // The toolbar: one button, the whole pill. The same machined housing as the
@@ -77,9 +77,21 @@
   // The name of whatever is currently running. It is a label, not a link —
   // green here made the one word on the toolbar look clickable while the
   // whole toolbar was in fact the button.
+  //
+  // Its box is the width of the longest name in the set rather than of the
+  // word currently in it, so that the mark beside it does not move. The pair
+  // is centred in the rail's width, which meant the glyph slid a few pixels
+  // every time the word changed length — on the reader's first frame, when the
+  // saved or random background replaces the default, and again every twelve
+  // seconds as the set cycles. The pair stays centred; the word changes inside
+  // a box that does not.
   .background-name {
+    width: 7rem;
     color: inherit;
     text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 

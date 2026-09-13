@@ -20,26 +20,19 @@
   }
 }
 
-// A floating pill arriving on the field on first mount, from its own side.
-@keyframes pill-in-left {
+// A floating pill arriving on the field on first mount. It arrives where it
+// lives: the two used to slide in from their own side, two rems of travel that
+// nothing about the rail asked for — the nav capsule at the top of it has
+// always simply been there, on the grounds that the rail is the still thing
+// the page moves against. On a reload, and especially on a phone, that slide
+// was the loudest thing on the screen. So the pills take the capsule's rule
+// and only come up in ink.
+@keyframes pill-in {
   from {
     opacity: 0;
-    transform: translateX(-2rem);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes pill-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(2rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
   }
 }
 

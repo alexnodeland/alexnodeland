@@ -29,7 +29,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  animation: pill-in-right var(--transition-slow) forwards;
+  animation: pill-in var(--transition-slow) forwards;
 
   // The same machined housing as the background toolbar in the opposite
   // corner and the nav capsule above — one language for every floating

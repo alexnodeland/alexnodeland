@@ -204,6 +204,21 @@
   h1 {
     margin-bottom: var(--space-4);
     transform-origin: left center;
+
+    // The rise that re-centres the folded line on the nav capsule. The scale
+    // is about the centre, so the centre is what travels: from where the
+    // title's box sits at rest (--title-centre, measured — its line box, not
+    // an em guess at it, which put the cover's title and the crumb's on
+    // different lines) to the capsule's own centre line. Declared here rather
+    // than inside the phone's block because the pinned hero takes it at every
+    // width; the fallback's em has to resolve against the title's own font,
+    // which is why it is on the h1 and not on the region.
+    --fold-rise: calc(
+      var(
+          --title-centre,
+          calc(var(--rail-clearance) + var(--hero-rest-lift) + 0.65em)
+        ) - var(--rail-centre)
+    );
   }
 
   // The tagline is the last thing in the hero; the room under it is the
@@ -272,17 +287,6 @@
     }
 
     h1 {
-      // The rise re-centres the line on the nav capsule. The scale is about
-      // the centre, so the centre is what travels: from where the title's
-      // box sits at rest (--title-centre, measured by Layout — its line box,
-      // not an em guess at it, which put the cover's title and the crumb's on
-      // different lines) to the capsule's own centre line.
-      --fold-rise: calc(
-        var(
-            --title-centre,
-            calc(var(--rail-clearance) + var(--hero-rest-lift) + 0.65em)
-          ) - var(--rail-centre)
-      );
       --fold-transform: translate(
           calc(-1 * var(--title-shift, 0px)),
           calc(-1 * var(--fold-rise))
@@ -340,7 +344,12 @@
       animation-timing-function: linear;
       animation-fill-mode: both;
       animation-timeline: --window;
-      animation-range: 0 var(--fold-band);
+      // Never a zero-length range. A scroll-driven animation across no distance at
+      // all reports itself finished, so on the frame before the band is measured —
+      // and on any page whose hero has not settled yet — every one of these would
+      // run straight to its end and draw the page fully folded. The floor is the
+      // same one the frame's own clip carries, and a real band is always far wider.
+      animation-range: 0 max(1px, var(--fold-band));
     }
 
     h1,
@@ -434,13 +443,46 @@
 // Pinned: the hero is folded by the stylesheet and never opens — the scroll
 // timeline is off it. (The window's half of the pinned state is with the
 // window, below, after the rules it has to outrank.)
-.stage.is-pinned .site-hero.is-collapsible {
+//
+// The ghost of a post carries the state on itself rather than on the stage it
+// is leaving, so both ways of saying it are here.
+.stage.is-pinned .site-hero.is-collapsible,
+.site-hero.is-collapsible.is-pinned {
   --hero-collapse: 1;
 
   h1,
   p,
   .hero-crumb-rest {
     animation-name: none;
+  }
+}
+
+// A pinned hero on a desktop sits on the nav capsule's line, which is what a
+// phone has always done with it.
+//
+// The desktop fold parks the title on the left and the tagline on the right of
+// a row of its own, below the capsule — it has to, because at full collapse
+// the tagline reaches the column's right edge, which is exactly where the
+// capsule lives. A pinned hero is the brand alone: the tagline is a blank line
+// held open for the geometry (see .brand-header) and there is nothing to
+// collide with. So it takes the phone's rise instead of the row's, and the
+// name lands opposite the page picker — one line of chrome across the top of
+// the page rather than a word stranded half a band below it.
+//
+// The room the row was holding goes back to the window with it: the folded
+// height loses the --row-lift term it was buying for a row that is not drawn.
+@media (min-width: 769px) {
+  .stage.is-pinned {
+    --hero-folded-height: calc(var(--rail-clearance) + var(--space-1));
+  }
+
+  .stage.is-pinned .site-hero.is-collapsible h1,
+  .site-hero.is-collapsible.is-pinned h1 {
+    transform: translate(
+        calc(-1 * var(--title-shift, 0px)),
+        calc(-1 * var(--fold-rise))
+      )
+      scale(var(--collapsed-title-scale));
   }
 }
 
@@ -498,7 +540,12 @@
     animation-timing-function: linear;
     animation-fill-mode: both;
     animation-timeline: --window;
-    animation-range: 0 var(--fold-band);
+    // Never a zero-length range. A scroll-driven animation across no distance at
+    // all reports itself finished, so on the frame before the band is measured —
+    // and on any page whose hero has not settled yet — every one of these would
+    // run straight to its end and draw the page fully folded. The floor is the
+    // same one the frame's own clip carries, and a real band is always far wider.
+    animation-range: 0 max(1px, var(--fold-band));
   }
 
   .stage.has-fold .window-frame {
