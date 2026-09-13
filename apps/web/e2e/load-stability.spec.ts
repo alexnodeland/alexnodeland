@@ -21,7 +21,17 @@ import { expect, test, type Page } from '@playwright/test';
  * src/lib/foldAnchor.ts), so the first frame is the settled one.
  */
 
-const ROUTES = ['/', '/cv/', '/projects/', '/timeline/'];
+// A post is in here on purpose: its hero is pinned, so its brand is folded from
+// the first frame rather than folding as the reader scrolls — which made it the
+// worst of the shifts (467px sideways on a desktop) and makes it the one most
+// worth holding still.
+const ROUTES = [
+  '/',
+  '/cv/',
+  '/projects/',
+  '/timeline/',
+  '/timeline/260913_statusbar/',
+];
 
 // Everything a reload used to move. The window in its three layers, the hero's
 // title, and the three floating controls on the field.

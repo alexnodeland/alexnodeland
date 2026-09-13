@@ -20,6 +20,16 @@
   }
 }
 
+// A simulation reaching the field for the first time (see .background-arrival).
+@keyframes background-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 // A floating pill arriving on the field on first mount. It arrives where it
 // lives: the two used to slide in from their own side, two rems of travel that
 // nothing about the rail asked for — the nav capsule at the top of it has

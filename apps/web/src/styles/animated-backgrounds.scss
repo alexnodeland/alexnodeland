@@ -19,6 +19,23 @@
   background: var(--bg-stage);
 }
 
+// The layer a simulation arrives on. Its duration is the cycle's own fade
+// (siteConfig.animatedBackgrounds.fadeDurationMs, written on by the manager),
+// so a background appearing for the first time takes exactly as long as one
+// changing does.
+//
+// The box is the canvas's own — fixed, edge to edge, at z-index -1 and blind
+// to the pointer. It has to be: the fade makes a stacking context here, and a
+// plain wrapper would have resolved the canvas's negative z-index inside
+// itself and floated the whole simulation up over the page.
+.background-arrival {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  animation: background-in var(--duration-slow) var(--ease-out) forwards;
+}
+
 // Background controls container (bottom-left). The rail's own offsets — this
 // is the left end of the same row of floating controls the chat pill closes on
 // the right. No panel-state repositioning: the sidebars are floating panels
