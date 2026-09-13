@@ -662,10 +662,20 @@
     overflow-wrap: anywhere;
   }
 
-  // The rail's gap closes by a step. A phone has no width to give away, and
-  // the gutter is already nothing but the line and its dots.
+  // No rail. A phone has no width to give away, and the line and its dots were
+  // spending some of it on a decoration: the years are what carry the timeline
+  // reading here, and they are rows in the column that cost nothing sideways.
+  // The cards take the full measure back.
   .posts-list {
-    --rail-gap: var(--space-3);
+    padding-left: 0;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .post-preview::before {
+    display: none;
   }
 
   // Arrows alone either side of the way back. There is no room on a phone for
