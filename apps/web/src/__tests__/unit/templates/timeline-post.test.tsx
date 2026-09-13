@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import BlogPost from '../../../templates/timeline-post';
 
@@ -48,6 +48,15 @@ describe('BlogPost Template', () => {
       fields: { slug: '/after' },
     },
   };
+
+  // Both of these are the browser's, and jsdom has neither — which is what
+  // makes them straightforward to hand over one test at a time. They are taken
+  // back afterwards so that the test for the readers without a share sheet is
+  // actually testing a browser without one.
+  afterEach(() => {
+    delete (navigator as { share?: unknown }).share;
+    delete (navigator as { clipboard?: unknown }).clipboard;
+  });
 
   it('renders SEO and content', () => {
     const { container } = render(<BlogPost data={mockData as any} />);
@@ -127,25 +136,67 @@ describe('BlogPost Template', () => {
     );
   });
 
-  it('offers the typeset copy and the ways to pass it on', () => {
+  it('offers the typeset copy and one way to pass it on', () => {
     const { container } = render(<BlogPost data={mockData as any} />);
     expect(container.querySelector('.post-download')).toHaveAttribute(
       'href',
       '/timeline/pdf/my-post.pdf'
     );
-    expect(
-      container
-        .querySelector('[aria-label="share on linkedin"]')
-        ?.getAttribute('href')
-    ).toContain('linkedin.com/sharing/share-offsite/');
-    expect(
-      container
-        .querySelector('[aria-label="share on bluesky"]')
-        ?.getAttribute('href')
-    ).toContain('bsky.app/intent/');
-    expect(
-      container.querySelector('[aria-label="share on mastodon"]')
-    ).not.toBeNull();
+    const chips = container.querySelectorAll('.pass-along-chip');
+    expect(chips).toHaveLength(1);
+    expect(chips[0].tagName).toBe('BUTTON');
+  });
+
+  // The reason it is a button and not a link, and the reason this test is
+  // here: a filter list hides a share control by the address inside it — the
+  // linkedin chip that used to sit here matched
+  // `a[href^="https://www.linkedin.com/sharing/share-offsite/?"]` and was
+  // hidden for every reader running Fanboy's Social Blocking List. An anchor
+  // put back in this row would be back in front of that rule.
+  it('puts no address in the row for a filter list to match', () => {
+    const { container } = render(<BlogPost data={mockData as any} />);
+    const row = container.querySelector('.pass-along');
+    expect(row).not.toBeNull();
+    expect(row?.querySelector('a')).toBeNull();
+    expect(row?.querySelector('[href]')).toBeNull();
+  });
+
+  it("hands the post to the reader's own share sheet", async () => {
+    const share = jest.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'share', {
+      value: share,
+      configurable: true,
+    });
+
+    const { container } = render(<BlogPost data={mockData as any} />);
+    fireEvent.click(container.querySelector('.pass-along-chip')!);
+
+    await waitFor(() =>
+      expect(share).toHaveBeenCalledWith({
+        title: 'My Post',
+        url: expect.stringContaining('/timeline/my-post'),
+      })
+    );
+    // Nothing to report: the sheet is the reader's own and says its own piece.
+    expect(container.querySelector('.pass-along-said')).toHaveTextContent('');
+  });
+
+  // Firefox on a desktop has no share sheet, and a chip that does nothing at
+  // all there is worse than one that hands over the address.
+  it('copies the address where there is no sheet', async () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
+    const { container } = render(<BlogPost data={mockData as any} />);
+    fireEvent.click(container.querySelector('.pass-along-chip')!);
+
+    await screen.findByText('link copied');
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining('/timeline/my-post')
+    );
   });
 
   it('tells the timeline which post the reader is on', () => {

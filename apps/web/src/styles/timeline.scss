@@ -331,18 +331,17 @@
 // can be done with it. The outline and the padding belong to the card; the
 // prose inside it only sets its own text.
 //
-// The space below is what centres the closing row under it, and it is the
-// window's bottom padding plus the footer's lead — the two pieces of air that
-// together make up everything between that row and the first mark in the
-// footer (see --footer-lead in layout.scss). Measuring to the footer's box
-// instead put the row a visible notch high: the box is transparent and has no
-// rule, so its top edge is not a line anybody sees. The eye measures to the
-// first ink, and so does this.
+// The space below is what centres the closing row under it: one trough's worth
+// of air above the row, and the column's own trough below it, so the row sits
+// on the middle line between the article and the first mark in the footer.
+// That trough is the inset at the top of the column — the page is let into the
+// window by the same amount at both ends, and the row's air is the page's air
+// rather than a measure of its own (see --main-foot in layout.scss).
 .post-article {
   @include outline-block;
   border-radius: var(--radius-lg);
   padding: var(--card-pad);
-  margin-bottom: calc(var(--main-pad-bottom) + var(--footer-lead));
+  margin-bottom: var(--main-foot);
   position: relative;
 }
 
@@ -558,9 +557,9 @@
 }
 
 // `pass-along`, not `share`: Fanboy's Social Blocking List carries the generic
-// rule `##.share-row`, which hid this row — and the three chips inside it — on
-// every browser running a content blocker. See ShareRow.tsx for the whole of
-// it. The names below are checked against the same lists.
+// rule `##.share-row`, which hid this row and everything in it on every
+// browser running a content blocker. See ShareRow.tsx for the whole of it. The
+// names below are checked against the same lists.
 .pass-along {
   display: flex;
   align-items: center;
@@ -583,24 +582,17 @@
   }
 }
 
-// The question mastodon has to ask, folded out beside the chip that asks it.
-// It takes the same field the search boxes do, at the width of a hostname.
-.pass-along-host {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex: 1 1 12rem;
-  min-width: 0;
-}
+// What the chip says to the readers it cannot hand a sheet to. Empty for
+// everyone else, and out of the row's flow while it is — an empty box in a
+// flex row still takes a gap either side of it.
+.pass-along-said {
+  font-size: var(--text-small);
+  color: var(--text-muted);
+  text-transform: lowercase;
 
-.pass-along-host-input {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.pass-along-host-go {
-  font-size: var(--text-control);
-  color: var(--ink-primary);
+  &:empty {
+    display: none;
+  }
 }
 
 // The way on and the way out, on one line: the post before this one in time,

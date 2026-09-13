@@ -44,6 +44,20 @@ export const LinkIcon: React.FC = () => (
 );
 
 /**
+ * An arrow out of a tray: hand this to somebody. The mark the phones draw for
+ * their own share sheet, which is what the chip wearing it opens — and the
+ * download mark below it reversed, the two sitting beside each other at the
+ * foot of a post as the two directions of the same idea.
+ */
+export const ShareIcon: React.FC = () => (
+  <svg {...iconProps}>
+    <path d="M12 16V4" />
+    <path d="m8 8 4-4 4 4" />
+    <path d="M8 11H6a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-2" />
+  </svg>
+);
+
+/**
  * An arrow into a tray: take this away with you. The one download mark on the
  * site — the CV's menu wears it and so does the typeset copy of a post — so
  * the two never drift into being two different glyphs for one idea.

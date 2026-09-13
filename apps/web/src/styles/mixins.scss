@@ -310,6 +310,44 @@
   }
 }
 
+// Somewhere to type. A text field is the one control here that takes a wash
+// rather than a bare hairline: it has to look like something you can type
+// into, and a transparent box inside a transparent box reads as a nested panel
+// instead of a field. The box itself is the caller's — how much padding a
+// field is given depends on what it sits in — and everything that makes it a
+// field is here.
+@mixin text-field {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--wash-field);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  // The type stays at 1rem at every width on purpose: iOS zooms the page when
+  // a field smaller than 16px takes focus, and a field that rearranges the
+  // layout under the thumb is worse than a long placeholder. So the
+  // placeholder gives way instead — the CV's search names three sections and
+  // runs past a phone's field, and a clean elision reads as a sentence
+  // continuing rather than as a word cut in half.
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  @include control-transition(var(--transition-fast));
+
+  // Focus is a state of a text field rather than a result, so it says so with
+  // a brighter hairline — matching the chips beside it rather than lighting a
+  // ring around a box the visitor is already typing in.
+  &:focus {
+    outline: none;
+    border-color: var(--hairline-lit);
+    background: var(--wash-hover);
+  }
+
+  // The placeholder takes the house case; what the visitor types does not.
+  &::placeholder {
+    color: var(--text-muted);
+    text-transform: lowercase;
+  }
+}
+
 // The panel a chip opens, and any panel that hangs over the page — a menu, the
 // shortcuts, a dialog. The chip is the window's own surface, but an overlay
 // with a list of words in it hangs over whatever the page happens to be

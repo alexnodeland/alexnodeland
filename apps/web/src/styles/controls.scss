@@ -212,10 +212,8 @@
 // Search is somewhere to type rather than a piece of chrome, so on every page
 // that has one it sits in a panel of its own below the control row instead of
 // being wedged into it. The panel is an outline like every other block inside
-// the window; the field is the one thing on these pages that takes a wash
-// rather than a bare hairline, because a text field has to look like
-// something you can type into and a transparent box inside a transparent box
-// reads as a nested panel.
+// the window, and the field inside it is a field (see `text-field` in
+// mixins.scss) at a panel's scale.
 .ui-search-panel {
   @include outline-block;
   padding: var(--card-pad);
@@ -224,37 +222,9 @@
   position: relative;
 
   .search-input {
+    @include text-field;
     width: 100%;
     padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-sm);
-    background: var(--wash-field);
-    color: var(--text-primary);
-    font-family: var(--font-mono);
-    // The type stays at 1rem at every width on purpose: iOS zooms the page
-    // when a field smaller than 16px takes focus, and a search box that
-    // rearranges the whole layout under the thumb is worse than a long
-    // placeholder. So the placeholder gives way instead — the CV's names three
-    // sections and runs past a phone's field, and a clean elision reads as a
-    // sentence continuing rather than as a word cut in half.
-    font-size: 1rem;
-    text-overflow: ellipsis;
-    @include control-transition(var(--transition-fast));
-
-    // Focus is a state of a text field rather than a result, so it says so
-    // with a brighter hairline — matching the chips in the row above rather
-    // than lighting a ring for a search box.
-    &:focus {
-      outline: none;
-      border-color: var(--hairline-lit);
-      background: var(--wash-hover);
-    }
-
-    // The placeholder takes the house case; what the visitor types does not.
-    &::placeholder {
-      color: var(--text-muted);
-      text-transform: lowercase;
-    }
   }
 }
 
