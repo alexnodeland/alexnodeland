@@ -5,7 +5,7 @@ description: "Stony Brook was one of the sites on InfiniCortex, A*STAR's attempt
 category: 'Notes'
 ---
 
-infiniband is the interconnect inside a supercomputer. short range, one subnet, the fabric a machine uses to talk to itself. infinicortex was a\*star's attempt to stretch it across oceans — range extenders over optical fibre, separate subnets routed into one another — so that machines in singapore, australia, europe and north america could be driven as a single system. not a network between supercomputers. a supercomputer's own network, made global.
+infiniband is the interconnect inside a supercomputer: short range, one subnet, the fabric a machine uses to talk to itself. infinicortex was a\*star's attempt to stretch it across oceans, using range extenders over optical fibre and routing separate subnets into one another, so that machines in singapore, australia, europe and north america could be driven as a single system. what circled the planet was a supercomputer's own internal network rather than a network between supercomputers.
 
 <figure>
   <img
@@ -28,6 +28,6 @@ marek michalewicz, who ran a\*star's computational resource centre, [gave the ta
 
 that meant dealing with obsidian directly to get the longbow and crossbow units to us on loan. i took delivery myself and carried the package over to the iacs supercomputing center to be installed.
 
-that november i went to sc15 in austin on an iacs travel award, for the unveiling of stony brook's addition to the network. 2015 was the year the ring actually closed — a new link running london east to singapore completed the circumnavigation — and the demonstrations ran out of the a\*star and obsidian booths from the 16th to the 19th.
+that november i went to sc15 in austin on an iacs travel award, for the unveiling of stony brook's addition to the network. 2015 was the year the ring actually closed, when a new link running london east to singapore completed the circumnavigation. the demonstrations ran out of the a\*star and obsidian booths from the 16th to the 19th.
 
 [infinicortex, from proof-of-concept to production](https://superfri.org/index.php/superfri/article/view/139) · [iacs](https://iacs.stonybrook.edu/)
