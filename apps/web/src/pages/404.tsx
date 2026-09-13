@@ -14,24 +14,25 @@ import '../styles/404.scss';
 // site, the one the visit drew if they landed here cold. Nothing is drawn
 // over the field; the field itself becomes the number. Meanwhile the window
 // drifts off it (404.scss, keyed off `data-not-found` on the root), leaving
-// the hero and the page's one line.
+// the hero.
 //
-// There are no ways out drawn here. The hero's crumb already leads home and
-// the nav capsule already lists the sections, so a second set of the same
-// links inside the window was the page saying everything twice.
+// The page has no content. It had a line and the address that was asked for,
+// and both were the hero saying the same thing twice: the title already reads
+// "alex → 404" and the line under it already says the page came apart. The
+// address is in the address bar, where the visitor typed it. What is left is
+// the window itself, drifting off empty, which is the one part of it that was
+// never prose.
+//
+// There are no ways out drawn here either. The hero's crumb leads home and the
+// nav capsule lists the sections, so a second set of the same links inside the
+// window was the page saying everything twice as well.
 const NotFoundPage: React.FC = () => {
-  // The address that was typed, read after mount: the server render has no
-  // address, and the page has to hydrate against what it shipped.
-  const [address, setAddress] = React.useState<string | null>(null);
-
   React.useEffect(() => {
     markNotFound(true);
     return () => markNotFound(false);
   }, []);
 
   React.useEffect(() => {
-    setAddress(window.location.pathname);
-
     // How the chrome comes apart is drawn once per visit: which way the
     // window slides, and how far.
     const root = document.documentElement;
@@ -50,22 +51,7 @@ const NotFoundPage: React.FC = () => {
     };
   }, []);
 
-  return (
-    <>
-      <SEO title="404" noindex />
-      <div className="not-found">
-        {address && (
-          <p className="not-found-address" aria-label="the address requested">
-            <code>{address}</code>
-          </p>
-        )}
-        <p>
-          there is no page at this address. the rest of the site is where it
-          was.
-        </p>
-      </div>
-    </>
-  );
+  return <SEO title="404" noindex />;
 };
 
 export default NotFoundPage;

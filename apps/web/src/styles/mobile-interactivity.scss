@@ -30,7 +30,7 @@ $mobile-breakpoint: 768px;
     // chat launcher mirrors this on the right).
     left: var(--window-side);
     z-index: var(--z-stage);
-    animation: pill-in-left var(--transition-slow) forwards;
+    animation: pill-in var(--transition-slow) forwards;
   }
 }
 

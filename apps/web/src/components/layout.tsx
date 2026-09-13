@@ -2,6 +2,7 @@ import { Link } from 'gatsby';
 import React from 'react';
 import { getAllSocialLinks, siteConfig } from '../config';
 import { EASE_IN, EASE_OUT } from '../config/motion';
+import { FOLD_ANCHOR, publishFoldMeasures } from '../lib/foldAnchor';
 import { holdNotFound, isNotFound, useNotFound } from '../lib/notFound';
 import { prefersReducedMotion, scrollBehavior } from '../lib/utils/motion';
 import '../styles/layout.scss';
@@ -58,30 +59,10 @@ const readBand = (region: HTMLElement, panel: HTMLElement): number =>
 const readProgress = (panel: HTMLElement, band: number): number =>
   band > 0 ? Math.min(Math.max(panel.scrollTop / band, 0), 1) : 0;
 
-// An element's layout top within an ancestor, summed up the offset chain —
-// unaffected by any transform on the way, which is the point: the title is
-// measured while it may be mid-fold.
-const offsetTopWithin = (el: HTMLElement, ancestor: HTMLElement): number => {
-  let top = 0;
-  let node: HTMLElement | null = el;
-  while (node && node !== ancestor) {
-    top += node.offsetTop;
-    node = node.offsetParent as HTMLElement | null;
-  }
-  return top;
-};
-
 // How far into the fold the phone's tagline is gone (the stylesheet's
 // hero-tagline-fade keyframe and its published-path expression carry the
 // same fraction): past this the published path takes it out of hit-testing.
 const TAGLINE_FADE = 0.2;
-
-// The space left between the shrunken title and the tagline once the two
-// share a row. The title's collapsed scale is the stylesheet's
-// (`--collapsed-title-scale` on the hero, per breakpoint) and is read from it
-// below, so the number lives in one place.
-const COLLAPSED_GAP = 24;
-const DEFAULT_TITLE_SCALE = 0.55;
 
 // The navigation transition, in milliseconds.
 //
@@ -790,113 +771,33 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   // The collapse choreography needs real widths: at full collapse the title
   // parks on the left edge and the tagline on the right, each travelling half
   // of its leftover space, and the tagline rises to the title's centerline.
-  // CSS can't measure text, so the distances are published here as pixel
-  // custom properties and the stylesheet scales them by --hero-collapse. The
-  // hero's identity is a dep: a new hero is new text, and new text is new
+  // CSS can't measure text, so the distances are published as pixel custom
+  // properties and the stylesheet scales them by --hero-collapse.
+  //
+  // The measuring itself lives in src/lib/foldAnchor.ts, because the page
+  // needs it before this file exists: the same function's source is rendered
+  // into the markup just below the hero and runs as the page parses (see the
+  // anchor in the tree), so the server's markup is already wearing these
+  // numbers on the frame it first paints. This effect is what keeps them true
+  // afterwards — through a resize, a rotation, and the height ease of a
+  // navigation. The publisher writes only what has actually changed, so the
+  // observer firing on every frame of that ease costs one string compare per
+  // property and no style invalidation.
+  //
+  // The hero's identity is a dep: a new hero is new text, and new text is new
   // distances.
   React.useLayoutEffect(() => {
     const el = heroRef.current;
     if (!shouldCollapse || !el) return;
 
-    // The observer fires on every frame of the hero's height ease (the region
-    // is the thing being resized), but the widths the split depends on only
-    // change when the text or the column does — so identical readings are
-    // dropped before they turn into style writes, which would otherwise
-    // invalidate the hero's subtree once per animation frame.
-    let lastKey = '';
-    let lastHeight = '';
     const measure = () => {
-      const stage = stageRef.current;
-      const panel = windowRef.current;
-      const h1 = el.querySelector('h1');
-      const sub = el.querySelector('p');
-      // The registry owns the element the two sit in, so that — not the hero
-      // region, which is padded — is the column they travel across. A hero of
-      // some other shape simply gets no split.
-      const container = h1?.parentElement;
-      if (!h1 || !sub || !container) return;
-
-      const width = container.clientWidth;
-      const subWidth = sub.offsetWidth;
-      const subHeight = sub.offsetHeight;
-      // Where the title's line box sits at rest, from the top of the screen
-      // (the region is the offset parent, and it starts at the stage's top),
-      // and where the nav capsule's centre line is. On a phone the fold
-      // carries the one to the other, so both are real pixels rather than a
-      // guess from the font: the cover's title and the crumb's have different
-      // metrics, and an em-based rise put them on different lines.
-      const titleCentre = offsetTopWithin(h1, el) + h1.offsetHeight / 2;
-      const rail = document.querySelector<HTMLElement>('.nav');
-      const railCentre = rail ? rail.offsetTop + rail.offsetHeight / 2 : null;
-      const titleShift = (width - h1.offsetWidth) / 2;
-      const subShift = (width - subWidth) / 2;
-      const rowLift = (h1.offsetHeight + subHeight) / 2;
-      // Whether the tagline actually fits beside the shrunken title. Most of
-      // them do, and this is 1; the projects tagline is nearly the full column
-      // wide, so it scales down — pinned to its right edge — by exactly the
-      // amount it overruns rather than colliding with the title. The title's
-      // collapsed scale is the stylesheet's own number for this width.
-      const titleScale =
-        (typeof window.getComputedStyle === 'function' &&
-          parseFloat(
-            window
-              .getComputedStyle(el)
-              .getPropertyValue('--collapsed-title-scale')
-          )) ||
-        DEFAULT_TITLE_SCALE;
-      const room = width - h1.offsetWidth * titleScale - COLLAPSED_GAP;
-      const scale = subWidth > 0 ? Math.min(1, room / subWidth) : 1;
-
-      const key = `${titleShift}|${subShift}|${rowLift}|${scale}|${titleScale}|${titleCentre}|${railCentre}`;
-      if (key !== lastKey) {
-        lastKey = key;
-        el.style.setProperty('--title-shift', `${titleShift}px`);
-        el.style.setProperty('--sub-shift', `${subShift}px`);
-        el.style.setProperty('--sub-scale', String(scale));
-        el.style.setProperty('--title-centre', `${titleCentre}px`);
-        if (railCentre !== null) {
-          stage?.style.setProperty('--rail-centre', `${railCentre}px`);
-        } else {
-          stage?.style.removeProperty('--rail-centre');
-        }
-        // This lands on the stage rather than the hero: the window's frame
-        // reads the band it makes, and it is not in the hero's subtree. A
-        // write there restyles the page, which is why it happens here — on a
-        // change of text or column — and never on a scroll frame.
-        stage?.style.setProperty('--row-lift', `${rowLift}px`);
-      }
-
-      // The hero's resting box, which the stylesheet turns into the band the
-      // window reaches up by — and the band is what the hero's negative bottom
-      // margin gives back, so the window's top edge holds still only while the
-      // two describe the same box. That is why this is the region as it stands
-      // rather than the height it is settling at: during a navigation the
-      // region eases between two heroes, and a band fixed at the destination
-      // would step the window's edge down by the difference and then walk it
-      // back over the transition.
-      //
-      // It is also the one number here that moves while that ease runs, so it
-      // is published on its own: the text-derived distances above are the same
-      // on every frame of it and must not be rewritten for a height that is.
-      //
-      // The real box, unrounded, rather than the offset height. The
-      // cancellation above is what pins the window's edge, and it cancels
-      // exactly only if the band is the height the region actually occupies:
-      // rounded, each hero leaked its own fraction into that edge, so the drawn
-      // hairline sat at a slightly different place per page (76.45 on the
-      // cover, 75.98 on the blog at a 2.75 pixel ratio) and shifted as one gave
-      // way to the other. Rounding it back to hundredths left a tenth of that;
-      // the raw reading is already snapped to the device's own grid.
-      const restHeight = `${el.getBoundingClientRect().height}px`;
-      if (restHeight !== lastHeight) {
-        lastHeight = restHeight;
-        stage?.style.setProperty('--hero-rest-height', restHeight);
-      }
+      publishFoldMeasures(el);
       // The band, read back as geometry for the fallback publisher. It can
       // move without the text moving — the stage resizing under a sidebar —
       // so it is read on every observation, after the numbers above land. A
       // pinned hero has already given its band up, so its scroll starts at
       // the frame's finished edge.
+      const panel = windowRef.current;
       if (panel) bandRef.current = pinned ? 0 : readBand(el, panel);
     };
 
@@ -966,6 +867,26 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
             >
               {hero}
             </section>
+            {/* The page's anchor, and the reason it sits here rather than at
+                the foot of the document.
+
+                The fold's distances are properties of rendered text, so they
+                are measured rather than written down (see src/lib/foldAnchor.ts)
+                — and until they are measured the window sits a whole band too
+                low with the title still centred. Left to the effect below,
+                that measurement cannot happen until the page bundle has
+                downloaded and hydrated, which on a phone was a second of a
+                visibly wrong page and then everything moving at once.
+
+                So the same function is sent down as source and run as the page
+                parses. Everything it reads is above this line and finished:
+                the nav capsule, the stage, the hero and its two lines. The
+                window, whose position is the answer, is below it and has not
+                been laid out yet — so the first frame that has a window in it
+                has it in the right place, however slowly the rest arrives.
+                React renders this element once and hydration reuses it; the
+                script does not run again. */}
+            <script dangerouslySetInnerHTML={{ __html: FOLD_ANCHOR }} />
             {/* The hero that is leaving, parked at the box it occupied and
                 animated out from under the one arriving. It is a real
                 .site-hero so the collapse choreography still applies to it —

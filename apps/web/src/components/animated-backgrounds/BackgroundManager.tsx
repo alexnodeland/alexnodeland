@@ -262,44 +262,77 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     const BackgroundComponent = currentBackground.component;
     return (
       <React.Suspense fallback={null}>
-        <BackgroundComponent
-          className={className}
-          settings={currentSettings}
-          frozen={prefersReducedMotion}
-          notFound={notFound}
-          onAudioControlsReady={publishAudioControls}
-        />
+        {/* The layer the simulation arrives on, and the reason it is a layer
+            rather than nothing.
+
+            A background is lazy twice over — a chunk to fetch, then three.js,
+            then a first frame to compute — so on a phone it lands a couple of
+            seconds after the page, and it used to cut straight in at full
+            strength: a flat field, and then suddenly a picture. It comes up
+            instead, over the same beat a cycle step takes.
+
+            Inside the Suspense boundary on purpose: React commits this and the
+            simulation in the same pass, so the fade starts when the picture
+            does rather than during the wait for it. Fixed and at the canvas's
+            own depth, because an opacity animation makes a stacking context of
+            whatever carries it — left as a plain wrapper, this would have
+            lifted the simulation out from behind the page. */}
+        <div
+          className="background-arrival"
+          style={{ animationDuration: `${fadeDurationMs}ms` }}
+        >
+          <BackgroundComponent
+            className={className}
+            settings={currentSettings}
+            frozen={prefersReducedMotion}
+            notFound={notFound}
+            onAudioControlsReady={publishAudioControls}
+          />
+        </div>
       </React.Suspense>
     );
   };
 
-  // Defer all background DOM until after client mount. SSR renders nothing for
-  // the background (no gatsby-ssr wrapRootElement), so rendering null on the
-  // first client render keeps hydration identical and avoids mismatches.
-  if (!mounted) return null;
+  // What has to wait for the client, and what does not.
+  //
+  // The simulation does: it is React.lazy, it is WebGL, and which one runs is
+  // a random pick or a restored setting — none of which the server can render.
+  // The chrome around it does not. The provider starts on a fixed default (see
+  // BackgroundProvider), so the pill's markup is the same on the server as it
+  // is on the first client render, which is the whole condition for shipping
+  // it: it can be in the page from the first frame and enter alongside the
+  // chat pill in the opposite corner, rather than popping into the corner a
+  // second later once the bundle has landed. Past mount the name inside it may
+  // swap for the one actually running — a word changing inside a pill whose
+  // width is the rail's own, so nothing moves.
+  //
+  // The ground goes down early for the same reason: it is one flat colour, and
+  // it is what the page is composited over.
 
   return (
     <>
       {/* Constant backing the simulations composite onto, so the set reads the
           same in both themes rather than picking up the page colour. */}
       <div className="background-stage" aria-hidden="true" />
-      {renderCurrentBackground()}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: -1,
-          pointerEvents: 'none',
-          backgroundColor: '#000',
-          opacity: overlayOpacity,
-          transition: cycleEnabled
-            ? `opacity ${fadeDurationMs}ms ease-in-out`
-            : 'none',
-        }}
-      />
+      {mounted && renderCurrentBackground()}
+      {mounted && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: -1,
+            pointerEvents: 'none',
+            backgroundColor: '#000',
+            opacity: overlayOpacity,
+            transition: cycleEnabled
+              ? `opacity ${fadeDurationMs}ms ease-in-out`
+              : 'none',
+          }}
+        />
+      )}
 
       {/* Background Controls */}
       <BackgroundControls

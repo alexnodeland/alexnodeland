@@ -1,45 +1,7 @@
-@use 'mixins' as *;
-
-// ── The page's own content ───────────────────────────────────────────────────
-// What is left inside the window: the address that was asked for, and one
-// line. The window is about to drift off the field, so this is short on
-// purpose — the hero (title and crumb) and the number forming behind
-// everything are what hold the screen, and the ways back are the shell's own:
-// the crumb leads home, the capsule lists the sections.
-.not-found {
-  padding: var(--space-7) 0;
-  max-width: 600px;
-  // Centred, block and lines both: the window is about to drift, and a
-  // column of text set hard left on a panel that is sliding reads as a
-  // page that lost its margin rather than one that let go on purpose.
-  margin: 0 auto;
-  text-align: center;
-
-  p {
-    font-size: var(--text-h4);
-    color: var(--text-secondary);
-    line-height: var(--leading-prose);
-    margin-bottom: 0;
-  }
-}
-
-// The address, as it was typed: the one thing on the page that is the
-// visitor's, so it reads as a value rather than as prose.
-.not-found-address {
-  margin-bottom: var(--space-4);
-
-  code {
-    display: inline-block;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    padding: var(--space-1) var(--space-2);
-    font-size: var(--text-small);
-    color: var(--text-muted);
-    background: var(--wash-field);
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-sm);
-  }
-}
+// The 404, which is all chrome: the page itself renders nothing (see
+// src/pages/404.tsx — the hero already says what there is to say, and the
+// field behind everything forms the number). What is here is the way the
+// chrome comes apart around that.
 
 // ── The chrome coming apart ──────────────────────────────────────────────────
 // Keyed off the root while the 404 is up (src/pages/404.tsx sets it, and the
@@ -139,10 +101,6 @@ html[data-not-found] {
 }
 
 @media (max-width: 768px) {
-  .not-found {
-    padding: var(--space-6) 0;
-  }
-
   // A phone has nowhere for the window to go; it thins out where it stands.
   html[data-not-found] .stage .window {
     animation-name: nf-window-thin;

@@ -78,6 +78,15 @@
 
   kbd {
     @include key-cap;
+    // On the field rather than on a panel. key-cap's ground is --bg-floating,
+    // which is opaque, and the two things either side of this on the same row
+    // are the floating pills: the cap read as the one solid box in a row of
+    // translucent ones. Here it takes the pills' own material — the window's
+    // scrim at the window's blur — so the three are one kit. The caps inside
+    // the panel keep the solid ground, where a raised key is what they are.
+    background: var(--window-scrim);
+    backdrop-filter: blur(var(--window-blur));
+    -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
   }
 }
 
