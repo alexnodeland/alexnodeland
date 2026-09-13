@@ -1,7 +1,7 @@
 ---
 title: 'Crewlit: Multi-Agent AI Systems in Your Browser'
 date: '2024-07-06'
-description: 'CrewAI in a browser — define agents, tasks and crews in a Streamlit UI instead of a Python file.'
+description: 'CrewAI in a browser: define agents, tasks and crews in a Streamlit UI instead of a Python file.'
 category: 'Projects'
 ---
 
