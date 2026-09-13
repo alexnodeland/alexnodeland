@@ -24,7 +24,7 @@ infiniband is the interconnect inside a supercomputer: short range, one subnet, 
   </figcaption>
 </figure>
 
-marek michalewicz, who ran a\*star's computational resource centre, [gave the talk on it at iacs](https://iacs.stonybrook.edu/_archived/event/seminars/infinicortex-another-path-to-reach-exascale-supercomputing.html) on 27 august 2015. stony brook became one of the sites on the fabric, and the work was mine to do, with the support of my advisor yuefan deng.
+marek michalewicz, who ran a\*star's computational resource centre, [gave the talk on it at iacs](https://iacs.stonybrook.edu/_archived/event/seminars/infinicortex-another-path-to-reach-exascale-supercomputing.html) on 27 august 2015. stony brook became one of the sites on the fabric.
 
 that meant dealing with obsidian directly to get the longbow and crossbow units to us on loan. i took delivery myself and carried the package over to the iacs supercomputing center to be installed.
 
