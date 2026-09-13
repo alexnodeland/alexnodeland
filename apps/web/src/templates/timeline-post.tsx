@@ -46,14 +46,17 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
         pathname={location?.pathname}
       />
       <div className="post-page">
+        {/* The way back, above the title card rather than inside it. In the
+            meta voice rather than as a link in the page's own green: the
+            capsule in the corner and the row at the foot are the two loud ways
+            out, and a third one shouting over the title would be the loudest
+            thing on the page. Outside the card it reads as what it is — the
+            page's own breadcrumb, on the column's left edge, above the piece
+            rather than part of it. */}
+        <Link to="/timeline" className="post-return">
+          ← timeline
+        </Link>
         <header className="post-header">
-          {/* The way back, in the meta voice rather than as a link in the
-              page's own green: the capsule in the corner and the row at the
-              foot are the two loud ways out, and a third one shouting over the
-              title would be the loudest thing on the page. */}
-          <Link to="/timeline" className="post-return">
-            ← timeline
-          </Link>
           <div className="post-meta">
             <time dateTime={post.frontmatter.date}>
               {formatDate(post.frontmatter.date)}
@@ -96,8 +99,8 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
 
         {/* The way on, and the way out, on one line: the post before this one
             in time, the list, and the post after it. No rule above it — the
-            article's own outline has already closed — and the row sits in the
-            middle of the air between that outline and the site's footer. */}
+            article's own outline has already closed — and the row sits on the
+            middle line between that outline and the footer's first mark. */}
         <nav className="post-nav" aria-label="more posts">
           {older ? (
             <Link
@@ -115,7 +118,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
           )}
 
           <Link to="/timeline" className="back-to-timeline">
-            back to timeline
+            timeline
           </Link>
 
           {newer ? (

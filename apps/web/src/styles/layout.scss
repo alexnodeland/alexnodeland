@@ -517,6 +517,20 @@
   display: flex;
   flex-direction: column;
   overflow: auto;
+  // The footer's mark: the touch target, and the glyph drawn inside it.
+  --footer-mark: 2.75rem;
+  --footer-mark-ink: 1.25rem;
+  // The air above the first thing a reader can actually see in the footer —
+  // its block padding, plus the room the touch target leaves around the glyph.
+  //
+  // Published here rather than on .footer because .main is where it gets read:
+  // a post's closing row sits on the middle line between the article and the
+  // footer, and the line the eye measures to is the mark, not the box. The box
+  // has no background and no rule, so its top edge is not anywhere — centring
+  // to it puts the row visibly high (see .post-article in timeline.scss).
+  --footer-lead: calc(
+    var(--space-5) + (var(--footer-mark) - var(--footer-mark-ink)) / 2
+  );
   // The frame's hairline is the layer behind; this keeps the content the
   // inset it had inside that hairline, and clips it to the same corners.
   border: 1px solid transparent;
@@ -722,8 +736,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--footer-mark);
+  height: var(--footer-mark);
   color: var(--text-secondary);
   text-decoration: none;
   border-radius: var(--radius-md);
@@ -740,8 +754,8 @@
   // (the brand marks) and read as unrelated stickers.
   .icon {
     display: inline-flex;
-    width: 1.25rem;
-    height: 1.25rem;
+    width: var(--footer-mark-ink);
+    height: var(--footer-mark-ink);
 
     svg {
       width: 100%;
@@ -827,9 +841,10 @@
     padding: var(--main-pad-top) var(--gutter) var(--main-pad-bottom);
   }
 
-  .footer-link {
-    width: 2.5rem;
-    height: 2.5rem;
+  // The touch target shrinks, and --footer-lead is written in terms of it, so
+  // the closing row's centring follows without being restated.
+  .layout {
+    --footer-mark: 2.5rem;
   }
 }
 

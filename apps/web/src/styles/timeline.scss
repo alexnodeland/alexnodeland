@@ -306,11 +306,12 @@
   position: relative;
 }
 
-// The way back, above the date. In the meta voice rather than the page's own
-// green: the capsule in the corner and the row at the foot are the two loud
-// ways out of a post, and a third one over the title would be the loudest
-// thing on the page. It answers the pointer by taking the link colour, which
-// is all it needs to say it is one.
+// The way back, above the title card rather than inside it: the page's own
+// breadcrumb, sitting on the column's left edge in the air above the piece. In
+// the meta voice rather than the page's own green — the capsule in the corner
+// and the row at the foot are the two loud ways out of a post, and a third one
+// over the title would be the loudest thing on the page. It answers the
+// pointer by taking the link colour, which is all it needs to say it is one.
 .post-return {
   display: inline-block;
   margin-bottom: var(--space-3);
@@ -330,14 +331,18 @@
 // can be done with it. The outline and the padding belong to the card; the
 // prose inside it only sets its own text.
 //
-// The space below is the window's own bottom padding, to the pixel. That is
-// what centres the row underneath: the air above it and the air below it —
-// between it and the footer — are then the same number at every breakpoint.
+// The space below is what centres the closing row under it, and it is the
+// window's bottom padding plus the footer's lead — the two pieces of air that
+// together make up everything between that row and the first mark in the
+// footer (see --footer-lead in layout.scss). Measuring to the footer's box
+// instead put the row a visible notch high: the box is transparent and has no
+// rule, so its top edge is not a line anybody sees. The eye measures to the
+// first ink, and so does this.
 .post-article {
   @include outline-block;
   border-radius: var(--radius-lg);
   padding: var(--card-pad);
-  margin-bottom: var(--main-pad-bottom);
+  margin-bottom: calc(var(--main-pad-bottom) + var(--footer-lead));
   position: relative;
 }
 
@@ -535,7 +540,7 @@
 
 // Typeset by LaTeX at build time and served as a file, so it is a chip that is
 // a link rather than a control — the same clothing the feed link wears on the
-// list. Parked at the far end, away from the share marks.
+// list. Parked at the far end, away from the marks that pass it on.
 .post-download {
   margin-left: auto;
   color: var(--text-secondary);
@@ -552,7 +557,11 @@
   }
 }
 
-.share-row {
+// `pass-along`, not `share`: Fanboy's Social Blocking List carries the generic
+// rule `##.share-row`, which hid this row — and the three chips inside it — on
+// every browser running a content blocker. See ShareRow.tsx for the whole of
+// it. The names below are checked against the same lists.
+.pass-along {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -560,7 +569,7 @@
   min-width: 0;
 }
 
-.share-chip {
+.pass-along-chip {
   color: var(--text-secondary);
 
   svg {
@@ -576,7 +585,7 @@
 
 // The question mastodon has to ask, folded out beside the chip that asks it.
 // It takes the same field the search boxes do, at the width of a hostname.
-.share-host {
+.pass-along-host {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -584,12 +593,12 @@
   min-width: 0;
 }
 
-.share-host-input {
+.pass-along-host-input {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.share-host-go {
+.pass-along-host-go {
   font-size: var(--text-control);
   color: var(--ink-primary);
 }

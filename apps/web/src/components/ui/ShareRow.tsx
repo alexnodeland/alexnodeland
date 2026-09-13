@@ -13,6 +13,16 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
  * to post to — there are thousands of servers, and a share link only works
  * against the reader's own — so the chip asks which one, once, and remembers
  * the answer in this browser for next time.
+ *
+ * The class names say `pass-along` and not `share`, and that is not taste.
+ * Fanboy's Social Blocking List — carried by uBlock Origin, AdGuard, and the
+ * iOS content blockers, so by a good share of the people who read this —
+ * contains the generic cosmetic rule `##.share-row`, which hides an element of
+ * that class on every site there is. This row was one of them: it was in the
+ * page and in the accessibility tree, and it was `display: none` before a
+ * reader ever saw it. The rule matches a name, so the fix is a name. Anything
+ * with `share` or `social` in it is spoken for (`.post-share`, `.post-social`
+ * and `.social-row` are all on the same list); this one is not.
  */
 
 const HOST_KEY = 'share:mastodon-host';
@@ -111,9 +121,9 @@ const ShareRow: React.FC<ShareRowProps> = ({ url, title, className = '' }) => {
   };
 
   return (
-    <div className={`share-row ${className}`.trim()}>
+    <div className={`pass-along ${className}`.trim()}>
       <a
-        className="ui-chip-button ui-icon-chip share-chip"
+        className="ui-chip-button ui-icon-chip pass-along-chip"
         href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`}
         target="_blank"
         rel="noopener noreferrer"
@@ -124,7 +134,7 @@ const ShareRow: React.FC<ShareRowProps> = ({ url, title, className = '' }) => {
       </a>
 
       <a
-        className="ui-chip-button ui-icon-chip share-chip"
+        className="ui-chip-button ui-icon-chip pass-along-chip"
         href={`https://bsky.app/intent/compose?text=${encodeURIComponent(text)}`}
         target="_blank"
         rel="noopener noreferrer"
@@ -136,7 +146,7 @@ const ShareRow: React.FC<ShareRowProps> = ({ url, title, className = '' }) => {
 
       <button
         type="button"
-        className="ui-chip-button ui-icon-chip share-chip"
+        className="ui-chip-button ui-icon-chip pass-along-chip"
         onClick={shareToMastodon}
         aria-label="share on mastodon"
         aria-expanded={asking}
@@ -146,11 +156,11 @@ const ShareRow: React.FC<ShareRowProps> = ({ url, title, className = '' }) => {
       </button>
 
       {asking && (
-        <form className="share-host" onSubmit={submitHost}>
+        <form className="pass-along-host" onSubmit={submitHost}>
           <input
             ref={hostInputRef}
             type="text"
-            className="search-input share-host-input"
+            className="search-input pass-along-host-input"
             value={host}
             onChange={event => setHost(event.target.value)}
             placeholder="your mastodon server"
@@ -158,7 +168,7 @@ const ShareRow: React.FC<ShareRowProps> = ({ url, title, className = '' }) => {
             spellCheck={false}
             autoCapitalize="none"
           />
-          <button type="submit" className="ui-chip-button share-host-go">
+          <button type="submit" className="ui-chip-button pass-along-host-go">
             go
           </button>
         </form>

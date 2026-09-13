@@ -74,6 +74,37 @@ describe('BlogPost Template', () => {
     );
   });
 
+  it('keeps the way back above the title card rather than inside it', () => {
+    const { container } = render(<BlogPost data={mockData as any} />);
+    const back = container.querySelector('.post-return');
+    const header = container.querySelector('.post-header');
+    expect(header?.contains(back!)).toBe(false);
+    // Above it, and a sibling of it: the page's breadcrumb, not the card's.
+    expect(back?.parentElement).toBe(header?.parentElement);
+    expect(back?.nextElementSibling).toBe(header);
+  });
+
+  it('names the foot link for where it goes, not for the going', () => {
+    const { container } = render(<BlogPost data={mockData as any} />);
+    expect(container.querySelector('.back-to-timeline')).toHaveTextContent(
+      /^timeline$/
+    );
+  });
+
+  // The class names below carry a constraint that is not visible from the
+  // markup: Fanboy's Social Blocking List hides `.share-row` generically, so
+  // this row wears a name no list is looking for (see ShareRow.tsx). A rename
+  // back to anything with `share` or `social` in it puts the row back in front
+  // of a filter that will hide it, which is what this test is here to catch.
+  it('wears a class name no content blocker is hunting', () => {
+    const { container } = render(<BlogPost data={mockData as any} />);
+    expect(container.querySelector('.pass-along')).not.toBeNull();
+    const named = Array.from(container.querySelectorAll('[class]')).flatMap(
+      el => el.className.split(/\s+/)
+    );
+    expect(named.filter(name => /share|social/.test(name))).toEqual([]);
+  });
+
   it('links the neighbours either side of it in time', () => {
     const { container } = render(<BlogPost data={mockData as any} />);
     const older = container.querySelector('.post-nav-older');
