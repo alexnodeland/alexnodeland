@@ -464,10 +464,18 @@
       hyphens: auto;
     }
 
-    // Help affordance next to a control's label. Keyboard reachable, and the
-    // description is also on aria-label so screen readers get it without
-    // needing hover.
+    // Help affordance next to a control's label: the mark that opens the note
+    // (see .setting-note). It is a real button now — it used to be a span with
+    // a tooltip inside it, which a thumb could not open — and a button brings
+    // the browser's own chrome with it. Unsaid, that chrome is a light grey
+    // fill and the system's font, which is how these came to be four pale
+    // boxes in a column of hairlines. Everything below down to `cursor` is the
+    // site taking its own mark back.
     .setting-help {
+      appearance: none;
+      background: transparent;
+      padding: 0;
+      font-family: inherit;
       position: relative;
       display: inline-flex;
       align-items: center;

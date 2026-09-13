@@ -70,6 +70,26 @@ const openEverySection = async (page: Page) => {
   }
 };
 
+// The mark is the site's own, not the browser's. A <button> arrives with a
+// light grey fill and the system's font unless it is told otherwise, and for a
+// while these were four pale boxes in a column of hairlines.
+const checkMark = async (page: Page) => {
+  const worn = await page
+    .locator('.setting-help')
+    .first()
+    .evaluate(el => {
+      const style = getComputedStyle(el);
+      return {
+        background: style.backgroundColor,
+        font: style.fontFamily,
+        border: style.borderTopColor,
+      };
+    });
+  expect(worn.background).toBe('rgba(0, 0, 0, 0)');
+  expect(worn.font).toContain('JetBrains Mono');
+  expect(worn.border).toBe('rgba(255, 255, 255, 0.16)');
+};
+
 // Open the note on one mark and check it landed inside the panel.
 const checkNote = async (page: Page, mark: ReturnType<Page['locator']>) => {
   // Scrolled into view by hand rather than by the actionability check: the
@@ -198,6 +218,7 @@ for (const phone of [true, false]) {
     }) => {
       await openPanel(page, phone, 'shortest-path-lab');
       if (!phone) await openEverySection(page);
+      await checkMark(page);
       const mark = page.locator('.setting-help').first();
       await mark.click({ force: true });
       await expect(page.locator('.setting-note')).toBeVisible();
