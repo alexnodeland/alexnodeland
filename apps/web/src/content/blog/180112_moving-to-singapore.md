@@ -1,15 +1,15 @@
 ---
 title: 'Moving to Singapore'
 date: '2018-01-12'
-description: "Leaving for Singapore on 12 January 2018, ahead of Entrepreneur First's third cohort, on the recommendation of two friends, one of whom had already been through it."
+description: "Leaving for Singapore on 12 January 2018 for Entrepreneur First's third cohort, on the recommendation of two friends — one who had already been through it, and one who came with me."
 category: 'Life'
 ---
 
 i moved to singapore on 12 january 2018, before entrepreneur first's third singapore cohort opened.
 
-two people are why. łukasz, and my friend martin sawtell, who had been through the second cohort himself and before that spent a decade at lucasfilm doing visual effects — dynamics and rendering, star wars and ready player one. a recommendation from someone who has already done the thing is worth more than any amount of reading about it.
+two people are why. łukasz orłowski, who i met at stony brook and worked with at scala, and who was joining the same cohort. and my friend martin sawtell, who had been through the second cohort himself, and before that spent a decade at lucasfilm doing visual effects — dynamics and rendering, star wars and ready player one. martin had already done the thing he was recommending, which is the only kind of recommendation worth much.
 
-singapore was also where the machines were. i had been talking with people at nscc for a while by then, and moving there did not end that relationship so much as put it in the same time zone. one-north held a\*star's institute of high performance computing and its computational resource centre as well, and those connections turned into letters of intent from research groups, and eventually into a product that modeled nscc's aspire 1. [six months later](/blog/180724_ef-investor-day/) i was pitching a supercomputing company.
+singapore was also where the machines were. i had been talking with people at nscc for a while by then, and moving there did not end that relationship so much as put it in the same time zone. one-north held a\*star's institute of high performance computing and its computational resource centre as well, and those connections turned into letters of intent from research groups, and eventually into a product that modeled nscc's aspire 1. [six months later](/blog/180724_ef-investor-day/) łukasz and i were pitching archanan.
 
 <figure>
   <img
