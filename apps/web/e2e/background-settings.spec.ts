@@ -199,22 +199,26 @@ for (const phone of [true, false]) {
       await openPanel(page, phone, 'shortest-path-lab');
       if (!phone) await openEverySection(page);
       const mark = page.locator('.setting-help').first();
-      await mark.click();
+      await mark.click({ force: true });
       await expect(page.locator('.setting-note')).toBeVisible();
 
       // The same mark again is "put it away".
-      await mark.click();
+      await mark.click({ force: true });
       await expect(page.locator('.setting-note')).toHaveCount(0);
 
       // So is a tap anywhere else in the panel.
-      await mark.click();
+      await mark.click({ force: true });
       await expect(page.locator('.setting-note')).toBeVisible();
       await page.locator('.settings-sidebar .background-name').click();
       await expect(page.locator('.setting-note')).toHaveCount(0);
 
-      // So is scrolling the list out from under it.
-      await mark.click();
+      // So is scrolling the list out from under it. The note arms that listener
+      // a frame after it opens — opening it resizes the list, and a list that
+      // has just been resized emits a scroll of its own — so the frame has to
+      // have happened before the scroll is sent.
+      await mark.click({ force: true });
       await expect(page.locator('.setting-note')).toBeVisible();
+      await page.waitForTimeout(250);
       await page.evaluate(() => {
         const list = document.querySelector('.settings-content');
         if (list) {
