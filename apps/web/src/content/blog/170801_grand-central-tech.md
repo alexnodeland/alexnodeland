@@ -25,7 +25,7 @@ we went from seven people to fifteen.
   </figcaption>
 </figure>
 
-the product had moved as well. it started as spare office machines linked into a grid; by that summer the pitch was the job scheduler module, which used spectral graph theory to decide how work was distributed across a cluster, and it was being sold against public clouds, private clouds and bare metal alike.
+the product had moved as well. it started as spare office machines linked into a grid; by that summer the pitch was the job scheduler module, which used spectral graph theory to decide how work was distributed across a cluster, and it was being sold against public clouds, private clouds and bare metal.
 
 we also did work for new york city's department of environmental protection.
 

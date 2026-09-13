@@ -7,9 +7,9 @@ category: 'Notes'
 
 i left the computational applied mathematics phd at stony brook in may 2017, a little over a year after starting a company out of it.
 
-yuefan deng was my advisor. the research i was there for was [optimal wavelet bases for audio compression](/blog/161101_optimal-wavelet-bases/), but the thing he kept pointing me at was a different problem: take what you know about graph theory and aim it at networks. resource allocation. task management in job scheduling.
+yuefan deng was my advisor. the research i was there for was [optimal wavelet bases for audio compression](/blog/161101_optimal-wavelet-bases/), but he kept pointing me at a different problem: take what you know about graph theory and aim it at networks. resource allocation. task management in job scheduling.
 
-the interconnect topology can be modeled as a graph. in a distributed system the connectivity and latency between nodes are not uniform, and job sizes and durations keep changing, so the scheduler is balancing fairness, dynamicity and utilization all at once — while trying to place jobs on high-conductance subgraphs of the network, which matters most when the workload is network-intensive.
+the interconnect topology can be modeled as a graph. in a distributed system the connectivity and latency between nodes are not uniform, and job sizes and durations keep changing, so the scheduler is balancing fairness, dynamicity and utilization all at once, while trying to place jobs on high-conductance subgraphs of the network, which matters most when the workload is network-intensive.
 
 yuefan deng advised arjun kapoor and me on starting it. scala computing, march 2016, in an office at cewit across the hall from the one i had as artist in residence. satya sharma was cewit's director and an advisor to the company as well. we grew to seven people in that room.
 
@@ -29,9 +29,9 @@ yuefan deng advised arjun kapoor and me on starting it. scala computing, march 2
   </figcaption>
 </figure>
 
-what it sold at the start was grid-style clusters on commodity office hardware — the spare capacity already sitting in a building, linked into something that could take work no single machine there could. later it grew into clusters on any distributed set of machines, on-prem, in the cloud, or across the web.
+what it sold at the start was grid-style clusters on commodity office hardware: the spare capacity already sitting in a building, linked into something that could take work no single machine there could. later it grew into clusters on any distributed set of machines, on-prem, in the cloud, or across the web.
 
-i left before advancing to candidacy, and the reason was not complicated: i wanted to build it rather than publish about it.
+i left before advancing to candidacy. i wanted to build it rather than publish about it.
 
 leaving the program did not mean leaving the building. the residency and the research post both ran on through the year.
 
