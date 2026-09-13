@@ -24,6 +24,10 @@ ARTICLES=(
   "2019-03_supercomputing-shouldnt-be-rocket-science|https://www.asianscientist.com/2019/03/features/supercomputing-shouldnt-be-rocket-science/"
   "2019-04_hpcwire-archanan-launch|https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/"
   "2019-10_hpcwire-test-driving|https://www.hpcwire.com/2019/10/07/try-before-you-buy-test-driving-a-supercomputer-system/"
+  # Points at the snapshot, not the origin: press.soundcloud.com retired its
+  # per-release pages and 301s every one of them to the generic newsroom, so
+  # following the origin would archive the wrong page rather than fail loudly.
+  "2022-05_soundcloud-acquires-musiio|https://web.archive.org/web/20220503150256/http://press.soundcloud.com/213899-soundcloud-acquires-cutting-edge-music-ai-company-musiio"
 )
 
 # Returns the URL of the most recent Wayback snapshot, or empty if none exists.
