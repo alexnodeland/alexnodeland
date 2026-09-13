@@ -175,17 +175,19 @@ const AUDIT = minRatio => {
   };
 };
 
-/** The blog post slugs move, so take one from the index rather than pinning it. */
+/** The post slugs move, so take one from the timeline rather than pinning it. */
 async function discoverPages(page) {
-  await page.goto(`${BASE_URL}/blog/`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE_URL}/timeline/`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(800);
   const post = await page.evaluate(() => {
     const link = Array.from(
-      document.querySelectorAll('a[href^="/blog/"]')
-    ).find(a => a.getAttribute('href') !== '/blog/');
+      document.querySelectorAll('a[href^="/timeline/"]')
+    ).find(a => a.getAttribute('href') !== '/timeline/');
     return link ? link.getAttribute('href') : null;
   });
-  return ['/', '/blog/', '/projects/', '/cv/', '/404/', post].filter(Boolean);
+  return ['/', '/timeline/', '/projects/', '/cv/', '/404/', post].filter(
+    Boolean
+  );
 }
 
 const browser = await chromium.launch();

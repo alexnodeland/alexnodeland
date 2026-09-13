@@ -17,24 +17,22 @@ Edit `src/pages/index.mdx` to customize the homepage:
 
 ```mdx
 ---
-title: "Your Name"
-description: "Your personal description"
+title: 'Your Name'
+description: 'Your personal description'
 ---
 
-import Layout from '../components/layout'
-import SEO from '../components/seo'
-import '../styles/index.scss'
+import Layout from '../components/layout';
+import SEO from '../components/seo';
+import '../styles/index.scss';
 
 <Layout>
   <SEO title="Home" />
   <div className="home">
     <section className="hero">
       <h1>Your Name</h1>
-      <p className="hero-subtitle">
-        Your personal introduction here...
-      </p>
+      <p className="hero-subtitle">Your personal introduction here...</p>
     </section>
-    
+
     {/* Add more sections as needed */}
   </div>
 </Layout>
@@ -46,13 +44,13 @@ Edit `src/pages/cv.mdx` to customize your resume:
 
 ```mdx
 ---
-title: "CV - Your Name"
-description: "Your resume and CV"
+title: 'CV - Your Name'
+description: 'Your resume and CV'
 ---
 
-import Layout from '../components/layout'
-import SEO from '../components/seo'
-import '../styles/cv.scss'
+import Layout from '../components/layout';
+import SEO from '../components/seo';
+import '../styles/cv.scss';
 
 <Layout>
   <SEO title="CV" />
@@ -60,13 +58,21 @@ import '../styles/cv.scss'
     <header className="cv-header">
       <h1>Your Name</h1>
       <div className="cv-contact">
-        <p><strong>Location:</strong> Your Location</p>
-        <p><strong>Email:</strong> your@email.com</p>
-        <p><strong>LinkedIn:</strong> linkedin.com/in/yourprofile</p>
-        <p><strong>Website:</strong> yourwebsite.com</p>
+        <p>
+          <strong>Location:</strong> Your Location
+        </p>
+        <p>
+          <strong>Email:</strong> your@email.com
+        </p>
+        <p>
+          <strong>LinkedIn:</strong> linkedin.com/in/yourprofile
+        </p>
+        <p>
+          <strong>Website:</strong> yourwebsite.com
+        </p>
       </div>
     </header>
-    
+
     {/* Add your experience, education, etc. */}
   </div>
 </Layout>
@@ -77,14 +83,14 @@ import '../styles/cv.scss'
 Update `src/components/seo.tsx` for your site:
 
 ```typescript
-const SEO: React.FC<SEOProps> = ({ 
-  title = 'Your Name', 
+const SEO: React.FC<SEOProps> = ({
+  title = 'Your Name',
   description = 'Your personal description',
   image = '/images/your-og-image.jpg',
-  url = 'https://yourwebsite.com'
+  url = 'https://yourwebsite.com',
 }) => {
   // ... rest of component
-}
+};
 ```
 
 ## 🎨 Design Customization
@@ -100,17 +106,17 @@ Edit `src/styles/global.scss` to change the color scheme:
   --primary-dark: #your-primary-dark;
   --secondary-color: #your-secondary-color;
   --accent-color: #your-accent-color;
-  
+
   // Text colors
   --text-primary: #your-text-primary;
   --text-secondary: #your-text-secondary;
   --text-muted: #your-text-muted;
-  
+
   // Background colors
   --bg-primary: #your-bg-primary;
   --bg-secondary: #your-bg-secondary;
   --bg-accent: #your-bg-accent;
-  
+
   // Border and shadow colors
   --border-color: #your-border-color;
 }
@@ -122,7 +128,13 @@ Update the font family in `src/styles/global.scss`:
 
 ```scss
 html {
-  font-family: 'Your Font', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family:
+    'Your Font',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    sans-serif;
 }
 ```
 
@@ -141,10 +153,10 @@ Adjust spacing and layout in `src/components/layout.scss`:
 .layout {
   // Adjust margins and padding
   margin: 1rem; // Change to 0 for full-width
-  
+
   // Adjust border radius
   border-radius: var(--radius-xl);
-  
+
   // Adjust shadows
   box-shadow: var(--shadow-xl);
 }
@@ -158,10 +170,10 @@ Customize the background in `src/styles/global.scss`:
 body {
   // Solid color background
   background: #your-color;
-  
+
   // Gradient background
   background: linear-gradient(135deg, #color1, #color2);
-  
+
   // Image background
   background: url('/images/your-bg.jpg') center/cover;
 }
@@ -185,7 +197,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="nav-menu">
             <Link to="/" className="nav-link">home</Link>
             <Link to="/cv" className="nav-link">cv</Link>
-            <Link to="/blog" className="nav-link">blog</Link> {/* Add new pages */}
+            <Link to="/timeline" className="nav-link">timeline</Link> {/* Add new pages */}
           </div>
         </nav>
       </header>
@@ -253,7 +265,7 @@ export default ProjectCard
 Then use it in your MDX files:
 
 ```mdx
-import ProjectCard from '../components/mdx/ProjectCard'
+import ProjectCard from '../components/mdx/ProjectCard';
 
 <ProjectCard
   title="My Project"
@@ -278,12 +290,12 @@ touch src/pages/blog.mdx
 
 ```mdx
 ---
-title: "Blog"
-description: "My blog posts"
+title: 'Blog'
+description: 'My blog posts'
 ---
 
-import Layout from '../components/layout'
-import SEO from '../components/seo'
+import Layout from '../components/layout';
+import SEO from '../components/seo';
 
 <Layout>
   <SEO title="Blog" />
@@ -309,7 +321,7 @@ Update `src/components/layout.tsx` to include the new page in navigation.
   // ... other variables
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   --primary-color: #818cf8;
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;
@@ -327,13 +339,13 @@ import React from 'react'
 
 const ThemeToggle: React.FC = () => {
   const [theme, setTheme] = React.useState('light')
-  
+
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
     document.documentElement.setAttribute('data-theme', newTheme)
   }
-  
+
   return (
     <button onClick={toggleTheme} className="theme-toggle">
       {theme === 'light' ? '🌙' : '☀️'}
@@ -361,11 +373,11 @@ module.exports = {
     {
       resolve: `gatsby-plugin-google-analytics`,
       options: {
-        trackingId: "YOUR_GA_TRACKING_ID",
+        trackingId: 'YOUR_GA_TRACKING_ID',
       },
     },
   ],
-}
+};
 ```
 
 ### Adding a Blog
@@ -391,7 +403,7 @@ module.exports = {
     },
     `gatsby-transformer-remark`,
   ],
-}
+};
 ```
 
 3. **Create blog posts:**

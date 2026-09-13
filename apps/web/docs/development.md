@@ -19,8 +19,11 @@ How the site is built, where things live, and what to run before you push.
 - **npm** 8 or newer
 - **Git**
 - **just** (optional) — the `justfile` wraps every npm script below
-- **LaTeX** (optional) — only `npm run build:cv` needs it; the CV PDFs are
-  typeset at build time and the dev server does without them
+- **LaTeX** (optional) — `npm run build:cv` and `npm run build:posts` need it;
+  the CV PDFs and one PDF per post are typeset at build time and the dev server
+  does without them
+- **libwebp** (optional) — `dwebp` decodes the posts' photographs on their way
+  into those PDFs; without it a figure comes out as its credit line alone
 
 ### Installation
 
@@ -63,18 +66,19 @@ src/
 │   ├── projects.ts           # Project cards, grouped by section
 │   ├── chat.ts               # Chat model, welcome message, sample prompts
 │   └── retrieval.mjs         # Chunking and ranking parameters for the chat index
-├── content/blog/             # Posts and press, one markdown file each
+├── content/blog/             # Posts and press, one markdown file each; served
+│                             # at /timeline/<filename>/
 ├── lib/
 │   ├── chat/                 # Prompt assembly and retrieval, shared with the worker
 │   ├── hooks/                # useScrollSpy
 │   ├── notFound.ts           # The flag the 404 raises so the shell wears its hero
 │   └── utils/                # Chat helpers, CV export (docx, markdown)
-├── pages/                    # index, blog, projects, cv, 404
-├── templates/blog-post.tsx   # Renders one post
+├── pages/                    # index, timeline, projects, cv, 404
+├── templates/timeline-post.tsx # Renders one post
 ├── styles/                   # SCSS: variables, mixins, one file per page and feature
 └── types/                    # Shared TypeScript types
 
-scripts/                      # Build steps: chat index, worker, CV PDFs, activity, evals
+scripts/                      # Build steps: chat index, worker, CV and post PDFs, activity, evals
 static/                       # Served as-is: CNAME, robots.txt, images
 docs/                         # These guides
 e2e/                          # Playwright specs
@@ -106,10 +110,17 @@ vim src/config/projects.ts
 vim src/config/site.ts
 ```
 
-Blog posts and press are markdown in `src/content/blog/`, named
-`YYMMDD_slug.md`, with `title`, `date`, `description`, and `category`
-frontmatter. A new file is a new page; the blog list, the RSS feed, the
-sitemap, and the chat index all pick it up at build time.
+Posts and press are markdown in `src/content/blog/`, named `YYMMDD_slug.md`,
+with `title`, `date`, `description`, and `category` frontmatter. A new file is
+a new page at `/timeline/<filename>/`; the timeline, the RSS feed, the sitemap,
+the typeset PDF, and the chat index all pick it up at build time.
+
+The directory keeps its name. The list moved to `/timeline` and the routes
+moved with it, but `blog` is also the source-instance name Gatsby filters posts
+by and the `kind` the chat corpus carries across to `apps/model` — a rename
+there is a rename of a contract between two apps, not of a word on a page.
+Every old `/blog/...` address is answered by a redirect page the build writes
+(see `onPostBuild` in `gatsby-node.js`).
 
 See [homepage-management.md](./homepage-management.md),
 [cv-management.md](./cv-management.md), and
@@ -153,7 +164,8 @@ as on every other page, so each background that comes up plays its own.
 
 ```bash
 npm run develop        # dev server with the chat worker and index built first
-npm run build          # full production build, including activity and CV PDFs
+npm run build          # full production build, including activity and the PDFs
+npm run build:posts    # just the typeset post PDFs (needs pdflatex; --keep for .tex)
 npx gatsby build       # production build without the LaTeX and GitHub steps
 npm run serve          # serve the production build
 npm run clean          # clear the Gatsby cache

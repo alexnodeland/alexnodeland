@@ -31,8 +31,8 @@ describe('Configuration Helper Functions', () => {
     });
 
     it('should handle nested paths', () => {
-      expect(getFullUrl('/blog/post-1')).toBe(
-        'https://alexnodeland.com/blog/post-1'
+      expect(getFullUrl('/timeline/post-1')).toBe(
+        'https://alexnodeland.com/timeline/post-1'
       );
     });
   });
@@ -62,7 +62,7 @@ describe('Configuration Helper Functions', () => {
       const navItems = getNavigationItems();
 
       expect(navItems).toEqual([
-        { name: 'blog', href: '/blog' },
+        { name: 'timeline', href: '/timeline' },
         { name: 'projects', href: '/projects' },
         { name: 'cv', href: '/cv' },
       ]);

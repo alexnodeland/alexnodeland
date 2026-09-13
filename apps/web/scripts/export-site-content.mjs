@@ -58,7 +58,7 @@ function posts(blogDir) {
       const body = stripMarkdown(content);
       return {
         slug,
-        url: `/blog/${slug}`,
+        url: `/timeline/${slug}`,
         title: data.title || slug,
         // gray-matter parses an unquoted date as a Date; the posts quote
         // theirs, but normalise anyway so the snapshot never depends on it.

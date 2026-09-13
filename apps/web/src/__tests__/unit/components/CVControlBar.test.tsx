@@ -105,9 +105,11 @@ describe('CVControlBar', () => {
     expect(
       screen.getByRole('button', { name: 'Choose CV length' })
     ).toHaveTextContent('full cv');
-    expect(
-      screen.getByRole('button', { name: 'Download the CV' })
-    ).toHaveTextContent('download');
+    // The download menu's trigger is the mark rather than the word, so what
+    // names it is its aria-label — which is how it is found here.
+    const download = screen.getByRole('button', { name: 'Download the CV' });
+    expect(download.querySelector('svg')).not.toBeNull();
+    expect(download).not.toHaveTextContent('download');
     // The row is chrome; the search field lives in its own panel below it.
     expect(screen.getAllByRole('button')).toHaveLength(2);
     expect(document.querySelector('input')).toBeNull();
@@ -256,14 +258,16 @@ describe('CVControlBar', () => {
       await openDownloadMenu(user);
       await user.click(screen.getByRole('option', { name: 'docx' }));
 
+      // An icon trigger has no word to swap, so the progress it reports is
+      // aria-busy and the pulse the stylesheet hangs off it.
       expect(
         screen.getByRole('button', { name: 'Download the CV' })
-      ).toHaveTextContent('generating...');
+      ).toHaveAttribute('aria-busy', 'true');
 
       await waitFor(() =>
         expect(
           screen.getByRole('button', { name: 'Download the CV' })
-        ).toHaveTextContent('download')
+        ).not.toHaveAttribute('aria-busy')
       );
     });
 

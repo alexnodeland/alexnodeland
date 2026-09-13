@@ -36,10 +36,10 @@ test.describe('Homepage', () => {
     // Check that main navigation links exist. There is no "home" link: the
     // brand is the way back, and it is deliberately not rendered on the
     // homepage itself, so asserting one here could never have passed.
-    // Scoped to the nav and matched exactly: the page body also links to the
-    // blog ("read the blog"), which an unscoped substring match collides with.
+    // Scoped to the nav and matched exactly, so that prose elsewhere on the
+    // page naming the same destination cannot satisfy it by accident.
     await expect(
-      nav.getByRole('link', { name: 'blog', exact: true })
+      nav.getByRole('link', { name: 'timeline', exact: true })
     ).toBeVisible();
     await expect(
       nav.getByRole('link', { name: 'projects', exact: true })

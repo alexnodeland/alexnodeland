@@ -82,13 +82,20 @@ const config: import('gatsby').GatsbyConfig = {
               };
             }) =>
               allMarkdownRemark.nodes.map(node => {
-                const url = `${site.siteMetadata.siteUrl}/blog${node.fields.slug}`;
+                const url = `${site.siteMetadata.siteUrl}/timeline${node.fields.slug}`;
                 return {
                   title: node.frontmatter.title,
                   description: node.frontmatter.description,
                   date: node.frontmatter.date,
                   url,
-                  guid: url,
+                  // The guid is an identity, not an address, and it is pinned
+                  // to the address these posts were first published at. The
+                  // list moved from /blog to /timeline; a guid that moved with
+                  // it would be a new identity for every post in the feed, and
+                  // every subscriber would be handed all of them again as
+                  // unread. It stays spelled this way for good — the item's
+                  // `url` above is the link that actually goes anywhere.
+                  guid: `${site.siteMetadata.siteUrl}/blog${node.fields.slug}`,
                   custom_elements: [{ 'content:encoded': node.html }],
                 };
               }),

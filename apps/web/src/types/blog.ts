@@ -17,7 +17,7 @@ export interface BlogPost {
   };
 }
 
-export interface BlogPageProps {
+export interface TimelinePageProps {
   location?: { pathname?: string };
   data: {
     allMarkdownRemark: {

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
-import BlogPage from '../../../pages/blog';
+import TimelinePage from '../../../pages/timeline';
 
 // Mock components barrel to avoid animated backgrounds
 jest.mock('../../../components/seo', () => ({
@@ -12,7 +12,7 @@ jest.mock('../../../components/seo', () => ({
 }));
 
 // Mock SCSS
-jest.mock('../../../styles/blog.scss', () => ({}));
+jest.mock('../../../styles/timeline.scss', () => ({}));
 
 const makePost = (
   id: string,
@@ -60,14 +60,14 @@ const mockData = {
   },
 };
 
-describe('Blog Page', () => {
+describe('Timeline Page', () => {
   it('renders SEO and the posts list, and no hero of its own', () => {
-    render(<BlogPage data={mockData as any} />);
-    expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'blog');
-    // The "alex → blog" title and its tagline live in the hero registry the
+    render(<TimelinePage data={mockData as any} />);
+    expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'timeline');
+    // The "alex → timeline" title and its tagline live in the hero registry the
     // shell reads, not here.
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
-    // two blog posts shown (non-blog source filtered out)
+    // two posts shown (non-blog source filtered out)
     expect(screen.getAllByRole('article')).toHaveLength(2);
     expect(screen.getByText('Zeta Post')).toBeInTheDocument();
     expect(screen.getByText('Alpha Post')).toBeInTheDocument();
@@ -95,7 +95,7 @@ describe('Blog Page', () => {
 
   it('offers the tags the posts actually carry, and no others', async () => {
     const user = userEvent.setup();
-    render(<BlogPage data={mockData as any} />);
+    render(<TimelinePage data={mockData as any} />);
 
     // The old row of filter buttons and the native select are both gone.
     expect(document.querySelector('select')).toBeNull();
@@ -119,21 +119,21 @@ describe('Blog Page', () => {
   });
 
   it('links to the feed from the control row, beside the pickers', () => {
-    render(<BlogPage data={mockData as any} />);
+    render(<TimelinePage data={mockData as any} />);
     const feed = screen.getByRole('link', { name: 'rss feed' });
     expect(feed).toHaveAttribute('href', '/rss.xml');
     expect(feed).toHaveAttribute('type', 'application/rss+xml');
     // In the row, in the chips' chrome, right after the sort picker.
-    const row = document.querySelector('.blog-control-bar') as HTMLElement;
+    const row = document.querySelector('.timeline-control-bar') as HTMLElement;
     expect(row).toContainElement(feed);
     expect(feed).toHaveClass('ui-chip-button');
-    const sort = row.querySelector('.blog-sort-dropdown') as HTMLElement;
+    const sort = row.querySelector('.timeline-sort-dropdown') as HTMLElement;
     expect(sort.nextElementSibling).toBe(feed);
   });
 
   it('filters by tag through the dropdown', async () => {
     const user = userEvent.setup();
-    render(<BlogPage data={mockData as any} />);
+    render(<TimelinePage data={mockData as any} />);
 
     await pick(user, tagTrigger(), 'ai');
 
@@ -148,7 +148,7 @@ describe('Blog Page', () => {
 
   it('sorts by date through the dropdown', async () => {
     const user = userEvent.setup();
-    render(<BlogPage data={mockData as any} />);
+    render(<TimelinePage data={mockData as any} />);
 
     // Newest first is the default and the trigger says so.
     expect(sortTrigger()).toHaveTextContent('newest first');
@@ -161,7 +161,7 @@ describe('Blog Page', () => {
   });
 
   it('still filters by search, from its own panel', () => {
-    render(<BlogPage data={mockData as any} />);
+    render(<TimelinePage data={mockData as any} />);
 
     const search = screen.getByPlaceholderText(
       'search posts...'
@@ -174,7 +174,7 @@ describe('Blog Page', () => {
 
   it('drives the pickers from the keyboard', async () => {
     const user = userEvent.setup();
-    render(<BlogPage data={mockData as any} />);
+    render(<TimelinePage data={mockData as any} />);
 
     tagTrigger().focus();
     await user.keyboard('{ArrowDown}');
@@ -184,6 +184,74 @@ describe('Blog Page', () => {
     await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
 
     expect(tagTrigger()).toHaveFocus();
+    expect(tagTrigger()).toHaveTextContent('ai');
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+  });
+  // The break is a row of its own between the cards, so the thing to read is
+  // the order of the list's children rather than anything on a card.
+  const listInOrder = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('.year-break, .post-preview')).map(
+      el =>
+        el.classList.contains('year-break')
+          ? el.textContent
+          : el.querySelector('h2')?.textContent
+    );
+
+  it('breaks the list with a year above the run it opens, and re-cuts it on a\n     change of sort', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<TimelinePage data={mockData as any} />);
+
+    expect(listInOrder(container)).toEqual([
+      '2024',
+      'Zeta Post',
+      '2023',
+      'Alpha Post',
+    ]);
+
+    await pick(user, sortTrigger(), 'oldest first');
+
+    expect(listInOrder(container)).toEqual([
+      '2023',
+      'Alpha Post',
+      '2024',
+      'Zeta Post',
+    ]);
+  });
+
+  it('leaves every card alike — the year is never on one', () => {
+    const { container } = render(<TimelinePage data={mockData as any} />);
+    expect(container.querySelector('.post-preview .year-break')).toBeNull();
+  });
+
+  it("carries each card's slug, which is what a reader is scrolled back to", () => {
+    const { container } = render(<TimelinePage data={mockData as any} />);
+    expect(
+      Array.from(container.querySelectorAll('article')).map(card =>
+        card.getAttribute('data-slug')
+      )
+    ).toEqual(['/zeta', '/alpha']);
+  });
+
+  it('keeps the view in the session as the pickers are changed', async () => {
+    const user = userEvent.setup();
+    render(<TimelinePage data={mockData as any} />);
+
+    await pick(user, tagTrigger(), 'ai');
+
+    expect(window.sessionStorage.setItem).toHaveBeenCalledWith(
+      'timeline:view',
+      expect.stringContaining('"tag":"AI"')
+    );
+  });
+
+  it('comes back to the tag and the order it was left on', () => {
+    (window.sessionStorage.getItem as jest.Mock).mockReturnValue(
+      JSON.stringify({ tag: 'AI', sort: 'asc', search: '', scrollTop: 0 })
+    );
+
+    render(<TimelinePage data={mockData as any} />);
+
+    expect(sortTrigger()).toHaveTextContent('oldest first');
     expect(tagTrigger()).toHaveTextContent('ai');
     expect(screen.getAllByRole('article')).toHaveLength(1);
   });

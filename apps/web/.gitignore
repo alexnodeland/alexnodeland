@@ -106,3 +106,7 @@ archive/press/*
 # workflow before gatsby build. Generated, so not committed — which also means
 # they are never stale relative to the data they came from.
 static/cv/
+
+# The same arrangement for the posts: one PDF per markdown file, typeset by
+# `npm run build:posts` from src/content/blog/ before gatsby build.
+static/timeline/

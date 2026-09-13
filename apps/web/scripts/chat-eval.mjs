@@ -459,7 +459,7 @@ const CASES = [
     // through a paper titled "Researcher, SUNY Research Foundation", which the
     // model had invented. The source URL settles it either way.
     expectAny: ['wavelet'],
-    expectSource: '/blog/161101_optimal-wavelet-bases',
+    expectSource: '/timeline/161101_optimal-wavelet-bases',
     forbidden: [REFUSAL_FRAGMENT],
     wantSources: true,
   },

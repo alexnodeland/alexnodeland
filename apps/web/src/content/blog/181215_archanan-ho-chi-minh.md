@@ -5,7 +5,7 @@ description: 'Opening an Archanan engineering office at The Hive in Thảo Đi�
 category: 'Notes'
 ---
 
-archanan opened an office in ho chi minh city in december 2018, five months after [the investor day](/blog/180724_ef-investor-day/), and after a few other spots settled at [the hive in thảo điền](https://thehive.com.vn/).
+archanan opened an office in ho chi minh city in december 2018, five months after [the investor day](/timeline/180724_ef-investor-day/), and after a few other spots settled at [the hive in thảo điền](https://thehive.com.vn/).
 
 we built the team out to five engineers. every month i flew down and worked from the office with them rather than managing it from singapore, and that held until covid closed the borders.
 

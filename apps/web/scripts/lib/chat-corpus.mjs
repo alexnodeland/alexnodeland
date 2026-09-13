@@ -310,7 +310,7 @@ function blogChunks(blogDir) {
 
   for (const file of files) {
     const slug = file.replace(/\.md$/, '');
-    const url = `/blog/${slug}`;
+    const url = `/timeline/${slug}`;
     const raw = fs.readFileSync(path.join(blogDir, file), 'utf8');
     const { data, content } = matter(raw);
     const title = data.title || slug;

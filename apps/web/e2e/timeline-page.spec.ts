@@ -1,19 +1,19 @@
 import { test, expect } from '@playwright/test';
 import { trackCriticalErrors } from './consoleErrors';
 
-test.describe('Blog Page', () => {
-  test('should load blog page successfully', async ({ page }) => {
-    await page.goto('/blog');
+test.describe('Timeline Page', () => {
+  test('should load timeline page successfully', async ({ page }) => {
+    await page.goto('/timeline');
 
     // Check that the page loads
-    await expect(page).toHaveTitle(/blog/i);
+    await expect(page).toHaveTitle(/timeline/i);
   });
 
   test('should display basic content', async ({ page }) => {
-    await page.goto('/blog');
+    await page.goto('/timeline');
 
-    // Check that basic blog content is visible
-    await expect(page.getByText(/blog/i).first()).toBeVisible();
+    // Check that basic timeline content is visible
+    await expect(page.getByText(/timeline/i).first()).toBeVisible();
 
     // Check that navigation exists
     const nav = page.getByRole('navigation');
@@ -21,7 +21,7 @@ test.describe('Blog Page', () => {
   });
 
   test('should have proper meta tags', async ({ page }) => {
-    await page.goto('/blog');
+    await page.goto('/timeline');
 
     // Check meta description exists
     const metaDescription = page.locator('meta[name="description"]');
@@ -34,7 +34,7 @@ test.describe('Blog Page', () => {
     // stale together.
     const errors = trackCriticalErrors(page);
 
-    await page.goto('/blog');
+    await page.goto('/timeline');
 
     // Wait for page to fully load
     await page.waitForLoadState('domcontentloaded');

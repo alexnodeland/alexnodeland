@@ -313,7 +313,7 @@ test.describe('structural performance guards', () => {
     // fold's rules must not reach the frame there — a rule declared before
     // the timeline's once lost to it, and the frame was clipped by a band
     // the content did not start under.
-    await page.goto('/blog');
+    await page.goto('/timeline');
     await settle(page);
     const post = await page
       .locator('.post-preview .post-title a')
@@ -359,7 +359,7 @@ test.describe('structural performance guards', () => {
   test('the scroll-linked properties land on their readers, not their containers', async ({
     page,
   }) => {
-    await page.goto('/blog');
+    await page.goto('/timeline');
     await settle(page);
 
     await page.evaluate(() => {
@@ -618,8 +618,8 @@ test.describe('measured metrics (chromium)', () => {
       }).observe({ type: 'longtask', buffered: false });
     });
 
-    await page.getByRole('navigation').getByText('blog').click();
-    await page.waitForURL(/\/blog/);
+    await page.getByRole('navigation').getByText('timeline').click();
+    await page.waitForURL(/\/timeline/);
     await page.waitForTimeout(1500); // every timeline in the transition ends
 
     const longTasks = await page.evaluate(

@@ -9,4 +9,4 @@ on 7 december 2016 the institute for advanced computational science at stony bro
 
 iacs was where the search had been running.
 
-[the listing](https://calendar.stonybrook.edu/site/iacs/event/optimal-wavelet-bases-for-audio-compression/) · [the research behind it](/blog/161101_optimal-wavelet-bases/)
+[the listing](https://calendar.stonybrook.edu/site/iacs/event/optimal-wavelet-bases-for-audio-compression/) · [the research behind it](/timeline/161101_optimal-wavelet-bases/)

@@ -2,6 +2,7 @@ import React from 'react';
 import { CVData } from '../../config/cv';
 import type { CVVariant } from '../../lib/utils/export/docx';
 import Dropdown, { DropdownOption } from '../ui/Dropdown';
+import { DownloadIcon } from '../ui/EntryIcons';
 import SearchToggle from '../ui/SearchToggle';
 import useCVExport, { CVExportFormat } from './useCVExport';
 
@@ -63,9 +64,13 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
         className="cv-view-dropdown"
       />
 
+      {/* The verb is the mark: one tray-and-arrow, the same one a post wears
+          over its typeset copy. The menu underneath still names the three
+          formats in words — the icon says "take it away", not which file. */}
       <Dropdown
         ariaLabel="Download the CV"
-        triggerLabel={isExporting ? 'generating...' : 'download'}
+        triggerIcon={<DownloadIcon />}
+        busy={isExporting}
         options={DOWNLOAD_OPTIONS}
         onSelect={value => exportAs(value as CVExportFormat)}
         tone="action"

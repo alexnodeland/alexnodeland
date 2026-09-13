@@ -3,14 +3,14 @@
 // A plain flow child of .main. The content column and its gutter belong to
 // .main and --gutter — a page container that re-states either one puts the
 // window's content at a different x from the hero and the nav above it.
-.blog-page {
+.timeline-page {
   position: relative;
 }
 
 // The page hero, rendered on the field above the window — see .site-hero in
 // layout.scss, which owns its column and its padding. Title and tagline take
 // the halo: they sit on the bare field.
-.blog-header {
+.timeline-header {
   margin-bottom: 0;
   padding: 0;
   position: relative;
@@ -36,13 +36,13 @@
 // `sticky-control-row` in mixins.scss and .ui-dropdown / .ui-search-panel in
 // controls.scss. The space under the row and under the search panel is the
 // shared default too, so the three list pages start at the same line.
-.blog-control-bar {
+.timeline-control-bar {
   @include sticky-control-row;
 }
 
 // The page adds no space of its own below the list: the window's own bottom
 // padding (.main) is where every page ends.
-.blog-content {
+.timeline-content {
   margin-bottom: 0;
 }
 
@@ -54,10 +54,44 @@
   }
 }
 
+// The rail: a hairline down the left of the list with a dot on it against
+// every card, and nothing else in the gutter.
+//
+// Drawn by the list and its cards rather than by elements of its own. A row of
+// rail cells parallel to the cards would have to be kept in step with them —
+// and the whole list re-orders on a change of sort and shortens on a filter —
+// whereas a dot that belongs to a card cannot be anywhere but beside it, and
+// the line re-forms underneath whatever is left. The years are their own rows
+// in the column (see .year-break below), so the gutter holds no text at any
+// width and is only as wide as a dot needs.
 .posts-list {
+  // Where the line sits, measured from the list's own left edge, and the air
+  // between it and the cards.
+  --rail-line: 0.5rem;
+  --rail-gap: var(--space-4);
+  // Down to the middle of a card's title line, which is what a dot points at.
+  --dot-top: 1.75rem;
+
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--stack-gap);
+  padding-left: calc(var(--rail-line) + var(--rail-gap));
+
+  // The line runs the full height of the list rather than between the first
+  // dot and the last: it is a timeline, and it does carry on past both ends.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--rail-line);
+    width: 1px;
+    // The card's own hairline, not the interior one. This line is drawn on the
+    // bare window over a simulation rather than inside a panel, and at the
+    // interior weight it disappeared into the field entirely.
+    background: var(--hairline);
+  }
 }
 
 // The reference card for the whole site: an outline, generous padding, and a
@@ -80,12 +114,60 @@
 
   @include reading-emphasis {
     @include card-highlight-on;
+
+    // The card's dot takes the link green with it, so the rail says which one
+    // the pointer is on as plainly as the hairline does.
+    &::before {
+      background: var(--ink-primary);
+    }
+  }
+
+  // The dot, centred on the rail's line and level with the title beside it.
+  // The card is the positioned ancestor, so the offset is measured from its
+  // own left edge back across the gap to the line.
+  &::before {
+    content: '';
+    position: absolute;
+    top: var(--dot-top);
+    left: calc(-1 * var(--rail-gap) - 2px);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    transition: background-color var(--transition-normal);
   }
 }
 
-// The title row: the name alone. Scoped to the preview: an article's own
-// title block is a `.post-header` too, and it is a card rather than a row.
+// The year a run of cards starts in: one line of plain text in the column,
+// between the card that ends the year before it and the card that opens this
+// one. It is a break rather than a badge — no card carries a year of its own,
+// so every card in the list is the same card — and it takes its air from
+// above, which binds it to the run it opens rather than the one it closes.
+// The first one in the list takes none: the row of pickers has already left
+// its own gap there.
+.year-break {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+
+  &:not(:first-child) {
+    margin-top: var(--space-5);
+  }
+}
+
+// The title row: the name, and the way in at the far end of the same line.
+// Scoped to the preview: an article's own title block is a `.post-header` too,
+// and it is a card rather than a row.
+//
+// The arrow used to sit in a ruled band at the foot of the card, a whole line
+// of its own for one glyph. On the title's line it is where the eye already is
+// — a card's name and the thing that opens it, together — and the card is two
+// rows shorter for it.
 .post-preview .post-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
   margin-bottom: var(--space-4);
 
   // The row owns the space under the title here. And the title is not a
@@ -93,6 +175,7 @@
   // element (see .post-title below) has to reach the card's edges, and a
   // positioned heading would be its containing block instead.
   .post-title {
+    flex: 1 1 auto;
     margin: 0;
     min-width: 0;
     position: static;
@@ -114,13 +197,13 @@
   text-transform: lowercase;
 }
 
+// The date closing a card, with nothing beside it and no rule above it: the
+// card's own outline is already the line that says where it ends, and a second
+// one a few pixels inside it was drawing the same boundary twice.
 .post-preview .post-meta {
-  justify-content: space-between;
   flex-wrap: nowrap;
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
   margin-bottom: 0;
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--hairline-interior);
 }
 
 // The tag on an article's own header: quiet text at the far end of the date
@@ -183,11 +266,11 @@
   margin-bottom: 0;
 }
 
-// The way in, parked at the far end of the meta band — the same place the
-// project card keeps its octocat. An arrow pointing up and out, in the link
-// colour: the card is a link, and this is the one thing on it that says so.
-// It holds still under the pointer; the card's hairline is the answer. It
-// sits above the stretched title link, so it stays a target of its own.
+// The way in, parked at the far end of the title's own row. An arrow pointing
+// up and out, in the link colour: the card is a link, and this is the one
+// thing on it that says so. It holds still under the pointer; the card's
+// hairline is the answer. It sits above the stretched title link, so it stays
+// a target of its own.
 .read-more {
   display: inline-flex;
   align-items: center;
@@ -211,23 +294,54 @@
 // Blog post page styles
 // A post's own title block is content, not a page hero — it stays inside the
 // window and scrolls with the article.
-.blog-post-page {
+.post-page {
   position: relative;
 }
 
-.blog-post-page .post-header {
-  margin-bottom: var(--space-7);
+.post-page .post-header {
+  margin-bottom: var(--space-6);
   padding: var(--card-pad);
   @include outline-block;
   border-radius: var(--radius-lg);
+  position: relative;
+}
+
+// The way back, above the date. In the meta voice rather than the page's own
+// green: the capsule in the corner and the row at the foot are the two loud
+// ways out of a post, and a third one over the title would be the loudest
+// thing on the page. It answers the pointer by taking the link colour, which
+// is all it needs to say it is one.
+.post-return {
+  display: inline-block;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-small);
+  color: var(--text-muted);
+  text-decoration: none;
+  text-transform: lowercase;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    color: var(--ink-primary);
+    text-decoration: none;
+  }
+}
+
+// The article, as one card: the prose, and under it the band of things that
+// can be done with it. The outline and the padding belong to the card; the
+// prose inside it only sets its own text.
+//
+// The space below is the window's own bottom padding, to the pixel. That is
+// what centres the row underneath: the air above it and the air below it —
+// between it and the footer — are then the same number at every breakpoint.
+.post-article {
+  @include outline-block;
+  border-radius: var(--radius-lg);
+  padding: var(--card-pad);
+  margin-bottom: var(--main-pad-bottom);
   position: relative;
 }
 
 .post-content {
-  margin-bottom: var(--space-7);
-  padding: var(--card-pad);
-  @include outline-block;
-  border-radius: var(--radius-lg);
   line-height: var(--leading-prose);
   position: relative;
 
@@ -406,15 +520,137 @@
   }
 }
 
-.post-footer {
-  padding-top: var(--space-6);
+// The band at the foot of the article, inside its outline: what to do with the
+// piece now it has been read. The interior hairline is the same one the preview
+// cards rule their meta band with, so the article closes the way they do.
+.post-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--hairline-interior);
+}
+
+// Typeset by LaTeX at build time and served as a file, so it is a chip that is
+// a link rather than a control — the same clothing the feed link wears on the
+// list. Parked at the far end, away from the share marks.
+.post-download {
+  margin-left: auto;
+  color: var(--text-secondary);
+  text-decoration: none;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    color: var(--ink-primary);
+    text-decoration: none;
+  }
+}
+
+.share-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.share-chip {
+  color: var(--text-secondary);
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    color: var(--ink-primary);
+    text-decoration: none;
+  }
+}
+
+// The question mastodon has to ask, folded out beside the chip that asks it.
+// It takes the same field the search boxes do, at the width of a hostname.
+.share-host {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.share-host-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.share-host-go {
+  font-size: var(--text-control);
+  color: var(--ink-primary);
+}
+
+// The way on and the way out, on one line: the post before this one in time,
+// the list, the post after it. Three columns with the middle one at its own
+// width, so the link back sits on the page's centre line whether or not there
+// is a neighbour either side of it — at the ends of the run, the empty cell
+// holds the column open rather than letting the row re-centre itself.
+//
+// No rule above it. The article's outline has already closed the piece, and a
+// second line under a line is a divider between nothing and nothing.
+.post-nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.post-nav-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+  text-decoration: none;
+  text-transform: lowercase;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    color: var(--ink-primary);
+    text-decoration: none;
+  }
+}
+
+.post-nav-newer {
+  justify-self: end;
+  text-align: right;
+}
+
+// The title of the neighbour, held to one line: two long titles either side of
+// the link back would push it off the centre and wrap the row into three.
+.post-nav-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-nav-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 // The way back is a link, and reads as one: green, like every other link on a
 // surface.
-.back-to-blog {
+.back-to-timeline {
   @include text-link;
+  font-size: var(--text-small);
+  text-align: center;
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {
@@ -426,11 +662,37 @@
     overflow-wrap: anywhere;
   }
 
+  // The rail's gap closes by a step. A phone has no width to give away, and
+  // the gutter is already nothing but the line and its dots.
+  .posts-list {
+    --rail-gap: var(--space-3);
+  }
+
+  // Arrows alone either side of the way back. There is no room on a phone for
+  // two titles and a link between them, and the one that has to survive is the
+  // one in the middle.
+  //
+  // Clipped rather than `display: none`: that would take the title out of the
+  // accessibility tree with it, and the arrow it leaves behind is decorative —
+  // the link would be announced as a link to nowhere in particular.
+  .post-nav-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .post-nav-arrow {
+    font-size: var(--text-body);
+  }
+
   // An article's own title block was a full phone screen on its own — date,
   // chip, title and standfirst each holding a desktop's worth of air, with the
   // first line of the piece somewhere below the fold. The same block, closer
   // set: the reader should reach the writing on the first screen.
-  .blog-post-page .post-header {
+  .post-page .post-header {
     margin-bottom: var(--space-5);
 
     .post-meta {
