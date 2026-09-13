@@ -331,18 +331,17 @@
 // can be done with it. The outline and the padding belong to the card; the
 // prose inside it only sets its own text.
 //
-// The space below is what centres the closing row under it, and it is the
-// window's bottom padding plus the footer's lead — the two pieces of air that
-// together make up everything between that row and the first mark in the
-// footer (see --footer-lead in layout.scss). Measuring to the footer's box
-// instead put the row a visible notch high: the box is transparent and has no
-// rule, so its top edge is not a line anybody sees. The eye measures to the
-// first ink, and so does this.
+// The space below is what centres the closing row under it: one trough's worth
+// of air above the row, and the column's own trough below it, so the row sits
+// on the middle line between the article and the first mark in the footer.
+// That trough is the inset at the top of the column — the page is let into the
+// window by the same amount at both ends, and the row's air is the page's air
+// rather than a measure of its own (see --main-foot in layout.scss).
 .post-article {
   @include outline-block;
   border-radius: var(--radius-lg);
   padding: var(--card-pad);
-  margin-bottom: calc(var(--main-pad-bottom) + var(--footer-lead));
+  margin-bottom: var(--main-foot);
   position: relative;
 }
 
@@ -583,8 +582,8 @@
   }
 }
 
-// The question mastodon has to ask, folded out beside the chip that asks it.
-// It takes the same field the search boxes do, at the width of a hostname.
+// The question mastodon has to ask, folded out beside the chip that asks it,
+// at the width of a hostname.
 .pass-along-host {
   display: flex;
   align-items: center;
@@ -593,9 +592,31 @@
   min-width: 0;
 }
 
+// The same field the search boxes are, in a chip's box rather than a panel's —
+// this one lives in a row of chips and has to sit at their height. It took no
+// chrome at all until now: the rule that dresses a search box is written
+// inside .ui-search-panel, and nothing on a post is in one, so the browser's
+// own field showed through — a white box in a dark row. It was never seen,
+// because until the row lost the class a blocker was hiding it (see
+// ShareRow.tsx).
 .pass-along-host-input {
+  @include text-field;
   flex: 1 1 auto;
   min-width: 0;
+  // A chip's box — but the type in it has to be 1rem, because iOS zooms the
+  // page for anything smaller (see `text-field`), and a chip's label is
+  // --text-control. Given the same padding the field would stand proud of the
+  // row by the difference between those two lines, so it takes that back out
+  // of its own padding, half at each end. What it lands on is the height of
+  // the one chip in this row that is also type: the `go` beside it.
+  --line-overshoot: calc((1rem - var(--text-control)) * 0.6);
+  padding: calc(var(--space-2) - var(--line-overshoot)) var(--space-3);
+
+  // The chips open up for a thumb at this width (see .ui-chip-button in
+  // controls.scss); the field opens with them, or the row stops being a row.
+  @media (max-width: 768px) {
+    padding-block: calc(var(--space-3) - var(--line-overshoot));
+  }
 }
 
 .pass-along-host-go {

@@ -523,11 +523,12 @@
   // The air above the first thing a reader can actually see in the footer —
   // its block padding, plus the room the touch target leaves around the glyph.
   //
-  // Published here rather than on .footer because .main is where it gets read:
-  // a post's closing row sits on the middle line between the article and the
-  // footer, and the line the eye measures to is the mark, not the box. The box
-  // has no background and no rule, so its top edge is not anywhere — centring
-  // to it puts the row visibly high (see .post-article in timeline.scss).
+  // Published here rather than on .footer because .main is where it gets read.
+  // The column's bottom inset is measured to this mark rather than to the
+  // footer's box, and so is the middle line a post's closing row sits on: the
+  // box has no background and no rule, so its top edge is not anywhere, and
+  // measuring to it leaves the whole column sitting high (see --main-foot on
+  // .main, and .post-article in timeline.scss).
   --footer-lead: calc(
     var(--space-5) + (var(--footer-mark) - var(--footer-mark-ink)) / 2
   );
@@ -694,16 +695,26 @@
   // of their own. The bottom is the same on every page — the page containers
   // add none of their own either.
   //
-  // Both are published as tokens, because two things have to read them back.
-  // The top: a sticky control row sits at the window's top edge in both its
-  // states, and the only way its resting gap can equal its stuck one is to
-  // start with no room above it at all (see `sticky-control-row` in
-  // mixins.scss). The bottom: a post's closing row is meant to sit on the
-  // middle line between the article above it and the footer below, and the
-  // footer's half of that air is this padding (see .post-article in
-  // timeline.scss). Every breakpoint below re-publishes both.
+  // The top is a token because a sticky control row has to read it back: the
+  // row sits at the window's top edge in both its states, and the only way its
+  // resting gap can equal its stuck one is to start with no room above it at
+  // all (see `sticky-control-row` in mixins.scss). Each breakpoint below
+  // re-publishes it, and the two lines under it follow on their own.
   --main-pad-top: var(--space-6);
-  --main-pad-bottom: var(--space-7);
+  // The air under the last thing in the column, and the column's own inset is
+  // what sets it: the content is let into the window by the same amount at
+  // both ends.
+  //
+  // Measured to the first mark in the footer, not to the footer's box. The box
+  // is transparent and carries no rule, so its top edge is not a line anybody
+  // sees; the eye measures to the ink, and so does this (see --footer-lead on
+  // .layout). The footer's lead is already part of that air, so the column
+  // only owes the remainder — which at every width the site has today is
+  // nothing, the lead being the larger of the two. The subtraction is here so
+  // that a footer which gave up some of its own padding would hand the column
+  // back its inset rather than closing the gap twice over.
+  --main-foot: max(var(--main-pad-top), var(--footer-lead));
+  --main-pad-bottom: calc(var(--main-foot) - var(--footer-lead));
   padding: var(--main-pad-top) var(--gutter) var(--main-pad-bottom);
   width: 100%;
   position: relative;
@@ -817,8 +828,6 @@
 
   .main {
     --main-pad-top: var(--space-5);
-    --main-pad-bottom: var(--space-6);
-    padding: var(--main-pad-top) var(--gutter) var(--main-pad-bottom);
   }
 }
 
@@ -837,8 +846,6 @@
 
   .main {
     --main-pad-top: var(--space-4);
-    --main-pad-bottom: var(--space-5);
-    padding: var(--main-pad-top) var(--gutter) var(--main-pad-bottom);
   }
 
   // The touch target shrinks, and --footer-lead is written in terms of it, so

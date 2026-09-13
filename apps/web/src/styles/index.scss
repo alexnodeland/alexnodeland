@@ -7,6 +7,16 @@
 // .main and --gutter, so nothing here re-states either.
 .home {
   position: relative;
+
+  // The sections below are spaced by the margin under each of them, which
+  // leaves the last one carrying a margin with nothing under it to separate —
+  // a section's worth of air on top of the column's own inset, and this page
+  // alone standing further off the footer than every other one. The air under
+  // the last thing in the column belongs to .main (see --main-foot), here as
+  // everywhere else.
+  > :last-child {
+    margin-bottom: 0;
+  }
 }
 
 // The cover. It renders on the field above the window and is centred, stacked
