@@ -18,8 +18,6 @@ six of them, in cycle order:
 | shortest path      | dijkstra, a\*, and greedy search, side by side   |
 | pde solver         | finite-difference heat and wave equations        |
 
----
-
 ## <a id="cellular-automata"></a>cellular automaton
 
 a grid of cells, a rule, and a state buffer stepped one generation at a time. each cell counts its eight neighbors on a wrapping torus, then lives, dies, or is born according to the rule, which is conway's b3/s23 by default, with highlife, maze, coral, day & night and seeds in the dropdown.
@@ -28,8 +26,6 @@ the shader only draws; the rule runs on a real buffer. newborn cells take the ne
 
 random soup under conway settles into still lifes and period-two oscillators within a couple of hundred generations, which is too static for a background. `perturbation rate` flips a small fraction of cells each step to keep things moving. set it to zero to watch it stall.
 
----
-
 ## <a id="wave-interference"></a>simple waves
 
 three sine waves summed in a shader. one runs along x, one along y at 0.8× the frequency, one diagonally at 0.6×, each drifting at a different rate. color maps amplitude: bright where they reinforce, dark where they cancel.
@@ -37,8 +33,6 @@ three sine waves summed in a shader. one runs along x, one along y at 0.8× the 
 it is nothing but superposition. interference is the mechanism behind a great deal of signal processing, and it takes three lines of arithmetic. i spent a couple of years on wavelet bases for audio compression at stony brook, and what stayed with me is how little machinery the underlying physics needs.
 
 turn `wave frequency` up and `wave speed` down to freeze the interference pattern in place.
-
----
 
 ## <a id="job-scheduling"></a>job scheduling
 
@@ -52,8 +46,6 @@ the layout is force-directed and running at the same time, so the graph is still
 
 set `number of clusters` to 2 and `requested subgraph size` to something close to one cluster's worth of nodes, then watch how long it takes to commit to one side.
 
----
-
 ## <a id="fm-synthesis"></a>dual fm oscillator
 
 a working synthesizer. two oscillators, one modulating the other's phase. that is all fm synthesis is, and it is how a dx7 could make a bell out of two sine waves when a subtractive synth needed a filter bank. the signal then runs through filter, delay, distortion and reverb.
@@ -65,8 +57,6 @@ push `vco 1 fm amount` up slowly and watch the sidebands appear in pairs either 
 it makes sound. hold the speaker button in the settings panel.
 
 i built synthesizers as artist in residence at cewit for a year, mostly analog.
-
----
 
 ## <a id="pathfinding"></a>shortest path
 
@@ -82,8 +72,6 @@ watch the shape of the explored region: a circle, then an ellipse, then a corrid
 
 turn `steps per second` down to about 5 to watch the frontier expand node by node.
 
----
-
 ## <a id="pde-solver"></a>pde solver
 
 explicit finite differences on a grid, solving either the heat equation `∂u/∂t = α∇²u` or the wave equation `∂²u/∂t² = c²∇²u`. the laplacian is a five-point stencil; heat uses forward-time centered-space, wave uses a centered second difference in time. grid runs at 64², 128² or 256².
@@ -91,8 +79,6 @@ explicit finite differences on a grid, solving either the heat equation `∂u/�
 the parameters that change the physics rather than the look are `boundary condition` and `initial condition`. dirichlet fixes the edge value, so waves reflect inverted. neumann sets the edge derivative to zero, so they reflect upright. periodic wraps, so anything leaving the right edge arrives at the left. pick a gaussian pulse on the wave equation and switch between the three. the difference in reflection is immediate. it is the clearest demonstration of boundary conditions i know of.
 
 you cannot make it explode. explicit schemes are only conditionally stable. heat needs `α·dt·(1/dx² + 1/dy²) ≤ 0.5` and wave needs the cfl condition `c·dt·√(1/dx² + 1/dy²) ≤ 1`, so the timestep is clamped to the stable maximum before every step. push thermal diffusivity to its limit and the simulation slows down rather than diverging.
-
----
 
 ## on the whole thing
 

@@ -242,6 +242,13 @@
   // its pickers on the left and this on the right.
   margin-left: auto;
 
+  // Except in a control row, where the way back to the top is hung first and
+  // carries the split (see .ui-scroll-top). Two auto margins would share the
+  // slack between them and strand the pair in the middle of the row.
+  .ui-control-row > & {
+    margin-left: 0;
+  }
+
   &.is-active {
     @include control-active;
   }
@@ -252,6 +259,61 @@
 
   &.is-open {
     display: block;
+  }
+}
+
+// The way back to the top of the window. It belongs to a reader who has left
+// the top, so at rest it is not there — and "not there" has to be a state
+// rather than an absence, because a chip that mounted when the scroll crossed
+// the line would reflow the row and shove the search chip sideways. So it is
+// always in the row and collapsed to nothing: no width, no ink, and a negative
+// margin cancelling the gap the flex row keeps either side of every item,
+// including a zero-width one. Opening it is the same transition, at the same
+// moment, as the row drawing its ends in (see `sticky-control-row`).
+//
+// The max-width is comfortably past the chip's own — it is a glyph in a little
+// housing, ~34px at the widest breakpoint — so the box is the chip's natural
+// size the whole way, not a clamp on it.
+//
+// The doubled class is not decoration: the phone breakpoints below set
+// `padding-inline` on every chip in the row, and a border-box width cannot go
+// under its own padding — collapsed with 8px either side the chip was still
+// 16px of nothing, and the row had a hole in it.
+.ui-chip-button.ui-scroll-top {
+  // The right-hung pair starts here rather than at the search toggle: the way
+  // back opens inside it, in the slack between the two groups, so search keeps
+  // the position it has at rest and nothing else in the row moves. Collapsed,
+  // the negative right margin gives back the gap the row would keep between a
+  // zero-width item and its neighbour, which would otherwise hold search a gap
+  // clear of the column's edge for no visible reason.
+  margin-left: auto;
+  margin-right: calc(-1 * var(--control-gap));
+  max-width: 0;
+  padding-inline: 0;
+  border-inline-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  // Not transform: the row's draw-in already owns that on every chip in it
+  // (see `sticky-control-row`), and this chip draws in with its neighbour.
+  transition:
+    max-width var(--transition-normal),
+    margin-right var(--transition-normal),
+    padding-left var(--transition-normal),
+    padding-right var(--transition-normal),
+    border-left-width var(--transition-normal),
+    border-right-width var(--transition-normal),
+    opacity var(--transition-normal),
+    visibility 0s linear var(--duration-normal);
+
+  .is-afloat > & {
+    max-width: 3rem;
+    margin-right: 0;
+    padding-inline: 0.55rem;
+    border-inline-width: 1px;
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
   }
 }
 
@@ -282,6 +344,10 @@
   .ui-chip-button {
     padding-inline: var(--space-2);
   }
+
+  .is-afloat > .ui-scroll-top {
+    padding-inline: var(--space-2);
+  }
 }
 
 // The narrowest phones. A control row is strictly one line (see
@@ -295,6 +361,10 @@
     padding-inline: 0.4rem;
   }
 
+  .is-afloat > .ui-scroll-top {
+    padding-inline: 0.4rem;
+  }
+
   .ui-dropdown-trigger {
     gap: var(--space-1);
   }
@@ -304,6 +374,12 @@
 // is the one piece of motion that is this file's own.
 @media (prefers-reduced-motion: reduce) {
   .ui-dropdown-trigger .ui-dropdown-caret {
+    transition: none;
+  }
+
+  // The row's two states still differ; it just arrives in them rather than
+  // travelling between them.
+  .ui-scroll-top {
     transition: none;
   }
 }

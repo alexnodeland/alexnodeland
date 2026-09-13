@@ -571,10 +571,11 @@
   }
 
   // The footer holds the one action: reset. The shortcuts that used to be
-  // printed under it live behind `?` with the rest.
+  // printed under it live behind `?` with the rest. No rule over it — the
+  // button is already an outlined box, and a hairline above it was a second
+  // line drawn a few pixels from the first.
   .settings-panel-footer {
     padding: var(--space-4) var(--space-5);
-    border-top: 1px solid var(--hairline-interior);
 
     .reset-button {
       @include button-secondary;

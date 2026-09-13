@@ -4,7 +4,11 @@ import { getAllSocialLinks, siteConfig } from '../config';
 import { EASE_IN, EASE_OUT } from '../config/motion';
 import { FOLD_ANCHOR, publishFoldMeasures } from '../lib/foldAnchor';
 import { holdNotFound, isNotFound, useNotFound } from '../lib/notFound';
-import { prefersReducedMotion, scrollBehavior } from '../lib/utils/motion';
+import {
+  prefersReducedMotion,
+  scrollBehavior,
+  supportsScrollTimeline,
+} from '../lib/utils/motion';
 import '../styles/layout.scss';
 import { useSettingsPanel } from './SettingsPanelContext';
 import ChatIcon from './chat/ChatIcon';
@@ -28,22 +32,6 @@ interface LayoutProps {
    */
   location?: { pathname?: string };
 }
-
-// The fold. As the window scrolls, the hero folds to a compact row above it
-// and the window's frame rises to take the room — following the scroll
-// exactly, both ways (see .site-hero.is-collapsible in layout.scss for the
-// choreography and why nothing in it lays out).
-//
-// Where the browser can run the fold off the window's scroll timeline, the
-// compositor reads the progress itself and nothing here runs on a scroll
-// frame. Both features are needed as a pair: the timeline alone, without the
-// scope that lets the hero — the scroller's sibling — name it, would leave
-// the fold with no driver at all.
-const supportsScrollDrivenFold = (): boolean =>
-  typeof CSS !== 'undefined' &&
-  typeof CSS.supports === 'function' &&
-  CSS.supports('animation-timeline: scroll()') &&
-  CSS.supports('timeline-scope: --window');
 
 // The band the hero gives up: how far the window's box reaches up into the
 // hero's. The stylesheet derives it (--fold-band) from the resting height
@@ -401,6 +389,10 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
   // The arrival's handover to the fold. The window is put back to the top by
   // the navigation above, and at the top the two do not disagree — so the cue
   // is not the scroll event itself but the first one that leaves the top.
+  // isContentHidden is a dependency because it unmounts the whole stage (see
+  // the render below — the phone's explore mode takes the page off the field
+  // to leave the background bare). The element this holds is replaced when it
+  // comes back, and without the re-run this went on talking to a detached one.
   React.useEffect(() => {
     const panel = windowRef.current;
     if (!panel) return;
@@ -409,7 +401,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     };
     panel.addEventListener('scroll', onScroll, { passive: true });
     return () => panel.removeEventListener('scroll', onScroll);
-  }, [endEntry]);
+  }, [endEntry, isContentHidden]);
 
   // ── The navigation, half two ────────────────────────────────────────────
   // Both heroes are in the DOM. Run the move: the region's height eases from
@@ -565,7 +557,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     if (!shouldCollapse || !region || !panel) return;
     // A pinned hero is folded by the stylesheet, for good.
     if (pinned) return;
-    if (supportsScrollDrivenFold()) return;
+    if (supportsScrollTimeline()) return;
 
     let frame = 0;
     let last = -1;
@@ -612,7 +604,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       }
       region.classList.remove('is-folded');
     };
-  }, [shouldCollapse, pinned]);
+  }, [shouldCollapse, pinned, isContentHidden]);
 
   // The page scrolls inside the window, not the document, so a wheel turned
   // over the field beside it — a fifth of a wide screen — used to do nothing,
@@ -719,7 +711,10 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       window.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, []);
+    // See the note above the scroll handover: the stage this reaches into is
+    // unmounted and rebuilt by the phone's explore mode.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isContentHidden]);
 
   // The window's top edge is dynamic now — it sits below the hero and rises
   // as the hero collapses — so its live position is published for the two
@@ -766,7 +761,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       if (frame) window.cancelAnimationFrame(frame);
       document.documentElement.style.removeProperty('--window-top');
     };
-  }, [sidebarVisible]);
+  }, [sidebarVisible, isContentHidden]);
 
   // The collapse choreography needs real widths: at full collapse the title
   // parks on the left edge and the tagline on the right, each travelling half
@@ -808,7 +803,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
       observer.disconnect();
       bandRef.current = 0;
     };
-  }, [shouldCollapse, heroKey, pinned]);
+  }, [shouldCollapse, heroKey, pinned, isContentHidden]);
 
   // Panel-state classes. The stage carries them for the hero and the window,
   // which move as one block when a sidebar opens; the nav capsule carries its

@@ -258,20 +258,74 @@
   // (see .ui-dropdown in controls.scss) rather than ever dropping below the
   // others.
   flex-wrap: nowrap;
-  gap: var(--space-2);
+  // The air between one chip and the next. Named, because the row's two ends
+  // take the same measure the moment it goes afloat.
+  --control-gap: var(--space-2);
+  gap: var(--control-gap);
   // The window's rhythm, above the chips and below them alike, so the row sits
   // in a band of even air rather than riding high in it — and the same gap the
   // list underneath keeps between its cards (--stack-gap in variables.scss).
+  //
+  // Nothing at the sides at rest: the row is the first thing in the page and
+  // there is nothing under it, so its ends want to be flush with the ends of
+  // the cards below — the column reading as one edge from the chips down.
   padding: var(--stack-gap) 0;
   pointer-events: none;
+
+  // The draw-in. At rest the row is part of the column: its chips line up with
+  // the cards below because there is nothing below them yet, and the column
+  // reads as one edge from the chips down. By the time the row is pinned to
+  // the window's top edge there is — the list runs underneath it — and flush
+  // stopped reading: a chip's hairline landed exactly on the border of the
+  // card passing beneath, and the two made one thickened line. So the ends
+  // draw in by the gap the row already keeps between its own chips.
+  //
+  // It travels on the window's scroll, over exactly the band that carries the
+  // row from the column to the frame's edge — the same distance, the same
+  // timeline and the same two paths as the hero's fold above it (see
+  // .site-hero.is-collapsible in layout.scss). Transforms, not padding: the
+  // row is a flex container, and a scroll-linked inset would have laid it out
+  // once per frame. The left of the row moves right and the right of it moves
+  // left, each by the whole gap, so nothing between them changes its spacing.
+  --row-fold: 0;
 
   > * {
     pointer-events: auto;
     min-width: 0;
+    transform: translateX(calc(var(--row-fold) * var(--control-gap)));
+  }
+
+  // Everything from the first right-hung chip onwards. That is the way back to
+  // the top: it is rendered just inside whatever the page hung on the right,
+  // and it carries the `margin-left: auto` that splits the row (see
+  // .ui-scroll-top in controls.scss).
+  > .ui-scroll-top,
+  > .ui-scroll-top ~ * {
+    transform: translateX(calc(-1 * var(--row-fold) * var(--control-gap)));
+  }
+
+  // The compositor path: it reads the scroll itself and nothing runs on a
+  // scroll frame. Longhands only — the `animation` shorthand resets the
+  // timeline and the range, and the build's minifier sorts declarations.
+  @supports (animation-timeline: scroll()) and (timeline-scope: --window) {
+    > * {
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --window;
+      // Never a zero-length range: an animation across no distance reports
+      // itself finished. Same floor the fold's own ranges carry.
+      animation-range: 0 max(1px, var(--fold-band));
+      animation-name: control-draw-in;
+    }
+
+    > .ui-scroll-top,
+    > .ui-scroll-top ~ * {
+      animation-name: control-draw-out;
+    }
   }
 
   @media (max-width: 480px) {
-    gap: var(--space-1);
+    --control-gap: var(--space-1);
   }
 }
 

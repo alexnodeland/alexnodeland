@@ -19,3 +19,20 @@ export const prefersReducedMotion = (): boolean => {
  */
 export const scrollBehavior = (): 'auto' | 'smooth' =>
   prefersReducedMotion() ? 'auto' : 'smooth';
+
+/**
+ * Whether the browser can run an animation off a scroll offset rather than a
+ * clock — and reach one declared on another element, which is how anything
+ * outside the scroller (the hero above the window, the chips inside it) gets
+ * at the window's own scroll.
+ *
+ * The two features are needed as a pair: the timeline alone, without the scope
+ * that lets a sibling name it, would leave the fold with no driver at all. Both
+ * the hero's fold and the control rows' draw-in ask this and fall back to a
+ * progress number published per frame when the answer is no.
+ */
+export const supportsScrollTimeline = (): boolean =>
+  typeof CSS !== 'undefined' &&
+  typeof CSS.supports === 'function' &&
+  CSS.supports('animation-timeline: scroll()') &&
+  CSS.supports('timeline-scope: --window');

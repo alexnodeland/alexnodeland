@@ -20,6 +20,22 @@
   }
 }
 
+// A list page's control row drawing its ends in as it leaves the column and
+// starts floating over the list (see `sticky-control-row` in mixins.scss). Two
+// keyframes because the two ends travel towards each other; the distance is
+// the row's own --control-gap, so the ends end up with the air the middle has.
+@keyframes control-draw-in {
+  to {
+    transform: translateX(var(--control-gap));
+  }
+}
+
+@keyframes control-draw-out {
+  to {
+    transform: translateX(calc(-1 * var(--control-gap)));
+  }
+}
+
 // A simulation reaching the field for the first time (see .background-arrival).
 @keyframes background-in {
   from {

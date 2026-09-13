@@ -141,19 +141,18 @@
 // The year a run of cards starts in: one line of plain text in the column,
 // between the card that ends the year before it and the card that opens this
 // one. It is a break rather than a badge — no card carries a year of its own,
-// so every card in the list is the same card — and it takes its air from
-// above, which binds it to the run it opens rather than the one it closes.
-// The first one in the list takes none: the row of pickers has already left
-// its own gap there.
+// so every card in the list is the same card.
+//
+// It takes no air of its own at all: the list's own gap is above it and below
+// it alike, so the line sits on the centre of the space between the two cards
+// it stands between. It used to take an extra step from above, which was meant
+// to bind it to the run it opens and instead left it hanging much nearer the
+// card under it than the one over it.
 .year-break {
   margin: 0;
   font-size: var(--text-small);
   color: var(--text-secondary);
   letter-spacing: 0.02em;
-
-  &:not(:first-child) {
-    margin-top: var(--space-5);
-  }
 }
 
 // The title row: the name, and the way in at the far end of the same line.
@@ -346,17 +345,30 @@
 }
 
 .post-content {
+  // The column's own inset owns the bottom of it. Left to the last paragraph's
+  // margin, the band of chips under the article stood a step further from the
+  // prose than it did from the outline below it (see .post-actions).
+  > :last-child {
+    margin-bottom: 0;
+  }
+
   line-height: var(--leading-prose);
   position: relative;
 
   h1,
+  // The same air above as below, and it is the prose rhythm's own: a heading
+  // in a piece sits evenly between the text it closes and the text it opens.
+  // It used to have twice as much above as below, which read as a title
+  // belonging to the paragraph under it rather than dividing the two — and
+  // that was on top of a rule drawn above it, which is gone: the heading does
+  // the dividing, which is what a heading is for.
   h2,
   h3,
   h4,
   h5,
   h6 {
-    margin-top: var(--space-6);
-    margin-bottom: var(--space-4);
+    margin-top: var(--space-5);
+    margin-bottom: var(--space-5);
     color: var(--text-primary);
     position: relative;
   }
@@ -525,16 +537,17 @@
 }
 
 // The band at the foot of the article, inside its outline: what to do with the
-// piece now it has been read. The interior hairline is the same one the preview
-// cards rule their meta band with, so the article closes the way they do.
+// piece now it has been read. No rule over it — the air is the separation, and
+// a hairline there was a second line drawn inside a box that already has one.
 .post-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3);
-  margin-top: var(--space-6);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--hairline-interior);
+  // The card's own inset, so the row sits the same distance from the prose
+  // above it as it does from the outline below it and the band reads as one
+  // measure rather than two.
+  margin-top: var(--card-pad);
 }
 
 // Typeset by LaTeX at build time and served as a file, so it is a chip that is

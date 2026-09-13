@@ -1,5 +1,6 @@
 import React from 'react';
 import ActivityPanel from '../components/ui/ActivityPanel';
+import ControlRow from '../components/ui/ControlRow';
 import Dropdown from '../components/ui/Dropdown';
 import { GitHubIcon, LinkIcon } from '../components/ui/EntryIcons';
 import SearchToggle from '../components/ui/SearchToggle';
@@ -223,7 +224,7 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
             end: the one row every list page carries (see the cv and the
             blog). Each picker resets itself through its own "all" or default
             option, so there is no separate reset. */}
-        <div className="projects-control-bar">
+        <ControlRow className="projects-control-bar">
           <Dropdown
             ariaLabel="Filter projects by category"
             triggerLabel={categoryLabel}
@@ -251,7 +252,7 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
             onToggle={() => setSearchOpen(open => !open)}
             controls="projects-search"
           />
-        </div>
+        </ControlRow>
 
         {/* Somewhere to type rather than a piece of chrome, so it keeps its
             own panel below the row, folded away behind the chip above until
