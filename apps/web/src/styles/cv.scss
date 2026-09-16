@@ -545,3 +545,40 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     grid-template-columns: 1fr;
   }
 }
+
+// The unlisted role-specific resumes at /cv/fde/ and /cv/ai-engineer/. They
+// reuse the experience, education and skills sections wholesale and only need
+// a header of their own — the shell's hero is the brand alone on these paths.
+.cv-variant {
+  .cv-variant-header {
+    @include outline-block;
+    padding: var(--card-pad);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--stack-gap);
+  }
+
+  .cv-variant-label {
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .cv-variant-contact {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin-top: var(--space-3);
+  }
+
+  .cv-variant-download {
+    display: inline-block;
+    margin-top: var(--space-4);
+  }
+
+  .cv-variant-projects {
+    list-style: none;
+    padding: 0;
+
+    li {
+      margin-bottom: var(--space-3);
+    }
+  }
+}

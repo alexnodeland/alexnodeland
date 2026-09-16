@@ -25,7 +25,18 @@ const config: import('gatsby').GatsbyConfig = {
       options: {
         // Everything the site wants found; the 404 and Gatsby's dev page are
         // the only things that are not pages.
-        excludes: [`/404`, `/404.html`, `/dev-404-page`],
+        //
+        // The role-specific resumes are unlisted rather than private: they are
+        // meant to be pasted into an application, not turned up by a search for
+        // the name. They carry `noindex` as well — this keeps them out of the
+        // sitemap that would invite the crawl in the first place.
+        excludes: [
+          `/404`,
+          `/404.html`,
+          `/dev-404-page`,
+          `/cv/fde`,
+          `/cv/ai-engineer`,
+        ],
       },
     },
     {

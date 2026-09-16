@@ -55,6 +55,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      cv: ${{ steps.filter.outputs.cv }}
 
     steps:
       - name: Checkout code
@@ -79,6 +80,17 @@ jobs:
               - 'apps/web/**'
               - '!apps/web/src/content/**'
               - '!apps/web/static/images/**'
+              - '.github/workflows/test.yml'
+            # Exactly what decides what the PDFs contain and how they are set.
+            # Narrow on purpose: the CV job installs TeX Live, so it should not
+            # run because a background shader changed.
+            cv:
+              - 'apps/web/src/config/cv.ts'
+              - 'apps/web/src/config/projects.ts'
+              - 'apps/web/templates/cv/**'
+              - 'apps/web/scripts/build-cv.js'
+              - 'apps/web/scripts/check-cv-text.js'
+              - 'apps/web/scripts/lib/cv-targets.js'
               - '.github/workflows/test.yml'
 
   test:
@@ -129,6 +141,51 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+
+  # The CV artifacts are the one thing here whose correctness is invisible in
+  # the source: the LaTeX compiles, the page looks right, and the text layer is
+  # still unreadable to whatever parses it. So this job typesets every variant
+  # and asserts against the extracted text — see scripts/check-cv-text.js for
+  # what has gone wrong before and what each assertion is defending.
+  #
+  # Its own job rather than a step in `test`, because it needs TeX Live, which
+  # nothing else in the suite does and which takes longer to install than the
+  # whole unit run.
+  cv:
+    name: CV text extraction
+    needs: changes
+    if: needs.changes.outputs.cv == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit --fund=false
+
+      # The same subset the deploy workflow installs, plus poppler-utils for
+      # pdftotext. Keep the two lists in step.
+      - name: Install LaTeX and poppler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            poppler-utils
+
+      - name: Build and check every variant
+        run: npm run check:cv:build
 
   e2e:
     name: End-to-end

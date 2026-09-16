@@ -219,3 +219,32 @@
     padding: var(--space-4);
   }
 }
+
+// The consulting page's hero, sized exactly as the cv and projects heroes
+// are — see the note on .cv-page-header in cv.scss.
+.consulting-page-header {
+  margin-bottom: 0;
+  padding: 0;
+  position: relative;
+
+  h1 {
+    margin-bottom: var(--space-4);
+    @include over-background;
+  }
+
+  p {
+    color: var(--text-secondary);
+    @include over-background;
+    font-size: var(--text-lead);
+    line-height: var(--leading-chrome);
+    font-style: italic;
+  }
+}
+
+// The one line the homepage still spends on consulting. Set apart from the
+// paragraphs above it by a little air and the secondary ink, so it reads as
+// an aside rather than as the end of the biography.
+.about-consulting-note {
+  color: var(--text-secondary);
+  margin-top: var(--space-4);
+}
