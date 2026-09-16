@@ -122,7 +122,7 @@ const HEROES: Record<string, () => React.ReactNode> = {
   '/consulting': () => (
     <header className="consulting-page-header">
       {crumbTitle('consulting')}
-      <p>how i work with teams, and when it makes sense.</p>
+      <p>past work, and how an engagement runs.</p>
     </header>
   ),
   [NOT_FOUND_KEY]: () => (
