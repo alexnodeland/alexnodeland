@@ -80,17 +80,26 @@ jobs:
               - 'apps/web/**'
               - '!apps/web/src/content/**'
               - '!apps/web/static/images/**'
+              - '!apps/web/role-profiles/**'
               - '.github/workflows/test.yml'
-            # Exactly what decides what the PDFs contain and how they are set.
-            # Narrow on purpose: the CV job installs TeX Live, so it should not
-            # run because a background shader changed.
+            # Exactly what decides what the PDFs contain, how they are set,
+            # and what they are scored against. Narrow on purpose: the CV job
+            # installs TeX Live, so it should not run because a background
+            # shader changed.
             cv:
               - 'apps/web/src/config/cv.ts'
+              - 'apps/web/src/config/cv-pages.json'
               - 'apps/web/src/config/projects.ts'
+              - 'apps/web/src/config/retrieval.mjs'
               - 'apps/web/templates/cv/**'
               - 'apps/web/scripts/build-cv.js'
               - 'apps/web/scripts/check-cv-text.js'
-              - 'apps/web/scripts/lib/cv-targets.js'
+              - 'apps/web/scripts/score-cv.js'
+              - 'apps/web/scripts/lib/cv-*.js'
+              - 'apps/web/scripts/lib/openresume.js'
+              - 'apps/web/scripts/lib/transformers-env.mjs'
+              - 'apps/web/role-profiles/**'
+              - 'apps/web/cv-scores.baseline.json'
               - '.github/workflows/test.yml'
 
   test:
@@ -146,17 +155,26 @@ jobs:
   # the source: the LaTeX compiles, the page looks right, and the text layer is
   # still unreadable to whatever parses it. So this job typesets every variant
   # and asserts against the extracted text — see scripts/check-cv-text.js for
-  # what has gone wrong before and what each assertion is defending.
+  # what has gone wrong before and what each assertion is defending — and then
+  # scores each document for how well a parser reads it and how well it
+  # answers the role profiles, failing on any score that fell below the
+  # committed baseline (scripts/score-cv.js). The scores go to the job
+  # summary, so a change to a bullet shows its effect on the PR.
   #
   # Its own job rather than a step in `test`, because it needs TeX Live, which
   # nothing else in the suite does and which takes longer to install than the
   # whole unit run.
   cv:
-    name: CV text extraction
+    name: CV text extraction and scores
     needs: changes
     if: needs.changes.outputs.cv == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    env:
+      # The scorer embeds with the chat's model; same cache arrangement as
+      # the e2e job, see scripts/lib/transformers-env.mjs.
+      HF_TRANSFORMERS_CACHE: ${{ github.workspace }}/apps/web/.hf-cache
 
     steps:
       - name: Checkout code
@@ -172,8 +190,25 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit --fund=false
 
+      # The same key as the e2e job, so the two share one download.
+      - name: Cache the embedding model
+        uses: actions/cache@v6
+        with:
+          path: apps/web/.hf-cache
+          key: hf-${{ hashFiles('apps/web/src/config/retrieval.mjs', 'apps/web/scripts/build-chat-index.mjs') }}
+          restore-keys: hf-
+
+      # The parser the scorer runs, cloned from upstream at a pinned commit
+      # (never committed here; see the licensing note in
+      # scripts/lib/openresume.js). Keyed on the pin, so a bump refetches.
+      - name: Cache the OpenResume parser
+        uses: actions/cache@v6
+        with:
+          path: apps/web/.openresume
+          key: openresume-${{ hashFiles('apps/web/scripts/lib/openresume.js') }}
+
       # The same subset the deploy workflow installs, plus poppler-utils for
-      # pdftotext. Keep the two lists in step.
+      # pdftotext, pdffonts and pdfinfo. Keep the two lists in step.
       - name: Install LaTeX and poppler
         run: |
           sudo apt-get update
@@ -186,6 +221,17 @@ jobs:
 
       - name: Build and check every variant
         run: npm run check:cv:build
+
+      - name: Score every variant against the baseline
+        run: npm run score:cv -- --baseline --verbose
+
+      - name: Upload the scores
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cv-scores
+          path: apps/web/.eval/cv-scores.json
+          retention-days: 30
 
   e2e:
     name: End-to-end

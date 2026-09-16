@@ -357,27 +357,67 @@ npm run check:cv:build   # build every variant first, then check
 `scripts/check-cv-text.js` runs `pdftotext` in both its modes, and again with
 the form feeds stripped — the worst a careless parser can do — and asserts that
 every section heading, job title, company, date range and project link comes out
-at the start of a line, in order, attached to the right entry. It also holds the
-one-pagers to one page. It runs in CI as its own job, `CV text extraction`,
-because it needs TeX Live and nothing else in the suite does. **It needs
-`pdftotext`**: `brew install poppler`, or `apt-get install poppler-utils`.
+at the start of a line, in order, attached to the right entry. Beyond the
+lines, it holds the text as a whole to the source: every bullet and the summary
+come back word for word, no line ends in a hyphen, no ligature glyph reaches
+the text layer, the email and site extract as tokens of their own, the sections
+come out in order, every font is embedded with a Unicode map, and the PDF's
+Title and Author are set. It also holds the one-pagers to one page. It runs in
+CI as its own job, `CV text extraction and scores`, because it needs TeX Live
+and nothing else in the suite does. **It needs poppler** (`pdftotext`,
+`pdffonts`, `pdfinfo`): `brew install poppler`, or
+`apt-get install poppler-utils`.
 
 If it fails, read the notes at the top of the script — each assertion is there
 because something specific went wrong.
 
-### Checking what a resume says to an ATS
+### Scoring the documents
 
 ```bash
-npm run report:cv              # every variant
-npm run report:cv -- fde       # one of them
+npm run score:cv                       # score what is in static/cv
+npm run score:cv:build                 # build every variant first
+npm run score:cv -- --baseline         # and fail on a regression
+npm run score:cv -- --verbose          # the missing terms and weakest requirements too
+npm run score:cv -- --update-baseline  # record these scores as the baseline
 ```
 
-`scripts/resume-report.js` goes a step past "the words survived" and reports
-what the document looks like as _fields_ — name, email, one record per job with
-its dates — using the parser from
-[OpenResume](https://github.com/xitanggg/open-resume). A document whose every
-line is intact can still hand an employer the wrong date range, and only a
-field-level parse shows it.
+The check above is pass-or-fail. `scripts/score-cv.js` is the signal: three
+numbers per document that have no right answer, only better and worse, so a
+change to a bullet can be judged by its effect.
+
+- **Parseability** — of the fields a parser is expected to recover (name,
+  email, one record per job with its dates, each school, a skills line), the
+  share the parser from [OpenResume](https://github.com/xitanggg/open-resume)
+  did. A document whose every line is intact can still hand an employer the
+  wrong date range, and only a field-level parse shows it.
+- **Keywords** — of the terms in `role-profiles/lexicon.json` that a family's
+  profiles ask for, weighted by how many ask, the share the extracted text
+  covers. What a keyword filter sees.
+- **Semantic** — for every requirement line in the family's profiles, the
+  cosine between its embedding and the nearest line of the resume, using the
+  same model the site's chat retrieval uses. The mean is the score; the share
+  of requirements above a threshold is reported beside it. Roughly what a
+  reader sees.
+
+A role variant is scored against the family of the same name in
+`role-profiles/` (`fde` against `role-profiles/fde/`); the neutral one-pager
+and the full CV are scored against every family. See
+[`role-profiles/README.md`](../role-profiles/README.md) for what a profile is
+and how to add a family.
+
+`cv-scores.baseline.json` is what the documents scored the last time someone
+decided the numbers were right. In CI, `--baseline` fails the job when
+parseability or keyword coverage falls at all, or the semantic score falls by
+more than a hundredth (the quantised model differs in the third decimal
+between machines). A change that lowers a score is not necessarily wrong — it
+is a change that has to say so: run `--update-baseline`, commit the result,
+and explain it in the PR. The scores land in the job summary, with the change
+against the baseline beside each.
+
+Read the verbose report as a list of things to check, never a list to paste.
+A term belongs on the resume only if it is true of work already described
+there — and if it is true and missing, the fix is usually to reword a bullet
+that already covers it, not to append a keyword.
 
 > **On the licensing.** OpenResume is AGPL-3.0 and this repository is MIT.
 > Nothing of theirs is committed here. `scripts/lib/openresume.js` clones the
@@ -387,14 +427,6 @@ field-level parse shows it.
 > redistributor and require a per-directory licence carve-out that not
 > committing it avoids. The parser is a development tool; the deployed site
 > never carries it, so the AGPL's network clause never comes into it.
-
-The same command reports a **keyword gap** against any real job descriptions in
-`jd-corpus/` — terms that come up across the postings and appear nowhere in a
-variant. See `jd-corpus/README.md`. It is a list of things to check, never a
-list to paste: a term belongs on the resume only if it is true of work already
-described there.
-
-Neither of these gates the build. The deterministic check is the one CI runs.
 
 ### Keeping the one-pagers on one page
 
