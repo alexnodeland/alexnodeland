@@ -5,6 +5,7 @@
  *   static/cv/alex-nodeland-resume.pdf       — the neutral one-pager
  *   static/cv/alex-nodeland-fde.pdf          — one page for FDE roles
  *   static/cv/alex-nodeland-ai-engineer.pdf  — one page for AI Engineer roles
+ *   static/cv/alex-nodeland-music-tech.pdf   — one page for music technology roles
  *   static/cv/alex-nodeland-cv.pdf           — everything
  *
  * The site's CV page links straight at these, so they are built before

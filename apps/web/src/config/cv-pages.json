@@ -12,5 +12,12 @@
     "tagline": "for ai engineer roles.",
     "title": "cv · ai engineer",
     "description": "Alex Nodeland — resume for AI Engineer roles"
+  },
+  "music-tech": {
+    "path": "/cv/music-tech/",
+    "label": "music tech",
+    "tagline": "for music technology roles.",
+    "title": "cv · music technology",
+    "description": "Alex Nodeland — resume for music technology roles"
   }
 }

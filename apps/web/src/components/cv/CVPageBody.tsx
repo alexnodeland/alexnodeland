@@ -5,7 +5,6 @@ import { scrollBehavior } from '../../lib/utils/motion';
 import CVControlBar from './CVControlBar';
 import EducationSection from './CVEducationSection';
 import ExperienceSection from './CVExperienceSection';
-import CVProjectsSection from './CVProjectsSection';
 import CVSearch from './CVSearch';
 import SkillsSection from './CVSkillsSection';
 
@@ -143,13 +142,9 @@ const CVPageBody: React.FC<CVPageBodyProps> = ({
           <ExperienceSection experiences={data.experience} />
         </section>
 
-        {/* Between experience and education, where every other export puts
-            it — the PDF, the DOCX and the Markdown all set it there. */}
-        {data.projects && data.projects.length > 0 && (
-          <section id="cv-projects">
-            <CVProjectsSection projects={data.projects} />
-          </section>
-        )}
+        {/* No projects section here. The PDF, DOCX and Markdown exports set
+            one between experience and education; on the site the projects
+            page is a click away and says more than a card could. */}
 
         <section id="cv-education">
           <EducationSection education={data.education} />

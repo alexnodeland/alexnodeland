@@ -191,7 +191,9 @@
       "data ingestion",
       "data warehouse",
       "data warehouses",
-      "lakehouse"
+      "lakehouse",
+      "big files",
+      "large datasets"
     ],
     "data modeling": [
       "data model",
@@ -339,7 +341,7 @@
       "re-ranking",
       "reranking"
     ],
-    "voice": ["voice", "speech", "audio"],
+    "voice": ["voice"],
     "crm": ["crm", "salesforce"],
     "open source": ["open source", "open-source"],
     "startup": [
@@ -374,6 +376,124 @@
       "high-performance computing",
       "high performance computing"
     ],
-    "signal processing": ["signal processing", "dsp", "audio compression"]
+    "signal processing": [
+      "signal processing",
+      "dsp",
+      "audio compression",
+      "wavelet",
+      "wavelets",
+      "spectrum analysis",
+      "spectral"
+    ],
+    "audio": ["audio", "audio engineering"],
+    "music": ["music", "musical", "musician", "musicians", "music technology"],
+    "audio synthesis": [
+      "synthesis",
+      "synthesizer",
+      "synthesizers",
+      "synth",
+      "synths",
+      "modular"
+    ],
+    "real-time": [
+      "real-time",
+      "real time",
+      "low-latency",
+      "low latency",
+      "multithreading",
+      "multi-threaded"
+    ],
+    "speech": [
+      "speech",
+      "asr",
+      "tts",
+      "stt",
+      "text-to-speech",
+      "speech-to-text",
+      "speech-to-speech"
+    ],
+    "audio plugins": [
+      "juce",
+      "vst",
+      "vst3",
+      "audiounits",
+      "audio units",
+      "daw",
+      "daws",
+      "plugin",
+      "plugins",
+      "web audio",
+      "webaudio"
+    ],
+    "music information retrieval": [
+      "music information retrieval",
+      "mir",
+      "audio tagging",
+      "tagging"
+    ],
+    "recommendations": [
+      "recommendation",
+      "recommendations",
+      "personalisation",
+      "personalization"
+    ],
+    "generative models": [
+      "generative",
+      "diffusion",
+      "gan",
+      "gans",
+      "autoencoder",
+      "autoencoders"
+    ],
+    "model training": [
+      "model training",
+      "pretraining",
+      "pre-training",
+      "training jobs",
+      "training runs",
+      "gpu",
+      "gpus",
+      "tpu"
+    ],
+    "firmware": [
+      "firmware",
+      "embedded",
+      "microcontroller",
+      "pedals",
+      "guitar pedals"
+    ],
+    "circuit design": [
+      "circuit design",
+      "circuit",
+      "circuits",
+      "pcb",
+      "hardware"
+    ],
+    "research": [
+      "research",
+      "researcher",
+      "publications",
+      "published",
+      "phd",
+      "doctorate"
+    ],
+    "data science": [
+      "data science",
+      "data scientist",
+      "statistics",
+      "statistical",
+      "causal inference",
+      "a/b tests",
+      "a/b testing"
+    ],
+    "objective-c": ["objective-c", "objective c"],
+    "streaming data": ["kafka", "airflow", "apache beam", "dataflow", "flink"],
+    "performance optimisation": [
+      "performance optimisation",
+      "performance optimization",
+      "inference optimisation",
+      "inference optimization",
+      "concurrency"
+    ]
   }
 }

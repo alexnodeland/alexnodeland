@@ -10,6 +10,7 @@
  *   resume      — the neutral one-pager.
  *   fde         — one page for Forward Deployed Engineer roles.
  *   ai-engineer — one page for AI Engineer roles.
+ *   music-tech  — one page for music technology roles.
  *   full        — everything, over as many pages as it takes.
  *
  * The three one-pagers share a layout and differ only in what `buildVariant`

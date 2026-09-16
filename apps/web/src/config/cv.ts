@@ -43,7 +43,7 @@ export const isRoleVariant = (variant: string): variant is RoleVariant =>
  * those pages about the engineering. A bullet with no tags at all
  * is neutral and eligible everywhere.
  */
-export type AudienceTag = 'fde' | 'ai-eng' | 'exec' | 'hardware';
+export type AudienceTag = 'fde' | 'ai-eng' | 'music' | 'exec' | 'hardware';
 
 /**
  * How a role was held. Rendered beside the dates so overlapping entries read
@@ -64,12 +64,30 @@ export type Bullet =
       /** Audiences this bullet is for. Omit to leave it neutral. */
       tags?: AudienceTag[];
       /**
+       * Show this bullet only to the audiences in `tags`. A tagged bullet is
+       * otherwise still part of the record — the full CV carries it and the
+       * neutral one-pager may — which is right for a bullet written *for*
+       * an audience, and wrong for one that is only *about* it: the music
+       * detail that belongs on the music-tech page and would dilute every
+       * general document. Requires `tags`.
+       */
+      audienceOnly?: boolean;
+      /**
        * The figure this bullet carries, repeated here so the generator can
        * prefer it when trimming to a page. The number must also appear in
        * `text` — this field ranks, it does not render.
        */
       metric?: string;
     };
+
+/**
+ * A keyword on the skills line. The object form carries the same audience
+ * fields as a bullet, with the same meaning: `tags` offers it to those
+ * variants, and `audienceOnly` keeps it off every document that selects no
+ * audience — the full CV and the neutral one-pager.
+ */
+export type Skill =
+  string | { name: string; tags?: AudienceTag[]; audienceOnly?: boolean };
 
 /** How one role is cut down for one variant. */
 export interface RoleVariantRule {
@@ -206,8 +224,17 @@ export interface CVSource extends Omit<
   };
   experience: ExperienceSource[];
   skills: {
-    technical: string[];
-    /** A keyword list per variant. Falls back to `technical`. */
+    /**
+     * The one list every document's skills line is selected from, in the
+     * order it is authored. Tag a term to offer it to a variant; mark it
+     * `audienceOnly` to keep it off the general documents too.
+     */
+    technical: Skill[];
+    /**
+     * A hand-ordered list for one variant, used in place of the selection
+     * from `technical`. The heavier tool: for a page whose reader scans the
+     * terms in a particular order.
+     */
     byVariant?: Partial<Record<CVVariant, string[]>>;
     soft?: string[];
     languages?: string[];
@@ -239,6 +266,12 @@ export const cvSource: CVSource = {
       // stays about the systems.
       'ai-engineer':
         'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built a DAG-based framework that runs autonomous agents through multi-step data analysis, a correction-to-evaluation loop that improves the system without retraining, and lineage that traces every generated number back to its source. Earlier I built the RAG pipeline at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
+      // Audio at every layer, oldest work included: this is the one page
+      // where the pedal firmware and the wavelet research lead rather than
+      // trail, and the Rust libraries are the current work rather than a
+      // weekend note.
+      'music-tech':
+        'Engineer and mathematician who has worked on audio at every layer: firmware for digital guitar pedals, wavelet research on audio compression, synthesizer design at Stony Brook, and engineering leadership at Musiio, a music-ML company SoundCloud acquired. I maintain quiver, a modular audio synthesis library in Rust, and auracle, a synthesizer that evolves patches toward the ones you prefer.',
     },
   },
 
@@ -253,6 +286,7 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 3 },
         fde: { maxBullets: 3 },
         'ai-engineer': { maxBullets: 4 },
+        'music-tech': { maxBullets: 1 },
       },
       location: 'Remote, NY',
       duration: '2024 - Present',
@@ -346,6 +380,7 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 1, collapse: true },
+        'music-tech': { maxBullets: 1, collapse: true },
       },
       location: 'Remote, NY',
       duration: '2022 - Present',
@@ -388,10 +423,23 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 2 },
+        'music-tech': { maxBullets: 3 },
       },
       location: 'Singapore',
       duration: '2021 - 2022',
       achievements: [
+        // The music-ML company. The two bullets below are the music work,
+        // and are shown to that audience only.
+        {
+          text: 'Built the audio ingestion pipelines',
+          tags: ['music'],
+          audienceOnly: true,
+        },
+        {
+          text: 'Partnered with the music research team and in-house music experts to design labeling processes that produced unbiased, high-signal data',
+          tags: ['music'],
+          audienceOnly: true,
+        },
         {
           text: 'Set technical direction against customer and partner requirements, planning releases with the founders',
           tags: ['fde'],
@@ -543,13 +591,23 @@ export const cvSource: CVSource = {
       engagement: 'part-time',
       description:
         'The Center of Excellence in Wireless Information Technology.',
+      // Off every one-pager but the music-tech one, where it is the point.
+      variants: {
+        'music-tech': { maxBullets: 2 },
+      },
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Designed, prototyped, and tested audio synthesizers, including the circuit design',
+        {
+          text: 'Designed, prototyped, and tested audio synthesizers, including the circuit design',
+          tags: ['music'],
+        },
         'Led seminars on music and mathematics',
         'Turned research into pieces that could be performed',
-        'Collaborated with people from the music technology industry on novel audio hardware',
+        {
+          text: 'Collaborated with people from the music technology industry on novel audio hardware',
+          tags: ['music'],
+        },
       ],
       skills: [
         'Audio Engineering',
@@ -563,12 +621,21 @@ export const cvSource: CVSource = {
       title: 'Researcher',
       company: 'SUNY Research Foundation',
       engagement: 'part-time',
+      variants: {
+        'music-tech': { maxBullets: 2 },
+      },
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Researched optimal wavelet bases for audio compression, looking for a general selection procedure',
+        {
+          text: 'Researched optimal wavelet bases for audio compression, looking for a general selection procedure',
+          tags: ['music'],
+        },
         'Ran a supercomputing project funded by the High Performance Computing Consortium of New York',
-        'Performed real-time signal analysis on spectrum data',
+        {
+          text: 'Performed real-time signal analysis on spectrum data',
+          tags: ['music'],
+        },
         'Maintained project documentation and datasets for other researchers',
       ],
       skills: [
@@ -583,11 +650,32 @@ export const cvSource: CVSource = {
       title: 'Assistant Product Engineer',
       company: 'Absara Audio',
       engagement: 'full-time',
+      variants: {
+        'music-tech': { maxBullets: 4 },
+      },
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
       description: 'My first software job, and my first hardware job.',
       achievements: [
-        'Wrote production firmware for digital guitar pedals',
+        {
+          text: 'Wrote production firmware for digital guitar pedals',
+          tags: ['music'],
+        },
+        {
+          text: 'Developed a digital tape loop emulator in Objective-C',
+          tags: ['music'],
+          audienceOnly: true,
+        },
+        {
+          text: 'Built test fixtures and ran quality assurance',
+          tags: ['music'],
+          audienceOnly: true,
+        },
+        {
+          text: 'Turned customer service reports into technical reports, and worked with the engineering team to diagnose and triage the underlying issues',
+          tags: ['music'],
+          audienceOnly: true,
+        },
         "Shipped feature releases through the team's continuous integration process",
         "Followed the team's test practice to catch firmware defects before release",
         'Wrote the technical documentation and user manuals',
@@ -687,9 +775,12 @@ export const cvSource: CVSource = {
   skills: {
     technical: [
       'Python',
-      'JavaScript',
-      'React',
-      'Node.js',
+      // The web and AI-specific terms are tagged for the engineering
+      // audiences: the general documents still carry them, and a page for
+      // another audience does not spend its line on them.
+      { name: 'JavaScript', tags: ['fde', 'ai-eng'] },
+      { name: 'React', tags: ['fde', 'ai-eng'] },
+      { name: 'Node.js', tags: ['fde', 'ai-eng'] },
       'AWS',
       'GCP',
       'Docker',
@@ -697,16 +788,20 @@ export const cvSource: CVSource = {
       'PostgreSQL',
       'Machine Learning',
       'LLMs',
-      'RAG Systems',
+      { name: 'RAG Systems', tags: ['fde', 'ai-eng'] },
       'Data Engineering',
-      'API Development',
-      'Infrastructure as Code',
+      { name: 'API Development', tags: ['fde', 'ai-eng'] },
+      { name: 'Infrastructure as Code', tags: ['fde', 'ai-eng'] },
       'CI/CD',
-      'Agile/Scrum',
-      'Git',
+      { name: 'Agile/Scrum', tags: ['fde', 'ai-eng'] },
+      { name: 'Git', tags: ['fde', 'ai-eng'] },
       'Linux',
       'Mathematics',
       'Signal Processing',
+      // Shown to the music-tech page only.
+      { name: 'Audio Synthesis', tags: ['music'], audienceOnly: true },
+      { name: 'Audio Compression', tags: ['music'], audienceOnly: true },
+      { name: 'Real-time Audio', tags: ['music'], audienceOnly: true },
     ],
     // One list per document, ordered so the terms a reader is scanning for sit
     // at the front. Every entry has to be true of work described somewhere
@@ -764,6 +859,7 @@ export const cvSource: CVSource = {
     full: ['fugue', 'quiver', 'fugue-evo', 'principled', 'claude-telegram'],
     fde: ['fugue', 'reflex', 'principled'],
     'ai-engineer': ['reflex', 'principled', 'fugue'],
+    'music-tech': ['quiver', 'auracle', 'llmcomposer'],
   },
 };
 
@@ -812,6 +908,7 @@ export const unknownProjectNames = (source: CVSource = cvSource): string[] => {
 const AUDIENCE: Record<RoleVariant, AudienceTag> = {
   fde: 'fde',
   'ai-engineer': 'ai-eng',
+  'music-tech': 'music',
 };
 
 const bulletText = (bullet: Bullet): string =>
@@ -823,11 +920,55 @@ const bulletTags = (bullet: Bullet): AudienceTag[] =>
 const hasMetric = (bullet: Bullet): boolean =>
   typeof bullet !== 'string' && Boolean(bullet.metric);
 
+/** Is this bullet or skill kept off the documents that select no audience? */
+const isAudienceOnly = (item: Bullet | Skill): boolean =>
+  typeof item !== 'string' && Boolean(item.audienceOnly);
+
+const audienceOf = (variant: CVVariant): AudienceTag | undefined =>
+  isRoleVariant(variant) ? AUDIENCE[variant] : undefined;
+
+/**
+ * Is `item` offered to `variant`? Neutral items go everywhere; tagged items
+ * go to their audiences, and to the documents selecting no audience unless
+ * they are `audienceOnly`.
+ */
+const isEligible = (
+  tags: AudienceTag[],
+  audienceOnly: boolean,
+  audience?: AudienceTag
+): boolean => {
+  if (tags.length === 0) return true;
+  return audience ? tags.includes(audience) : !audienceOnly;
+};
+
+/**
+ * The skills line for one variant: what `technical` offers it, on-audience
+ * terms first and the rest in authored order.
+ */
+const selectSkills = (skills: Skill[], variant: CVVariant): string[] => {
+  const audience = audienceOf(variant);
+  const tagsOf = (skill: Skill): AudienceTag[] =>
+    typeof skill === 'string' ? [] : (skill.tags ?? []);
+  return skills
+    .map((skill, index) => ({ skill, index }))
+    .filter(({ skill }) =>
+      isEligible(tagsOf(skill), isAudienceOnly(skill), audience)
+    )
+    .sort((a, b) => {
+      const rank = (skill: Skill) =>
+        audience && tagsOf(skill).includes(audience) ? 0 : 1;
+      return rank(a.skill) - rank(b.skill) || a.index - b.index;
+    })
+    .map(({ skill }) => (typeof skill === 'string' ? skill : skill.name));
+};
+
 /**
  * Picks and orders one role's bullets for one variant.
  *
  * A bullet is eligible if it is neutral — no tags — or carries this variant's
- * audience tag. Eligible bullets are then ordered: on-audience first, and
+ * audience tag; on the neutral one-pager, which selects no audience, every
+ * bullet is eligible except one marked `audienceOnly`. Eligible bullets are
+ * then ordered: on-audience first, and
  * within each group the ones carrying a metric ahead of the ones that do not,
  * so what survives the trim to a page is the most specific evidence available.
  * Both passes are stable, so the strongest-first order this file is authored in
@@ -838,13 +979,11 @@ const selectBullets = (
   variant: CVVariant,
   limit: number
 ): string[] => {
-  const audience = isRoleVariant(variant) ? AUDIENCE[variant] : undefined;
+  const audience = audienceOf(variant);
 
-  const eligible = achievements.filter(bullet => {
-    const tags = bulletTags(bullet);
-    if (tags.length === 0) return true;
-    return audience ? tags.includes(audience) : true;
-  });
+  const eligible = achievements.filter(bullet =>
+    isEligible(bulletTags(bullet), isAudienceOnly(bullet), audience)
+  );
 
   const rank = (bullet: Bullet): number => {
     const onAudience = audience && bulletTags(bullet).includes(audience);
@@ -862,7 +1001,8 @@ const selectBullets = (
  * Resolves `cvSource` into the `CVData` one document renders from.
  *
  * The full CV takes everything in the order it is authored — nothing is
- * filtered, reordered or trimmed, because nothing has to fit. Every other
+ * reordered or trimmed, because nothing has to fit, and nothing is filtered
+ * but the bullets marked `audienceOnly`. Every other
  * variant keeps only the roles that name it in `variants`, and only the
  * bullets `selectBullets` returns for it. Coursework and certifications go
  * unconditionally on the one-pagers: they are the first things to cost a page
@@ -877,7 +1017,9 @@ export const buildVariant = (
   const experience: ExperienceItem[] = isFull
     ? source.experience.map(({ achievements, variants: _omit, ...role }) => ({
         ...role,
-        achievements: achievements.map(bulletText),
+        achievements: achievements
+          .filter(bullet => !isAudienceOnly(bullet))
+          .map(bulletText),
       }))
     : source.experience.flatMap(
         ({ achievements, variants, ...role }): ExperienceItem[] => {
@@ -914,7 +1056,9 @@ export const buildVariant = (
     certifications: isFull ? source.certifications : [],
     projects: resolveProjects(source.projects?.[variant]),
     skills: {
-      technical: source.skills.byVariant?.[variant] ?? source.skills.technical,
+      technical:
+        source.skills.byVariant?.[variant] ??
+        selectSkills(source.skills.technical, variant),
       soft: source.skills.soft,
       languages: source.skills.languages,
     },
@@ -937,6 +1081,7 @@ export const CV_ARTIFACTS: Record<
   resume: { name: 'alex-nodeland-resume', maxPages: 1 },
   fde: { name: 'alex-nodeland-fde', maxPages: 1 },
   'ai-engineer': { name: 'alex-nodeland-ai-engineer', maxPages: 1 },
+  'music-tech': { name: 'alex-nodeland-music-tech', maxPages: 1 },
   full: { name: 'alex-nodeland-cv', maxPages: null },
 };
 

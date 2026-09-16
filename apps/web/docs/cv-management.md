@@ -70,18 +70,18 @@ personal: {
 
 The CV page has a **full cv / one page** toggle, and all three exports follow
 whichever is on screen. The two role-specific resumes are separate documents at
-`/cv/fde/` and `/cv/ai-engineer/`, unlinked from the nav. See [Export Options](#-export-options) for how the
+`/cv/fde/`, `/cv/ai-engineer/` and `/cv/music-tech/`, unlinked from the nav. See [Export Options](#-export-options) for how the
 one-pager is derived and where its layout lives.
 
 Every CV page renders one component, `src/components/cv/CVPageBody.tsx` — the
 control row, the search, the overview and contact card, and the experience,
-projects, education, skills and certifications sections — and the pages differ
-only in the data they hand it. `/cv/`'s menu switches between the full CV and
-the one-pager in place; a role page's menu lists those two plus its own entry,
-and picking one navigates (the one-pager is `/cv/?view=resume`). Project cards
-take the projects page's link marks and its card click — the site where there is
-one, the repo otherwise — from the shared `project-ways-out` mixin. Change how
-the CV is presented in the body and every page changes together.
+education, skills and certifications sections — and the pages differ only in
+the data they hand it. `/cv/`'s menu switches between the full CV and the
+one-pager in place; a role page's menu lists those two plus its own entry, and
+picking one navigates (the one-pager is `/cv/?view=resume`). A variant's
+projects go into its PDF, DOCX and Markdown and not onto the page, where the
+projects page is a click away. Change how the CV is presented in the body and
+every page changes together.
 
 ### The role pages are generated
 
@@ -145,7 +145,7 @@ As authored in `cvSource` (`ExperienceSource`):
   duration: string;         // Employment period
   description?: string;     // Optional job description, full CV only
   engagement?: EngagementType;  // full-time | part-time | advisory | freelance
-  achievements: Bullet[];   // Strings, or { text, tags?, metric? }
+  achievements: Bullet[];   // Strings, or { text, tags?, audienceOnly?, metric? }
   skills?: string[];        // Optional skills used, full CV only
   variants?: Partial<Record<Exclude<CVVariant, 'full'>, RoleVariantRule>>;
 }
@@ -255,6 +255,7 @@ skills: {
 | `resume`      | `static/cv/alex-nodeland-resume.pdf`      | the neutral one-pager           |
 | `fde`         | `static/cv/alex-nodeland-fde.pdf`         | Forward Deployed Engineer roles |
 | `ai-engineer` | `static/cv/alex-nodeland-ai-engineer.pdf` | AI Engineer roles               |
+| `music-tech`  | `static/cv/alex-nodeland-music-tech.pdf`  | music technology roles          |
 
 The full CV takes everything in the order it is authored — nothing filtered,
 reordered or trimmed, because nothing has to fit. The other three keep only the
@@ -285,19 +286,40 @@ achievements: [
   { text: 'customer-facing work', tags: ['fde'] },
   { text: 'raised a seed round', tags: ['exec'] },
   { text: 'cut eval latency 40%', tags: ['ai-eng'], metric: '40%' },
+  { text: 'voiced the synth's filter section', tags: ['music'], audienceOnly: true },
 ],
 ```
 
 A bullet with no tags is neutral and eligible everywhere. A tagged bullet is
 offered to the variants sharing its tag and withheld from the rest — which is
 how `exec` bullets (fundraising, board, investor relations) stay off the
-engineering-focused pages, which keeps those pages about the engineering.
+engineering-focused pages, which keeps those pages about the engineering. The
+full CV still carries every tagged bullet, and the neutral one-pager may,
+unless the bullet is also `audienceOnly`: then only its audiences see it. That
+is the flag for detail that is _about_ one audience rather than written _for_
+it — the music specifics that belong on the music-tech page and would dilute
+the general documents.
 Within a variant, on-audience bullets come first and, among
 those, the ones carrying a `metric` come first again; the strongest-first order
 the file is authored in decides every remaining tie.
 
 `metric` **ranks, it does not render** — the number has to appear in `text` too.
 Never invent one.
+
+**Skills** follow the same rule. `skills.technical` is one list, and an entry
+may carry `tags` and `audienceOnly` with the meaning they have on a bullet:
+
+```typescript
+technical: [
+  'Python',
+  { name: 'Rust', tags: ['music'], audienceOnly: true },
+],
+```
+
+A variant's skills line is what that list offers it, on-audience terms first
+and the rest in authored order. `skills.byVariant` still wins where it is set:
+it is the heavier tool, for a page whose reader scans the terms in a particular
+order.
 
 **Engagement type** is per role, and renders beside the dates:
 
