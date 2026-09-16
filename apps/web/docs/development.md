@@ -124,7 +124,10 @@ Every old `/blog/...` address is answered by a redirect page the build writes
 
 See [homepage-management.md](./homepage-management.md),
 [cv-management.md](./cv-management.md), and
-[chat-management.md](./chat-management.md) for the details of each.
+[chat-management.md](./chat-management.md) for the details of each. The
+same config and markdown are also what the site says about itself in RDF —
+JSON-LD on every page, and Turtle beside them; see
+[linked-data.md](./linked-data.md).
 
 ### 2. Styling
 

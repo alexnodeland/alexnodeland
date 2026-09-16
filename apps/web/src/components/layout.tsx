@@ -914,14 +914,20 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                 <main className="main" ref={mainRef}>
                   {children}
                 </main>
-                <footer className="footer">
+                {/* The footer is also the site's representative h-card
+                    (microformats2): the name, the email, the profiles the
+                    person claims with rel="me", and the site's own URL as
+                    its uid. It is on every page, so it is on the front
+                    page, which is where the authorship algorithm looks. */}
+                <footer className="footer h-card">
                   <div className="footer-content">
                     <div className="footer-links">
                       <a
                         href={`mailto:${siteConfig.contact.email}`}
-                        className="footer-link"
+                        className="footer-link u-email"
                         data-platform="email"
                         aria-label="email"
+                        rel="me"
                       >
                         <span className="icon">{socialIcon('email')}</span>
                       </a>
@@ -930,11 +936,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                           <a
                             key={platform}
                             href={url}
-                            className="footer-link"
+                            className="footer-link u-url"
                             data-platform={platform}
                             aria-label={platform}
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel="me noopener noreferrer"
                           >
                             <span className="icon">{socialIcon(platform)}</span>
                           </a>
@@ -947,10 +953,16 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                         only break it must not take is the one inside the name
                         — "alex" left on one line and "nodeland" on the next
                         reads as two people. */}
-                      <span className="footer-copyright-name">
+                      <span className="footer-copyright-name p-name">
                         {siteConfig.author.toLowerCase()}
                       </span>
                     </p>
+                    {/* The h-card's own address: this site. A data element
+                        carries a u-* value without drawing a link. */}
+                    <data
+                      className="u-url u-uid"
+                      value={`${siteConfig.siteUrl}/`}
+                    />
                   </div>
                 </footer>
               </div>

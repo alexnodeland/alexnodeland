@@ -146,3 +146,7 @@ eval-promote:
 # Gate the working tree against that reference; non-zero exit on a real drop.
 eval-gate:
     node scripts/eval-run.mjs --repeat 3 --baseline .eval/baseline/summary.json
+
+# The site for machines: RDF (profile, vocabulary, graph, provenance, VoID), llms.txt, security.txt
+ld:
+    npm run build:ld

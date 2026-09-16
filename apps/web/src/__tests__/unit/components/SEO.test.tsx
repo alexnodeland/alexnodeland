@@ -103,6 +103,124 @@ describe('SEO Component', () => {
     expect(ogType).toHaveAttribute('content', 'website');
   });
 
+  it('emits Dublin Core beside the Open Graph tags, with the schemes declared', () => {
+    render(<SEO title="A Page" description="About it" pathname="/page/" />);
+
+    expect(document.querySelector('link[rel="schema.DC"]')).toHaveAttribute(
+      'href',
+      'http://purl.org/dc/elements/1.1/'
+    );
+    expect(
+      document.querySelector('link[rel="schema.DCTERMS"]')
+    ).toHaveAttribute('href', 'http://purl.org/dc/terms/');
+    const dc = (name: string) => document.querySelector(`meta[name="${name}"]`);
+    expect(dc('DC.title')).toHaveAttribute('content', 'A Page');
+    expect(dc('DC.description')).toHaveAttribute('content', 'About it');
+    expect(dc('DC.identifier')).toHaveAttribute(
+      'content',
+      'https://alexnodeland.com/page/'
+    );
+    expect(dc('DC.identifier')).toHaveAttribute('scheme', 'DCTERMS.URI');
+    expect(dc('DC.language')).toHaveAttribute('content', 'en');
+    expect(dc('DC.type')).toHaveAttribute('content', 'Text');
+    expect(dc('DC.rights')?.getAttribute('content')).toMatch(
+      /all rights reserved/
+    );
+    // No date, no issued.
+    expect(dc('DCTERMS.issued')).toBeNull();
+    expect(dc('DC.subject')).toBeNull();
+  });
+
+  it('dates an article and files it under its keywords', () => {
+    render(
+      <SEO
+        title="A Post"
+        type="article"
+        published="2026-09-13"
+        keywords={['projects']}
+      />
+    );
+    expect(document.querySelector('meta[property="og:type"]')).toHaveAttribute(
+      'content',
+      'article'
+    );
+    expect(
+      document.querySelector('meta[property="article:published_time"]')
+    ).toHaveAttribute('content', '2026-09-13');
+    expect(
+      document.querySelector('meta[name="DCTERMS.issued"]')
+    ).toHaveAttribute('content', '2026-09-13');
+    expect(document.querySelector('meta[name="DC.subject"]')).toHaveAttribute(
+      'content',
+      'projects'
+    );
+    // The rights line carries the year of publication, not of the build.
+    expect(
+      document.querySelector('meta[name="DC.rights"]')?.getAttribute('content')
+    ).toMatch(/^© 2026 /);
+  });
+
+  it('links every page to its author', () => {
+    render(<SEO />);
+    expect(document.querySelector('link[rel="author"]')).toHaveAttribute(
+      'href',
+      'https://alexnodeland.com/'
+    );
+  });
+
+  it('offers the alternates it is given, as alternate unless told otherwise', () => {
+    render(
+      <SEO
+        alternates={[
+          { href: 'https://alexnodeland.com/me.ttl', type: 'text/turtle' },
+          {
+            href: 'https://alexnodeland.com/foaf.rdf',
+            type: 'application/rdf+xml',
+            rel: 'meta',
+            title: 'FOAF',
+          },
+        ]}
+      />
+    );
+    expect(
+      document.querySelector('link[rel="alternate"][type="text/turtle"]')
+    ).toHaveAttribute('href', 'https://alexnodeland.com/me.ttl');
+    const foaf = document.querySelector('link[rel="meta"]');
+    expect(foaf).toHaveAttribute('type', 'application/rdf+xml');
+    expect(foaf).toHaveAttribute('title', 'FOAF');
+  });
+
+  it('passes a JSON-LD document through as it is', () => {
+    render(
+      <SEO jsonLd={{ '@context': 'https://schema.org', '@type': 'Thing' }} />
+    );
+    expect(
+      JSON.parse(
+        document.querySelector('script[type="application/ld+json"]')!
+          .textContent!
+      )
+    ).toEqual({ '@context': 'https://schema.org', '@type': 'Thing' });
+  });
+
+  it('wraps a list of nodes as one JSON-LD graph', () => {
+    render(
+      <SEO
+        jsonLd={[
+          { '@id': 'https://alexnodeland.com/#me', '@type': 'Person' },
+          { '@id': 'https://alexnodeland.com/#website', '@type': 'WebSite' },
+        ]}
+      />
+    );
+    const script = document.querySelector('script[type="application/ld+json"]');
+    expect(JSON.parse(script!.textContent!)).toEqual({
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@id': 'https://alexnodeland.com/#me', '@type': 'Person' },
+        { '@id': 'https://alexnodeland.com/#website', '@type': 'WebSite' },
+      ],
+    });
+  });
+
   it('should render Twitter Card meta tags', () => {
     render(<SEO title="Test Page" description="Test description" />);
 

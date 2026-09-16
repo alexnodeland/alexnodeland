@@ -6,7 +6,7 @@ import { GitHubIcon, LinkIcon } from '../components/ui/EntryIcons';
 import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
-import { projectsConfig, getLanguageColor } from '../config';
+import { getLanguageColor, projectsConfig, projectsGraph } from '../config';
 import type { GitHubProject, ProjectCategory } from '../config';
 import { scrollBehavior } from '../lib/utils/motion';
 import '../styles/projects.scss';
@@ -218,6 +218,7 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
         title="projects"
         description="open source projects, experiments, and tools by alex nodeland"
         pathname={location?.pathname}
+        jsonLd={projectsGraph()}
       />
       <div className="projects-page">
         {/* The two pickers, left, and the way to the search box at the far

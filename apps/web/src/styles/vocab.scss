@@ -1,0 +1,89 @@
+@use 'mixins' as *;
+
+// The vocabulary page: the site's concept scheme, one card per concept, in
+// the same grammar as the consulting steps and the cv cards — an outline, a
+// title row, a body, and one meta band at the foot where a concept has
+// other names or relations.
+
+.vocab-section {
+  margin-bottom: var(--space-5);
+  position: relative;
+
+  h2 {
+    margin-bottom: var(--space-3);
+    @include over-background;
+  }
+}
+
+.vocab-section-description {
+  margin: 0 0 var(--space-4);
+  color: var(--text-secondary);
+  @include over-background;
+}
+
+.vocab-concepts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--stack-gap);
+}
+
+.vocab-concept {
+  @include outline-block;
+  padding: var(--card-pad);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  // The fragment lands here: leave the room the fixed shell takes so the
+  // card's title is not under it.
+  scroll-margin-top: var(--space-6);
+}
+
+.vocab-concept-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+
+  h3 {
+    margin: 0;
+  }
+}
+
+// The id, as it is spelt in the uri and in the config: the machine's name
+// for the concept, beside the person's.
+.vocab-concept-notation {
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+
+.vocab-concept-definition {
+  margin: 0;
+}
+
+.vocab-concept-meta {
+  border-top: 1px solid var(--hairline);
+  padding-top: var(--space-3);
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+
+.vocab-concept-line {
+  margin: 0;
+
+  & + & {
+    margin-top: var(--space-1);
+  }
+}
+
+.vocab-concept-key {
+  color: var(--text-muted);
+}
+
+.vocab-concept-pointer {
+  margin: 0;
+  font-size: var(--text-small);
+  @include over-background;
+}

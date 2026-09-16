@@ -118,6 +118,30 @@ describe('Timeline Page', () => {
     ]);
   });
 
+  it('marks the list up as an h-feed of h-entries', () => {
+    const { container } = render(<TimelinePage data={mockData as any} />);
+    const feed = container.querySelector('.posts-list');
+    expect(feed).toHaveClass('h-feed');
+    const entries = container.querySelectorAll('.h-entry');
+    expect(entries.length).toBeGreaterThan(0);
+    expect(entries.length).toBe(
+      container.querySelectorAll('.post-preview').length
+    );
+    const first = entries[0];
+    expect(first.querySelector('a.p-name.u-url')).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^\/timeline\//)
+    );
+    expect(first.querySelector('time.dt-published')).toHaveAttribute(
+      'datetime'
+    );
+    expect(first.querySelector('.p-summary')).toBeInTheDocument();
+    expect(first.querySelector('data.p-category')).toHaveAttribute(
+      'value',
+      expect.stringMatching(/^[a-z]+$/)
+    );
+  });
+
   it('links to the feed from the control row, beside the pickers', () => {
     render(<TimelinePage data={mockData as any} />);
     const feed = screen.getByRole('link', { name: 'rss feed' });

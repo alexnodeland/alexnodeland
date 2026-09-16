@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const { createFilePath } = require('gatsby-source-filesystem');
+const { renderAtom, renderJsonFeed } = require('./scripts/lib/feeds');
 
 exports.createSchemaCustomization = ({ actions }) => {
   const { createTypes } = actions;
@@ -182,8 +183,69 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
   });
 };
 
+/**
+ * The timeline as Atom and JSON Feed, beside the RSS gatsby-plugin-feed
+ * writes. Built here rather than by a script because a feed carries each
+ * post's rendered HTML, and the end of the build is where that exists. The
+ * same query as the RSS feed's, so the three agree on what is in them.
+ */
+const writeFeeds = async graphql => {
+  const result = await graphql(`
+    {
+      allMarkdownRemark(sort: { frontmatter: { date: DESC } }) {
+        nodes {
+          html
+          fields {
+            slug
+          }
+          frontmatter {
+            title
+            date
+            description
+            category
+          }
+        }
+      }
+    }
+  `);
+  if (result.errors) throw result.errors;
+
+  const posts = result.data.allMarkdownRemark.nodes.map(node => ({
+    title: node.frontmatter.title,
+    url: `${SITE_URL}/timeline${node.fields.slug}`,
+    html: node.html,
+    date: node.frontmatter.date,
+    description: node.frontmatter.description,
+    category: node.frontmatter.category,
+    pdf: `${SITE_URL}/timeline/pdf/${node.fields.slug.replace(/\//g, '')}.pdf`,
+  }));
+  const meta = {
+    title: 'alex nodeland — timeline',
+    description: 'things built, played, and written about.',
+    siteUrl: SITE_URL,
+    homeUrl: `${SITE_URL}/timeline/`,
+    author: {
+      name: 'alex nodeland',
+      url: `${SITE_URL}/`,
+      email: 'alex@ournature.studio',
+    },
+  };
+  const out = path.join(__dirname, 'public');
+  fs.writeFileSync(
+    path.join(out, 'atom.xml'),
+    renderAtom({ ...meta, feedUrl: `${SITE_URL}/atom.xml` }, posts)
+  );
+  fs.writeFileSync(
+    path.join(out, 'feed.json'),
+    renderJsonFeed({ ...meta, feedUrl: `${SITE_URL}/feed.json` }, posts)
+  );
+  console.log(`✅ atom.xml and feed.json carry ${posts.length} posts`);
+};
+
 // Copy .nojekyll file to public directory for GitHub Pages
-exports.onPostBuild = () => {
+exports.onPostBuild = async ({ graphql }) => {
+  await writeFeeds(graphql);
+
   const srcPath = path.join(__dirname, '.nojekyll');
   const destPath = path.join(__dirname, 'public', '.nojekyll');
 

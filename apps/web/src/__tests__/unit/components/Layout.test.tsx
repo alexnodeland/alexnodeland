@@ -231,8 +231,28 @@ describe('Layout Component', () => {
       )
       .forEach(link => {
         expect(link).toHaveAttribute('target', '_blank');
-        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+        // rel="me" rides along: the footer is the site's h-card.
+        expect(link.getAttribute('rel')?.split(' ')).toEqual(
+          expect.arrayContaining(['noopener', 'noreferrer'])
+        );
       });
+  });
+
+  it('is the representative h-card, claiming its profiles with rel="me"', () => {
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
+    const footer = screen.getByRole('contentinfo');
+    expect(footer).toHaveClass('h-card');
+    expect(footer.querySelector('.p-name')).toHaveTextContent('test author');
+    expect(footer.querySelector('a.u-email')).toHaveAttribute('rel', 'me');
+    getAllSocialLinks().forEach(({ platform }) => {
+      const link = footer.querySelector(`a[data-platform="${platform}"]`);
+      expect(link).toHaveClass('u-url');
+      expect(link?.getAttribute('rel')?.split(' ')).toEqual(
+        expect.arrayContaining(['me', 'noopener', 'noreferrer'])
+      );
+    });
+    // The card's own address, carried without drawing a link.
+    expect(footer.querySelector('data.u-url.u-uid')).toBeInTheDocument();
   });
 
   it('should render copyright notice in footer', () => {

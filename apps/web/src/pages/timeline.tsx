@@ -16,6 +16,7 @@ import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
 import { formatMonthDay, yearOf } from '../lib/utils/dates';
 import { readTimelineView, saveTimelineView } from '../lib/timelineView';
+import { isoDay, timelineGraph } from '../config/linked-data';
 import { TimelinePageProps } from '../types';
 import '../styles/timeline.scss';
 
@@ -267,7 +268,21 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
 
   return (
     <>
-      <SEO title="timeline" pathname={location?.pathname} />
+      <SEO
+        title="timeline"
+        pathname={location?.pathname}
+        // Every post, whatever the filter is showing: the structured data
+        // describes the blog, not the view of it.
+        jsonLd={timelineGraph(
+          allPosts.map(post => ({
+            slug: post.fields.slug,
+            title: post.frontmatter.title,
+            date: isoDay(post.frontmatter.date),
+            description: post.frontmatter.description,
+            category: post.frontmatter.category,
+          }))
+        )}
+      />
       <div className="timeline-page" ref={pageRef}>
         {/* The two pickers and the feed, left, and the way to the search box
             at the far end: the one row every list page carries (see the cv
@@ -340,7 +355,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
                to its card, so a filter or a change of sort carries it along
                and the line re-forms underneath whatever is left. The years are
                the one thing in the column that is a row of its own. */
-            <div className="posts-list">
+            <div className="posts-list h-feed">
               {filteredPosts.map(post => (
                 <React.Fragment key={post.id}>
                   {/* The year that starts here: a line of plain text between
@@ -354,7 +369,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
                     </p>
                   )}
                   <article
-                    className="post-preview"
+                    className="post-preview h-entry"
                     // The tag is what the filter above keys on; it is carried
                     // here as data rather than drawn as a chip, since the row
                     // of pickers has already said which tag the list is
@@ -368,7 +383,10 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
                       kind of thing the card is: the page already has. */}
                     <div className="post-header">
                       <h2 className="post-title">
-                        <Link to={`/timeline${post.fields.slug}`}>
+                        <Link
+                          to={`/timeline${post.fields.slug}`}
+                          className="p-name u-url"
+                        >
                           {post.frontmatter.title}
                         </Link>
                       </h2>
@@ -384,7 +402,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
                       excerpt used to follow it, and since every post opens
                       by saying what it is, the card said it twice. */}
                     {post.frontmatter.description && (
-                      <p className="post-description">
+                      <p className="post-description p-summary">
                         {post.frontmatter.description}
                       </p>
                     )}
@@ -392,9 +410,20 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
                       above it — carrying it here as well would print the same
                       four digits twice inside one screenful. */}
                     <div className="post-meta">
-                      <time dateTime={post.frontmatter.date}>
+                      <time
+                        className="dt-published"
+                        dateTime={post.frontmatter.date}
+                      >
                         {formatMonthDay(post.frontmatter.date)}
                       </time>
+                      {/* The tag, for the feed's readers: the picker above
+                          shows it to people, so it is carried without ink. */}
+                      {post.frontmatter.category && (
+                        <data
+                          className="p-category"
+                          value={post.frontmatter.category.toLowerCase()}
+                        />
+                      )}
                     </div>
                   </article>
                 </React.Fragment>

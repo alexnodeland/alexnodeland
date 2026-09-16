@@ -4,6 +4,7 @@ import SEO from '../components/seo';
 import { DownloadIcon } from '../components/ui/EntryIcons';
 import ShareRow from '../components/ui/ShareRow';
 import { getFullUrl } from '../config/helpers';
+import { isoDay, postGraph } from '../config/linked-data';
 import { rememberPost } from '../lib/timelineView';
 import { formatDate } from '../lib/utils/dates';
 import '../styles/timeline.scss';
@@ -28,6 +29,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
   const post = data.markdownRemark;
   const { older, newer } = data;
   const url = getFullUrl(location?.pathname ?? `/timeline${post.fields.slug}`);
+  const published = isoDay(post.frontmatter.date);
 
   // The timeline remembers where the reader got to, and this is what tells it.
   // The post says so itself rather than the card that was clicked: a reader who
@@ -44,8 +46,26 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
         title={post.frontmatter.title}
         description={post.frontmatter.description}
         pathname={location?.pathname}
+        type="article"
+        published={published}
+        keywords={
+          post.frontmatter.category
+            ? [post.frontmatter.category.toLowerCase()]
+            : undefined
+        }
+        jsonLd={postGraph({
+          slug: post.fields.slug,
+          title: post.frontmatter.title,
+          date: published,
+          description: post.frontmatter.description,
+          category: post.frontmatter.category,
+        })}
       />
-      <div className="post-page">
+      {/* The page is one h-entry (microformats2): the header carries the
+          name, the date and the tag, the article carries the content. The
+          author is the site's representative h-card, reached through the
+          rel="author" link in the head. */}
+      <div className="post-page h-entry">
         {/* The way back, above the title card rather than inside it. In the
             meta voice rather than as a link in the page's own green: the
             capsule in the corner and the row at the foot are the two loud ways
@@ -58,16 +78,20 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
         </Link>
         <header className="post-header">
           <div className="post-meta">
-            <time dateTime={post.frontmatter.date}>
+            <time className="dt-published" dateTime={post.frontmatter.date}>
               {formatDate(post.frontmatter.date)}
             </time>
             {post.frontmatter.category && (
-              <span className="post-category">{post.frontmatter.category}</span>
+              <span className="post-category p-category">
+                {post.frontmatter.category}
+              </span>
             )}
           </div>
-          <h1 className="post-title">{post.frontmatter.title}</h1>
+          <h1 className="post-title p-name">{post.frontmatter.title}</h1>
           {post.frontmatter.description && (
-            <p className="post-description">{post.frontmatter.description}</p>
+            <p className="post-description p-summary">
+              {post.frontmatter.description}
+            </p>
           )}
         </header>
 
@@ -77,11 +101,12 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
             outline rather than trailing off into loose chrome. */}
         <article className="post-article">
           <div
-            className="post-content"
+            className="post-content e-content"
             dangerouslySetInnerHTML={{ __html: post.html }}
           />
           <div className="post-actions">
             <ShareRow url={url} title={post.frontmatter.title} />
+            <data className="u-url u-uid" value={url} />
             {/* Typeset by LaTeX at build time, like the CV's — see
                 scripts/build-post-pdfs.js. A plain anchor at a static file,
                 not a router link, wearing the site's one download mark. */}

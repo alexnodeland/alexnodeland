@@ -6,3 +6,4 @@ export * from './helpers';
 export * from './homepage';
 export * from './projects';
 export * from './site';
+export * from './linked-data';

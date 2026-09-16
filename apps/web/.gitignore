@@ -115,3 +115,23 @@ static/timeline/
 # The OpenResume parser, fetched on demand by scripts/lib/openresume.js.
 # AGPL-3.0 and deliberately not committed — see the licensing note in that file.
 .openresume/
+
+# The site as RDF — the FOAF profile, the SKOS vocabulary, the whole graph,
+# the PROV chain behind the site model and the VoID description — written by
+# `npm run build:ld` (scripts/build-linked-data.mjs) from the same config and
+# markdown the pages render. Generated before every build like the CV PDFs,
+# so never stale relative to the content, and never committed.
+static/me.ttl
+static/me.jsonld
+static/vocab.ttl
+static/vocab.jsonld
+static/graph.ttl
+static/graph.jsonld
+static/provenance.ttl
+static/provenance.jsonld
+static/void.ttl
+static/.well-known/void
+# And the discovery files beside them, from scripts/build-discovery.mjs:
+# the site summarised for an assistant, and security.txt with its expiry.
+static/llms.txt
+static/.well-known/security.txt
