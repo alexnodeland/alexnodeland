@@ -16,7 +16,12 @@ export interface HomepageConfig {
      * front page reads to a hiring manager as divided commitment; a sentence
      * with a link reads as something someone also does.
      */
-    consultingNote: { lead: string; linkText: string; href: string };
+    consultingNote: {
+      before: string;
+      linkText: string;
+      after: string;
+      href: string;
+    };
   };
   consulting: {
     title: string;
@@ -59,11 +64,12 @@ export const homepageConfig: HomepageConfig = {
     paragraphs: [
       'i build ai systems, mostly the infrastructure: agent orchestration, evaluation loops, and the data model everything else depends on. currently senior ai engineer at perch insights.',
       'before that i co-founded archanan in singapore and ran it as ceo for four years. we built cloud emulators of supercomputers so people could develop at scale without waiting for time on the real machine. i also led engineering at musiio, a music-ml company that soundcloud later acquired. before any of that i worked on wavelet bases for audio compression at stony brook, and wrote firmware for guitar pedals.',
-      'i maintain fugue, a type-safe probabilistic programming library for rust, and quiver, a modular audio synthesis library built on arrow-style combinators. both are published and have documentation sites of their own. the backgrounds on this site are simulations running in your browser, not video. the landscape icon in the corner opens their controls.',
+      'on the weekends, i maintain the fugue and quiver ecosystems, for probabilistic programming and audio synthesis in rust. the backgrounds on this site are simulations running in your browser, not video. the landscape icon in the corner opens their controls.',
     ],
     consultingNote: {
-      lead: 'i also take on a few consulting engagements a year —',
-      linkText: 'what that usually looks like',
+      before: 'i also take on a few',
+      linkText: 'consulting',
+      after: 'engagements a year.',
       href: '/consulting/',
     },
   },

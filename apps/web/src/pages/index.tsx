@@ -36,11 +36,11 @@ const IndexPage: React.FC<{ location?: { pathname?: string } }> = ({
             {/* The whole of consulting on the front page: one sentence and a
                 link. The section it replaced lives at /consulting/. */}
             <p className="about-consulting-note">
-              {homepageConfig.about.consultingNote.lead}{' '}
+              {homepageConfig.about.consultingNote.before}{' '}
               <Link to={homepageConfig.about.consultingNote.href}>
                 {homepageConfig.about.consultingNote.linkText}
-              </Link>
-              .
+              </Link>{' '}
+              {homepageConfig.about.consultingNote.after}
             </p>
           </div>
         </section>

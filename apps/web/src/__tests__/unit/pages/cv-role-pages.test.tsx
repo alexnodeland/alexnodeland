@@ -26,9 +26,9 @@ const structureOf = (container: HTMLElement) => ({
   overviewCard: !!container.querySelector('.cv-overview-contact'),
   controlRow: !!container.querySelector('.cv-control-bar'),
   search: !!container.querySelector('#cv-search'),
-  sections: [
-    ...container.querySelectorAll('#resume-content > section[id]'),
-  ].map(section => section.id),
+  sections: Array.from(
+    container.querySelectorAll('#resume-content > section[id]')
+  ).map(section => section.id),
 });
 
 describe('the role-specific resume pages', () => {
@@ -68,10 +68,10 @@ describe('the role-specific resume pages', () => {
     const cards = container.querySelectorAll('#cv-projects .cv-project-card');
 
     expect(
-      [...cards].map(card => card.querySelector('h3')?.textContent)
+      Array.from(cards).map(card => card.querySelector('h3')?.textContent)
     ).toEqual(fdeData.projects?.map(project => project.name));
     // Each card links to its repository in the meta band.
-    for (const card of cards) {
+    for (const card of Array.from(cards)) {
       expect(
         within(card as HTMLElement).getByRole('link', { name: 'repo' })
       ).toHaveAttribute('href', expect.stringContaining('github.com'));
