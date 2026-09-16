@@ -23,12 +23,22 @@
  * parser can do. Everything the source promises — every section heading, every
  * job title and company, every date range — has to start a line under both.
  *
+ * Beyond the lines, the text as a whole: every bullet the source carries has
+ * to come back word for word (a dropped hyphen or a glued pair of words is a
+ * bullet a keyword filter cannot match), no line may end in a hyphen, no
+ * ligature glyph may reach the text layer, the contact details have to be
+ * separate tokens, the sections have to come out in order, every font has to
+ * be embedded with a Unicode map, and the PDF has to say whose it is.
+ *
+ * What this file does not do is score anything. It is the pass-or-fail half;
+ * `score-cv.js` is the signal half, and the two read the same extractions
+ * (scripts/lib/cv-text.js).
+ *
  * Usage:
  *   node scripts/check-cv-text.js          # check what is in static/cv
  *   node scripts/check-cv-text.js --build  # build first, then check
  */
 
-const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -38,31 +48,37 @@ const {
   loadCVConfig,
   cvTargets,
 } = require('./lib/cv-targets.js');
+const {
+  have,
+  run,
+  extractions,
+  normalise,
+  foldTypography,
+  pageCount,
+  pdfFonts,
+  pdfInfo,
+} = require('./lib/cv-text.js');
 
 /** The section names a parser is looking for, as the template emits them. */
 const SECTIONS = ['SUMMARY', 'EXPERIENCE', 'EDUCATION', 'SKILLS'];
 
-const run = (cmd, args) => {
-  const result = spawnSync(cmd, args, { encoding: 'utf8', maxBuffer: 32e6 });
-  if (result.status !== 0) {
-    throw new Error(`${cmd} failed: ${result.stderr || result.stdout}`);
-  }
-  return result.stdout;
-};
+/** Every heading the template can emit, in the order it emits them. */
+const SECTION_ORDER = [
+  'SUMMARY',
+  'EXPERIENCE',
+  'PROJECTS',
+  'EDUCATION',
+  'SKILLS',
+  'CERTIFICATIONS',
+];
 
-const have = cmd => spawnSync(cmd, ['-v'], { stdio: 'ignore' }).status !== null;
-
-/**
- * Collapses the soft line wrapping the PDF's column width imposes.
- *
- * A long job title wraps inside its own column, so "Artist in Residence, Center
- * of Excellence in Wireless Information Technology" arrives as two lines. That
- * is not the fusion this script is looking for, and treating it as a failure
- * would make the check unusable. Comparing against a space-normalised copy of
- * the whole document tells the two apart: a wrapped title is still present and
- * still starts its own line, a fused one does not start a line at all.
- */
-const normalise = text => text.replace(/\s+/g, ' ').trim();
+// `normalise` collapses the soft line wrapping the PDF's column width imposes.
+// A long job title wraps inside its own column, so "Artist in Residence, Center
+// of Excellence in Wireless Information Technology" arrives as two lines. That
+// is not the fusion this script is looking for, and treating it as a failure
+// would make the check unusable. Comparing against a space-normalised copy of
+// the whole document tells the two apart: a wrapped title is still present and
+// still starts its own line, a fused one does not start a line at all.
 
 /** Does some line begin with `phrase`, allowing for a wrap inside it? */
 const startsALine = (lines, phrase) => {
@@ -190,12 +206,76 @@ const checkText = (text, target) => {
     }
   }
 
+  // The sections too, in the order the template writes them. A parser
+  // that finds SKILLS above EXPERIENCE files the bullets under the wrong
+  // heading, and every one of them is lost to the job history.
+  const headingsSeen = lines
+    .map(normalise)
+    .filter(line => SECTION_ORDER.includes(line));
+  const expectedOrder = SECTION_ORDER.filter(h => headingsSeen.includes(h));
+  if (headingsSeen.join(' ') !== expectedOrder.join(' ')) {
+    failures.push(`sections extract as ${headingsSeen.join(', ')}`);
+  }
+
+  // Every bullet, word for word. The line checks above prove the skeleton
+  // survives; this proves the flesh does. A keyword filter matches whole
+  // words, so a bullet that comes back with two words glued together, or a
+  // hyphen deleted at a line end, is a bullet that says nothing to it.
+  // Dashes, quotes and soft hyphens are folded on both sides first: those
+  // are what typesetting legitimately changes.
+  const folded = foldTypography(text);
+  const wordFor = phrase => foldTypography(phrase);
+  for (const role of target.data.experience) {
+    for (const bullet of role.achievements) {
+      if (!folded.includes(wordFor(bullet))) {
+        failures.push(
+          `a bullet under "${role.title}, ${role.company}" does not extract` +
+            ` intact: "${bullet.slice(0, 60)}…"`
+        );
+      }
+    }
+  }
+  if (!folded.includes(wordFor(target.data.personal.summary))) {
+    failures.push('the summary does not extract intact');
+  }
+
+  // A hyphen at a line end is either hyphenation, which a parser will
+  // delete and be right, or a real hyphen, which it will delete and be
+  // wrong. The template forbids hyphenation across a URL for exactly this
+  // reason; here every line end is held to it.
+  for (const line of lines) {
+    if (/[\w]-$/.test(line.trimEnd())) {
+      failures.push(`a line ends in a hyphen: "${line.trim().slice(-40)}"`);
+    }
+  }
+
+  // Ligatures. "fi" and "fl" set as single glyphs reach the text layer as
+  // U+FB01 and U+FB02 unless the font carries a map back to the letters,
+  // and then "efficient" is not the word "efficient" to a string comparison.
+  if (/[\ufb00-\ufb06]/.test(text)) {
+    failures.push('a ligature glyph (ﬁ, ﬂ, …) reached the text layer');
+  }
+  if (/\u00ad/.test(text)) {
+    failures.push('a soft hyphen reached the text layer');
+  }
+
+  // The contact details have to be their own tokens. An email that comes
+  // out as "USA·alex@…" is an email no field parser finds — which is what
+  // the interword glue in the header did once.
+  const tokens = flat.split(' ');
+  for (const [field, value] of [
+    ['email', target.data.personal.email],
+    ['website', target.data.personal.website],
+  ]) {
+    if (!tokens.includes(value)) {
+      failures.push(
+        `the ${field} "${value}" does not extract as a token of its own`
+      );
+    }
+  }
+
   return failures;
 };
-
-/** Pages, counted from the form feeds `pdftotext` writes between them. */
-const pageCount = text =>
-  text.split('\f').filter(part => part.length > 0).length;
 
 const check = target => {
   const pdf = path.join(OUT_DIR, `${target.name}.pdf`);
@@ -207,28 +287,39 @@ const check = target => {
 
   // -layout preserves the columns, the default reflows them. A parser may do
   // either, so neither is allowed to lose an entry.
-  const modes = [
-    { label: 'pdftotext', text: run('pdftotext', [pdf, '-']) },
-    {
-      label: 'pdftotext -layout',
-      text: run('pdftotext', ['-layout', pdf, '-']),
-    },
-  ];
-
-  for (const mode of modes) {
-    for (const label of [mode.label, `${mode.label}, form feeds stripped`]) {
-      const text = label.endsWith('stripped')
-        ? mode.text.replace(/\f/g, '')
-        : mode.text;
-      failures.push(...checkText(text, target).map(f => `[${label}] ${f}`));
-    }
+  const readings = extractions(pdf);
+  for (const { label, text } of readings) {
+    failures.push(...checkText(text, target).map(f => `[${label}] ${f}`));
   }
 
-  const pages = pageCount(modes[0].text);
+  const pages = pageCount(readings[0].text);
   if (target.maxPages !== null && pages > target.maxPages) {
     failures.push(
       `is ${pages} pages, and must be ${target.maxPages}` +
         ' — trim bullets in src/config/cv.ts'
+    );
+  }
+
+  // A font that is not embedded is rendered with whatever the reader has,
+  // and one without a Unicode map extracts as glyph ids. Either is a
+  // document that looks fine and reads as nothing.
+  for (const font of pdfFonts(pdf)) {
+    if (!font.embedded) failures.push(`font ${font.name} is not embedded`);
+    if (!font.unicode) failures.push(`font ${font.name} has no Unicode map`);
+  }
+
+  // The metadata, as the template sets it. Whoever downloads the file sees
+  // the Title before a word of the page.
+  const info = pdfInfo(pdf);
+  const { name, title } = target.data.personal;
+  if (info.Title !== `${name} - ${title}`) {
+    failures.push(
+      `PDF Title is ${JSON.stringify(info.Title || '')}, expected "${name} - ${title}"`
+    );
+  }
+  if (info.Author !== name) {
+    failures.push(
+      `PDF Author is ${JSON.stringify(info.Author || '')}, expected "${name}"`
     );
   }
 
