@@ -40,11 +40,11 @@ semantic score reads; the whole body is what the keyword score reads.
 
 ## What is not in a profile
 
-No employer, product, customer or place names, no salary or equity figures,
-no boilerplate about benefits or equal opportunity, and no passage long enough
-to search for. Technology terms are kept exactly as the posting wrote them,
-since matching them is the point. The employer is described by type
-(`employer_type`) and the role by what it does.
+No names of the employer, its products or its customers, no place names, no
+salary or equity figures, no boilerplate about benefits or equal opportunity,
+and no passage long enough to search for. Third-party tools and platforms are
+kept exactly as the posting wrote them, since matching them is the point. The
+employer is described by type (`employer_type`) and the role by what it does.
 
 Where a posting is from is deliberately not recorded here. The records are the
 signal; the sources were the means.
