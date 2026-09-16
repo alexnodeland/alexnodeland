@@ -53,7 +53,7 @@ const SEPARATOR = `\\hspace{${SEP_GAP}}$\\cdot$\\hspace{${SEP_GAP}}`;
 /** The full CV is the only variant that runs to as many pages as it takes. */
 const isFull = variant => variant === 'full';
 
-const preamble = variant => {
+const preamble = (variant, data) => {
   const onePage = !isFull(variant);
 
   // The one-pager runs tighter on every axis; the full CV can breathe.
@@ -77,6 +77,14 @@ const preamble = variant => {
 \\usepackage{microtype}
 \\usepackage{needspace}
 \\usepackage[hidelinks]{hyperref}
+% The document says whose it is in its own metadata, which is the first place
+% a document-management tool looks and where a downloaded file gets its name
+% from. Left unset, the Title is empty and the Author is whoever ran pdflatex.
+\\hypersetup{
+  unicode,
+  pdftitle={${tex(data.personal.name)} - ${tex(data.personal.title)}},
+  pdfauthor={${tex(data.personal.name)}},
+}
 
 \\definecolor{rulegray}{gray}{0.72}
 \\definecolor{mutedink}{gray}{0.35}
@@ -84,6 +92,19 @@ const preamble = variant => {
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\setlength{\\parskip}{0pt}
+
+% No hyphenation, at either kind of hyphen. A word broken at a line end
+% reaches the text layer as two pieces with a hyphen between them, and what
+% a parser does with that is its own business: pdftotext's reflow mode joins
+% "Learn-" and "ing" back into a word, its layout mode does not, and a
+% keyword filter reading "Machine Learn- ing" matches neither term. The
+% explicit kind is worse — "music-ML" broken after its hyphen is "musicML"
+% to a parser that deletes line-end hyphens, which is most of them. The
+% stretch below is what keeps a justified line from overflowing when it can
+% no longer break inside a word.
+\\hyphenpenalty=10000
+\\exhyphenpenalty=10000
+\\emergencystretch=1.5em
 
 % Real capitals, not \\scshape. Small caps set "Summary" as a full-size S
 % followed by capital-shaped glyphs at lowercase size, and every PDF text
@@ -405,7 +426,7 @@ const renderResumeTex = (data, { variant }) => {
     sections.push(`\\section{Certifications}\n${certifications(data)}`);
   }
 
-  return `${preamble(variant)}
+  return `${preamble(variant, data)}
 \\begin{document}
 ${sections.join('\n')}
 \\end{document}

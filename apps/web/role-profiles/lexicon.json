@@ -1,0 +1,379 @@
+{
+  "$comment": "The terms the keyword score looks for, each with the spellings that mean the same thing to a reader. A term's weight is how many profiles in a family mention any of its spellings, so a term no profile names costs nothing to leave off a resume. Matching is whole-word and case-insensitive over both sides. Keep entries to skills, tools and ways of working; a phrase that is merely common English inflates every score equally and separates nothing.",
+  "terms": {
+    "python": ["python"],
+    "javascript": ["javascript", "node.js", "nodejs", "node js", "next.js"],
+    "typescript": ["typescript"],
+    "react": ["react"],
+    "java": ["java"],
+    "rust": ["rust"],
+    "scala": ["scala"],
+    "ruby": ["ruby"],
+    "c++": ["c++"],
+    "sql": ["sql"],
+    "postgresql": ["postgresql", "postgres"],
+    "graphql": ["graphql"],
+    "redis": ["redis"],
+    "aws": ["aws", "amazon web services"],
+    "gcp": ["gcp", "google cloud"],
+    "azure": ["azure"],
+    "cloud": ["cloud", "cloud infrastructure", "cloud platforms", "serverless"],
+    "docker": ["docker", "containers", "containerization", "containerisation"],
+    "container orchestration": [
+      "kubernetes",
+      "k8s",
+      "container orchestration",
+      "ecs",
+      "helm"
+    ],
+    "infrastructure as code": [
+      "infrastructure as code",
+      "iac",
+      "terraform",
+      "cloudformation"
+    ],
+    "ci/cd": [
+      "ci/cd",
+      "cicd",
+      "ci cd",
+      "continuous integration",
+      "continuous delivery",
+      "devops"
+    ],
+    "linux": ["linux"],
+    "llms": [
+      "llm",
+      "llms",
+      "large language model",
+      "large language models",
+      "generative ai",
+      "genai",
+      "foundation model",
+      "foundation models",
+      "frontier model",
+      "frontier models"
+    ],
+    "agents": [
+      "agent",
+      "agents",
+      "agentic",
+      "multi-agent",
+      "subagent",
+      "subagents",
+      "sub-agents",
+      "autonomous agents"
+    ],
+    "tool use": [
+      "tool use",
+      "tool-use",
+      "tool calling",
+      "tool calls",
+      "function calling"
+    ],
+    "mcp": ["mcp", "model context protocol"],
+    "evals": [
+      "eval",
+      "evals",
+      "evaluation",
+      "evaluations",
+      "evaluation framework",
+      "evaluation frameworks",
+      "evaluation harness",
+      "llm-as-judge",
+      "llm-as-a-judge",
+      "benchmark",
+      "benchmarks",
+      "regression testing",
+      "regression tests",
+      "regression suites"
+    ],
+    "rag": [
+      "rag",
+      "retrieval augmented generation",
+      "retrieval-augmented generation",
+      "retrieval"
+    ],
+    "vector search": [
+      "vector search",
+      "vector database",
+      "vector databases",
+      "vector db",
+      "vector index",
+      "embeddings",
+      "embedding"
+    ],
+    "prompt engineering": [
+      "prompt engineering",
+      "prompting",
+      "prompts",
+      "prompt",
+      "system prompt"
+    ],
+    "context engineering": [
+      "context engineering",
+      "context window",
+      "context windows",
+      "context management",
+      "context construction"
+    ],
+    "observability": [
+      "observability",
+      "tracing",
+      "monitoring",
+      "telemetry",
+      "instrumentation",
+      "logging"
+    ],
+    "guardrails": [
+      "guardrails",
+      "guardrail",
+      "grounding",
+      "prompt injection",
+      "hallucination"
+    ],
+    "human-in-the-loop": ["human-in-the-loop", "human in the loop"],
+    "fine-tuning": [
+      "fine-tuning",
+      "fine tuning",
+      "fine-tune",
+      "fine-tuned",
+      "post-training"
+    ],
+    "machine learning": [
+      "machine learning",
+      "ml",
+      "deep learning",
+      "pytorch",
+      "tensorflow",
+      "jax",
+      "nlp",
+      "natural language processing"
+    ],
+    "mlops": ["mlops"],
+    "agent frameworks": [
+      "langchain",
+      "langgraph",
+      "langsmith",
+      "agent framework",
+      "agent frameworks",
+      "orchestration framework",
+      "orchestration frameworks"
+    ],
+    "orchestration": [
+      "orchestration",
+      "workflow orchestration",
+      "dag",
+      "dag-based",
+      "workflows",
+      "workflow automation"
+    ],
+    "distributed systems": [
+      "distributed systems",
+      "distributed computing",
+      "distributed infrastructure"
+    ],
+    "apis": [
+      "api",
+      "apis",
+      "rest",
+      "api design",
+      "api development",
+      "api integration",
+      "sdk",
+      "sdks"
+    ],
+    "data pipelines": [
+      "data pipeline",
+      "data pipelines",
+      "etl",
+      "elt",
+      "data engineering",
+      "data ingestion",
+      "data warehouse",
+      "data warehouses",
+      "lakehouse"
+    ],
+    "data modeling": [
+      "data model",
+      "data models",
+      "data modeling",
+      "data modelling",
+      "ontology",
+      "semantic data models",
+      "schema"
+    ],
+    "system design": [
+      "system design",
+      "systems design",
+      "architecture",
+      "architectures",
+      "architect",
+      "architected"
+    ],
+    "production": [
+      "production",
+      "production-grade",
+      "productionize",
+      "productionise",
+      "productionizing",
+      "shipped",
+      "shipping"
+    ],
+    "full-stack": [
+      "full-stack",
+      "full stack",
+      "frontend",
+      "front-end",
+      "backend",
+      "back-end"
+    ],
+    "customer-facing": [
+      "customer-facing",
+      "customer facing",
+      "customers",
+      "customer",
+      "clients",
+      "client"
+    ],
+    "technical discovery": [
+      "technical discovery",
+      "discovery",
+      "scoping",
+      "scope",
+      "requirements gathering"
+    ],
+    "proof of concept": [
+      "proof of concept",
+      "proofs of concept",
+      "poc",
+      "pocs",
+      "pilot",
+      "pilots",
+      "prototype",
+      "prototypes",
+      "prototyping",
+      "demo",
+      "demos"
+    ],
+    "pre-sales": [
+      "pre-sales",
+      "presales",
+      "technical pre-sales",
+      "sales engineering",
+      "sales engineer",
+      "technical win"
+    ],
+    "solution architecture": [
+      "solution architecture",
+      "solutions architecture",
+      "solutions architect",
+      "solutions engineering",
+      "solutions engineer",
+      "reference architecture",
+      "reference architectures"
+    ],
+    "enterprise": ["enterprise", "enterprises"],
+    "integrations": [
+      "integration",
+      "integrations",
+      "integrate",
+      "integrating",
+      "connectors"
+    ],
+    "identity and access": [
+      "sso",
+      "oauth",
+      "saml",
+      "iam",
+      "identity",
+      "authentication",
+      "access control",
+      "access controls",
+      "permissions"
+    ],
+    "security": [
+      "security",
+      "compliance",
+      "governance",
+      "auditability",
+      "audit"
+    ],
+    "reusable patterns": [
+      "playbook",
+      "playbooks",
+      "reusable",
+      "accelerators",
+      "reference implementation",
+      "reference implementations",
+      "cookbooks",
+      "templates"
+    ],
+    "technical leadership": [
+      "technical leadership",
+      "mentor",
+      "mentoring",
+      "mentorship",
+      "led engineering",
+      "head of engineering",
+      "cto"
+    ],
+    "stakeholders": [
+      "stakeholder",
+      "stakeholders",
+      "executives",
+      "executive",
+      "cross-functional"
+    ],
+    "documentation": ["documentation", "documented", "document"],
+    "experimentation": ["experimentation", "experiments", "a/b"],
+    "latency and cost": ["latency", "cost", "cost-performance", "token spend"],
+    "spark": ["spark", "apache spark"],
+    "search": [
+      "information retrieval",
+      "elasticsearch",
+      "opensearch",
+      "bm25",
+      "lucene",
+      "semantic search",
+      "ranking",
+      "re-ranking",
+      "reranking"
+    ],
+    "voice": ["voice", "speech", "audio"],
+    "crm": ["crm", "salesforce"],
+    "open source": ["open source", "open-source"],
+    "startup": [
+      "startup",
+      "startups",
+      "start-up",
+      "founder",
+      "founders",
+      "founding",
+      "co-founded",
+      "cofounded",
+      "co-founder"
+    ],
+    "consulting": [
+      "consulting",
+      "consultant",
+      "professional services",
+      "advisory",
+      "advising"
+    ],
+    "product sense": [
+      "product mindset",
+      "product sense",
+      "product judgment",
+      "product taste",
+      "product instinct"
+    ],
+    "mathematics": ["mathematics", "math", "mathematical", "mathematician"],
+    "hpc": [
+      "hpc",
+      "supercomputing",
+      "high-performance computing",
+      "high performance computing"
+    ],
+    "signal processing": ["signal processing", "dsp", "audio compression"]
+  }
+}
