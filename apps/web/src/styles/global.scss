@@ -20,6 +20,12 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  // Mobile Safari inflates what it takes for body copy when the viewport
+  // widens into landscape, and keeps the inflated size after the phone turns
+  // back to portrait. Pinning the adjustment holds every size to the scale
+  // in variables.scss in both orientations.
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 // The page's own ground. Nothing decorates it: the animated stage covers it
