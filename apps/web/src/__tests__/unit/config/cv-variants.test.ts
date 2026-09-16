@@ -60,7 +60,11 @@ const fixture: CVSource = {
   ],
   certifications: [{ name: 'A Cert', issuer: 'Someone', date: '2015' }],
   skills: {
-    technical: ['Default Skill'],
+    technical: [
+      'Default Skill',
+      { name: 'AI Skill', tags: ['ai-eng'] },
+      { name: 'AI Only Skill', tags: ['ai-eng'], audienceOnly: true },
+    ],
     byVariant: { fde: ['FDE Skill'] },
   },
   projects: { fde: ['fugue'] },
@@ -118,6 +122,23 @@ describe('buildVariant', () => {
     expect(buildVariant('resume', roomy).experience[0].achievements).toContain(
       'fde one'
     );
+  });
+
+  it('selects the skills line the way it selects bullets, on-audience terms first', () => {
+    expect(buildVariant('ai-engineer', fixture).skills.technical).toEqual([
+      'AI Skill',
+      'AI Only Skill',
+      'Default Skill',
+    ]);
+    // The full CV carries a tagged skill and not an audience-only one.
+    expect(buildVariant('full', fixture).skills.technical).toEqual([
+      'Default Skill',
+      'AI Skill',
+    ]);
+    // A hand-ordered list wins outright.
+    expect(buildVariant('fde', fixture).skills.technical).toEqual([
+      'FDE Skill',
+    ]);
   });
 
   it('withholds exec bullets from the engineering-focused variants', () => {
@@ -178,7 +199,7 @@ describe('buildVariant', () => {
     const resume = buildVariant('resume', fixture);
     expect(resume.personal.summary).toBe('Default summary.');
     expect(resume.personal.title).toBe('Default Title');
-    expect(resume.skills.technical).toEqual(['Default Skill']);
+    expect(resume.skills.technical).toEqual(['Default Skill', 'AI Skill']);
   });
 
   it('drops coursework and certifications from the one-pagers', () => {

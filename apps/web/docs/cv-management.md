@@ -75,13 +75,13 @@ one-pager is derived and where its layout lives.
 
 Every CV page renders one component, `src/components/cv/CVPageBody.tsx` — the
 control row, the search, the overview and contact card, and the experience,
-projects, education, skills and certifications sections — and the pages differ
-only in the data they hand it. `/cv/`'s menu switches between the full CV and
-the one-pager in place; a role page's menu lists those two plus its own entry,
-and picking one navigates (the one-pager is `/cv/?view=resume`). Project cards
-take the projects page's link marks and its card click — the site where there is
-one, the repo otherwise — from the shared `project-ways-out` mixin. Change how
-the CV is presented in the body and every page changes together.
+education, skills and certifications sections — and the pages differ only in
+the data they hand it. `/cv/`'s menu switches between the full CV and the
+one-pager in place; a role page's menu lists those two plus its own entry, and
+picking one navigates (the one-pager is `/cv/?view=resume`). A variant's
+projects go into its PDF, DOCX and Markdown and not onto the page, where the
+projects page is a click away. Change how the CV is presented in the body and
+every page changes together.
 
 ### The role pages are generated
 
@@ -305,6 +305,21 @@ the file is authored in decides every remaining tie.
 
 `metric` **ranks, it does not render** — the number has to appear in `text` too.
 Never invent one.
+
+**Skills** follow the same rule. `skills.technical` is one list, and an entry
+may carry `tags` and `audienceOnly` with the meaning they have on a bullet:
+
+```typescript
+technical: [
+  'Python',
+  { name: 'Rust', tags: ['music'], audienceOnly: true },
+],
+```
+
+A variant's skills line is what that list offers it, on-audience terms first
+and the rest in authored order. `skills.byVariant` still wins where it is set:
+it is the heavier tool, for a page whose reader scans the terms in a particular
+order.
 
 **Engagement type** is per role, and renders beside the dates:
 

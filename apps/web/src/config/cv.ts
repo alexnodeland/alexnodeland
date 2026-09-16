@@ -80,6 +80,15 @@ export type Bullet =
       metric?: string;
     };
 
+/**
+ * A keyword on the skills line. The object form carries the same audience
+ * fields as a bullet, with the same meaning: `tags` offers it to those
+ * variants, and `audienceOnly` keeps it off every document that selects no
+ * audience — the full CV and the neutral one-pager.
+ */
+export type Skill =
+  string | { name: string; tags?: AudienceTag[]; audienceOnly?: boolean };
+
 /** How one role is cut down for one variant. */
 export interface RoleVariantRule {
   maxBullets: number;
@@ -215,8 +224,17 @@ export interface CVSource extends Omit<
   };
   experience: ExperienceSource[];
   skills: {
-    technical: string[];
-    /** A keyword list per variant. Falls back to `technical`. */
+    /**
+     * The one list every document's skills line is selected from, in the
+     * order it is authored. Tag a term to offer it to a variant; mark it
+     * `audienceOnly` to keep it off the general documents too.
+     */
+    technical: Skill[];
+    /**
+     * A hand-ordered list for one variant, used in place of the selection
+     * from `technical`. The heavier tool: for a page whose reader scans the
+     * terms in a particular order.
+     */
     byVariant?: Partial<Record<CVVariant, string[]>>;
     soft?: string[];
     languages?: string[];
@@ -890,9 +908,47 @@ const bulletTags = (bullet: Bullet): AudienceTag[] =>
 const hasMetric = (bullet: Bullet): boolean =>
   typeof bullet !== 'string' && Boolean(bullet.metric);
 
-/** Is this bullet kept off the documents that select no audience? */
-const isAudienceOnly = (bullet: Bullet): boolean =>
-  typeof bullet !== 'string' && Boolean(bullet.audienceOnly);
+/** Is this bullet or skill kept off the documents that select no audience? */
+const isAudienceOnly = (item: Bullet | Skill): boolean =>
+  typeof item !== 'string' && Boolean(item.audienceOnly);
+
+const audienceOf = (variant: CVVariant): AudienceTag | undefined =>
+  isRoleVariant(variant) ? AUDIENCE[variant] : undefined;
+
+/**
+ * Is `item` offered to `variant`? Neutral items go everywhere; tagged items
+ * go to their audiences, and to the documents selecting no audience unless
+ * they are `audienceOnly`.
+ */
+const isEligible = (
+  tags: AudienceTag[],
+  audienceOnly: boolean,
+  audience?: AudienceTag
+): boolean => {
+  if (tags.length === 0) return true;
+  return audience ? tags.includes(audience) : !audienceOnly;
+};
+
+/**
+ * The skills line for one variant: what `technical` offers it, on-audience
+ * terms first and the rest in authored order.
+ */
+const selectSkills = (skills: Skill[], variant: CVVariant): string[] => {
+  const audience = audienceOf(variant);
+  const tagsOf = (skill: Skill): AudienceTag[] =>
+    typeof skill === 'string' ? [] : (skill.tags ?? []);
+  return skills
+    .map((skill, index) => ({ skill, index }))
+    .filter(({ skill }) =>
+      isEligible(tagsOf(skill), isAudienceOnly(skill), audience)
+    )
+    .sort((a, b) => {
+      const rank = (skill: Skill) =>
+        audience && tagsOf(skill).includes(audience) ? 0 : 1;
+      return rank(a.skill) - rank(b.skill) || a.index - b.index;
+    })
+    .map(({ skill }) => (typeof skill === 'string' ? skill : skill.name));
+};
 
 /**
  * Picks and orders one role's bullets for one variant.
@@ -911,13 +967,11 @@ const selectBullets = (
   variant: CVVariant,
   limit: number
 ): string[] => {
-  const audience = isRoleVariant(variant) ? AUDIENCE[variant] : undefined;
+  const audience = audienceOf(variant);
 
-  const eligible = achievements.filter(bullet => {
-    const tags = bulletTags(bullet);
-    if (tags.length === 0) return true;
-    return audience ? tags.includes(audience) : !isAudienceOnly(bullet);
-  });
+  const eligible = achievements.filter(bullet =>
+    isEligible(bulletTags(bullet), isAudienceOnly(bullet), audience)
+  );
 
   const rank = (bullet: Bullet): number => {
     const onAudience = audience && bulletTags(bullet).includes(audience);
@@ -990,7 +1044,9 @@ export const buildVariant = (
     certifications: isFull ? source.certifications : [],
     projects: resolveProjects(source.projects?.[variant]),
     skills: {
-      technical: source.skills.byVariant?.[variant] ?? source.skills.technical,
+      technical:
+        source.skills.byVariant?.[variant] ??
+        selectSkills(source.skills.technical, variant),
       soft: source.skills.soft,
       languages: source.skills.languages,
     },
