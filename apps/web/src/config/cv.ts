@@ -1,14 +1,38 @@
+import cvPagesJson from './cv-pages.json';
 import { projectsConfig } from './projects';
 
 /**
- * Which document is being produced.
+ * A role variant: one of the focused one-pagers, each with a page of its own.
  *
- *   full        — the complete CV, every role and every bullet
- *   resume      — the neutral one-pager
- *   fde         — one page aimed at Forward Deployed Engineer roles
- *   ai-engineer — one page aimed at AI Engineer roles
+ * The list of them is `cv-pages.json` — each key a variant, each entry its
+ * page's path, menu label, hero tagline and tab title — and it is the one
+ * place a variant is declared. `gatsby-node.js` creates a page per entry from
+ * `src/templates/cv-variant.tsx`; the heroes, the sitemap exclusions, the
+ * document menu and its routes all read the same entries. Adding a key there
+ * is how a variant is added, and the types below then ask this file for the
+ * rest: its PDF artifact, its audience, and whatever content it selects.
  */
-export type CVVariant = 'full' | 'resume' | 'fde' | 'ai-engineer';
+export type RoleVariant = keyof typeof cvPagesJson;
+
+export interface CVPage {
+  path: string;
+  label: string;
+  tagline: string;
+  title: string;
+  description: string;
+}
+
+export const CV_PAGES: Record<RoleVariant, CVPage> = cvPagesJson;
+
+/**
+ * Which document is being produced: the complete CV, the neutral one-pager,
+ * or one of the role variants in `cv-pages.json`.
+ */
+export type CVVariant = 'full' | 'resume' | RoleVariant;
+
+/** Whether a variant is one of the role variants, with a generated page. */
+export const isRoleVariant = (variant: string): variant is RoleVariant =>
+  Object.prototype.hasOwnProperty.call(CV_PAGES, variant);
 
 /**
  * Who a bullet is written for.
@@ -781,8 +805,11 @@ export const unknownProjectNames = (source: CVSource = cvSource): string[] => {
   });
 };
 
-/** The audience a variant selects bullets for. The neutral pages select none. */
-const AUDIENCE: Partial<Record<CVVariant, AudienceTag>> = {
+/**
+ * The audience each role variant selects bullets for. Every role variant must
+ * have one — the type says so — and the neutral pages select none.
+ */
+const AUDIENCE: Record<RoleVariant, AudienceTag> = {
   fde: 'fde',
   'ai-engineer': 'ai-eng',
 };
@@ -811,7 +838,7 @@ const selectBullets = (
   variant: CVVariant,
   limit: number
 ): string[] => {
-  const audience = AUDIENCE[variant];
+  const audience = isRoleVariant(variant) ? AUDIENCE[variant] : undefined;
 
   const eligible = achievements.filter(bullet => {
     const tags = bulletTags(bullet);
@@ -922,9 +949,3 @@ export const cvData: CVData = buildVariant('full');
 
 /** The neutral one-page resume. */
 export const resumeData: CVData = buildVariant('resume');
-
-/** The one-pager aimed at Forward Deployed Engineer roles. */
-export const fdeData: CVData = buildVariant('fde');
-
-/** The one-pager aimed at AI Engineer roles. */
-export const aiEngineerData: CVData = buildVariant('ai-engineer');

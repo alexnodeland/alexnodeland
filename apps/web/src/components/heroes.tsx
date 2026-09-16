@@ -1,6 +1,7 @@
 import { Link } from 'gatsby';
 import React from 'react';
 import { homepageConfig, projectsConfig } from '../config';
+import { CV_PAGES, RoleVariant } from '../config/cv';
 
 /**
  * The page heroes, in one place.
@@ -65,6 +66,30 @@ const crumbTitle = (label: string) => (
  */
 export const NOT_FOUND_KEY = '404:';
 
+/**
+ * One hero per role-variant CV page, generated from the same entries in
+ * src/config/cv-pages.json that create the pages. They wear the CV's hero,
+ * class and all, so the collapse choreography and the styles key off them
+ * exactly as on /cv/; the entry's tagline says which resume this is. Keyed by
+ * the page's path without its trailing slash, the one spelling the lookup
+ * below uses.
+ */
+function roleVariantHeroes(): Record<string, () => React.ReactNode> {
+  return Object.keys(CV_PAGES).reduce<Record<string, () => React.ReactNode>>(
+    (heroes, variant) => {
+      const page = CV_PAGES[variant as RoleVariant];
+      heroes[page.path.replace(/\/+$/, '')] = () => (
+        <header className="cv-page-header">
+          {crumbTitle('cv')}
+          <p>{page.tagline}</p>
+        </header>
+      );
+      return heroes;
+    },
+    {}
+  );
+}
+
 // Each entry is built on demand rather than held as a module constant: the
 // elements are cheap, and a fresh tree per resolution keeps the outgoing and
 // incoming heroes from ever sharing a node during a swap.
@@ -104,21 +129,7 @@ const HEROES: Record<string, () => React.ReactNode> = {
       <p>roles, research, and skills.</p>
     </header>
   ),
-  // The unlisted role resumes wear the CV's hero, class and all, so the
-  // collapse choreography and the styles key off them exactly as on /cv/. The
-  // tagline says which resume this is.
-  '/cv/fde': () => (
-    <header className="cv-page-header">
-      {crumbTitle('cv')}
-      <p>for forward deployed engineer roles.</p>
-    </header>
-  ),
-  '/cv/ai-engineer': () => (
-    <header className="cv-page-header">
-      {crumbTitle('cv')}
-      <p>for ai engineer roles.</p>
-    </header>
-  ),
+  ...roleVariantHeroes(),
   '/consulting': () => (
     <header className="consulting-page-header">
       {crumbTitle('consulting')}

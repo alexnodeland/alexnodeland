@@ -1,5 +1,5 @@
 import React from 'react';
-import { CVData, CVVariant } from '../../config/cv';
+import { CVData, CVVariant, CV_PAGES, isRoleVariant } from '../../config/cv';
 import ControlRow from '../ui/ControlRow';
 import Dropdown, { DropdownOption } from '../ui/Dropdown';
 import { DownloadIcon } from '../ui/EntryIcons';
@@ -14,10 +14,11 @@ const VIEW_OPTIONS: DropdownOption[] = [
 // What a role page adds to the menu: its own entry, so the row reads the same
 // as /cv/'s with the page you are on selected. /cv/ itself lists only the two
 // lengths — the role pages are unlisted, and its menu is the one everyone sees.
-const ROLE_OPTIONS: Partial<Record<CVVariant, DropdownOption>> = {
-  fde: { value: 'fde', label: 'fde' },
-  'ai-engineer': { value: 'ai-engineer', label: 'ai engineer' },
-};
+// The entry's label is the page's own, from src/config/cv-pages.json.
+const roleOptionFor = (view: CVVariant): DropdownOption | undefined =>
+  isRoleVariant(view)
+    ? { value: view, label: CV_PAGES[view].label }
+    : undefined;
 
 const DOWNLOAD_OPTIONS: DropdownOption[] = [
   // The trigger already says "download" — the options are just the formats.
@@ -63,7 +64,7 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
 }) => {
   const { isExporting, exportAs } = useCVExport(resumeData, view);
 
-  const roleOption = ROLE_OPTIONS[view];
+  const roleOption = roleOptionFor(view);
   const viewOptions = roleOption ? [...VIEW_OPTIONS, roleOption] : VIEW_OPTIONS;
   const viewLabel =
     viewOptions.find(option => option.value === view)?.label ?? 'full cv';

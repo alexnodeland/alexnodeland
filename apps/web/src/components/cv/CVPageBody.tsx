@@ -1,6 +1,6 @@
 import { navigate } from 'gatsby';
 import React, { useState } from 'react';
-import { CVData, CVVariant } from '../../config/cv';
+import { CVData, CVVariant, CV_PAGES, isRoleVariant } from '../../config/cv';
 import { scrollBehavior } from '../../lib/utils/motion';
 import CVControlBar from './CVControlBar';
 import EducationSection from './CVEducationSection';
@@ -22,30 +22,31 @@ interface CVPageBodyProps {
 }
 
 /**
- * Everything the CV pages draw inside the window, for every variant.
- *
- * /cv/, /cv/fde/ and /cv/ai-engineer/ used to be two renderers: the CV page,
- * and a role-page component with a header of its own that matched nothing
- * above the experience section. Now there is one body and the pages differ
- * only in the data they hand it, so a change to how the CV is presented lands
- * on all three at once instead of drifting apart.
- *
- * The heroes ("alex → cv" and its tagline) are not here — the shell resolves
- * them from the path, in src/components/heroes.tsx.
- */
-/**
  * Where a pick from a role page's document menu goes. The two lengths live on
  * /cv/ — the one-pager behind `?view=resume`, which the CV page reads on load —
- * and picking the page you are already on does nothing.
+ * and every role variant at its own page's path, from src/config/cv-pages.json.
+ * Picking the page you are already on does nothing.
  */
 const goToDocument = (current: CVVariant) => (next: CVVariant) => {
   if (next === current) return;
   if (next === 'full') navigate('/cv/');
   else if (next === 'resume') navigate('/cv/?view=resume');
-  else if (next === 'fde') navigate('/cv/fde/');
-  else if (next === 'ai-engineer') navigate('/cv/ai-engineer/');
+  else if (isRoleVariant(next)) navigate(CV_PAGES[next].path);
 };
 
+/**
+ * Everything the CV pages draw inside the window, for every variant.
+ *
+ * /cv/ and every role-variant page used to be two renderers: the CV page, and
+ * a role-page component with a header of its own that matched nothing above
+ * the experience section. Now there is one body — the role pages are generated
+ * from src/templates/cv-variant.tsx — and the pages differ only in the data
+ * they hand it, so a change to how the CV is presented lands
+ * on all three at once instead of drifting apart.
+ *
+ * The heroes ("alex → cv" and its tagline) are not here — the shell resolves
+ * them from the path, in src/components/heroes.tsx.
+ */
 const CVPageBody: React.FC<CVPageBodyProps> = ({
   data,
   variant,

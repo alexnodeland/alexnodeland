@@ -73,17 +73,49 @@ whichever is on screen. The two role-specific resumes are separate documents at
 `/cv/fde/` and `/cv/ai-engineer/`, unlinked from the nav. See [Export Options](#-export-options) for how the
 one-pager is derived and where its layout lives.
 
-All three pages render one component, `src/components/cv/CVPageBody.tsx` — the
+Every CV page renders one component, `src/components/cv/CVPageBody.tsx` — the
 control row, the search, the overview and contact card, and the experience,
-projects, education, skills and certifications sections — and differ only in
-the data they hand it. `/cv/`'s menu switches between the full CV and the
-one-pager in place; a role page's menu lists those two plus its own entry, and
-picking one navigates (the one-pager is `/cv/?view=resume`). Their heroes are in
-`src/components/heroes.tsx`, in the CV's own `cv-page-header` style with the role
-as the tagline. Project cards take the projects page's link marks and its card
-click — the site where there is one, the repo otherwise — from the shared
-`project-ways-out` mixin. Change how the CV is
-presented in the body and all three change together.
+projects, education, skills and certifications sections — and the pages differ
+only in the data they hand it. `/cv/`'s menu switches between the full CV and
+the one-pager in place; a role page's menu lists those two plus its own entry,
+and picking one navigates (the one-pager is `/cv/?view=resume`). Project cards
+take the projects page's link marks and its card click — the site where there is
+one, the repo otherwise — from the shared `project-ways-out` mixin. Change how
+the CV is presented in the body and every page changes together.
+
+### The role pages are generated
+
+There are no page files for the role variants. `src/config/cv-pages.json` lists
+them — each key a variant, each entry its page's `path`, menu `label`, hero
+`tagline`, tab `title` and `description` — and everything else reads that list:
+
+| What                             | Where it reads the list              |
+| -------------------------------- | ------------------------------------ |
+| One page per entry               | `createPages` in `gatsby-node.js`    |
+| The page itself                  | `src/templates/cv-variant.tsx`       |
+| Its hero ("alex → cv" + tagline) | `src/components/heroes.tsx`          |
+| Its sitemap exclusion            | `gatsby-config.ts`                   |
+| Its entry in the document menu   | `src/components/cv/CVControlBar.tsx` |
+| Where picking that entry goes    | `src/components/cv/CVPageBody.tsx`   |
+| The variant type, `RoleVariant`  | `src/config/cv.ts`                   |
+
+### Adding a variant
+
+1. **Add an entry to `src/config/cv-pages.json`.** Its key is the variant name.
+2. **Run `npm run type-check`.** `RoleVariant` now includes the new key, so the
+   compiler lists what `src/config/cv.ts` still needs: an entry in
+   `CV_ARTIFACTS` (its PDF name and page limit) and in `AUDIENCE` (the tag its
+   bullets are selected by).
+3. **Give it content in `src/config/cv.ts`:** the new tag on the bullets written
+   for it, a `variants` rule on each role it should carry, and — where it
+   differs from the defaults — `summaryByVariant`, `skills.byVariant` and
+   `projects`.
+4. **Check it:** `npm run check:cv:build` builds and checks its PDF (the CI job
+   picks it up the same way), and the role-page unit tests run every assertion
+   against every entry in the list.
+
+The page, its hero, its menu entry, its sitemap exclusion, its PDF and its CI
+check all follow from those two files; there is no page file to write.
 
 ## 📊 Data Structure
 
@@ -290,7 +322,7 @@ The PDFs are **not** generated in the browser. `scripts/build-cv.js` renders
 `npm run build` runs this before `gatsby build`, so `static/cv/` is in place
 when Gatsby copies it into the bundle. The CV page's PDF button is a plain
 download link at whichever artifact matches the current view; the role-specific
-variants are served at `/cv/fde/` and `/cv/ai-engineer/`, which are `noindex`
+variants are served at the paths in `src/config/cv-pages.json`, which are `noindex`
 and absent from the nav and the sitemap. Each page's download menu fetches its
 own variant's PDF, and builds its DOCX and Markdown from that variant's data.
 

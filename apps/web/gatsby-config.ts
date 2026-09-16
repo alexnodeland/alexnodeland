@@ -1,4 +1,5 @@
 import path from 'path';
+import cvPages from './src/config/cv-pages.json';
 import { siteConfig } from './src/config/site';
 
 /**
@@ -26,16 +27,17 @@ const config: import('gatsby').GatsbyConfig = {
         // Everything the site wants found; the 404 and Gatsby's dev page are
         // the only things that are not pages.
         //
-        // The role-specific resumes are unlisted rather than private: they are
-        // meant to be shared by address, not turned up by a search for the
-        // name. They carry `noindex` as well — this keeps them out of the
-        // sitemap that would invite the crawl in the first place.
+        // The role-variant CV pages (src/config/cv-pages.json) are unlisted
+        // rather than private: they are meant to be shared by address, not
+        // turned up by a search for the name. They carry `noindex` as well —
+        // this keeps them out of the sitemap that would invite the crawl in the
+        // first place. The plugin strips trailing slashes on both sides before
+        // matching.
         excludes: [
           `/404`,
           `/404.html`,
           `/dev-404-page`,
-          `/cv/fde`,
-          `/cv/ai-engineer`,
+          ...Object.values(cvPages).map(page => page.path),
         ],
       },
     },

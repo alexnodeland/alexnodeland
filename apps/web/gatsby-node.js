@@ -166,6 +166,20 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
   });
 
   redirects.set('/blog/', '/timeline/');
+
+  // The role-variant CV pages, one per entry in src/config/cv-pages.json. The
+  // list is the one place a variant is declared; the template renders the
+  // /cv/ page's own body for it, so a new variant needs a new entry and its
+  // content in src/config/cv.ts, and no page file.
+  const cvPages = require('./src/config/cv-pages.json');
+  const cvVariantTemplate = path.resolve(`./src/templates/cv-variant.tsx`);
+  Object.entries(cvPages).forEach(([variant, page]) => {
+    createPage({
+      path: page.path,
+      component: cvVariantTemplate,
+      context: { variant },
+    });
+  });
 };
 
 // Copy .nojekyll file to public directory for GitHub Pages
