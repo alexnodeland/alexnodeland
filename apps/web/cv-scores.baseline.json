@@ -3,16 +3,16 @@
     "parseability": 1,
     "families": {
       "ai-engineer": {
-        "keywords": 0.726,
-        "semantic": 0.725
+        "keywords": 0.722,
+        "semantic": 0.724
       },
       "fde": {
-        "keywords": 0.749,
-        "semantic": 0.684
+        "keywords": 0.746,
+        "semantic": 0.682
       },
       "music-tech": {
-        "keywords": 0.719,
-        "semantic": 0.696
+        "keywords": 0.714,
+        "semantic": 0.695
       }
     }
   },
@@ -20,7 +20,7 @@
     "parseability": 1,
     "families": {
       "fde": {
-        "keywords": 0.763,
+        "keywords": 0.76,
         "semantic": 0.69
       }
     }
@@ -47,15 +47,15 @@
     "parseability": 1,
     "families": {
       "ai-engineer": {
-        "keywords": 0.799,
+        "keywords": 0.802,
         "semantic": 0.752
       },
       "fde": {
-        "keywords": 0.805,
-        "semantic": 0.703
+        "keywords": 0.819,
+        "semantic": 0.704
       },
       "music-tech": {
-        "keywords": 0.829,
+        "keywords": 0.824,
         "semantic": 0.736
       }
     }
