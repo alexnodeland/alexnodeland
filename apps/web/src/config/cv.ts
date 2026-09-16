@@ -423,11 +423,23 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 2 },
-        'music-tech': { maxBullets: 2 },
+        'music-tech': { maxBullets: 3 },
       },
       location: 'Singapore',
       duration: '2021 - 2022',
       achievements: [
+        // The music-ML company. The two bullets below are the music work,
+        // and are shown to that audience only.
+        {
+          text: 'Built the audio ingestion pipelines',
+          tags: ['music'],
+          audienceOnly: true,
+        },
+        {
+          text: 'Worked with the music research team on data labeling with in-house music experts, keeping the labels unbiased and high-signal',
+          tags: ['music'],
+          audienceOnly: true,
+        },
         {
           text: 'Set technical direction against customer and partner requirements, planning releases with the founders',
           tags: ['fde'],
@@ -468,7 +480,6 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 3 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 2 },
-        'music-tech': { maxBullets: 1, collapse: true },
       },
       location: 'Singapore, SG',
       duration: '2018 - 2022',
@@ -640,7 +651,7 @@ export const cvSource: CVSource = {
       company: 'Absara Audio',
       engagement: 'full-time',
       variants: {
-        'music-tech': { maxBullets: 1 },
+        'music-tech': { maxBullets: 3 },
       },
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
@@ -649,6 +660,21 @@ export const cvSource: CVSource = {
         {
           text: 'Wrote production firmware for digital guitar pedals',
           tags: ['music'],
+        },
+        {
+          text: 'Worked on a digital tape loop emulator in Objective-C',
+          tags: ['music'],
+          audienceOnly: true,
+        },
+        {
+          text: 'Built test fixtures and ran QA',
+          tags: ['music'],
+          audienceOnly: true,
+        },
+        {
+          text: 'Translated customer service reports into technical reports, and worked with the engineering team to diagnose and triage them',
+          tags: ['music'],
+          audienceOnly: true,
         },
         "Shipped feature releases through the team's continuous integration process",
         "Followed the team's test practice to catch firmware defects before release",
@@ -749,9 +775,12 @@ export const cvSource: CVSource = {
   skills: {
     technical: [
       'Python',
-      'JavaScript',
-      'React',
-      'Node.js',
+      // The web and AI-specific terms are tagged for the engineering
+      // audiences: the general documents still carry them, and a page for
+      // another audience does not spend its line on them.
+      { name: 'JavaScript', tags: ['fde', 'ai-eng'] },
+      { name: 'React', tags: ['fde', 'ai-eng'] },
+      { name: 'Node.js', tags: ['fde', 'ai-eng'] },
       'AWS',
       'GCP',
       'Docker',
@@ -759,16 +788,20 @@ export const cvSource: CVSource = {
       'PostgreSQL',
       'Machine Learning',
       'LLMs',
-      'RAG Systems',
+      { name: 'RAG Systems', tags: ['fde', 'ai-eng'] },
       'Data Engineering',
-      'API Development',
-      'Infrastructure as Code',
+      { name: 'API Development', tags: ['fde', 'ai-eng'] },
+      { name: 'Infrastructure as Code', tags: ['fde', 'ai-eng'] },
       'CI/CD',
-      'Agile/Scrum',
-      'Git',
+      { name: 'Agile/Scrum', tags: ['fde', 'ai-eng'] },
+      { name: 'Git', tags: ['fde', 'ai-eng'] },
       'Linux',
       'Mathematics',
       'Signal Processing',
+      // Shown to the music-tech page only.
+      { name: 'Audio Synthesis', tags: ['music'], audienceOnly: true },
+      { name: 'Audio Compression', tags: ['music'], audienceOnly: true },
+      { name: 'Real-time Audio', tags: ['music'], audienceOnly: true },
     ],
     // One list per document, ordered so the terms a reader is scanning for sit
     // at the front. Every entry has to be true of work described somewhere
@@ -814,27 +847,6 @@ export const cvSource: CVSource = {
         'Distributed Systems',
         'CI/CD',
         'Mathematics',
-      ],
-      // Every term here is one a role or project above already carries; Rust
-      // is the language of quiver and auracle.
-      'music-tech': [
-        'Python',
-        'Rust',
-        'Signal Processing',
-        'Audio Engineering',
-        'Music Technology',
-        'Firmware Development',
-        'Embedded Systems',
-        'Circuit Design',
-        'Machine Learning',
-        'LLMs',
-        'Mathematics',
-        'Supercomputing',
-        'AWS',
-        'GCP',
-        'Docker',
-        'Container Orchestration',
-        'PostgreSQL',
       ],
     },
   },
