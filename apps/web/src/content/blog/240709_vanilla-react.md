@@ -5,7 +5,7 @@ description: 'A ReAct agent in Python with no framework underneath it: the loop,
 category: 'Projects'
 ---
 
-a react agent in python with no framework underneath it, written when every agent library was adding abstraction faster than i could read it.
+written when every agent library was adding abstraction faster than i could read it. i wanted the thing underneath, on one page, before deciding which of them to trust.
 
 react is a small idea. the model reasons about what to do, takes an action, observes the result, and repeats until it decides it is finished. that is a loop, a prompt template, and a way to dispatch tool calls, and it fits on a page against the openai api.
 

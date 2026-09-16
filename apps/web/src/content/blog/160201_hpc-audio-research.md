@@ -5,7 +5,7 @@ description: "CEWIT's newsletter on my use of Stony Brook's supercomputing time 
 category: 'Press'
 ---
 
-cewit's newsletter ran a short piece on what i was doing with the university's supercomputing allocation: audio synthesis and modeling at a scale that does not fit on a desktop.
+the short version, for the newsletter: audio synthesis and modeling at a scale that does not fit on a desktop. the longer version is about what the scale is for.
 
 having that much compute changes which questions you can ask. a lot of audio engineering is choosing a filter design or a basis function on the strength of experience and then tuning it until it sounds right. with a cluster you can search the space instead, evaluating thousands of candidates against a real corpus to find out whether the conventional choice was ever the best one.
 

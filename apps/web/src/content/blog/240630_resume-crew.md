@@ -5,7 +5,7 @@ description: 'A CrewAI system that tailors a resume to a specific posting and pr
 category: 'Projects'
 ---
 
-a crewai system that tailors a resume to a specific job posting, then prepares you for the interview that follows.
+three agents and one posting. what matters is where the lines between them fall.
 
 the agents split the work rather than sharing it. one reads the posting and separates the real requirements from the boilerplate. one rewrites the resume against that reading. one generates the questions you should expect given the gap between the two.
 

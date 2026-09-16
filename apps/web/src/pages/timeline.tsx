@@ -380,12 +380,14 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
                         <ArrowOutIcon />
                       </Link>
                     </div>
+                    {/* The description alone says what the post is. The
+                      excerpt used to follow it, and since every post opens
+                      by saying what it is, the card said it twice. */}
                     {post.frontmatter.description && (
                       <p className="post-description">
                         {post.frontmatter.description}
                       </p>
                     )}
-                    <p className="post-excerpt">{post.excerpt}</p>
                     {/* The date, and only the date. Its year is the break
                       above it — carrying it here as well would print the same
                       four digits twice inside one screenful. */}
