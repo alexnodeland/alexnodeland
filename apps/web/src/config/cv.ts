@@ -436,7 +436,7 @@ export const cvSource: CVSource = {
           audienceOnly: true,
         },
         {
-          text: 'Worked with the music research team on data labeling with in-house music experts, keeping the labels unbiased and high-signal',
+          text: 'Partnered with the music research team and in-house music experts to design labeling processes that produced unbiased, high-signal data',
           tags: ['music'],
           audienceOnly: true,
         },
@@ -662,17 +662,17 @@ export const cvSource: CVSource = {
           tags: ['music'],
         },
         {
-          text: 'Worked on a digital tape loop emulator in Objective-C',
+          text: 'Developed a digital tape loop emulator in Objective-C',
           tags: ['music'],
           audienceOnly: true,
         },
         {
-          text: 'Built test fixtures and ran QA',
+          text: 'Built test fixtures and ran quality assurance',
           tags: ['music'],
           audienceOnly: true,
         },
         {
-          text: 'Translated customer service reports into technical reports, and worked with the engineering team to diagnose and triage them',
+          text: 'Turned customer service reports into technical reports, and worked with the engineering team to diagnose and triage the underlying issues',
           tags: ['music'],
           audienceOnly: true,
         },
