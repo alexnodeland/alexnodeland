@@ -192,15 +192,15 @@
 // without the main thread: transform, opacity, clip-path.
 
 // A hero line travelling to its folded place. The destination is the
-// element's own `--fold-transform`, so one keyframe serves the title on a
-// desktop, the title on a phone and the tagline beside it.
+// element's own `--fold-transform`, so one keyframe serves the title and the
+// tagline.
 @keyframes hero-fold-transform {
   to {
     transform: var(--fold-transform, none);
   }
 }
 
-// A hero line that fades as the hero folds — the crumb's tail on a phone.
+// A hero line that fades as the hero folds — the crumb's tail.
 // Hidden at the very end, so a faded-out line stops taking the taps meant for
 // whatever has scrolled up under it.
 @keyframes hero-fold-fade {
@@ -210,7 +210,7 @@
   }
 }
 
-// The phone's tagline, which goes early. The content rises through the band
+// The tagline, which goes early. The content rises through the band
 // as the hero folds, and the tagline sits in that band — the content reaches
 // its line about a tenth of the way in. Faded over the whole scroll it was
 // still half there, over the chips, and still taking taps meant for them.

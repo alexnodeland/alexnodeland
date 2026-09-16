@@ -47,7 +47,7 @@ const readBand = (region: HTMLElement, panel: HTMLElement): number =>
 const readProgress = (panel: HTMLElement, band: number): number =>
   band > 0 ? Math.min(Math.max(panel.scrollTop / band, 0), 1) : 0;
 
-// How far into the fold the phone's tagline is gone (the stylesheet's
+// How far into the fold the tagline is gone (the stylesheet's
 // hero-tagline-fade keyframe and its published-path expression carry the
 // same fraction): past this the published path takes it out of hit-testing.
 const TAGLINE_FADE = 0.2;
@@ -96,12 +96,7 @@ const canAnimate = (el: Element | null | undefined): el is HTMLElement =>
 // line box sits — so Layout writes them on the hero region itself rather than
 // anywhere they would inherit from. The ghost is the region's sibling, not its
 // child, so it has to be handed a copy (see the navigation's first half).
-const FOLD_MEASURES = [
-  '--title-shift',
-  '--sub-shift',
-  '--sub-scale',
-  '--title-centre',
-] as const;
+const FOLD_MEASURES = ['--title-shift', '--title-centre'] as const;
 
 // The footer marks, drawn as one monoline set rather than collected: the
 // vendor logos were a mix of outline and solid and read as five unrelated
