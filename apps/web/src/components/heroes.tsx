@@ -104,6 +104,21 @@ const HEROES: Record<string, () => React.ReactNode> = {
       <p>roles, research, and skills.</p>
     </header>
   ),
+  // The unlisted role resumes wear the CV's hero, class and all, so the
+  // collapse choreography and the styles key off them exactly as on /cv/. The
+  // tagline says which resume this is.
+  '/cv/fde': () => (
+    <header className="cv-page-header">
+      {crumbTitle('cv')}
+      <p>for forward deployed engineer roles.</p>
+    </header>
+  ),
+  '/cv/ai-engineer': () => (
+    <header className="cv-page-header">
+      {crumbTitle('cv')}
+      <p>for ai engineer roles.</p>
+    </header>
+  ),
   '/consulting': () => (
     <header className="consulting-page-header">
       {crumbTitle('consulting')}

@@ -15,6 +15,7 @@ import { saveAs } from 'file-saver';
 import {
   CertificationItem,
   CVData,
+  CVVariant,
   EducationItem,
   ExperienceItem,
 } from '../../../config/cv';
@@ -33,7 +34,9 @@ import {
  * half-points, everything else in twips (1 inch = 1440).
  */
 
-export type CVVariant = 'resume' | 'full';
+// One variant type for the whole site, defined beside the data it selects.
+// Every variant but the full CV is a one-pager and shares its tighter layout.
+export type { CVVariant };
 
 const LETTER = { width: 12240, height: 15840 };
 
@@ -43,7 +46,7 @@ const RULE = 'B8B8B8';
 
 /**
  * Width reserved for the place-and-dates rail, sized for the longest string
- * either variant produces — "Stony Brook University · 2016 - (Incomplete)".
+ * any variant produces — "Remote, NY · freelance · 2022 - Present".
  */
 const RIGHT_RAIL = 3700;
 
@@ -60,17 +63,17 @@ interface Metrics {
 }
 
 const metricsFor = (variant: CVVariant): Metrics => {
-  const margin = variant === 'resume' ? 792 : 1296; // 0.55in / 0.9in
+  const margin = variant !== 'full' ? 792 : 1296; // 0.55in / 0.9in
   const textWidth = LETTER.width - margin * 2;
   return {
     margin,
     textWidth,
     entryLeft: textWidth - RIGHT_RAIL,
-    body: variant === 'resume' ? 20 : 22,
-    entry: variant === 'resume' ? 21 : 23,
+    body: variant !== 'full' ? 20 : 22,
+    entry: variant !== 'full' ? 21 : 23,
     meta: 18,
-    entrySpacing: variant === 'resume' ? 120 : 220,
-    bulletSpacing: variant === 'resume' ? 20 : 60,
+    entrySpacing: variant !== 'full' ? 120 : 220,
+    bulletSpacing: variant !== 'full' ? 20 : 60,
   };
 };
 

@@ -73,6 +73,15 @@ whichever is on screen. The two role-specific resumes are separate documents at
 `/cv/fde/` and `/cv/ai-engineer/`, unlinked from the nav. See [Export Options](#-export-options) for how the
 one-pager is derived and where its layout lives.
 
+All three pages render one component, `src/components/cv/CVPageBody.tsx` — the
+control row, the search, the overview and contact card, and the experience,
+projects, education, skills and certifications sections — and differ only in
+the data they hand it. `/cv/` also passes the full/one-page switch; the role
+pages pass nothing, so their control row carries only the download menu and
+the search. Their heroes are in `src/components/heroes.tsx`, in the CV's own
+`cv-page-header` style with the role as the tagline. Change how the CV is
+presented in the body and all three change together.
+
 ## 📊 Data Structure
 
 ### Personal Information
@@ -279,7 +288,8 @@ The PDFs are **not** generated in the browser. `scripts/build-cv.js` renders
 when Gatsby copies it into the bundle. The CV page's PDF button is a plain
 download link at whichever artifact matches the current view; the role-specific
 variants are served at `/cv/fde/` and `/cv/ai-engineer/`, which are `noindex`
-and absent from the nav and the sitemap.
+and absent from the nav and the sitemap. Each page's download menu fetches its
+own variant's PDF, and builds its DOCX and Markdown from that variant's data.
 
 ```bash
 just cv          # build every PDF

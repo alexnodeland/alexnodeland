@@ -114,6 +114,7 @@
 #cv-experience,
 #cv-education,
 #cv-skills,
+#cv-projects,
 #cv-certifications {
   scroll-margin-top: var(--sticky-row-clearance);
 }
@@ -132,7 +133,7 @@
   position: relative;
 }
 
-// Shared card style for experience, education, and certifications — the blog
+// Shared card style for experience, education, projects and certifications — the blog
 // preview's grammar applied to a cv entry: an outline, the same padding, a
 // title row, and one meta band. Nothing lifts and nothing scales; the
 // hairline eases brighter under the pointer and eases back when it leaves
@@ -152,6 +153,7 @@
 // between them — the same air the blog's list and the projects grid keep.
 .experience-section,
 .education-section,
+.cv-projects-section,
 .certifications-section {
   display: flex;
   flex-direction: column;
@@ -357,25 +359,31 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
 // Certifications as small cards, in the same grammar as every other entry on
 // the site: the name, and one meta band at the foot with the issuer at one
-// end and the date at the other.
-.certifications-grid {
+// end and the date at the other. Projects carry about as much and take the
+// same card, with a line of description above the band and the language and
+// links in it.
+.certifications-grid,
+.cv-projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--stack-gap);
 }
 
-.certification-card {
+.certification-card,
+.cv-project-card {
   // A column, so every card's meta band lands on the same line however many
   // lines its name takes — the grid stretches them all to the tallest.
   display: flex;
   flex-direction: column;
 
   // The title row: the name alone.
-  .cert-header {
+  .cert-header,
+  .cv-project-header {
     margin-bottom: var(--space-4);
   }
 
-  .cert-name {
+  .cert-name,
+  .cv-project-name {
     margin: 0;
     min-width: 0;
     color: var(--text-primary);
@@ -386,7 +394,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 
   // The meta band every other card carries, at the same distance above its
   // hairline.
-  .cert-meta {
+  .cert-meta,
+  .cv-project-meta {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -399,13 +408,39 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     color: var(--text-secondary);
   }
 
-  .cert-issuer {
+  .cert-issuer,
+  .cv-project-stack {
     min-width: 0;
   }
 
-  .cert-date {
+  .cert-date,
+  .cv-project-links {
     flex-shrink: 0;
     white-space: nowrap;
+  }
+
+  // A project's one line of description, between the name and the band.
+  .cv-project-description {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: var(--leading-prose);
+  }
+
+  // The links at the band's far end: words, a step apart, and marked as links
+  // under the pointer the way the contact card's are.
+  .cv-project-links {
+    display: flex;
+    gap: var(--space-4);
+
+    a {
+      color: var(--text-primary);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+
+      &:hover {
+        color: var(--ink-primary);
+      }
+    }
   }
 
   // A credential id, where there is one, under the band in the value face.
@@ -541,53 +576,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 
   // One column of certification cards on a phone, like every other list here.
-  .certifications-grid {
+  .certifications-grid,
+  .cv-projects-grid {
     grid-template-columns: 1fr;
-  }
-}
-
-// The unlisted role-specific resumes at /cv/fde/ and /cv/ai-engineer/. They
-// reuse the experience, education and skills sections wholesale and only need
-// a header of their own — the shell's hero is the brand alone on these paths.
-.cv-variant {
-  .cv-variant-header {
-    @include outline-block;
-    padding: var(--card-pad);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--stack-gap);
-  }
-
-  .cv-variant-label {
-    color: var(--text-secondary);
-    font-style: italic;
-  }
-
-  .cv-variant-contact {
-    color: var(--text-secondary);
-    font-size: var(--text-sm);
-    margin-top: var(--space-3);
-  }
-
-  .cv-variant-download {
-    display: inline-block;
-    margin-top: var(--space-4);
-  }
-
-  .cv-variant-projects {
-    list-style: none;
-    padding: 0;
-
-    li {
-      margin-bottom: var(--space-3);
-    }
-
-    // A repo URL is one unbroken word, and at 320px
-    // "github.com/alexnodeland/principled" is wider than the column, so it ran
-    // past the card and was clipped by the layout. Here it may break anywhere.
-    // The PDFs deliberately do the opposite (see resume.tex.js): that break
-    // costs a hyphen in extracted text, which a rendered page does not have.
-    a {
-      overflow-wrap: anywhere;
-    }
   }
 }

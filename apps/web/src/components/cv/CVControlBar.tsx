@@ -1,6 +1,5 @@
 import React from 'react';
-import { CVData } from '../../config/cv';
-import type { CVVariant } from '../../lib/utils/export/docx';
+import { CVData, CVVariant } from '../../config/cv';
 import ControlRow from '../ui/ControlRow';
 import Dropdown, { DropdownOption } from '../ui/Dropdown';
 import { DownloadIcon } from '../ui/EntryIcons';
@@ -21,9 +20,14 @@ const DOWNLOAD_OPTIONS: DropdownOption[] = [
 
 interface CVControlBarProps {
   resumeData: CVData;
-  /** Which length is on screen; picks the PDF artifact and the DOCX layout. */
+  /** Which variant is on screen; picks the PDF artifact and the DOCX layout. */
   view: CVVariant;
-  onViewChange: (view: CVVariant) => void;
+  /**
+   * Switches between the full CV and the one-pager. The role-specific pages
+   * pass nothing — they are one document each — and the row draws only the
+   * download menu and the search chip.
+   */
+  onViewChange?: (view: CVVariant) => void;
   /** Phone only: the search panel below is folded away behind a chip here. */
   searchOpen?: boolean;
   onToggleSearch?: () => void;
@@ -56,14 +60,16 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
 
   return (
     <ControlRow className={`cv-control-bar ${className}`.trim()}>
-      <Dropdown
-        ariaLabel="Choose CV length"
-        triggerLabel={viewLabel}
-        options={VIEW_OPTIONS}
-        value={view}
-        onSelect={value => onViewChange(value as CVVariant)}
-        className="cv-view-dropdown"
-      />
+      {onViewChange && (
+        <Dropdown
+          ariaLabel="Choose CV length"
+          triggerLabel={viewLabel}
+          options={VIEW_OPTIONS}
+          value={view}
+          onSelect={value => onViewChange(value as CVVariant)}
+          className="cv-view-dropdown"
+        />
+      )}
 
       {/* The verb is the mark: one tray-and-arrow, the same one a post wears
           over its typeset copy. The menu underneath still names the three
