@@ -1,4 +1,5 @@
 import React from 'react';
+import { consultingStepIcons } from '../components/consulting-icons';
 import SEO from '../components/seo';
 import { getCTAButtonURL, homepageConfig } from '../config';
 import '../styles/index.scss';
@@ -46,12 +47,22 @@ const ConsultingPage: React.FC<{ location?: { pathname?: string } }> = ({
         >
           <h2 id="consulting-steps">how an engagement runs</h2>
           <ol className="consulting-steps">
-            {consulting.steps.map(step => (
-              <li key={step.title} className="consulting-step">
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </li>
-            ))}
+            {consulting.steps.map((step, index) => {
+              // Paired by position with the steps (see consulting-icons). The
+              // drawing is decorative: the title under it does the naming.
+              const Icon = consultingStepIcons[index];
+              return (
+                <li key={step.title} className="consulting-step">
+                  <div className="consulting-step-head">
+                    <span className="consulting-step-icon">
+                      {Icon && <Icon />}
+                    </span>
+                  </div>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </li>
+              );
+            })}
           </ol>
         </section>
 

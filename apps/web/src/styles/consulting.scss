@@ -37,16 +37,36 @@
   border-radius: var(--radius-lg);
   counter-increment: consulting-step;
 
-  // The step's number, small and quiet above its title — a position in a
-  // sequence, not a heading of its own.
-  &::before {
-    content: counter(consulting-step, decimal-leading-zero);
+  // The card's top row: the step's drawing at one end and its number at the
+  // other — a position in a sequence, not a heading of its own.
+  .consulting-step-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+
+    &::after {
+      content: counter(consulting-step, decimal-leading-zero);
+      font-size: var(--text-small);
+      // Secondary, not muted: the simulation runs behind the cards, and at the
+      // muted ink a small number disappeared into the brighter frames.
+      color: var(--text-secondary);
+    }
+  }
+
+  // The drawings are the homepage expertise icons' set (see
+  // components/consulting-icons): the same ink, a step smaller than the
+  // homepage's 64px, since these cards are narrower and lead with their words.
+  // 48px read as a stray glyph beside the titles.
+  .consulting-step-icon {
     display: block;
-    margin-bottom: var(--space-3);
-    font-size: var(--text-small);
-    // Secondary, not muted: the simulation runs behind the cards, and at the
-    // muted ink a small number disappeared into the brighter frames.
-    color: var(--text-secondary);
+    color: var(--text-primary);
+
+    svg {
+      display: block;
+      width: 56px;
+      height: 56px;
+    }
   }
 
   h3 {
