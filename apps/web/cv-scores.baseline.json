@@ -1,0 +1,46 @@
+{
+  "resume": {
+    "parseability": 1,
+    "families": {
+      "ai-engineer": {
+        "keywords": 0.599,
+        "semantic": 0.724
+      },
+      "fde": {
+        "keywords": 0.651,
+        "semantic": 0.683
+      }
+    }
+  },
+  "fde": {
+    "parseability": 1,
+    "families": {
+      "fde": {
+        "keywords": 0.685,
+        "semantic": 0.69
+      }
+    }
+  },
+  "ai-engineer": {
+    "parseability": 1,
+    "families": {
+      "ai-engineer": {
+        "keywords": 0.626,
+        "semantic": 0.738
+      }
+    }
+  },
+  "full": {
+    "parseability": 0.75,
+    "families": {
+      "ai-engineer": {
+        "keywords": 0.709,
+        "semantic": 0.751
+      },
+      "fde": {
+        "keywords": 0.755,
+        "semantic": 0.704
+      }
+    }
+  }
+}
