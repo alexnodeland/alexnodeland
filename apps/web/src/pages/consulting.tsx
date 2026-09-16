@@ -2,15 +2,19 @@ import React from 'react';
 import SEO from '../components/seo';
 import { getCTAButtonURL, homepageConfig } from '../config';
 import '../styles/index.scss';
+import '../styles/consulting.scss';
 
 /**
  * Consulting, on a page of its own.
  *
- * It used to be a section on the homepage, under the expertise grid and above
- * nothing. That put a "book a call" button in front of every hiring manager
- * who opened the site, which reads as someone whose attention is already
- * spoken for. Here the same copy is one link away for anyone who came looking
- * for it, and invisible to anyone who did not — the page is not in the nav.
+ * It used to be a section on the homepage: one paragraph and a "book a call"
+ * button in front of every hiring manager who opened the site. The homepage
+ * now spends one sentence on it, and this page — not in the nav — carries the
+ * rest as a track record: what the engagements were and how one runs, with
+ * only the last line and the buttons saying new ones are still possible.
+ *
+ * No client is named anywhere on it. The case studies describe who the work
+ * was for, and that is deliberate, not a placeholder.
  */
 const ConsultingPage: React.FC<{ location?: { pathname?: string } }> = ({
   location,
@@ -28,12 +32,47 @@ const ConsultingPage: React.FC<{ location?: { pathname?: string } }> = ({
     <>
       <SEO
         title="consulting"
-        description="Consulting engagements — LLM systems that need to survive production, and second opinions before a team commits to building one."
+        description="Past consulting work: LLM systems built to survive production, evaluations of whether and how to use LLMs, and engineering process."
         pathname={location?.pathname}
       />
       <div className="home">
         <section className="consulting">
           <p>{consulting.description}</p>
+        </section>
+
+        <section
+          className="consulting-section"
+          aria-labelledby="consulting-steps"
+        >
+          <h2 id="consulting-steps">how an engagement runs</h2>
+          <ol className="consulting-steps">
+            {consulting.steps.map(step => (
+              <li key={step.title} className="consulting-step">
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section
+          className="consulting-section"
+          aria-labelledby="consulting-work"
+        >
+          <h2 id="consulting-work">past work</h2>
+          <div className="consulting-work">
+            {consulting.caseStudies.map(study => (
+              <article key={study.title} className="consulting-case">
+                <h3>{study.title}</h3>
+                <p>{study.body}</p>
+                <div className="consulting-case-client">{study.client}</div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="consulting">
+          <p>{consulting.closing}</p>
           <div className="cta-buttons">
             <a
               href={getCTAButtonURL(primary.action, primary.url)}

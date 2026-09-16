@@ -19,7 +19,11 @@ import { createRequire } from 'module';
 import matter from 'gray-matter';
 
 const require = createRequire(import.meta.url);
-const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const ROOT = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..'
+);
 
 require('@babel/register')({
   extensions: ['.js', '.jsx', '.ts', '.tsx'],
@@ -261,15 +265,27 @@ function homeChunks(homepageConfig) {
   // "can I hire him", "is he available", "what does he charge" are all the
   // same question and none of them share a word with the consulting copy,
   // which talks about engagements and problems. The lead sentence supplies
-  // the vocabulary visitors actually use.
+  // the vocabulary visitors actually use — and says what the page says: a
+  // track record, with a few engagements a year still taken on, not an open
+  // freelance practice. The id stays `home:consulting` so the retrieval evals
+  // keep their target; the page itself moved to /consulting/.
+  //
+  // The page's "how an engagement runs" steps are left out on purpose. Their
+  // how-to phrasing ("how to do it", "it starts with…") lifted this chunk
+  // over the off-topic gate: with them in, "give me a recipe for banana
+  // bread" matched at 0.60 and was answered instead of refused. The intro and
+  // the case studies carry everything a visitor asks about consulting.
   out.push({
     id: 'home:consulting',
     kind: 'home',
     title: "Alex's consulting work",
-    url,
+    url: '/consulting/',
     text:
-      `Hiring Alex: he is available for consulting engagements and freelance work, and can be contacted to discuss one. ` +
-      `Alex's consulting practice — ${consulting.title}:\n${consulting.description}`,
+      `Hiring Alex for consulting: he has done consulting work for a range of teams and still takes on a few engagements a year, and can be contacted to discuss one. ` +
+      `Alex's consulting — ${consulting.title}:\n${consulting.description}\n` +
+      `Past consulting work (clients are not named):\n${consulting.caseStudies
+        .map(study => `- ${study.title}, for ${study.client}: ${study.body}`)
+        .join('\n')}`,
   });
 
   out.push({

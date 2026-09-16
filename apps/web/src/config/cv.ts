@@ -330,9 +330,9 @@ export const cvSource: CVSource = {
           text: 'Advise startups and established companies on where AI fits in their stack',
           tags: ['fde'],
         },
-        'Delivered a keynote on ChatGPT to a room of CIOs and founders',
+        'Delivered a virtual keynote to about 30 CIOs and founders, hosted by an Australian VC, on LLM architectures, guardrails for workflows, and feedback loops that let an organization build on automation',
         {
-          text: 'Advised a blockchain unicorn on engineering process and operational flow',
+          text: 'Codified organizational process for a blockchain unicorn: RACI matrices, documented processes, and access controls aligned across the org and built into internal tooling',
           tags: ['fde'],
         },
         {
@@ -340,7 +340,12 @@ export const cvSource: CVSource = {
           tags: ['fde'],
         },
         'Led migrations onto AI-integrated systems that reduced cost and manual work',
-        'Consulted on personal knowledge management systems built around LLMs',
+        // Tagged for the AI Engineer page, where the Freelance entry collapses
+        // to one line: of everything here, this is the AI system actually built.
+        {
+          text: 'Built an ontology-powered knowledge platform and AI copilot for a management consulting firm, mapping client organizations, surfacing conflicts and gaps across documentation, and synthesizing reports',
+          tags: ['ai-eng'],
+        },
         'Help early-stage startups choose a technology stack that will last',
       ],
       skills: [
