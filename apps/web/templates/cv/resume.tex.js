@@ -127,6 +127,17 @@ const preamble = variant => {
 \\newcolumntype{L}{>{\\raggedright\\arraybackslash}X}
 \\renewcommand{\\arraystretch}{1}
 
+% Ends the current paragraph with #1 flush right: on the same line when it
+% fits, and otherwise on a line of its own, still flush right. The TeXbook's
+% construction — the \\penalty50 between two \\hfil is where the line may break,
+% \\mbox keeps #1 whole, and \\parfillskip=0pt stops the last line being set
+% ragged. Used for the dates beside a one-pager's job titles and for the link at
+% the end of every project.
+\\newcommand{\\trailright}[1]{%
+  \\unskip\\nobreak\\hfil\\penalty50\\hskip1em\\hbox{}\\nobreak\\hfil
+  \\mbox{#1}{\\parfillskip=0pt\\par}%
+}
+
 % The print equivalent of break-inside: avoid. Reserve the title line, the
 % place-and-date line, and the first two bullets, so a role either starts a
 % page with its own body under it or is carried over whole. Without this a
@@ -149,14 +160,11 @@ ${
 % if a date ever crosses into the next entry. Setting the meta inline after the
 % title removes the gap altogether, if that trade is ever wanted instead.
 %
-% The glue is the TeXbook's flush-right-or-next-line construction: the meta
-% sits at the right margin on the title's line when both fit, and otherwise
-% breaks onto a line of its own, still flush right. \\mbox keeps the meta whole,
-% and \\parfillskip=0pt stops the paragraph's last line from being set ragged.
+% The meta sits at the right margin on the title's line when both fit, and
+% otherwise breaks onto a line of its own, still flush right (\\trailright).
 \\newcommand{\\entry}[2]{%
   \\needspace{4\\baselineskip}%
-  \\noindent\\textbf{#1}\\unskip\\nobreak\\hfil\\penalty50\\hskip1em\\hbox{}\\nobreak\\hfil
-  \\mbox{\\small\\color{mutedink}#2}{\\parfillskip=0pt\\par}%
+  \\noindent\\textbf{#1}\\trailright{\\small\\color{mutedink}#2}%
 }`
     : `\\newcommand{\\entry}[2]{%
   \\needspace{4\\baselineskip}%
@@ -247,37 +255,40 @@ const projects = (data, variant) =>
     .map(project => {
       const link = project.github || project.url;
 
-      // \mbox, so the URL never breaks across lines. A repo named
-      // `claude-telegram` otherwise wraps at its own hyphen, and every
-      // extractor treats a hyphen at a line break as hyphenation and deletes
-      // it — the PDF reads correctly and the extracted link is
-      // `alexnodeland/claudetelegram`, which 404s. The surrounding paragraph is
-      // \raggedright, so an unbreakable URL moves to the next line whole rather
-      // than running into the margin.
+      // On the one-pagers, set flush right at the end of the project's line, by
+      // \trailright, which also keeps it whole. It must never break across
+      // lines: a repo named `claude-telegram` otherwise wraps at its own
+      // hyphen, and every extractor treats a hyphen at a line break as
+      // hyphenation and deletes it — the PDF reads correctly and the extracted
+      // link is `alexnodeland/claudetelegram`, which 404s. When the line has no
+      // room for it, the whole URL moves to the next line, still flush right.
       const href = link
-        ? `\\mbox{\\href{${link}}{${tex(link.replace(/^https?:\/\//, ''))}}}`
+        ? `\\href{${link}}{${tex(link.replace(/^https?:\/\//, ''))}}`
         : '';
-      const stack =
-        project.technologies && project.technologies.length > 0
-          ? tex(project.technologies.join(', '))
-          : '';
+      const endWithLink = href
+        ? `\\trailright{\\small\\color{mutedink}${href}}`
+        : '\\par';
 
       // Three lines a project is most of a section on a page that has one. The
       // one-pagers take a single line each — name, what it is, where it lives —
       // which still starts with the project name, so a parser reading line by
       // line gets the same fields out of it.
       if (!isFull(variant)) {
-        return `\\needspace{2\\baselineskip}{\\raggedright\\textbf{${tex(project.name)}} --- ${tex(
+        // Not \raggedright: LaTeX sets it as infinite stretch at the right edge,
+        // which shares the line's slack with \trailright's glue and leaves the
+        // link short of the margin, at a different place on every line.
+        return `\\needspace{2\\baselineskip}{\\noindent\\textbf{${tex(project.name)}} --- ${tex(
           project.description
-        )}${href ? `${SEPARATOR}{\\small\\color{mutedink}${href}}` : ''}\\par}
+        )}${endWithLink}}
 \\vspace{0.25em}
 `;
       }
 
-      return `\\entry{${tex(project.name)}}{${stack}}
-${tex(project.description)}${
-        href ? `\\par\n{\\small\\color{mutedink}${href}}` : ''
-      }\\par
+      // The full CV sets the link where a role's dates go: in the entry's right
+      // column, beside the name. That column never wraps, so the link stays
+      // whole there too; the language it replaced said less than the link does.
+      return `\\entry{${tex(project.name)}}{${href}}
+${tex(project.description)}\\par
 \\vspace{\\rolesep}
 `;
     })

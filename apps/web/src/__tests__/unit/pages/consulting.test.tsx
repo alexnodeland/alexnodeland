@@ -54,9 +54,14 @@ describe('Consulting page', () => {
     }
   });
 
-  it('ends on the closing line and both ways to get in touch', () => {
-    render(<ConsultingPage />);
-    expect(screen.getByText(consulting.closing)).toBeInTheDocument();
+  it('ends on both ways to get in touch, with nothing between them and the past work', () => {
+    const { container } = render(<ConsultingPage />);
+    const last = Array.from(
+      container.querySelectorAll('.home > section')
+    ).pop();
+    // The last section is the buttons alone: no sentence above them.
+    expect(last?.querySelector('p')).toBeNull();
+    expect(last?.querySelector('.cta-buttons')).not.toBeNull();
     expect(
       screen.getByRole('link', { name: consulting.ctaButtons.primary.text })
     ).toHaveAttribute('href', expect.stringMatching(/^mailto:/));

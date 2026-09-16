@@ -82,8 +82,7 @@ const ConsultingPage: React.FC<{ location?: { pathname?: string } }> = ({
           </div>
         </section>
 
-        <section className="consulting">
-          <p>{consulting.closing}</p>
+        <section className="consulting consulting-cta">
           <div className="cta-buttons">
             <a
               href={getCTAButtonURL(primary.action, primary.url)}

@@ -32,8 +32,6 @@ export interface HomepageConfig {
     steps: Array<{ title: string; body: string }>;
     /** Past engagements. No client is named: `client` describes, never names. */
     caseStudies: Array<{ title: string; client: string; body: string }>;
-    /** The line just above the buttons. */
-    closing: string;
     ctaButtons: {
       primary: {
         text: string;
@@ -141,7 +139,6 @@ export const homepageConfig: HomepageConfig = {
         body: 'a virtual keynote for about 30 cios and founders: an introduction to llm architectures and what they can do, how to protect workflows with guardrails, and how to build virtuous loops in an organization that make the most of automation and feedback.',
       },
     ],
-    closing: 'if something here sounds like where your team is, get in touch.',
     ctaButtons: {
       primary: {
         text: 'send me an email',

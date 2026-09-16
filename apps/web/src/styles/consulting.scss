@@ -128,6 +128,13 @@
   }
 }
 
+// The buttons end the page. With no sentence above them they sat one grid gap
+// under the last row of cards and read as another row of it; a section's worth
+// of air above sets them apart as where the page goes next.
+.consulting-cta {
+  padding-top: var(--space-5);
+}
+
 @media (max-width: 768px) {
   .consulting-section {
     margin-bottom: var(--space-7);
