@@ -137,16 +137,26 @@ const preamble = variant => {
 % gaps at the foot of the full CV's pages.
 ${
   onePage
-    ? `% The one-pagers set the meta inline instead, on the same text run as the
-% title. These are the copies that go into application forms, and the two-column
-% entry above is only safe under \\texttt{pdftotext -layout}: in the default
-% reflow mode, the wide gap between the columns lets the right cell drift past
-% the bullets, so a date range is read as belonging to the job below it. Inline
-% there is no second column to reorder, and every extractor returns the same
-% string. The cost is a left-aligned date, which is the cheaper of the two.
+    ? `% The one-pagers set the meta flush right within the title's own paragraph,
+% not in a table cell, so title and meta share one paragraph and one baseline.
+%
+% What right alignment cannot avoid is the wide gap before the meta. In
+% pdftotext's default reflow mode that gap splits the meta into a block of its
+% own, and for some entries the block is read after the bullets: title,
+% bullets, date. The date still lands inside its own entry, before the next
+% title, so a parser reading top to bottom attaches it correctly, and
+% OpenResume does. scripts/check-cv-text.js asserts exactly that span and fails
+% if a date ever crosses into the next entry. Setting the meta inline after the
+% title removes the gap altogether, if that trade is ever wanted instead.
+%
+% The glue is the TeXbook's flush-right-or-next-line construction: the meta
+% sits at the right margin on the title's line when both fit, and otherwise
+% breaks onto a line of its own, still flush right. \\mbox keeps the meta whole,
+% and \\parfillskip=0pt stops the paragraph's last line from being set ragged.
 \\newcommand{\\entry}[2]{%
   \\needspace{4\\baselineskip}%
-  \\noindent{\\raggedright\\textbf{#1}{\\small\\color{mutedink}${SEPARATOR}#2}\\par}%
+  \\noindent\\textbf{#1}\\unskip\\nobreak\\hfil\\penalty50\\hskip1em\\hbox{}\\nobreak\\hfil
+  \\mbox{\\small\\color{mutedink}#2}{\\parfillskip=0pt\\par}%
 }`
     : `\\newcommand{\\entry}[2]{%
   \\needspace{4\\baselineskip}%

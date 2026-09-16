@@ -108,24 +108,51 @@ const checkText = (text, target) => {
     if (!startsALine(lines, entry)) {
       failures.push(`job entry "${entry}" does not start a line`);
     }
+  }
 
-    // The date has to stay with its own entry. Extraction orders by position,
-    // not by document structure, so a right-aligned date can drift past the
-    // bullets under it and be read as belonging to the job below — which is
-    // worse than losing it, because the result still looks like a valid CV.
-    const at = lines.findIndex(line =>
-      normalise(line).startsWith(normalise(entry).slice(0, 40))
+  // Every date has to land inside its own entry: after that entry's title and
+  // before whatever comes next — the next job's title, or the next section.
+  //
+  // That span, rather than "on or just under the title", is what a field
+  // parser actually depends on: it reads top to bottom and hands a date to the
+  // last title it saw. The right-aligned dates on the one-pagers show why the
+  // distinction matters. In pdftotext's reflow mode the wide gap before a date
+  // splits it into a block of its own, and for some entries that block is read
+  // after the bullets — title, bullets, date. Still correctly attributed, and
+  // OpenResume parses it so. What must fail is a date that crosses into the
+  // next entry, because the result is a CV that looks valid and says the wrong
+  // thing.
+  const lineOf = role =>
+    lines.findIndex(line =>
+      normalise(line).startsWith(
+        normalise(`${role.title}, ${role.company}`).slice(0, 40)
+      )
     );
-    // From the entry's own line, since -layout keeps the date on it and the
-    // reflow mode pushes it to the next one.
-    const near = lines
-      .slice(at, at + 3)
-      .map(normalise)
-      .join(' ');
-    if (!near.includes(normalise(role.duration))) {
+  const boundaries = [
+    ...target.data.experience.map(lineOf),
+    ...lines
+      .map((line, index) =>
+        [...SECTIONS, 'PROJECTS', 'CERTIFICATIONS'].includes(normalise(line))
+          ? index
+          : -1
+      )
+      .filter(index => index !== -1),
+  ].filter(index => index !== -1);
+
+  for (const role of target.data.experience) {
+    const entry = `${role.title}, ${role.company}`;
+    const at = lineOf(role);
+    if (at === -1) continue; // already reported as missing above
+
+    const end = Math.min(
+      lines.length,
+      ...boundaries.filter(index => index > at)
+    );
+    const span = lines.slice(at, end).map(normalise).join(' ');
+    if (!span.includes(normalise(role.duration))) {
       failures.push(
-        `date range "${role.duration}" does not follow "${entry}" —` +
-          ` it drifted to another entry or is missing`
+        `date range "${role.duration}" is not inside "${entry}" —` +
+          ` it crossed into the next entry or is missing`
       );
     }
   }

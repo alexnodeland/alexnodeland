@@ -379,7 +379,14 @@ to a single line.** The two-column entry puts the date in a right-hand cell, and
 a title that wraps leaves the date sitting between the two halves of it — the
 company is severed from the role and the tail of the title becomes an orphan
 line. `check-cv-text.js` fails on any entry that does this. The one-pagers set
-their meta inline and are not subject to it.
+their dates flush right in the title's own paragraph rather than a table cell,
+so a long title there pushes the date onto the next line instead of splitting.
+
+On the one-pagers, `pdftotext`'s default reflow mode reads a few entries as
+title, bullets, date: the gap before a right-aligned date makes it a block of
+its own. That is expected. The check asserts that every date lands inside its
+own entry — before the next title or section — which is what a field parser
+depends on, and it fails if a date ever crosses into the next job.
 
 ### DOCX — docx.js, generated in the browser
 
