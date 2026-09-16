@@ -97,7 +97,11 @@ jobs:
         uses: actions/cache@v6
         with:
           path: apps/web/static/cv
-          key: ${{ runner.os }}-cv-pdfs-${{ hashFiles('apps/web/src/config/cv.ts', 'apps/web/templates/cv/**', 'apps/web/scripts/build-cv.js') }}
+          # Every file the PDFs are a function of. projects.ts is here because
+          # cv.ts resolves each variant's Projects section out of it, and
+          # cv-targets.js because it decides which variants are built — leave
+          # either out and editing it ships the previous PDFs from cache.
+          key: ${{ runner.os }}-cv-pdfs-${{ hashFiles('apps/web/src/config/cv.ts', 'apps/web/src/config/projects.ts', 'apps/web/templates/cv/**', 'apps/web/scripts/build-cv.js', 'apps/web/scripts/lib/cv-targets.js') }}
 
       # And the same for the posts, on a key of its own: the two sets are
       # typeset from different sources and change on different days, so a

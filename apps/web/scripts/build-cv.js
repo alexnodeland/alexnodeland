@@ -2,8 +2,10 @@
 /**
  * Builds the downloadable CV artifacts from `src/config/cv.ts`.
  *
- *   static/cv/alex-nodeland-resume.pdf  — the one-pager, from `resumeData`
- *   static/cv/alex-nodeland-cv.pdf      — everything, from `cvData`
+ *   static/cv/alex-nodeland-resume.pdf       — the neutral one-pager
+ *   static/cv/alex-nodeland-fde.pdf          — one page for FDE roles
+ *   static/cv/alex-nodeland-ai-engineer.pdf  — one page for AI Engineer roles
+ *   static/cv/alex-nodeland-cv.pdf           — everything
  *
  * The site's CV page links straight at these, so they are built before
  * `gatsby build` copies `static/` into the bundle. Nothing here is committed;
@@ -14,7 +16,7 @@
  * TeX installed still produces a working site, just without fresh PDFs.
  *
  * Usage:
- *   node scripts/build-cv.js           # build both
+ *   node scripts/build-cv.js           # build all four
  *   node scripts/build-cv.js --keep    # keep the .tex and .log for debugging
  */
 
@@ -23,22 +25,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const ROOT = path.join(__dirname, '..');
-const OUT_DIR = path.join(ROOT, 'static', 'cv');
-
-require('@babel/register')({
-  extensions: ['.js', '.jsx', '.ts', '.tsx'],
-  cwd: ROOT,
-  only: [path.join(ROOT, 'src')],
-});
-
-const { cvData, resumeData } = require('../src/config/cv.ts');
+const { ROOT, OUT_DIR, cvTargets } = require('./lib/cv-targets.js');
 const { renderResumeTex } = require('../templates/cv/resume.tex.js');
-
-const TARGETS = [
-  { variant: 'resume', data: resumeData, name: 'alex-nodeland-resume' },
-  { variant: 'full', data: cvData, name: 'alex-nodeland-cv' },
-];
 
 const hasPdflatex = () =>
   spawnSync('pdflatex', ['--version'], { stdio: 'ignore' }).status === 0;
@@ -58,7 +46,7 @@ const pageCount = logPath => {
   return match ? Number(match[1]) : null;
 };
 
-const build = ({ variant, data, name }, { keep }) => {
+const build = ({ variant, data, name, maxPages }, { keep }) => {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), `cv-${variant}-`));
   const texPath = path.join(workDir, `${name}.tex`);
   fs.writeFileSync(texPath, renderResumeTex(data, { variant }));
@@ -94,9 +82,10 @@ const build = ({ variant, data, name }, { keep }) => {
 
   // Not a gate — the build still succeeds — but silently shipping a two-page
   // "one page" resume is the exact failure this pipeline exists to avoid.
-  if (variant === 'resume' && pages !== null && pages > 1) {
+  // `check-cv-text.js` is the gate; this is the warning you see while editing.
+  if (maxPages !== null && pages !== null && pages > maxPages) {
     console.warn(
-      `  ⚠ the one-page resume is ${pages} pages. Trim bullets in src/config/cv.ts,\n` +
+      `  ⚠ ${name} is ${pages} pages, not ${maxPages}. Trim bullets in src/config/cv.ts,\n` +
         `    or tighten the knobs at the top of preamble() in templates/cv/resume.tex.js.`
     );
   }
@@ -124,7 +113,7 @@ const main = () => {
   }
 
   console.log('build-cv: rendering CV artifacts');
-  for (const target of TARGETS) build(target, { keep });
+  for (const target of cvTargets()) build(target, { keep });
 };
 
 main();

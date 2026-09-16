@@ -1,6 +1,5 @@
 import React from 'react';
-import { CVData } from '../../config/cv';
-import type { CVVariant } from '../../lib/utils/export/docx';
+import { CVData, CVVariant, CV_PAGES, isRoleVariant } from '../../config/cv';
 import ControlRow from '../ui/ControlRow';
 import Dropdown, { DropdownOption } from '../ui/Dropdown';
 import { DownloadIcon } from '../ui/EntryIcons';
@@ -12,6 +11,15 @@ const VIEW_OPTIONS: DropdownOption[] = [
   { value: 'resume', label: 'one page' },
 ];
 
+// What a role page adds to the menu: its own entry, so the row reads the same
+// as /cv/'s with the page you are on selected. /cv/ itself lists only the two
+// lengths — the role pages are unlisted, and its menu is the one everyone sees.
+// The entry's label is the page's own, from src/config/cv-pages.json.
+const roleOptionFor = (view: CVVariant): DropdownOption | undefined =>
+  isRoleVariant(view)
+    ? { value: view, label: CV_PAGES[view].label }
+    : undefined;
+
 const DOWNLOAD_OPTIONS: DropdownOption[] = [
   // The trigger already says "download" — the options are just the formats.
   { value: 'pdf', label: 'pdf' },
@@ -21,9 +29,14 @@ const DOWNLOAD_OPTIONS: DropdownOption[] = [
 
 interface CVControlBarProps {
   resumeData: CVData;
-  /** Which length is on screen; picks the PDF artifact and the DOCX layout. */
+  /** Which variant is on screen; picks the PDF artifact and the DOCX layout. */
   view: CVVariant;
-  onViewChange: (view: CVVariant) => void;
+  /**
+   * Called when a document is picked from the menu. On /cv/ it switches the
+   * length in place; on a role page it navigates. Leave it out and the row
+   * draws no menu at all, only the download menu and the search chip.
+   */
+  onViewChange?: (view: CVVariant) => void;
   /** Phone only: the search panel below is folded away behind a chip here. */
   searchOpen?: boolean;
   onToggleSearch?: () => void;
@@ -51,19 +64,23 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
 }) => {
   const { isExporting, exportAs } = useCVExport(resumeData, view);
 
+  const roleOption = roleOptionFor(view);
+  const viewOptions = roleOption ? [...VIEW_OPTIONS, roleOption] : VIEW_OPTIONS;
   const viewLabel =
-    VIEW_OPTIONS.find(option => option.value === view)?.label ?? 'full cv';
+    viewOptions.find(option => option.value === view)?.label ?? 'full cv';
 
   return (
     <ControlRow className={`cv-control-bar ${className}`.trim()}>
-      <Dropdown
-        ariaLabel="Choose CV length"
-        triggerLabel={viewLabel}
-        options={VIEW_OPTIONS}
-        value={view}
-        onSelect={value => onViewChange(value as CVVariant)}
-        className="cv-view-dropdown"
-      />
+      {onViewChange && (
+        <Dropdown
+          ariaLabel="Choose CV length"
+          triggerLabel={viewLabel}
+          options={viewOptions}
+          value={view}
+          onSelect={value => onViewChange(value as CVVariant)}
+          className="cv-view-dropdown"
+        />
+      )}
 
       {/* The verb is the mark: one tray-and-arrow, the same one a post wears
           over its typeset copy. The menu underneath still names the three

@@ -700,7 +700,7 @@ describe('Layout Component', () => {
       return heroRegion;
     };
 
-    it('should publish the travel distances the split choreography needs', () => {
+    it('should publish the travel distances the fold needs', () => {
       const { unmount } = render(
         <TestWrapper pathname="/projects">{mockChildren}</TestWrapper>
       );
@@ -712,41 +712,21 @@ describe('Layout Component', () => {
       expect(observe).toHaveBeenCalledWith(heroRegion);
       observers.forEach(callback => callback());
 
-      // Each box travels half of its own leftover space, so at full collapse
-      // the title sits on the left edge and the tagline on the right.
+      // The title travels half of its leftover space, so at full collapse it
+      // sits on the left edge.
       expect(heroRegion.style.getPropertyValue('--title-shift')).toBe('400px');
-      expect(heroRegion.style.getPropertyValue('--sub-shift')).toBe('50px');
-      // Half of the stacked height is what puts the tagline on the title's
-      // row. It lands on the stage, with the resting height, because the
-      // window's frame reads the band the two make and it is not in the
-      // hero's subtree.
+      // The resting height lands on the stage, because the window's frame reads
+      // the band it makes and is not in the hero's subtree.
       const stage = document.querySelector('.stage') as HTMLElement;
-      expect(stage.style.getPropertyValue('--row-lift')).toBe('45px');
       expect(stage.style.getPropertyValue('--hero-rest-height')).toBe('0px');
       // The title's centre line, from its planted 60px box at the top of the
       // region, and the nav capsule's (0 in jsdom, which lays nothing out):
-      // the phone's fold carries the one to the other.
+      // the fold carries the one to the other.
       expect(heroRegion.style.getPropertyValue('--title-centre')).toBe('30px');
       expect(stage.style.getPropertyValue('--rail-centre')).toBe('0px');
-      // 900 does not fit beside 200 × 0.55 with a 24px gap in 1000, so the
-      // tagline gives back exactly the overrun.
-      expect(
-        Number(heroRegion.style.getPropertyValue('--sub-scale'))
-      ).toBeCloseTo((1000 - 200 * 0.55 - 24) / 900, 6);
 
       unmount();
       expect(disconnect).toHaveBeenCalled();
-    });
-
-    it('should leave a tagline that already fits at full size', () => {
-      render(<TestWrapper pathname="/projects">{mockChildren}</TestWrapper>);
-
-      const heroRegion = plant({ title: 200, sub: 300 });
-      observers.forEach(callback => callback());
-
-      // Room to spare never becomes a scale-up: the tagline is drawn at its
-      // own size, as it is on the homepage.
-      expect(heroRegion.style.getPropertyValue('--sub-scale')).toBe('1');
     });
 
     it('should re-measure when the hero itself changes', () => {

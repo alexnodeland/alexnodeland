@@ -1,0 +1,147 @@
+@use 'mixins' as *;
+
+// The consulting page: an opening paragraph, how an engagement runs, the past
+// work, and the buttons. The paragraph and the buttons keep the homepage's
+// `.consulting` styles (index.scss) they were built with; what is here is the
+// two card sections between them, in the same grammar as the rest of the site —
+// an outline, a title row, and for the past work one meta band at the foot.
+
+// A section title inside the window, like the homepage's "what i work on" and
+// the CV's: the halo, the same air above and below.
+.consulting-section {
+  margin-bottom: var(--space-5);
+  position: relative;
+
+  h2 {
+    margin-bottom: var(--space-5);
+    @include over-background;
+  }
+}
+
+// How an engagement runs: the steps in order, one card each. An ordered list,
+// because the order is the content; the number is drawn from the list rather
+// than typed into the copy.
+.consulting-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--stack-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: consulting-step;
+}
+
+.consulting-step {
+  @include outline-block;
+  padding: var(--card-pad);
+  border-radius: var(--radius-lg);
+  counter-increment: consulting-step;
+
+  // The card's top row: the step's drawing at one end and its number at the
+  // other — a position in a sequence, not a heading of its own.
+  .consulting-step-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+
+    &::after {
+      content: counter(consulting-step, decimal-leading-zero);
+      font-size: var(--text-small);
+      // Secondary, not muted: the simulation runs behind the cards, and at the
+      // muted ink a small number disappeared into the brighter frames.
+      color: var(--text-secondary);
+    }
+  }
+
+  // The drawings are the homepage expertise icons' set (see
+  // components/consulting-icons): the same ink, a step smaller than the
+  // homepage's 64px, since these cards are narrower and lead with their words.
+  // 48px read as a stray glyph beside the titles.
+  .consulting-step-icon {
+    display: block;
+    color: var(--text-primary);
+
+    svg {
+      display: block;
+      width: 56px;
+      height: 56px;
+    }
+  }
+
+  h3 {
+    margin: 0 0 var(--space-3);
+    color: var(--text-primary);
+    font-size: var(--text-h4);
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: var(--leading-prose);
+  }
+}
+
+// Past work, in the certification and project cards' grammar: the title, the
+// account of it, and one meta band at the foot saying who it was for. Static,
+// like the homepage's expertise cards — nothing here is a link, so nothing
+// lights under the pointer as if it were.
+.consulting-work {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--stack-gap);
+}
+
+.consulting-case {
+  @include outline-block;
+  padding: var(--card-pad);
+  border-radius: var(--radius-lg);
+  // A column, so every card's meta band lands on the same line however long
+  // its account runs — the grid stretches a row's cards to the tallest.
+  display: flex;
+  flex-direction: column;
+
+  h3 {
+    margin: 0 0 var(--space-4);
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: var(--text-h4);
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  // Its margin is the least air above the band: on the tallest card in a row
+  // the band's `margin-top: auto` resolves to nothing, and this is what is left.
+  p {
+    margin: 0 0 var(--space-5);
+    color: var(--text-secondary);
+    line-height: var(--leading-prose);
+  }
+
+  .consulting-case-client {
+    margin-top: auto;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--hairline-interior);
+    font-size: var(--text-small);
+    color: var(--text-secondary);
+  }
+}
+
+// The buttons end the page. With no sentence above them they sat one grid gap
+// under the last row of cards and read as another row of it; a section's worth
+// of air above sets them apart as where the page goes next.
+.consulting-cta {
+  padding-top: var(--space-5);
+}
+
+@media (max-width: 768px) {
+  .consulting-section {
+    margin-bottom: var(--space-7);
+  }
+
+  .consulting-steps,
+  .consulting-work {
+    grid-template-columns: 1fr;
+  }
+}

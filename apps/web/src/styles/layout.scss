@@ -47,18 +47,12 @@
   --rail-centre: calc(var(--rail-inset-top) + var(--rail-height) / 2);
 
   // The band the hero gives up when it folds: its resting box less the folded
-  // row's. Layout publishes the resting height (and, for the desktop's row,
-  // the tagline's lift); the folded row's height is the stylesheet's own.
-  // Zero on a page whose hero does not fold (the cover, a post), where the
-  // window starts under the hero as it always did.
-  --hero-folded-height: calc(
-    var(--rail-clearance) + var(--row-lift, 0px) + var(--space-4)
-  );
+  // row's. Layout publishes the resting height; the folded row is the nav
+  // capsule's own row, at every width, because that is where the folded title
+  // goes (see .site-hero.is-collapsible). Zero on a page whose hero does not
+  // fold, where the window starts under the hero as it always did.
+  --hero-folded-height: calc(var(--rail-clearance) + var(--space-1));
   --fold-band: 0px;
-
-  @media (max-width: 768px) {
-    --hero-folded-height: calc(var(--rail-clearance) + var(--space-1));
-  }
 
   &.has-fold {
     --fold-band: max(
@@ -145,10 +139,16 @@
   color: var(--text-muted);
 }
 
-// The fold. As the window scrolls, the hero folds to a compact row above it
-// — the title to the left edge, shrunk; the tagline beside it on a desktop,
-// faded out on a phone — and the window's frame rises to take the room. The
-// fold follows the scroll exactly, both ways.
+// The fold. As the window scrolls, the hero folds into the nav capsule's row:
+// the title slides to the column's left edge, shrinks to about the rail's
+// type size and rises onto the capsule's centre line — the brand on the left
+// answering the page picker on the right — while the crumb's tail and the
+// tagline fade away. The fold follows the scroll exactly, both ways.
+//
+// It used to split on a desktop: the title parked on the left and the tagline
+// on the right of a row of their own, floating on top of the window's frame
+// below the capsule. That row read as a second, looser header. A desktop now
+// folds the way a phone always has, and a pinned hero on a post already did.
 //
 // Nothing here lays out. The first version of this scrubbed the hero's
 // paddings and margins with the scroll, which resized the window — the scroll
@@ -164,15 +164,28 @@
 // window's scroll timeline; elsewhere Layout publishes it once per frame as
 // --hero-collapse and the same properties are written as functions of it.
 .site-hero.is-collapsible {
-  // How far the title shrinks when folded. Layout reads this for the fit
-  // calculation too, so it lives here and nowhere else. Just over half on a
-  // desktop, where the tagline has to fit beside it; half on a phone, which
-  // lands it on the rail's own scale; the narrowest phones take it further so
-  // the homepage's full name still clears the nav capsule with real air.
-  --collapsed-title-scale: 0.55;
+  // How far the title shrinks when folded: to about the nav's own type size,
+  // so the brand reads as part of the rail. The title's size is fluid and the
+  // nav's is not, so the scale steps with the width — a desktop title is
+  // largest, and the narrowest phones take it furthest so the homepage's full
+  // name still clears the capsule with real air. Layout reads this too, so it
+  // lives here and nowhere else.
+  --collapsed-title-scale: 0.35;
+
+  @media (max-width: 1100px) {
+    --collapsed-title-scale: 0.4;
+  }
+
+  @media (max-width: 768px) {
+    --collapsed-title-scale: 0.5;
+  }
+
+  @media (max-width: 360px) {
+    --collapsed-title-scale: 0.44;
+  }
 
   // The breath above the title that the fold gives back: the base padding is
-  // the rail's clearance plus this, and the folded row sits on the rail.
+  // the rail's clearance plus this.
   --hero-rest-lift: var(--space-2);
 
   // The window starts this far up inside the hero's box — at the folded row's
@@ -187,7 +200,7 @@
   pointer-events: none;
 
   // Every hero is a title and a tagline stacked and centred. The column of
-  // content-width boxes is what lets the fold move each one outward by
+  // content-width boxes is what lets the fold move the title outward by
   // transform, without either of them reflowing.
   > * {
     display: flex;
@@ -201,127 +214,58 @@
     pointer-events: auto;
   }
 
+  // The title slides to the left edge, shrinks, and rises until its centre
+  // sits on the nav capsule's. The scale is about the centre, so the centre is
+  // what travels: from where the title's box sits at rest (--title-centre,
+  // measured — its line box, not an em guess at it, which put the cover's
+  // title and the crumb's on different lines) to the capsule's own centre
+  // line. The fallback's em has to resolve against the title's own font,
+  // which is why --fold-rise is on the h1 and not on the region.
   h1 {
     margin-bottom: var(--space-4);
     transform-origin: left center;
 
-    // The rise that re-centres the folded line on the nav capsule. The scale
-    // is about the centre, so the centre is what travels: from where the
-    // title's box sits at rest (--title-centre, measured — its line box, not
-    // an em guess at it, which put the cover's title and the crumb's on
-    // different lines) to the capsule's own centre line. Declared here rather
-    // than inside the phone's block because the pinned hero takes it at every
-    // width; the fallback's em has to resolve against the title's own font,
-    // which is why it is on the h1 and not on the region.
     --fold-rise: calc(
       var(
           --title-centre,
           calc(var(--rail-clearance) + var(--hero-rest-lift) + 0.65em)
         ) - var(--rail-centre)
     );
+    --fold-transform: translate(
+        calc(-1 * var(--title-shift, 0px)),
+        calc(-1 * var(--fold-rise))
+      )
+      scale(var(--collapsed-title-scale));
+    transform: translate(
+        calc(-1 * var(--hero-collapse) * var(--title-shift, 0px)),
+        calc(-1 * var(--hero-collapse) * var(--fold-rise))
+      )
+      scale(calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse)));
+  }
+
+  // The tail goes with the tagline; the anchor keeps its ink the whole way.
+  .hero-crumb-rest {
+    opacity: calc(1 - var(--hero-collapse));
   }
 
   // The tagline is the last thing in the hero; the room under it is the
-  // hero's own padding, not a paragraph margin.
+  // hero's own padding, not a paragraph margin. It fades and drifts up as the
+  // scroll moves — and is gone by a fifth of the way (see hero-tagline-fade):
+  // the content rises through the band it sits in, and a tagline still fading
+  // over the content read as a smear. The published path's fraction is
+  // Layout's TAGLINE_FADE.
   p {
     margin-bottom: 0;
+    --fold-transform: translateY(-0.5rem);
+    opacity: calc(1 - var(--hero-collapse) / 0.2);
+    transform: translateY(calc(-0.5rem * var(--hero-collapse)));
   }
 
-  // The split. At rest the two are stacked and centred; folded, the title
-  // sits at the left edge, shrunk, and the tagline at the right edge, risen
-  // onto the title's row — both lifted by the breath the row gives back — so
-  // the two make one line floating above the window. The pixel distances are
-  // measured by Layout (they depend on rendered text widths); each line
-  // states its destination as --fold-transform, which the scroll timeline
-  // travels to, and the same journey as a function of --hero-collapse for
-  // the browsers that cannot.
-  @media (min-width: 769px) {
-    h1 {
-      --fold-transform: translate(
-          calc(-1 * var(--title-shift, 0px)),
-          calc(-1 * var(--hero-rest-lift))
-        )
-        scale(var(--collapsed-title-scale));
-      transform: translate(
-          calc(-1 * var(--hero-collapse) * var(--title-shift, 0px)),
-          calc(-1 * var(--hero-collapse) * var(--hero-rest-lift))
-        )
-        scale(
-          calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse))
-        );
-    }
-
-    p {
-      // The tagline travels rather than fading, so it keeps its ink the whole
-      // way. --sub-scale is 1 wherever it already fits beside the shrunken
-      // title, and below 1 on the one page where it does not; the right-edge
-      // origin keeps it parked against the column's right side either way.
-      --fold-transform: translate(
-          var(--sub-shift, 0px),
-          calc(-1 * (var(--row-lift, 0px) + var(--hero-rest-lift)))
-        )
-        scale(var(--sub-scale, 1));
-      transform-origin: right center;
-      transform: translate(
-          calc(var(--hero-collapse) * var(--sub-shift, 0px)),
-          calc(
-            -1 * var(--hero-collapse) *
-              (var(--row-lift, 0px) + var(--hero-rest-lift))
-          )
-        )
-        scale(calc(1 - (1 - var(--sub-scale, 1)) * var(--hero-collapse)));
-    }
-  }
-
-  // Phones have no room for the two side by side, so below the split's
-  // breakpoint the hero folds into the navigator's own row instead: the
-  // title slides to the left edge, shrinks to the rail's scale, and rises
-  // until it sits on the nav capsule's line — "alex" on the left answering
-  // the page picker on the right. The crumb's tail ("→ blog") fades out with
-  // the tagline; the green brand is the whole folded header.
-  @media (max-width: 768px) {
-    --collapsed-title-scale: 0.5;
-
-    @media (max-width: 360px) {
-      --collapsed-title-scale: 0.44;
-    }
-
-    h1 {
-      --fold-transform: translate(
-          calc(-1 * var(--title-shift, 0px)),
-          calc(-1 * var(--fold-rise))
-        )
-        scale(var(--collapsed-title-scale));
-      transform: translate(
-          calc(-1 * var(--hero-collapse) * var(--title-shift, 0px)),
-          calc(-1 * var(--hero-collapse) * var(--fold-rise))
-        )
-        scale(
-          calc(1 - (1 - var(--collapsed-title-scale)) * var(--hero-collapse))
-        );
-    }
-
-    // The tail goes with the tagline; the anchor keeps its ink the whole way.
-    .hero-crumb-rest {
-      opacity: calc(1 - var(--hero-collapse));
-    }
-
-    // The tagline fades and drifts up as the finger moves — and is gone by a
-    // fifth of the way (see hero-tagline-fade): the content rises through
-    // the band it sits in, and a tagline still fading over the chips read as
-    // a smear. The published path's fraction is Layout's TAGLINE_FADE.
-    p {
-      --fold-transform: translateY(-0.5rem);
-      opacity: calc(1 - var(--hero-collapse) / 0.2);
-      transform: translateY(calc(-0.5rem * var(--hero-collapse)));
-    }
-
-    // Faded (Layout's class, on the published path), the tagline is taken
-    // out of hit-testing: its box sits over the content that has scrolled up
-    // under the hero, and the chips there are what a tap means.
-    &.is-folded p {
-      visibility: hidden;
-    }
+  // Faded (Layout's class, on the published path), the tagline is taken out
+  // of hit-testing: its box sits over the content that has scrolled up under
+  // the hero, and what is there is what a click means.
+  &.is-folded p {
+    visibility: hidden;
   }
 
   @media (max-width: 480px) {
@@ -352,19 +296,16 @@
       animation-range: 0 max(1px, var(--fold-band));
     }
 
-    h1,
-    p {
+    h1 {
       animation-name: hero-fold-transform;
     }
 
-    @media (max-width: 768px) {
-      p {
-        animation-name: hero-fold-transform, hero-tagline-fade;
-      }
+    p {
+      animation-name: hero-fold-transform, hero-tagline-fade;
+    }
 
-      .hero-crumb-rest {
-        animation-name: hero-fold-fade;
-      }
+    .hero-crumb-rest {
+      animation-name: hero-fold-fade;
     }
   }
 }
@@ -454,35 +395,6 @@
   p,
   .hero-crumb-rest {
     animation-name: none;
-  }
-}
-
-// A pinned hero on a desktop sits on the nav capsule's line, which is what a
-// phone has always done with it.
-//
-// The desktop fold parks the title on the left and the tagline on the right of
-// a row of its own, below the capsule — it has to, because at full collapse
-// the tagline reaches the column's right edge, which is exactly where the
-// capsule lives. A pinned hero is the brand alone: the tagline is a blank line
-// held open for the geometry (see .brand-header) and there is nothing to
-// collide with. So it takes the phone's rise instead of the row's, and the
-// name lands opposite the page picker — one line of chrome across the top of
-// the page rather than a word stranded half a band below it.
-//
-// The room the row was holding goes back to the window with it: the folded
-// height loses the --row-lift term it was buying for a row that is not drawn.
-@media (min-width: 769px) {
-  .stage.is-pinned {
-    --hero-folded-height: calc(var(--rail-clearance) + var(--space-1));
-  }
-
-  .stage.is-pinned .site-hero.is-collapsible h1,
-  .site-hero.is-collapsible.is-pinned h1 {
-    transform: translate(
-        calc(-1 * var(--title-shift, 0px)),
-        calc(-1 * var(--fold-rise))
-      )
-      scale(var(--collapsed-title-scale));
   }
 }
 

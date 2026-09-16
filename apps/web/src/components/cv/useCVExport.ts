@@ -1,16 +1,12 @@
 import { useCallback, useState } from 'react';
-import { CVData } from '../../config/cv';
-import type { CVVariant } from '../../lib/utils/export/docx';
+import { CVData, CVVariant, cvPdfPath } from '../../config/cv';
 import { exportCVAsMarkdown } from '../../lib/utils/export/markdown';
 import { downloadMarkdown } from '../../lib/utils/export/utils';
 
 // The PDFs are typeset by LaTeX at build time rather than generated in the
 // browser — see scripts/build-cv.js — so "download pdf" is a plain fetch of
-// the artifact for whichever length is on screen.
-export const CV_PDF_ARTIFACTS: Record<CVVariant, string> = {
-  resume: '/cv/alex-nodeland-resume.pdf',
-  full: '/cv/alex-nodeland-cv.pdf',
-};
+// the artifact for whichever variant is on screen, at the path the build
+// writes it to (`CV_ARTIFACTS` in src/config/cv.ts).
 
 /** `Alex Nodeland` + `docx` → `Alex_Nodeland_Resume.docx`. */
 export const cvExportFilename = (resumeData: CVData, extension: string) =>
@@ -41,7 +37,7 @@ export const useCVExport = (
 ): CVExportApi => {
   const [isExporting, setIsExporting] = useState(false);
 
-  const pdfHref = CV_PDF_ARTIFACTS[variant];
+  const pdfHref = cvPdfPath(variant);
 
   // The PDF used to be an `<a download>` in the row. As a menu item it is a
   // button like the other two, so the anchor is synthesised here — same

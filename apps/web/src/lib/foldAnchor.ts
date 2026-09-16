@@ -2,13 +2,13 @@
  * The fold's measured distances — the numbers the stylesheet cannot work out
  * for itself, because they are properties of rendered text.
  *
- * The hero folds as the window scrolls: the title shrinks and parks on the
- * column's left edge, the tagline rises to sit beside it, and the window's
+ * The hero folds as the window scrolls: the title shrinks, slides to the
+ * column's left edge and rises onto the nav capsule's line, and the window's
  * frame climbs into the room the hero gives up. How far each of those travels
- * depends on how wide this page's title happens to be set, which is a question
- * only a laid-out document can answer. So they are measured and published as
- * custom properties, and the stylesheet does the choreography from there (see
- * `.site-hero.is-collapsible` in layout.scss).
+ * depends on how wide this page's title happens to be set and where its line
+ * box sits, which is a question only a laid-out document can answer. So they
+ * are measured and published as custom properties, and the stylesheet does the
+ * choreography from there (see `.site-hero.is-collapsible` in layout.scss).
  *
  * The catch is *when*. Layout re-measures on every resize and every
  * navigation, but its first run cannot happen until the page bundle has
@@ -28,8 +28,8 @@
  * browser does not wait for the last byte to show the first screen. Measured at
  * the end, the numbers landed a frame or two after the window had already been
  * painted in the wrong place, which is the whole bug wearing a smaller hat.
- * Everything this reads — the nav capsule, the stage, the hero and its two
- * lines — is above it in the document and final by the time it runs; the window
+ * Everything this reads — the nav capsule, the stage, the hero and its title
+ * — is above it in the document and final by the time it runs; the window
  * whose position depends on the answer is below it and has not been laid out
  * yet. So the first frame that contains the window contains it in the right
  * place.
@@ -52,12 +52,11 @@ export function publishFoldMeasures(hero?: HTMLElement | null): void {
 
   const stage = region.parentElement;
   const h1 = region.querySelector<HTMLElement>('h1');
-  const sub = region.querySelector<HTMLElement>('p');
-  // The registry owns the element the two sit in, so that — not the hero
-  // region, which is padded — is the column they travel across. A hero of
-  // some other shape simply gets no split.
+  // The registry owns the element the title sits in, so that — not the hero
+  // region, which is padded — is the column it travels across. A hero of some
+  // other shape simply gets no fold measures.
   const container = h1 ? h1.parentElement : null;
-  if (!stage || !h1 || !sub || !container) return;
+  if (!stage || !h1 || !container) return;
 
   // Everything is read before anything is written: a custom property landing
   // on the region invalidates its subtree, and a measurement taken after it
@@ -66,8 +65,6 @@ export function publishFoldMeasures(hero?: HTMLElement | null): void {
   const width = container.clientWidth;
   const titleWidth = h1.offsetWidth;
   const titleHeight = h1.offsetHeight;
-  const subWidth = sub.offsetWidth;
-  const subHeight = sub.offsetHeight;
 
   // Where the title's line box sits at rest, from the top of the stage (the
   // region is the offset parent, and it starts at the stage's top). Summed up
@@ -81,29 +78,12 @@ export function publishFoldMeasures(hero?: HTMLElement | null): void {
     node = node.offsetParent as HTMLElement | null;
   }
 
-  // The line the phone's folded title lands on: the nav capsule's centre. Real
+  // The line the folded title lands on: the nav capsule's centre. Real
   // pixels rather than a guess from the font — the cover's title and the
   // crumb's have different metrics, and an em-based rise put them on different
   // lines.
   const rail = document.querySelector<HTMLElement>('.nav');
   const railCentre = rail ? rail.offsetTop + rail.offsetHeight / 2 : null;
-
-  // How far the title shrinks when folded. The stylesheet's number, per
-  // breakpoint, read back rather than restated here.
-  const DEFAULT_TITLE_SCALE = 0.55;
-  const declared = parseFloat(
-    getComputedStyle(region).getPropertyValue('--collapsed-title-scale')
-  );
-  const titleScale = declared || DEFAULT_TITLE_SCALE;
-
-  // Whether the tagline actually fits beside the shrunken title. Most of them
-  // do, and this is 1; the projects tagline is nearly the full column wide, so
-  // it scales down — pinned to its right edge — by exactly the amount it
-  // overruns rather than colliding with the title. COLLAPSED_GAP is the space
-  // left between the two once they share a row.
-  const COLLAPSED_GAP = 24;
-  const room = width - titleWidth * titleScale - COLLAPSED_GAP;
-  const subScale = subWidth > 0 ? Math.min(1, room / subWidth) : 1;
 
   // Written only where the value is actually new. Layout calls this from a
   // ResizeObserver, which fires on every frame of the hero's height ease, and
@@ -116,22 +96,18 @@ export function publishFoldMeasures(hero?: HTMLElement | null): void {
     }
   };
 
-  // The split: at full collapse the title parks on the left edge and the
-  // tagline on the right, each travelling half of its leftover space, and the
-  // tagline rises to the title's centreline.
+  // At full collapse the title parks on the left edge, travelling half of its
+  // leftover space, and its centre rises from here to the capsule's.
   set(region, '--title-shift', `${(width - titleWidth) / 2}px`);
-  set(region, '--sub-shift', `${(width - subWidth) / 2}px`);
-  set(region, '--sub-scale', String(subScale));
   set(region, '--title-centre', `${titleTop + titleHeight / 2}px`);
 
-  // These two land on the stage rather than the hero: the window's frame reads
-  // the band they make, and it is not in the hero's subtree.
+  // These land on the stage rather than the hero: the window's frame reads the
+  // band they make, and it is not in the hero's subtree.
   if (railCentre !== null) {
     set(stage, '--rail-centre', `${railCentre}px`);
   } else {
     stage.style.removeProperty('--rail-centre');
   }
-  set(stage, '--row-lift', `${(titleHeight + subHeight) / 2}px`);
 
   // The hero's resting box, which the stylesheet turns into the band the
   // window reaches up by — and the band is what the hero's negative bottom

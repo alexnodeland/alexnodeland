@@ -5,6 +5,9 @@
   "scripts": {
     "build:worker": "node scripts/clean-worker-artifacts.mjs && npx webpack --config webpack.worker.config.js",
     "build:cv": "node scripts/build-cv.js",
+    "check:cv": "node scripts/check-cv-text.js",
+    "check:cv:build": "node scripts/check-cv-text.js --build",
+    "report:cv": "node scripts/resume-report.js",
     "build:posts": "node scripts/build-post-pdfs.js",
     "build:index": "node scripts/build-chat-index.mjs",
     "build:activity": "node scripts/build-activity.mjs",
@@ -112,6 +115,7 @@
     "jest-canvas-mock": "^2.5.8",
     "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^16.2.0",
+    "pdfjs-dist": "^6.3.289",
     "playwright": "^1.62.0",
     "prettier": "^3.9.6",
     "sass": "^1.104.0",

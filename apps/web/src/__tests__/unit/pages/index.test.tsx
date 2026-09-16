@@ -35,7 +35,12 @@ describe('Index Page', () => {
     // h1 at all — what it owns is the prose and the sections.
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
     expect(container.querySelector('.home')).not.toBeNull();
-    expect(screen.getByText('consulting')).toBeInTheDocument();
+    // Consulting is a page of its own now. What the homepage keeps is the one
+    // sentence pointing at it — no heading, and no "book a call".
+    expect(
+      screen.getByText(homepageConfig.about.consultingNote.linkText)
+    ).toHaveAttribute('href', homepageConfig.about.consultingNote.href);
+    expect(screen.queryByText('book a call')).not.toBeInTheDocument();
   });
 
   it('draws one expertise icon per card, hidden from assistive tech', () => {

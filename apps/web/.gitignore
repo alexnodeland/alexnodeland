@@ -110,3 +110,8 @@ static/cv/
 # The same arrangement for the posts: one PDF per markdown file, typeset by
 # `npm run build:posts` from src/content/blog/ before gatsby build.
 static/timeline/
+
+
+# The OpenResume parser, fetched on demand by scripts/lib/openresume.js.
+# AGPL-3.0 and deliberately not committed — see the licensing note in that file.
+.openresume/

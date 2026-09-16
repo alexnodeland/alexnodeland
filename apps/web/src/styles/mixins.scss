@@ -468,3 +468,73 @@
     text-decoration: underline;
   }
 }
+
+// A project card's ways out: the chain to the project's own site where there
+// is one, then the octocat, with whichever the card follows stretched across
+// the whole card. Emitted as rules rather than declarations, because both the
+// projects page and the project cards on the CV pages carry the same marks,
+// and each stylesheet only loads on its own pages. A card that uses them must
+// be `position: relative`, so the stretched link has something to fill.
+@mixin project-ways-out {
+  // The way out: the octocat, in the link colour. The card is a link to the
+  // repo, and this is the one thing on it that says so — the counterpart of the
+  // arrow at the foot of a blog preview. The words it replaced ("view on
+  // github") are still there for a screen reader.
+  // The ways out, at the footer's far end: the chain to the project's own site
+  // where there is one, then the octocat. Both in the link colour — they are
+  // the only things on the card that leave it.
+  .project-link-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-shrink: 0;
+    color: var(--ink-primary);
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .project-out {
+    display: inline-flex;
+    align-items: center;
+    color: inherit;
+    // Same reason the card gives: a mark is not a link in running text, and the
+    // global underline has nothing to underline here anyway.
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: none;
+    }
+
+    // The mark a pointer is actually on brightens, so a card with two ways out
+    // says which one is under the cursor. The card's own highlight is behind
+    // this and does not change.
+    @include reading-emphasis {
+      color: var(--text-primary);
+    }
+  }
+
+  // The card's own link — the site where the project has one, the repo where it
+  // does not. Its overlay covers the whole box, so a click anywhere that is not
+  // the other mark follows it, and the card reads as one target the way it did
+  // when it was an anchor. The cost is that text on the card can no longer be
+  // selected by dragging across it, which is the trade every stretched-link
+  // card makes; the card is a name, a line and a row of tags, and none of it is
+  // meant to be copied.
+  .project-out.is-card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  // The other mark, lifted above that overlay so it is hit directly rather than
+  // buried under the card's click target. Everything else on the card stays
+  // under it, which is what makes the rest of the card one target.
+  .project-out.is-raised {
+    position: relative;
+    z-index: 1;
+  }
+}

@@ -1,6 +1,7 @@
+import { Link } from 'gatsby';
 import React from 'react';
 import SEO from '../components/seo';
-import { getCTAButtonURL, getPersonSchema, homepageConfig } from '../config';
+import { getPersonSchema, homepageConfig } from '../config';
 import { expertiseIcons } from '../components/expertise-icons';
 import '../styles/index.scss';
 
@@ -32,6 +33,15 @@ const IndexPage: React.FC<{ location?: { pathname?: string } }> = ({
             {homepageConfig.about.paragraphs.map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
             ))}
+            {/* The whole of consulting on the front page: one sentence and a
+                link. The section it replaced lives at /consulting/. */}
+            <p className="about-consulting-note">
+              {homepageConfig.about.consultingNote.before}{' '}
+              <Link to={homepageConfig.about.consultingNote.href}>
+                {homepageConfig.about.consultingNote.linkText}
+              </Link>{' '}
+              {homepageConfig.about.consultingNote.after}
+            </p>
           </div>
         </section>
 
@@ -53,55 +63,6 @@ const IndexPage: React.FC<{ location?: { pathname?: string } }> = ({
                 </div>
               );
             })}
-          </div>
-        </section>
-
-        <section className="consulting">
-          <h2>{homepageConfig.consulting.title}</h2>
-          <p>{homepageConfig.consulting.description}</p>
-          <div className="cta-buttons">
-            <a
-              href={getCTAButtonURL(
-                homepageConfig.consulting.ctaButtons.primary.action,
-                homepageConfig.consulting.ctaButtons.primary.url
-              )}
-              className="cta-button primary"
-              target={
-                homepageConfig.consulting.ctaButtons.primary.action ===
-                'calendar'
-                  ? '_blank'
-                  : undefined
-              }
-              rel={
-                homepageConfig.consulting.ctaButtons.primary.action ===
-                'calendar'
-                  ? 'noopener noreferrer'
-                  : undefined
-              }
-            >
-              {homepageConfig.consulting.ctaButtons.primary.text}
-            </a>
-            <a
-              href={getCTAButtonURL(
-                homepageConfig.consulting.ctaButtons.secondary.action,
-                homepageConfig.consulting.ctaButtons.secondary.url
-              )}
-              className="cta-button secondary"
-              target={
-                homepageConfig.consulting.ctaButtons.secondary.action ===
-                'calendar'
-                  ? '_blank'
-                  : undefined
-              }
-              rel={
-                homepageConfig.consulting.ctaButtons.secondary.action ===
-                'calendar'
-                  ? 'noopener noreferrer'
-                  : undefined
-              }
-            >
-              {homepageConfig.consulting.ctaButtons.secondary.text}
-            </a>
           </div>
         </section>
       </div>

@@ -1,0 +1,16 @@
+{
+  "fde": {
+    "path": "/cv/fde/",
+    "label": "fde",
+    "tagline": "for forward deployed engineer roles.",
+    "title": "cv · forward deployed engineer",
+    "description": "Alex Nodeland — resume for Forward Deployed Engineer roles"
+  },
+  "ai-engineer": {
+    "path": "/cv/ai-engineer/",
+    "label": "ai engineer",
+    "tagline": "for ai engineer roles.",
+    "title": "cv · ai engineer",
+    "description": "Alex Nodeland — resume for AI Engineer roles"
+  }
+}

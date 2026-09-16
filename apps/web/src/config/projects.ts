@@ -3,11 +3,7 @@
 // anchor. The old groupings (featured / apps / tools / libraries /
 // experiments) live on as tags on each card.
 export type ProjectCategory =
-  | 'math'
-  | 'audio-dsp'
-  | 'distributed-systems'
-  | 'ai'
-  | 'misc';
+  'math' | 'audio-dsp' | 'distributed-systems' | 'ai' | 'misc';
 
 export interface GitHubProject {
   name: string;
@@ -151,8 +147,7 @@ export const projectsConfig: ProjectsConfig = {
     // --- ai ---
     {
       name: 'principled',
-      description:
-        'claude code plugins for specification-first development: write the spec, then build to it.',
+      description: 'claude code plugins for specification-first development.',
       language: 'Shell',
       tags: ['featured', 'tool', 'claude-code', 'spec-driven'],
       url: 'https://github.com/alexnodeland/principled',
