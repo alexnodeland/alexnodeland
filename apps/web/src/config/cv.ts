@@ -64,6 +64,15 @@ export type Bullet =
       /** Audiences this bullet is for. Omit to leave it neutral. */
       tags?: AudienceTag[];
       /**
+       * Show this bullet only to the audiences in `tags`. A tagged bullet is
+       * otherwise still part of the record — the full CV carries it and the
+       * neutral one-pager may — which is right for a bullet written *for*
+       * an audience, and wrong for one that is only *about* it: the music
+       * detail that belongs on the music-tech page and would dilute every
+       * general document. Requires `tags`.
+       */
+      audienceOnly?: boolean;
+      /**
        * The figure this bullet carries, repeated here so the generator can
        * prefer it when trimming to a page. The number must also appear in
        * `text` — this field ranks, it does not render.
@@ -881,11 +890,17 @@ const bulletTags = (bullet: Bullet): AudienceTag[] =>
 const hasMetric = (bullet: Bullet): boolean =>
   typeof bullet !== 'string' && Boolean(bullet.metric);
 
+/** Is this bullet kept off the documents that select no audience? */
+const isAudienceOnly = (bullet: Bullet): boolean =>
+  typeof bullet !== 'string' && Boolean(bullet.audienceOnly);
+
 /**
  * Picks and orders one role's bullets for one variant.
  *
  * A bullet is eligible if it is neutral — no tags — or carries this variant's
- * audience tag. Eligible bullets are then ordered: on-audience first, and
+ * audience tag; on the neutral one-pager, which selects no audience, every
+ * bullet is eligible except one marked `audienceOnly`. Eligible bullets are
+ * then ordered: on-audience first, and
  * within each group the ones carrying a metric ahead of the ones that do not,
  * so what survives the trim to a page is the most specific evidence available.
  * Both passes are stable, so the strongest-first order this file is authored in
@@ -901,7 +916,7 @@ const selectBullets = (
   const eligible = achievements.filter(bullet => {
     const tags = bulletTags(bullet);
     if (tags.length === 0) return true;
-    return audience ? tags.includes(audience) : true;
+    return audience ? tags.includes(audience) : !isAudienceOnly(bullet);
   });
 
   const rank = (bullet: Bullet): number => {
@@ -920,7 +935,8 @@ const selectBullets = (
  * Resolves `cvSource` into the `CVData` one document renders from.
  *
  * The full CV takes everything in the order it is authored — nothing is
- * filtered, reordered or trimmed, because nothing has to fit. Every other
+ * reordered or trimmed, because nothing has to fit, and nothing is filtered
+ * but the bullets marked `audienceOnly`. Every other
  * variant keeps only the roles that name it in `variants`, and only the
  * bullets `selectBullets` returns for it. Coursework and certifications go
  * unconditionally on the one-pagers: they are the first things to cost a page
@@ -935,7 +951,9 @@ export const buildVariant = (
   const experience: ExperienceItem[] = isFull
     ? source.experience.map(({ achievements, variants: _omit, ...role }) => ({
         ...role,
-        achievements: achievements.map(bulletText),
+        achievements: achievements
+          .filter(bullet => !isAudienceOnly(bullet))
+          .map(bulletText),
       }))
     : source.experience.flatMap(
         ({ achievements, variants, ...role }): ExperienceItem[] => {

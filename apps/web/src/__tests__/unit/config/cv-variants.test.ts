@@ -32,10 +32,11 @@ const fixture: CVSource = {
         { text: 'exec one', tags: ['exec'] },
         { text: 'fde one', tags: ['fde'] },
         { text: 'fde with a metric, 40%', tags: ['fde'], metric: '40%' },
+        { text: 'fde only', tags: ['fde'], audienceOnly: true },
       ],
       variants: {
         resume: { maxBullets: 2 },
-        fde: { maxBullets: 2 },
+        fde: { maxBullets: 3 },
         'ai-engineer': { maxBullets: 1, collapse: true },
       },
     },
@@ -76,7 +77,8 @@ describe('buildVariant', () => {
       'fde one',
       'fde with a metric, 40%',
     ]);
-    // Nothing is filtered or reordered when nothing has to fit.
+    // Nothing is reordered when nothing has to fit, and nothing is filtered
+    // but the audience-only bullet.
     expect(full.personal.summary).toBe('Default summary.');
     expect(full.personal.title).toBe('Default Title');
     expect(full.certifications).toHaveLength(1);
@@ -88,6 +90,34 @@ describe('buildVariant', () => {
       const built = buildVariant(variant, fixture);
       expect(built.experience.map(r => r.company)).toEqual(['Current Co']);
     }
+  });
+
+  it('keeps an audience-only bullet off every document but its audience’s', () => {
+    // Room for everything, so what is missing is withheld, not trimmed.
+    const roomy: CVSource = {
+      ...fixture,
+      experience: fixture.experience.map(role => ({
+        ...role,
+        variants: role.variants && {
+          ...role.variants,
+          resume: { maxBullets: 9 },
+        },
+      })),
+    };
+    expect(
+      buildVariant('full', roomy).experience[0].achievements
+    ).not.toContain('fde only');
+    expect(
+      buildVariant('resume', roomy).experience[0].achievements
+    ).not.toContain('fde only');
+    expect(buildVariant('fde', roomy).experience[0].achievements).toContain(
+      'fde only'
+    );
+    // A bullet written for an audience, without the flag, is still on the
+    // general documents.
+    expect(buildVariant('resume', roomy).experience[0].achievements).toContain(
+      'fde one'
+    );
   });
 
   it('withholds exec bullets from the engineering-focused variants', () => {
@@ -119,6 +149,7 @@ describe('buildVariant', () => {
     expect(fde.experience[0].achievements).toEqual([
       'fde with a metric, 40%',
       'fde one',
+      'fde only',
     ]);
   });
 

@@ -145,7 +145,7 @@ As authored in `cvSource` (`ExperienceSource`):
   duration: string;         // Employment period
   description?: string;     // Optional job description, full CV only
   engagement?: EngagementType;  // full-time | part-time | advisory | freelance
-  achievements: Bullet[];   // Strings, or { text, tags?, metric? }
+  achievements: Bullet[];   // Strings, or { text, tags?, audienceOnly?, metric? }
   skills?: string[];        // Optional skills used, full CV only
   variants?: Partial<Record<Exclude<CVVariant, 'full'>, RoleVariantRule>>;
 }
@@ -286,13 +286,19 @@ achievements: [
   { text: 'customer-facing work', tags: ['fde'] },
   { text: 'raised a seed round', tags: ['exec'] },
   { text: 'cut eval latency 40%', tags: ['ai-eng'], metric: '40%' },
+  { text: 'voiced the synth's filter section', tags: ['music'], audienceOnly: true },
 ],
 ```
 
 A bullet with no tags is neutral and eligible everywhere. A tagged bullet is
 offered to the variants sharing its tag and withheld from the rest — which is
 how `exec` bullets (fundraising, board, investor relations) stay off the
-engineering-focused pages, which keeps those pages about the engineering.
+engineering-focused pages, which keeps those pages about the engineering. The
+full CV still carries every tagged bullet, and the neutral one-pager may,
+unless the bullet is also `audienceOnly`: then only its audiences see it. That
+is the flag for detail that is _about_ one audience rather than written _for_
+it — the music specifics that belong on the music-tech page and would dilute
+the general documents.
 Within a variant, on-audience bullets come first and, among
 those, the ones carrying a `metric` come first again; the strongest-first order
 the file is authored in decides every remaining tie.
