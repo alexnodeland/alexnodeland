@@ -4,6 +4,7 @@ import { getAllSocialLinks, siteConfig } from '../config';
 import { EASE_IN, EASE_OUT } from '../config/motion';
 import { FOLD_ANCHOR, publishFoldMeasures } from '../lib/foldAnchor';
 import { holdNotFound, isNotFound, useNotFound } from '../lib/notFound';
+import { forgetPostOffTimeline } from '../lib/timelineView';
 import {
   prefersReducedMotion,
   scrollBehavior,
@@ -279,6 +280,13 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
 
   // The outgoing hero, held on screen while it leaves.
   const [ghost, setGhost] = React.useState<HeroGhost | null>(null);
+
+  // The timeline's place is only kept for a reader coming straight back from
+  // a post. Landing anywhere else drops it, so the next visit to the list —
+  // by the capsule, by the back button, however — starts at the top.
+  React.useEffect(() => {
+    forgetPostOffTimeline(location?.pathname);
+  }, [location?.pathname]);
 
   // ── The navigation, half one ────────────────────────────────────────────
   // The page inside the window has already swapped by the time this runs (it

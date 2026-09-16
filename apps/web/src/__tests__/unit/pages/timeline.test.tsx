@@ -268,6 +268,36 @@ describe('Timeline Page', () => {
     );
   });
 
+  // The page scrolls inside the shell's window, which it finds by class; the
+  // tests stand one in so there is a scrollTop to read back.
+  const renderInWindow = () => {
+    const panel = document.createElement('div');
+    panel.className = 'layout';
+    document.body.appendChild(panel);
+    render(<TimelinePage data={mockData as any} />, { container: panel });
+    return panel;
+  };
+
+  it('comes back to where it was when the reader left it for a post', () => {
+    (window.sessionStorage.getItem as jest.Mock).mockReturnValue(
+      JSON.stringify({ scrollTop: 400, slug: '/zeta' })
+    );
+
+    const panel = renderInWindow();
+
+    expect(panel.scrollTop).toBe(400);
+  });
+
+  it('starts at the top when the reader comes from anywhere but a post', () => {
+    (window.sessionStorage.getItem as jest.Mock).mockReturnValue(
+      JSON.stringify({ scrollTop: 400, slug: null })
+    );
+
+    const panel = renderInWindow();
+
+    expect(panel.scrollTop).toBe(0);
+  });
+
   it('comes back to the tag and the order it was left on', () => {
     (window.sessionStorage.getItem as jest.Mock).mockReturnValue(
       JSON.stringify({ tag: 'AI', sort: 'asc', search: '', scrollTop: 0 })
