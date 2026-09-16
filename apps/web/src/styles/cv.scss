@@ -580,5 +580,14 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     li {
       margin-bottom: var(--space-3);
     }
+
+    // A repo URL is one unbroken word, and at 320px
+    // "github.com/alexnodeland/principled" is wider than the column, so it ran
+    // past the card and was clipped by the layout. Here it may break anywhere.
+    // The PDFs deliberately do the opposite (see resume.tex.js): that break
+    // costs a hyphen in extracted text, which a rendered page does not have.
+    a {
+      overflow-wrap: anywhere;
+    }
   }
 }
