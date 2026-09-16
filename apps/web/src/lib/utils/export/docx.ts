@@ -204,7 +204,11 @@ const experience = (cvData: CVData, variant: CVVariant, m: Metrics): Block[] =>
   cvData.experience.flatMap((exp: ExperienceItem) => [
     entryHeading(
       `${exp.title}, ${exp.company}`,
-      `${exp.location}${SEPARATOR}${exp.duration}`,
+      // Engagement type beside the dates, as the PDF sets it, so overlapping
+      // roles read as concurrent rather than as job-hopping.
+      [exp.location, exp.engagement, exp.duration]
+        .filter(Boolean)
+        .join(SEPARATOR),
       m
     ),
     // Six extra lines on the one-pager restating what the bullets already say.
@@ -237,6 +241,22 @@ const education = (cvData: CVData, variant: CVVariant, m: Metrics): Block[] =>
     new Paragraph({ children: [], spacing: { after: m.entrySpacing } }),
   ]);
 
+// The same selection the PDF of this variant carries, one entry per project:
+// name and language on the heading row, then what it is, then where it lives.
+const projectsBlock = (cvData: CVData, m: Metrics): Block[] =>
+  (cvData.projects ?? []).flatMap(project => {
+    const link = project.github || project.url;
+    return [
+      entryHeading(project.name, project.technologies.join(', '), m),
+      new Paragraph({
+        children: [new TextRun({ text: project.description, size: m.body })],
+        spacing: { after: 40 },
+      }),
+      ...(link ? [note(link, m)] : []),
+      new Paragraph({ children: [], spacing: { after: m.entrySpacing } }),
+    ];
+  });
+
 const skillsBlock = (cvData: CVData, m: Metrics): Paragraph[] => {
   const line = (label: string, items: string[]) =>
     new Paragraph({
@@ -267,6 +287,9 @@ export const buildCVDocument = (
     ...header(cvData, m),
     sectionHeading('Experience', m),
     ...experience(cvData, variant, m),
+    ...(cvData.projects && cvData.projects.length > 0
+      ? [sectionHeading('Projects', m), ...projectsBlock(cvData, m)]
+      : []),
     sectionHeading('Education', m),
     ...education(cvData, variant, m),
     sectionHeading('Skills', m),

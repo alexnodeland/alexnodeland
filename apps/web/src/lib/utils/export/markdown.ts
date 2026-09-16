@@ -23,7 +23,11 @@ export const exportCVAsMarkdown = (cvData: CVData): string => {
   markdown += `## Experience\n\n`;
   cvData.experience.forEach((exp: ExperienceItem) => {
     markdown += `### ${exp.title}, ${exp.company}\n`;
-    markdown += `**${exp.location}** | ${exp.duration}\n\n`;
+    // Engagement type beside the dates, as the PDF sets it, so overlapping
+    // roles read as concurrent here too.
+    markdown += `**${exp.location}** | ${[exp.engagement, exp.duration]
+      .filter(Boolean)
+      .join(' | ')}\n\n`;
     if (exp.description) {
       markdown += `${exp.description}\n\n`;
     }
@@ -36,6 +40,17 @@ export const exportCVAsMarkdown = (cvData: CVData): string => {
     }
     markdown += `\n`;
   });
+
+  // Projects — the same selection the PDF of this variant carries.
+  if (cvData.projects && cvData.projects.length > 0) {
+    markdown += `## Projects\n\n`;
+    cvData.projects.forEach(project => {
+      const link = project.github || project.url;
+      markdown += `- **${project.name}** — ${project.description}`;
+      markdown += link ? ` ${link}\n` : `\n`;
+    });
+    markdown += `\n`;
+  }
 
   // Education
   markdown += `## Education\n\n`;
