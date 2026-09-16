@@ -818,10 +818,8 @@ export const cvSource: CVSource = {
       { name: 'Infrastructure as Code', tags: ['fde', 'ai-eng'] },
       'CI/CD',
       { name: 'API Development', tags: ['fde', 'ai-eng'] },
-      // JavaScript, for the pages whose families ask for it. Not the
-      // frameworks: a skills line is what the writer would stand behind in
-      // an interview, and the web stack is not that.
-      { name: 'JavaScript', tags: ['fde', 'ai-eng'] },
+      // No web stack: a skills line is what the writer would stand behind in
+      // an interview, and that is not it.
       { name: 'Linux', tags: ['fde'] },
       // The customer-side of the FDE work. Pre-sales is a sales word, and
       // stays off the general documents.
