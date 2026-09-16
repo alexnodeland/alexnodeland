@@ -227,15 +227,11 @@ export interface CVSource extends Omit<
     /**
      * The one list every document's skills line is selected from, in the
      * order it is authored. Tag a term to offer it to a variant; mark it
-     * `audienceOnly` to keep it off the general documents too.
+     * `audienceOnly` to keep it off the general documents too. There is no
+     * per-variant list: the order here is the order on every page, so a
+     * term that should lead is authored early.
      */
     technical: Skill[];
-    /**
-     * A hand-ordered list for one variant, used in place of the selection
-     * from `technical`. The heavier tool: for a page whose reader scans the
-     * terms in a particular order.
-     */
-    byVariant?: Partial<Record<CVVariant, string[]>>;
     soft?: string[];
     languages?: string[];
   };
@@ -271,7 +267,7 @@ export const cvSource: CVSource = {
       // trail, and the Rust libraries are the current work rather than a
       // weekend note.
       'music-tech':
-        'Engineer and mathematician who has worked on audio at every layer: firmware for digital guitar pedals, wavelet research on audio compression, synthesizer design at Stony Brook, and engineering leadership at Musiio, a music-ML company SoundCloud acquired. I maintain quiver, a modular audio synthesis library in Rust, and auracle, a synthesizer that evolves patches toward the ones you prefer.',
+        'Engineer and mathematician who has worked on audio at every layer: firmware for digital guitar pedals, wavelet research on audio compression, synthesizer design at Stony Brook, and engineering leadership at Musiio, a music-ML company SoundCloud acquired. I maintain quiver, a modular audio synthesis library in Rust, and auracle, a synthesizer that evolves patches toward the ones you prefer. Today I work on AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on.',
     },
   },
 
@@ -293,7 +289,7 @@ export const cvSource: CVSource = {
       achievements: [
         {
           text: 'Built a DAG-based orchestration framework that lets autonomous agents carry out multi-step data analysis end to end',
-          tags: ['ai-eng'],
+          tags: ['ai-eng', 'music'],
         },
         {
           text: 'Designed a DSL that non-technical users write analysis workflows in, mixing LLM agents with conventional ML models in the same pipeline',
@@ -330,7 +326,7 @@ export const cvSource: CVSource = {
       engagement: 'full-time',
       variants: {
         resume: { maxBullets: 3 },
-        fde: { maxBullets: 2 },
+        fde: { maxBullets: 3 },
         'ai-engineer': { maxBullets: 3 },
       },
       location: 'Remote, NY',
@@ -341,7 +337,10 @@ export const cvSource: CVSource = {
           text: "Built the RAG pipeline behind the product's generated responses, covering retrieval, chunking, and grounding",
           tags: ['ai-eng'],
         },
-        'Designed the Postgres schema and backend on Supabase, including authentication and access control',
+        {
+          text: 'Designed the Postgres schema and backend on Supabase, including authentication and access control',
+          tags: ['fde', 'ai-eng'],
+        },
         {
           text: 'Designed the API layer in front of the AI pipelines, improving latency and throughput',
           tags: ['ai-eng'],
@@ -423,7 +422,7 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 2 },
-        'music-tech': { maxBullets: 3 },
+        'music-tech': { maxBullets: 4 },
       },
       location: 'Singapore',
       duration: '2021 - 2022',
@@ -445,6 +444,10 @@ export const cvSource: CVSource = {
           tags: ['fde'],
         },
         'Led a cross-functional engineering team, working alongside the music, research, and sales sides of the company',
+        {
+          text: 'Ran experiments to validate models in-house',
+          tags: ['ai-eng', 'music'],
+        },
         {
           text: 'Ran GCP infrastructure: Kubernetes and Istio, monitored with Grafana and Prometheus',
           tags: ['ai-eng'],
@@ -486,8 +489,8 @@ export const cvSource: CVSource = {
       achievements: [
         'Took the product from concept to launch: a cloud platform that emulates supercomputer environments so teams can develop and test at scale without waiting for time on the real machine',
         {
-          text: 'Won early customers including Fortune 500 companies and national governments',
-          tags: ['fde'],
+          text: 'Won early customers, including Fortune 500 enterprises and national governments',
+          tags: ['fde', 'ai-eng'],
         },
         {
           text: 'Raised early rounds from government, VC, and angel investors',
@@ -500,7 +503,7 @@ export const cvSource: CVSource = {
         },
         {
           text: 'Managed relationships with several levels of government across the region',
-          tags: ['fde', 'exec'],
+          tags: ['exec'],
         },
         {
           text: 'Ran investor relations and board communications',
@@ -628,7 +631,7 @@ export const cvSource: CVSource = {
       duration: '2016 - 2017',
       achievements: [
         {
-          text: 'Researched optimal wavelet bases for audio compression, looking for a general selection procedure',
+          text: 'Researched optimal wavelet bases for audio compression in C++ on HPC clusters, running experiments that scored timbre coherence against compression ratio',
           tags: ['music'],
         },
         'Ran a supercomputing project funded by the High Performance Computing Consortium of New York',
@@ -696,7 +699,7 @@ export const cvSource: CVSource = {
       duration: '2010 - 2014',
       achievements: [
         'Assembled and tested printed circuit boards for audio processing units',
-        'Ran technical customer service, including repairs and returns',
+        'Was the customer service contact point, answering the calls and emails and handling repairs and returns',
         'Serviced customer hardware sent back to the shop',
         'Trained new staff on assembly and quality control',
       ],
@@ -773,82 +776,59 @@ export const cvSource: CVSource = {
   ],
 
   skills: {
+    // Every entry has to be true of work described somewhere above — this
+    // list is what a keyword filter reads, not a wishlist. It is ordered once,
+    // for every page: what the engineer is, then the AI work, then the
+    // platform under it, then the tooling. A tag offers a term to that page;
+    // the general documents carry every term that is not `audienceOnly`.
     technical: [
       'Python',
-      // The web and AI-specific terms are tagged for the engineering
-      // audiences: the general documents still carry them, and a page for
-      // another audience does not spend its line on them.
-      { name: 'JavaScript', tags: ['fde', 'ai-eng'] },
-      { name: 'React', tags: ['fde', 'ai-eng'] },
-      { name: 'Node.js', tags: ['fde', 'ai-eng'] },
-      'AWS',
-      'GCP',
-      'Docker',
-      'Container Orchestration',
-      'PostgreSQL',
-      'Machine Learning',
-      'LLMs',
-      { name: 'RAG Systems', tags: ['fde', 'ai-eng'] },
-      'Data Engineering',
-      { name: 'API Development', tags: ['fde', 'ai-eng'] },
-      { name: 'Infrastructure as Code', tags: ['fde', 'ai-eng'] },
-      'CI/CD',
-      { name: 'Agile/Scrum', tags: ['fde', 'ai-eng'] },
-      { name: 'Git', tags: ['fde', 'ai-eng'] },
-      'Linux',
-      'Mathematics',
-      'Signal Processing',
+      { name: 'C++', tags: ['music'] },
+      'SQL',
+      // A term is tagged away from a page whose family does not ask for it
+      // and whose bullets already say it: the mathematics and the signal
+      // processing are in the AI Engineer page's summary and off its list.
+      { name: 'Mathematics', tags: ['fde', 'music'] },
+      { name: 'Signal Processing', tags: ['music'] },
       // Shown to the music-tech page only.
       { name: 'Audio Synthesis', tags: ['music'], audienceOnly: true },
       { name: 'Audio Compression', tags: ['music'], audienceOnly: true },
       { name: 'Real-time Audio', tags: ['music'], audienceOnly: true },
+      'Machine Learning',
+      'LLMs',
+      // The LLM-systems vocabulary. Perch and Influize are the work behind
+      // it; the general documents carry it because that work is the current
+      // work, and the music-tech page does not spend its line on it.
+      { name: 'Agents', tags: ['fde', 'ai-eng', 'music'] },
+      { name: 'Evals', tags: ['fde', 'ai-eng', 'music'] },
+      { name: 'RAG', tags: ['fde', 'ai-eng'] },
+      { name: 'Tool Use', tags: ['ai-eng'] },
+      { name: 'MCP', tags: ['fde', 'ai-eng'] },
+      { name: 'Prompt Engineering', tags: ['fde', 'ai-eng'] },
+      { name: 'Vector Search', tags: ['ai-eng'] },
+      { name: 'Semantic Data Models', tags: ['ai-eng'] },
+      { name: 'Observability', tags: ['fde', 'ai-eng', 'music'] },
+      { name: 'Data Engineering', tags: ['fde', 'music'] },
+      { name: 'Distributed Systems', tags: ['fde', 'ai-eng'] },
+      'AWS',
+      { name: 'GCP', tags: ['fde', 'music'] },
+      'Docker',
+      'Container Orchestration',
+      'PostgreSQL',
+      { name: 'Infrastructure as Code', tags: ['fde', 'ai-eng'] },
+      'CI/CD',
+      { name: 'API Development', tags: ['fde', 'ai-eng'] },
+      // The web stack, for the pages whose families ask for it: the FDE
+      // postings want the whole stack, the AI Engineer ones the front of it.
+      { name: 'JavaScript', tags: ['fde', 'ai-eng'] },
+      { name: 'React', tags: ['fde'] },
+      { name: 'Node.js', tags: ['fde'] },
+      { name: 'Linux', tags: ['fde'] },
+      // The customer-side of the FDE work. Pre-sales is a sales word, and
+      // stays off the general documents.
+      { name: 'Solution Architecture', tags: ['fde'] },
+      { name: 'Technical Pre-Sales', tags: ['fde'], audienceOnly: true },
     ],
-    // One list per document, ordered so the terms a reader is scanning for sit
-    // at the front. Every entry has to be true of work described somewhere
-    // above — this list is what a keyword filter reads, not a wishlist.
-    byVariant: {
-      fde: [
-        'Python',
-        'LLMs',
-        'Agents',
-        'Evals',
-        'RAG',
-        'AWS',
-        'GCP',
-        'Docker',
-        'Container Orchestration',
-        'PostgreSQL',
-        'Data Engineering',
-        'API Development',
-        'Infrastructure as Code',
-        'CI/CD',
-        'Observability',
-        'Solution Architecture',
-        'Technical Pre-Sales',
-        'Linux',
-      ],
-      'ai-engineer': [
-        'Python',
-        'LLMs',
-        'Agents',
-        'Tool Use',
-        'MCP',
-        'Evals',
-        'RAG',
-        'Vector Search',
-        'Prompt Engineering',
-        'Semantic Data Models',
-        'Observability',
-        'AWS',
-        'Docker',
-        'Container Orchestration',
-        'PostgreSQL',
-        'Data Engineering',
-        'Distributed Systems',
-        'CI/CD',
-        'Mathematics',
-      ],
-    },
   },
 
   // Named from `src/config/projects.ts`. The CrewAI-era experiments are
@@ -942,24 +922,17 @@ const isEligible = (
 };
 
 /**
- * The skills line for one variant: what `technical` offers it, on-audience
- * terms first and the rest in authored order.
+ * The skills line for one variant: what `technical` offers it, in the order
+ * it is authored. Tags decide membership and nothing else, so one list, read
+ * once, is the order on every page.
  */
 const selectSkills = (skills: Skill[], variant: CVVariant): string[] => {
   const audience = audienceOf(variant);
   const tagsOf = (skill: Skill): AudienceTag[] =>
     typeof skill === 'string' ? [] : (skill.tags ?? []);
   return skills
-    .map((skill, index) => ({ skill, index }))
-    .filter(({ skill }) =>
-      isEligible(tagsOf(skill), isAudienceOnly(skill), audience)
-    )
-    .sort((a, b) => {
-      const rank = (skill: Skill) =>
-        audience && tagsOf(skill).includes(audience) ? 0 : 1;
-      return rank(a.skill) - rank(b.skill) || a.index - b.index;
-    })
-    .map(({ skill }) => (typeof skill === 'string' ? skill : skill.name));
+    .filter(skill => isEligible(tagsOf(skill), isAudienceOnly(skill), audience))
+    .map(skill => (typeof skill === 'string' ? skill : skill.name));
 };
 
 /**
@@ -1056,9 +1029,7 @@ export const buildVariant = (
     certifications: isFull ? source.certifications : [],
     projects: resolveProjects(source.projects?.[variant]),
     skills: {
-      technical:
-        source.skills.byVariant?.[variant] ??
-        selectSkills(source.skills.technical, variant),
+      technical: selectSkills(source.skills.technical, variant),
       soft: source.skills.soft,
       languages: source.skills.languages,
     },

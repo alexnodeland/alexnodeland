@@ -64,8 +64,8 @@ const fixture: CVSource = {
       'Default Skill',
       { name: 'AI Skill', tags: ['ai-eng'] },
       { name: 'AI Only Skill', tags: ['ai-eng'], audienceOnly: true },
+      { name: 'FDE Skill', tags: ['fde'] },
     ],
-    byVariant: { fde: ['FDE Skill'] },
   },
   projects: { fde: ['fugue'] },
 };
@@ -124,19 +124,20 @@ describe('buildVariant', () => {
     );
   });
 
-  it('selects the skills line the way it selects bullets, on-audience terms first', () => {
+  it('selects the skills line by tag, in authored order', () => {
     expect(buildVariant('ai-engineer', fixture).skills.technical).toEqual([
+      'Default Skill',
       'AI Skill',
       'AI Only Skill',
-      'Default Skill',
     ]);
-    // The full CV carries a tagged skill and not an audience-only one.
+    expect(buildVariant('fde', fixture).skills.technical).toEqual([
+      'Default Skill',
+      'FDE Skill',
+    ]);
+    // The general documents carry a tagged skill and not an audience-only one.
     expect(buildVariant('full', fixture).skills.technical).toEqual([
       'Default Skill',
       'AI Skill',
-    ]);
-    // A hand-ordered list wins outright.
-    expect(buildVariant('fde', fixture).skills.technical).toEqual([
       'FDE Skill',
     ]);
   });
@@ -190,16 +191,14 @@ describe('buildVariant', () => {
     );
   });
 
-  it('prefers the per-variant summary, title and skills, and falls back', () => {
+  it('prefers the per-variant summary and title, and falls back', () => {
     const fde = buildVariant('fde', fixture);
     expect(fde.personal.summary).toBe('FDE summary.');
     expect(fde.personal.title).toBe('FDE Title');
-    expect(fde.skills.technical).toEqual(['FDE Skill']);
 
     const resume = buildVariant('resume', fixture);
     expect(resume.personal.summary).toBe('Default summary.');
     expect(resume.personal.title).toBe('Default Title');
-    expect(resume.skills.technical).toEqual(['Default Skill', 'AI Skill']);
   });
 
   it('drops coursework and certifications from the one-pagers', () => {

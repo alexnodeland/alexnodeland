@@ -316,10 +316,14 @@ technical: [
 ],
 ```
 
-A variant's skills line is what that list offers it, on-audience terms first
-and the rest in authored order. `skills.byVariant` still wins where it is set:
-it is the heavier tool, for a page whose reader scans the terms in a particular
-order.
+A variant's skills line is what that list offers it, in the order it is
+authored. Tags decide membership and nothing else, so the one list is ordered
+once for every page: what the engineer is, then the current work, then the
+platform under it, then the tooling. There is no per-variant list.
+
+The rule for tagging a term away from a page: its family does not ask for it
+(`npm run score:cv -- --verbose` shows what each family asks for) and a bullet
+already on that page says it. A term that is true and asked for stays.
 
 **Engagement type** is per role, and renders beside the dates:
 
@@ -331,8 +335,8 @@ This is what stops overlapping entries reading as job-hopping: "Freelance"
 beside 2022–Present says the same years counted twice are one person consulting
 on the side.
 
-**Summaries, headlines, keyword lists and projects** are all per variant:
-`personal.summaryByVariant`, `personal.titleByVariant`, `skills.byVariant`, and
+**Summaries, headlines and projects** are all per variant:
+`personal.summaryByVariant`, `personal.titleByVariant`, and
 `projects`, which names entries from `src/config/projects.ts` rather than
 restating their descriptions.
 
@@ -413,8 +417,9 @@ change to a bullet can be judged by its effect.
   did. A document whose every line is intact can still hand an employer the
   wrong date range, and only a field-level parse shows it.
 - **Keywords** — of the terms in `role-profiles/lexicon.json` that a family's
-  profiles ask for, weighted by how many ask, the share the extracted text
-  covers. What a keyword filter sees.
+  profiles ask for in their responsibility and qualification lines, weighted
+  by how many ask, the share the extracted text covers. What a keyword filter
+  sees.
 - **Semantic** — for every requirement line in the family's profiles, the
   cosine between its embedding and the nearest line of the resume, using the
   same model the site's chat retrieval uses. The mean is the score; the share
@@ -466,8 +471,8 @@ build-cv: rendering CV artifacts
 `npm run check:cv` is the gate that actually fails. If you add content and it
 spills, you have two levers:
 
-1. **Trim content** — drop a bullet, lower a `maxBullets`, shorten a
-   `skills.byVariant` list, or name one fewer project for that variant.
+1. **Trim content** — drop a bullet, lower a `maxBullets`, tag a skill away
+   from that variant, or name one fewer project for it.
 2. **Tighten the layout** — the knobs are at the top of `preamble()` in
    `templates/cv/resume.tex.js`: `margin`, `fontSize`, `sectionBefore`,
    `sectionAfter`, `itemSep`, `roleSep`. They are already fairly tight; prefer
