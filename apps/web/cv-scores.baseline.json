@@ -39,7 +39,7 @@
     "families": {
       "music-tech": {
         "keywords": 0.481,
-        "semantic": 0.679
+        "semantic": 0.682
       }
     }
   },
@@ -48,15 +48,15 @@
     "families": {
       "ai-engineer": {
         "keywords": 0.7,
-        "semantic": 0.751
+        "semantic": 0.752
       },
       "fde": {
         "keywords": 0.752,
-        "semantic": 0.704
+        "semantic": 0.705
       },
       "music-tech": {
         "keywords": 0.745,
-        "semantic": 0.733
+        "semantic": 0.734
       }
     }
   }

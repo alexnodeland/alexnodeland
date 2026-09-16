@@ -80,8 +80,7 @@ export const projectsConfig: ProjectsConfig = {
     // --- audio dsp ---
     {
       name: 'quiver',
-      description:
-        'a modular audio synthesis library using arrow-style combinators and graph-based patching.',
+      description: 'a modular audio synthesis library in rust.',
       language: 'Rust',
       tags: ['featured', 'library', 'category-theory', 'modular-synthesizers'],
       url: 'https://github.com/alexnodeland/quiver',
@@ -92,7 +91,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'auracle',
       description:
-        'a synthesizer that evolves patches toward the ones you prefer, built on fugue-evo and quiver.',
+        'a synthesizer that evolves patches toward the ones you prefer.',
       language: 'Rust',
       tags: ['app', 'synthesis', 'preference-learning'],
       url: 'https://github.com/alexnodeland/auracle',
@@ -112,8 +111,7 @@ export const projectsConfig: ProjectsConfig = {
     },
     {
       name: 'llmcomposer',
-      description:
-        'an experiment in composing music with an llm, and in how much musical understanding language models have.',
+      description: 'an experiment in composing music with an llm.',
       language: 'Python',
       tags: ['experiment', 'music', 'llm'],
       url: 'https://github.com/alexnodeland/llmcomposer',
