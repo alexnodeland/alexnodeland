@@ -12,7 +12,7 @@
     "build:posts": "node scripts/build-post-pdfs.js",
     "build:index": "node scripts/build-chat-index.mjs",
     "build:activity": "node scripts/build-activity.mjs",
-    "build:ld": "node scripts/build-linked-data.mjs",
+    "build:ld": "node scripts/build-linked-data.mjs && node scripts/build-discovery.mjs",
     "build": "npm run build:activity && npm run build:worker && npm run build:index && npm run build:ld && npm run build:cv && npm run build:posts && gatsby build",
     "develop": "npm run build:worker && npm run build:index && npm run build:ld && gatsby develop",
     "start": "npm run build:worker && npm run build:index && npm run build:ld && gatsby develop",

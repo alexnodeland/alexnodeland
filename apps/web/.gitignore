@@ -131,3 +131,7 @@ static/provenance.ttl
 static/provenance.jsonld
 static/void.ttl
 static/.well-known/void
+# And the discovery files beside them, from scripts/build-discovery.mjs:
+# the site summarised for an assistant, and security.txt with its expiry.
+static/llms.txt
+static/.well-known/security.txt

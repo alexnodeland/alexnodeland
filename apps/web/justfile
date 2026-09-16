@@ -147,6 +147,6 @@ eval-promote:
 eval-gate:
     node scripts/eval-run.mjs --repeat 3 --baseline .eval/baseline/summary.json
 
-# The site as RDF: profile, vocabulary, whole graph, provenance, VoID
+# The site for machines: RDF (profile, vocabulary, graph, provenance, VoID), llms.txt, security.txt
 ld:
     npm run build:ld

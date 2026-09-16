@@ -4,7 +4,8 @@
  * and the way to the site's RDF.
  */
 import React from 'react';
-import { headComponents, onRenderBody } from '../../../gatsby-ssr';
+import { onRenderBody } from '../../../gatsby-ssr';
+import { headComponents } from '../../lib/head';
 import { siteConfig } from '../../config/site';
 
 describe('the site-wide head', () => {
@@ -18,10 +19,14 @@ describe('the site-wide head', () => {
     expect(setHeadComponents).toHaveBeenCalledWith(headComponents());
   });
 
-  it('leaves the feed link to gatsby-plugin-feed', () => {
-    expect(
-      headComponents().some(el => props(el).type === 'application/rss+xml')
-    ).toBe(false);
+  it('links the Atom and JSON Feed forms of the timeline, and leaves RSS to the plugin', () => {
+    const feeds = headComponents()
+      .filter(el => props(el).rel === 'alternate')
+      .map(el => [props(el).type, props(el).href]);
+    expect(feeds).toEqual([
+      ['application/atom+xml', '/atom.xml'],
+      ['application/feed+json', '/feed.json'],
+    ]);
   });
 
   it('claims every profile the footer links, and the email, with rel="me"', () => {

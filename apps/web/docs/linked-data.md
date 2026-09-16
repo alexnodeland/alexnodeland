@@ -10,6 +10,7 @@ what is there, where it comes from, and how to add to it.
 - [The graph](#the-graph)
 - [Identifiers](#identifiers)
 - [The files](#the-files)
+- [The discovery files](#the-discovery-files)
 - [The vocabulary](#the-vocabulary)
 - [Adding to it](#adding-to-it)
 - [Checking it](#checking-it)
@@ -118,6 +119,22 @@ and needs no network; within the shape it reads, the conversion is exact.
 
 The provenance graph reads `apps/model/models/site-needle.json`. A checkout
 without it builds everything else and says so.
+
+## The discovery files
+
+Beside the RDF, the files a machine reads before it reads the site:
+
+| File                        | What                                                                                                                                                                                          |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/robots.txt`               | Hand-written in `static/`. Allows everything, and names the AI crawlers so the allowance is a decision rather than an omission.                                                               |
+| `/llms.txt`                 | The site summarised for an assistant (llmstxt.org): pages, posts, projects, and where the machine-readable forms are. From the config.                                                        |
+| `/.well-known/security.txt` | RFC 9116. Regenerated on every deploy, so its `Expires` is always in the future.                                                                                                              |
+| `/.well-known/tdmrep.json`  | The W3C TDM Reservation Protocol: text-and-data-mining rights are not reserved, which is the same policy as robots.txt in the form the EU opt-out machinery reads. Hand-written in `static/`. |
+| `/atom.xml`, `/feed.json`   | The timeline as Atom and JSON Feed, with full content, beside the plugin's RSS. Written by `gatsby-node` at the end of the build, where the rendered HTML is. Linked from every head.         |
+
+`llms.txt` and `security.txt` come from `scripts/build-discovery.mjs`
+(`scripts/lib/discovery.js`), which `npm run build:ld` also runs; the feeds
+from `scripts/lib/feeds.js`. Both libraries are pure functions with tests.
 
 ## The vocabulary
 
