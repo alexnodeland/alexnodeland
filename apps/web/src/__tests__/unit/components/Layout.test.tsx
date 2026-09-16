@@ -416,6 +416,32 @@ describe('Layout Component', () => {
       </SettingsPanelProvider>
     );
 
+    it("drops the timeline's place on landing anywhere but the list or a post", () => {
+      // Other things (the chat) write to the same store; only the timeline's
+      // key is of interest here.
+      const timelineWrites = () =>
+        (window.sessionStorage.setItem as jest.Mock).mock.calls.filter(
+          ([key]) => key === 'timeline:view'
+        );
+
+      const { rerender } = render(
+        <Shell pathname="/timeline/my-post/" label="post" />
+      );
+      expect(timelineWrites()).toHaveLength(0);
+
+      act(() => {
+        rerender(<Shell pathname="/timeline/" label="timeline" />);
+      });
+      expect(timelineWrites()).toHaveLength(0);
+
+      act(() => {
+        rerender(<Shell pathname="/projects" label="projects" />);
+      });
+      expect(timelineWrites()).toEqual([
+        ['timeline:view', expect.stringContaining('"slug":null')],
+      ]);
+    });
+
     it('should swap the hero when the path changes', () => {
       const { rerender } = render(
         <Shell pathname="/timeline" label="timeline" />

@@ -122,17 +122,20 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
     if (!restored) return;
     const saved = readTimelineView();
     const panel = scrollerOf(pageRef.current);
-    if (!saved || !panel) return;
+    // Only a reader coming back from a post has a place to come back to. From
+    // anywhere else — the projects page, the capsule, a cold load — the list
+    // starts at the top, whatever offset it was left at: that reader asked
+    // for the timeline, not for wherever they happened to be in it last.
+    if (!saved || !panel || !saved.slug) return;
 
     // The card they were last on, wherever the current sort has put it. The
-    // pixel offset is only the fallback: it means nothing after a rotation, a
-    // resize, or a walk down the older/newer chain at the foot of a post.
+    // pixel offset is only the fallback, for a post whose card the current
+    // filter has hidden: it means nothing after a rotation, a resize, or a
+    // walk down the older/newer chain at the foot of a post.
     const cards = Array.from(
       pageRef.current?.querySelectorAll<HTMLElement>('[data-slug]') ?? []
     );
-    const card = saved.slug
-      ? cards.find(el => el.dataset.slug === saved.slug)
-      : undefined;
+    const card = cards.find(el => el.dataset.slug === saved.slug);
 
     const top = card ? offsetWithin(card, panel) : null;
     if (top !== null) {
@@ -171,9 +174,9 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
     };
     // The offset, and the post anchor cleared with it. The anchor belongs to a
     // reader who left the list *for a post* — the post sets it again on the
-    // way in, a beat after this runs — and leaving it behind would strand
-    // someone who went to the projects page and came back at whatever card
-    // they last read rather than where they had scrolled to.
+    // way in, a beat after this runs — and without it the offset is never
+    // used: someone who went to the projects page and came back gets the top
+    // of the list, not wherever they had scrolled to.
     const persist = () => saveTimelineView({ scrollTop: last, slug: null });
     panel.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('pagehide', persist);

@@ -31,8 +31,12 @@ export interface TimelineView {
    * somewhere that is not a post. The anchor proper while it is set: it
    * survives a resize, a rotation and a walk along the older/newer chain,
    * none of which leave the pixel offset meaning what it meant when it was
-   * written. The list clears it on the way out and a post sets it on the way
-   * in, in that order, so it only ever says "a post is what you left for".
+   * written. The list clears it on the way out, a post sets it on the way in,
+   * in that order, and the shell clears it again on arriving anywhere else —
+   * so it only ever says "a post is what you left for, and you are still on
+   * it". Without it the list does not scroll at all: a reader who comes back
+   * from the projects page, or a cold load, gets the top of the list, and
+   * only a reader coming back from a post gets their place in it.
    */
   slug: string | null;
 }
@@ -102,3 +106,23 @@ export const saveTimelineView = (patch: Partial<TimelineView>): void => {
  */
 export const rememberPost = (slug: string | null): void =>
   saveTimelineView({ slug });
+
+/** The list itself, with or without its trailing slash. */
+const TIMELINE = /^\/timeline\/?$/;
+/** A post: anything under the list's address that is not the list. */
+const POST = /^\/timeline\/.+/;
+
+/**
+ * Called by the shell on every navigation, with where the reader has landed.
+ * The anchor means "a post is what you left the list for", so landing on a
+ * page that is neither a post nor the list takes it away: a reader who goes
+ * from a post to the projects page and then to the timeline gets the top of
+ * the list, not the card of a post they finished with two pages ago. Landing
+ * on a post is left alone (the post has just set it), and so is landing on
+ * the list (which is about to read it, and clears it itself on the way out).
+ */
+export const forgetPostOffTimeline = (pathname: string | undefined): void => {
+  const path = pathname ?? '/';
+  if (TIMELINE.test(path) || POST.test(path)) return;
+  rememberPost(null);
+};
