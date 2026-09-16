@@ -346,6 +346,7 @@ export const cvSource: CVSource = {
           text: 'Built an ontology-powered knowledge platform and AI copilot for a management consulting firm, mapping client organizations, surfacing conflicts and gaps across documentation, and synthesizing reports',
           tags: ['ai-eng'],
         },
+        'Developed personal knowledge management agents in Claude Code and Obsidian for non-technical founders, consultants, and creatives, covering capture, linking, reviews, and research across their notes',
         'Help early-stage startups choose a technology stack that will last',
       ],
       skills: [

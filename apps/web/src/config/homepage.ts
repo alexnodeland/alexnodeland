@@ -106,13 +106,19 @@ export const homepageConfig: HomepageConfig = {
         body: 'optionally, further engagement: the full implementation, or advising while the implementation happens.',
       },
     ],
-    // Ordered for the reader most likely to be here: the AI build work first,
-    // the organisational and speaking work after it.
+    // Six, so the grid lands in even rows at three columns and at two. Ordered
+    // for the reader most likely to be here: the AI build work is the first
+    // row, the startup, organisational and speaking work the second.
     caseStudies: [
       {
         title: 'a knowledge platform and ai copilot',
         client: 'a small management consulting firm',
         body: 'built an ontology-powered knowledge platform and ai copilot for mapping client organizations: organizing references to documentation, identifying conflicts or gaps in understanding, and synthesizing insights and reports across the documents it can access. all packaged as a web app with chat, graph visualization, task tracking and document management.',
+      },
+      {
+        title: 'personal knowledge agents',
+        client: 'non-technical individuals',
+        body: 'developed personal knowledge management agents in claude code and obsidian for founders, executives, consultants and creatives. they capture and file notes into the vault, link them and keep its structure consistent, run reviews that synthesize across notes, and research and draft from what is already there. built from claude code skills and commands, hooks, mcp servers and vault conventions, then set up for each person and taught as a few plain-language commands.',
       },
       {
         title: 'llms for internal processes',

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { homepageConfig } from '../../../config';
+import { cvSource } from '../../../config/cv';
 import ConsultingPage from '../../../pages/consulting';
 
 jest.mock('../../../components/seo', () => ({
@@ -28,13 +29,28 @@ describe('Consulting page', () => {
     );
   });
 
-  it('keeps every client anonymous', () => {
+  it('names no company the CV names', () => {
     const { container } = render(<ConsultingPage />);
-    // The one past client the rest of the site does name: its consulting
-    // start is on this page, described rather than named.
-    expect(container.textContent?.toLowerCase()).not.toContain('influize');
-    for (const study of consulting.caseStudies) {
-      expect(study.client).toMatch(/^an? /);
+    const page = container.textContent?.toLowerCase() ?? '';
+
+    // Every client on this page is described, not named, and the CV is where
+    // the names that could leak onto it live — Influize among them, whose
+    // consulting start is one of the stories here. "Freelance" is not a
+    // company, and a parenthetical like "(acquired by SoundCloud)" is checked
+    // as its own name.
+    const names = cvSource.experience
+      .flatMap(role => role.company.split(/[(),]/))
+      .map(part =>
+        part
+          .replace(/acquired by/i, '')
+          .trim()
+          .toLowerCase()
+      )
+      .filter(name => name.length > 3 && name !== 'freelance');
+
+    expect(names).toContain('influize');
+    for (const name of names) {
+      expect(page).not.toContain(name);
     }
   });
 
