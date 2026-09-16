@@ -259,8 +259,8 @@ achievements: [
 A bullet with no tags is neutral and eligible everywhere. A tagged bullet is
 offered to the variants sharing its tag and withheld from the rest — which is
 how `exec` bullets (fundraising, board, investor relations) stay off the
-IC-facing pages, the thing that most makes a CEO/CTO history read as
-overqualified. Within a variant, on-audience bullets come first and, among
+engineering-focused pages, which keeps those pages about the engineering.
+Within a variant, on-audience bullets come first and, among
 those, the ones carrying a `metric` come first again; the strongest-first order
 the file is authored in decides every remaining tie.
 
@@ -310,8 +310,8 @@ still builds; `/cv/*.pdf` just 404s. On macOS: `brew install texlive`.
 ### Checking that the PDFs can be read by a machine
 
 A resume is read twice: once by a person and once by whatever parses it into
-fields. The second reader is the one that rejects you, and it sees only the
-PDF's text layer — which is not the same thing as what the page looks like.
+fields. The second reader sees only the PDF's text layer — which is not the same
+thing as what the page looks like.
 Several defects here were invisible on screen and fatal in extraction: section
 headings set in small caps that came out as `S UMMARY`, a job title long enough
 to wrap that put its date between the two halves of itself, a repo URL that lost

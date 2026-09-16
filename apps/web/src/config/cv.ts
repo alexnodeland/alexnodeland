@@ -15,8 +15,8 @@ export type CVVariant = 'full' | 'resume' | 'fde' | 'ai-engineer';
  *
  * A bullet carrying a tag is offered to the variants that share it and
  * withheld from the ones that do not — so `exec` bullets (fundraising, board,
- * investor relations) stay off the IC-facing pages, which is most of what
- * makes a CEO/CTO history read as overqualified. A bullet with no tags at all
+ * investor relations) stay off the engineering-focused pages, which keeps
+ * those pages about the engineering. A bullet with no tags at all
  * is neutral and eligible everywhere.
  */
 export type AudienceTag = 'fde' | 'ai-eng' | 'exec' | 'hardware';
@@ -211,8 +211,8 @@ export const cvSource: CVSource = {
       // between a customer and a system that has to work in their hands.
       fde: 'Engineer who takes LLM systems from a prototype to something that holds up in front of customers. At Perch Insights I build the agent orchestration and evaluation infrastructure behind an analytics product, and designed the DSL non-technical users write their own analysis workflows in. Before that I co-founded a supercomputing startup in Singapore, won Fortune 500 and national-government customers, and led engineering at a music-ML company SoundCloud acquired. Prototypes that demo well and break in production are usually failing on the data model, the evals, or how failures are handled, not on the model.',
       // Leads with shipped systems and names them concretely. The founder
-      // years are one clause: enough to account for the time, not enough to
-      // read as a chief executive applying for an IC role.
+      // years are one clause: enough to account for the time, while the page
+      // stays about the systems.
       'ai-engineer':
         'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built a DAG-based framework that runs autonomous agents through multi-step data analysis, a correction-to-evaluation loop that improves the system without retraining, and lineage that traces every generated number back to its source. Earlier I built the RAG pipeline at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
     },
@@ -400,10 +400,10 @@ export const cvSource: CVSource = {
       title: 'CEO & Co-Founder',
       company: 'Archanan',
       engagement: 'full-time',
-      // Deliberately short on the IC-facing pages. The fundraising and board
-      // bullets below are tagged `exec`, so those pages never see them and the
-      // role reads as four years of shipping a hard product to demanding
-      // customers rather than as a chief executive applying for a coding job.
+      // Deliberately short on the engineering-focused pages. The fundraising
+      // and board bullets below are tagged `exec`, so those pages never see
+      // them and the role reads as four years of shipping a hard product to
+      // demanding customers.
       variants: {
         resume: { maxBullets: 3 },
         fde: { maxBullets: 2 },

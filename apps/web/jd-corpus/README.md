@@ -1,7 +1,7 @@
 # Job description corpus
 
-Drop real postings in here as `.md` or `.txt`, one per file — the ones you are
-actually applying to. `npm run report:cv` reads every file in this directory and
+Drop real postings in here as `.md` or `.txt`, one per file. `npm run report:cv`
+reads every file in this directory and
 reports which terms come up across the set and appear nowhere in a given
 variant.
 

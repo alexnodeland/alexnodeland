@@ -90,7 +90,7 @@ describe('buildVariant', () => {
     }
   });
 
-  it('withholds exec bullets from the IC-facing variants', () => {
+  it('withholds exec bullets from the engineering-focused variants', () => {
     const fde = buildVariant('fde', fixture);
     expect(fde.experience[0].achievements).not.toContain('exec one');
 

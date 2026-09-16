@@ -12,9 +12,9 @@ export interface HomepageConfig {
     paragraphs: string[];
     /**
      * The one line the homepage still spends on consulting, now that the
-     * section itself lives at /consulting/. A "book a call" button on the
-     * front page reads to a hiring manager as divided commitment; a sentence
-     * with a link reads as something someone also does.
+     * section itself lives at /consulting/. A full sales block with a booking
+     * button crowded the front page; a sentence with a link reads as something
+     * someone also does.
      */
     consultingNote: {
       before: string;

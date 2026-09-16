@@ -27,8 +27,8 @@ const config: import('gatsby').GatsbyConfig = {
         // the only things that are not pages.
         //
         // The role-specific resumes are unlisted rather than private: they are
-        // meant to be pasted into an application, not turned up by a search for
-        // the name. They carry `noindex` as well — this keeps them out of the
+        // meant to be shared by address, not turned up by a search for the
+        // name. They carry `noindex` as well — this keeps them out of the
         // sitemap that would invite the crawl in the first place.
         excludes: [
           `/404`,

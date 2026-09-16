@@ -3,9 +3,9 @@
  * Asserts that the generated CV PDFs survive text extraction.
  *
  * A resume is read twice: once by a person, and once by whatever parses it into
- * fields. The second reader is the one that rejects you, and it sees only the
- * PDF's text layer — which is not the same thing as what the page looks like.
- * Two ways that layer has gone wrong here, both invisible on screen:
+ * fields. The second reader sees only the PDF's text layer — which is not the
+ * same thing as what the page looks like. Two ways that layer has gone wrong
+ * here, both invisible on screen:
  *
  *   Small-caps headings. `\scshape` sets "Summary" as a full-size S followed by
  *   capital-shaped glyphs at lowercase size. Every extractor reads the size

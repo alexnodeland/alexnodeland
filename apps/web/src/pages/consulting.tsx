@@ -9,7 +9,7 @@ import '../styles/consulting.scss';
  * Consulting, on a page of its own.
  *
  * It used to be a section on the homepage: one paragraph and a "book a call"
- * button in front of every hiring manager who opened the site. The homepage
+ * button in the middle of the front page. The homepage
  * now spends one sentence on it, and this page — not in the nav — carries the
  * rest as a track record: what the engagements were and how one runs, with
  * only the last line and the buttons saying new ones are still possible.
