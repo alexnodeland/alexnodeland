@@ -76,10 +76,13 @@ one-pager is derived and where its layout lives.
 All three pages render one component, `src/components/cv/CVPageBody.tsx` — the
 control row, the search, the overview and contact card, and the experience,
 projects, education, skills and certifications sections — and differ only in
-the data they hand it. `/cv/` also passes the full/one-page switch; the role
-pages pass nothing, so their control row carries only the download menu and
-the search. Their heroes are in `src/components/heroes.tsx`, in the CV's own
-`cv-page-header` style with the role as the tagline. Change how the CV is
+the data they hand it. `/cv/`'s menu switches between the full CV and the
+one-pager in place; a role page's menu lists those two plus its own entry, and
+picking one navigates (the one-pager is `/cv/?view=resume`). Their heroes are in
+`src/components/heroes.tsx`, in the CV's own `cv-page-header` style with the role
+as the tagline. Project cards take the projects page's link marks and its card
+click — the site where there is one, the repo otherwise — from the shared
+`project-ways-out` mixin. Change how the CV is
 presented in the body and all three change together.
 
 ## 📊 Data Structure

@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProjectItem } from '../../config/cv';
+import { GitHubIcon, LinkIcon } from '../ui/EntryIcons';
 
 interface CVProjectsSectionProps {
   projects: ProjectItem[];
@@ -12,7 +13,9 @@ interface CVProjectsSectionProps {
  * A project carries about as much as a certification does — a name, a line
  * saying what it is, and two small facts — so it takes the same card: the
  * name, the description under it, and one meta band at the foot with the
- * language at one end and the links at the other. The descriptions come from
+ * language at one end and the projects page's own link marks at the other —
+ * the whole card clicking through to the site, or to the repo where there is
+ * no site. The descriptions come from
  * `src/config/projects.ts`, the same text the projects page shows.
  *
  * Every class is `cv-`-prefixed: the projects page already owns
@@ -37,13 +40,21 @@ const CVProjectsSection: React.FC<CVProjectsSectionProps> = ({
             <span className="cv-project-stack">
               {project.technologies.join(', ')}
             </span>
-            {/* Words rather than the address: a repo URL is wider than a
-                card at phone width, and the band has room for two short
-                links where it has none for one long one. */}
-            <span className="cv-project-links">
+            {/* The projects page's ways out, and its click: the chain to the
+                project's own site where there is one, then the octocat.
+                Whichever the card follows (the site if there is one, the
+                repo if not) stretches across the whole card, and the other
+                stays a mark you hit directly. */}
+            <span className="project-link-indicator">
               {project.url && (
-                <a href={project.url} target="_blank" rel="noopener noreferrer">
-                  site
+                <a
+                  href={project.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="project-out project-out-site is-card-link"
+                >
+                  <LinkIcon />
+                  <span className="sr-only">{`visit the ${project.name} site`}</span>
                 </a>
               )}
               {project.github && (
@@ -51,8 +62,12 @@ const CVProjectsSection: React.FC<CVProjectsSectionProps> = ({
                   href={project.github}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className={`project-out project-out-repo ${
+                    project.url ? 'is-raised' : 'is-card-link'
+                  }`}
                 >
-                  repo
+                  <GitHubIcon />
+                  <span className="sr-only">{`view ${project.name} on github`}</span>
                 </a>
               )}
             </span>

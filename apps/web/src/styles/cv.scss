@@ -413,8 +413,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     min-width: 0;
   }
 
-  .cert-date,
-  .cv-project-links {
+  .cert-date {
     flex-shrink: 0;
     white-space: nowrap;
   }
@@ -426,23 +425,6 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     line-height: var(--leading-prose);
   }
 
-  // The links at the band's far end: words, a step apart, and marked as links
-  // under the pointer the way the contact card's are.
-  .cv-project-links {
-    display: flex;
-    gap: var(--space-4);
-
-    a {
-      color: var(--text-primary);
-      text-decoration: none;
-      transition: color var(--transition-fast);
-
-      &:hover {
-        color: var(--ink-primary);
-      }
-    }
-  }
-
   // A credential id, where there is one, under the band in the value face.
   .cert-credential {
     margin: var(--space-2) 0 0;
@@ -451,6 +433,20 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     overflow-wrap: anywhere;
   }
 }
+
+// A project card is one click target, as on the projects page: the site where
+// the project has one, the repo where it does not, stretched across the card
+// by the shared ways-out rules. The card is what that overlay fills, and a
+// keyboard landing on either mark lights the card the way a pointer does.
+.cv-project-card {
+  position: relative;
+
+  &:focus-within {
+    @include card-highlight-on;
+  }
+}
+
+@include project-ways-out;
 
 // Skills: one group, one heading, and the site's small chip. A label the
 // pointer cannot do anything with does not answer the pointer.

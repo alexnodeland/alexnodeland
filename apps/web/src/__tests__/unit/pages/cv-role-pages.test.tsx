@@ -1,4 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { navigate } from 'gatsby';
 import React from 'react';
 import CVControlBar from '../../../components/cv/CVControlBar';
 import { searchCV } from '../../../components/cv/CVSearch';
@@ -70,12 +72,19 @@ describe('the role-specific resume pages', () => {
     expect(
       Array.from(cards).map(card => card.querySelector('h3')?.textContent)
     ).toEqual(fdeData.projects?.map(project => project.name));
-    // Each card links to its repository in the meta band.
-    for (const card of Array.from(cards)) {
-      expect(
-        within(card as HTMLElement).getByRole('link', { name: 'repo' })
-      ).toHaveAttribute('href', expect.stringContaining('github.com'));
-    }
+    // Each card carries the projects page's marks, and the card itself
+    // follows the site where there is one and the repo where there is not.
+    Array.from(cards).forEach((card, index) => {
+      const project = fdeData.projects![index];
+      const repo = within(card as HTMLElement).getByRole('link', {
+        name: `view ${project.name} on github`,
+      });
+      expect(repo).toHaveAttribute('href', project.github);
+
+      const cardLink = (card as HTMLElement).querySelector('.is-card-link');
+      expect(cardLink).toHaveAttribute('href', project.url ?? project.github);
+      expect(repo.classList.contains('is-raised')).toBe(Boolean(project.url));
+    });
   });
 
   it('show the full CV’s projects on /cv/ too', () => {
@@ -83,6 +92,38 @@ describe('the role-specific resume pages', () => {
     expect(
       container.querySelectorAll('#cv-projects .cv-project-card')
     ).toHaveLength(cvData.projects?.length ?? 0);
+  });
+});
+
+describe('the document menu', () => {
+  it('names the role page it is on, and lists both lengths of /cv/ beside it', async () => {
+    const user = userEvent.setup();
+    render(<AIEngineerResumePage />);
+
+    const menu = screen.getByRole('button', { name: /choose cv length/i });
+    expect(menu).toHaveTextContent('ai engineer');
+
+    await user.click(menu);
+    const options = screen
+      .getAllByRole('option')
+      .map(option => option.textContent);
+    expect(options).toEqual(['full cv', 'one page', 'ai engineer']);
+  });
+
+  it('navigates from a role page, rather than switching in place', async () => {
+    const user = userEvent.setup();
+    render(<FDEResumePage />);
+
+    await user.click(screen.getByRole('button', { name: /choose cv length/i }));
+    await user.click(screen.getByRole('option', { name: 'one page' }));
+    expect(navigate).toHaveBeenCalledWith('/cv/?view=resume');
+  });
+
+  it('opens /cv/ on the one-pager when the address asks for it', () => {
+    render(<CVPage location={{ pathname: '/cv/', search: '?view=resume' }} />);
+    expect(
+      screen.getByRole('button', { name: /choose cv length/i })
+    ).toHaveTextContent('one page');
   });
 });
 

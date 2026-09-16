@@ -11,6 +11,14 @@ const VIEW_OPTIONS: DropdownOption[] = [
   { value: 'resume', label: 'one page' },
 ];
 
+// What a role page adds to the menu: its own entry, so the row reads the same
+// as /cv/'s with the page you are on selected. /cv/ itself lists only the two
+// lengths — the role pages are unlisted, and its menu is the one everyone sees.
+const ROLE_OPTIONS: Partial<Record<CVVariant, DropdownOption>> = {
+  fde: { value: 'fde', label: 'fde' },
+  'ai-engineer': { value: 'ai-engineer', label: 'ai engineer' },
+};
+
 const DOWNLOAD_OPTIONS: DropdownOption[] = [
   // The trigger already says "download" — the options are just the formats.
   { value: 'pdf', label: 'pdf' },
@@ -23,9 +31,9 @@ interface CVControlBarProps {
   /** Which variant is on screen; picks the PDF artifact and the DOCX layout. */
   view: CVVariant;
   /**
-   * Switches between the full CV and the one-pager. The role-specific pages
-   * pass nothing — they are one document each — and the row draws only the
-   * download menu and the search chip.
+   * Called when a document is picked from the menu. On /cv/ it switches the
+   * length in place; on a role page it navigates. Leave it out and the row
+   * draws no menu at all, only the download menu and the search chip.
    */
   onViewChange?: (view: CVVariant) => void;
   /** Phone only: the search panel below is folded away behind a chip here. */
@@ -55,8 +63,10 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
 }) => {
   const { isExporting, exportAs } = useCVExport(resumeData, view);
 
+  const roleOption = ROLE_OPTIONS[view];
+  const viewOptions = roleOption ? [...VIEW_OPTIONS, roleOption] : VIEW_OPTIONS;
   const viewLabel =
-    VIEW_OPTIONS.find(option => option.value === view)?.label ?? 'full cv';
+    viewOptions.find(option => option.value === view)?.label ?? 'full cv';
 
   return (
     <ControlRow className={`cv-control-bar ${className}`.trim()}>
@@ -64,7 +74,7 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
         <Dropdown
           ariaLabel="Choose CV length"
           triggerLabel={viewLabel}
-          options={VIEW_OPTIONS}
+          options={viewOptions}
           value={view}
           onSelect={value => onViewChange(value as CVVariant)}
           className="cv-view-dropdown"

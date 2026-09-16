@@ -1,3 +1,4 @@
+import { navigate } from 'gatsby';
 import React, { useState } from 'react';
 import { CVData, CVVariant } from '../../config/cv';
 import { scrollBehavior } from '../../lib/utils/motion';
@@ -14,8 +15,8 @@ interface CVPageBodyProps {
   variant: CVVariant;
   /**
    * Given on /cv/, where one page switches between the full CV and the
-   * one-pager. The role-specific pages are one document each and leave it out,
-   * so their control row has no length menu.
+   * one-pager in place. The role pages leave it out, and picking from their
+   * menu navigates instead — see `goToDocument`.
    */
   onViewChange?: (view: CVVariant) => void;
 }
@@ -32,6 +33,19 @@ interface CVPageBodyProps {
  * The heroes ("alex → cv" and its tagline) are not here — the shell resolves
  * them from the path, in src/components/heroes.tsx.
  */
+/**
+ * Where a pick from a role page's document menu goes. The two lengths live on
+ * /cv/ — the one-pager behind `?view=resume`, which the CV page reads on load —
+ * and picking the page you are already on does nothing.
+ */
+const goToDocument = (current: CVVariant) => (next: CVVariant) => {
+  if (next === current) return;
+  if (next === 'full') navigate('/cv/');
+  else if (next === 'resume') navigate('/cv/?view=resume');
+  else if (next === 'fde') navigate('/cv/fde/');
+  else if (next === 'ai-engineer') navigate('/cv/ai-engineer/');
+};
+
 const CVPageBody: React.FC<CVPageBodyProps> = ({
   data,
   variant,
@@ -69,7 +83,7 @@ const CVPageBody: React.FC<CVPageBodyProps> = ({
       <CVControlBar
         resumeData={data}
         view={variant}
-        onViewChange={onViewChange}
+        onViewChange={onViewChange ?? goToDocument(variant)}
         searchOpen={searchOpen}
         onToggleSearch={() => setSearchOpen(open => !open)}
       />
