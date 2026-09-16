@@ -1,7 +1,7 @@
 import { Link } from 'gatsby';
 import React from 'react';
 import SEO from '../components/seo';
-import { getPersonSchema, homepageConfig } from '../config';
+import { homeGraph, homepageConfig, LD } from '../config';
 import { expertiseIcons } from '../components/expertise-icons';
 import '../styles/index.scss';
 
@@ -25,7 +25,18 @@ const IndexPage: React.FC<{ location?: { pathname?: string } }> = ({
         title={homepageConfig.hero.title}
         description="AI engineer and mathematician. Agent systems, distributed infrastructure, and audio DSP."
         pathname={location?.pathname}
-        jsonLd={getPersonSchema()}
+        type="profile"
+        jsonLd={homeGraph()}
+        // The same person, as RDF: the profile document a linked-data
+        // consumer dereferences (/#me is described here and there alike).
+        alternates={[
+          { href: LD.profileTurtle, type: 'text/turtle', title: 'profile' },
+          {
+            href: LD.profileJsonLd,
+            type: 'application/ld+json',
+            title: 'profile',
+          },
+        ]}
       />
       <div className="home">
         <section className="about">

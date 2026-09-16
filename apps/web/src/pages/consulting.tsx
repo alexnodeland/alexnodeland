@@ -1,7 +1,7 @@
 import React from 'react';
 import { consultingStepIcons } from '../components/consulting-icons';
 import SEO from '../components/seo';
-import { getCTAButtonURL, homepageConfig } from '../config';
+import { consultingGraph, getCTAButtonURL, homepageConfig } from '../config';
 import '../styles/index.scss';
 import '../styles/consulting.scss';
 
@@ -35,6 +35,7 @@ const ConsultingPage: React.FC<{ location?: { pathname?: string } }> = ({
         title="consulting"
         description="Past consulting work: LLM systems built to survive production, evaluations of whether and how to use LLMs, and engineering process."
         pathname={location?.pathname}
+        jsonLd={consultingGraph()}
       />
       <div className="home">
         <section className="consulting">

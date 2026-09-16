@@ -71,6 +71,26 @@ describe('BlogPost Template', () => {
     );
   });
 
+  it('is one h-entry: name, date, tag, summary and content', () => {
+    const { container } = render(<BlogPost data={mockData as any} />);
+    const entry = container.querySelector('.post-page');
+    expect(entry).toHaveClass('h-entry');
+    expect(entry?.querySelector('h1.p-name')).toHaveTextContent('My Post');
+    expect(entry?.querySelector('time.dt-published')).toHaveAttribute(
+      'datetime',
+      '2024-02-01'
+    );
+    expect(entry?.querySelector('.p-category')).toHaveTextContent('Tech');
+    expect(entry?.querySelector('.p-summary')).toHaveTextContent('Desc');
+    expect(entry?.querySelector('.e-content')?.innerHTML).toBe(
+      '<p>Post content</p>'
+    );
+    expect(entry?.querySelector('data.u-url.u-uid')).toHaveAttribute(
+      'value',
+      'https://alexnodeland.com/timeline/my-post'
+    );
+  });
+
   it('offers the way back at the top and at the foot', () => {
     const { container } = render(<BlogPost data={mockData as any} />);
     expect(container.querySelector('.post-return')).toHaveAttribute(

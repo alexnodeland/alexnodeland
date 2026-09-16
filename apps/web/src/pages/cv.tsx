@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import CVPageBody from '../components/cv/CVPageBody';
 import SEO from '../components/seo';
-import { cvData, resumeData } from '../config';
+import { cvData, cvGraph, resumeData } from '../config';
 import '../styles/cv.scss';
 
 type CVView = 'full' | 'resume';
@@ -41,6 +41,10 @@ const CVPage: React.FC<{
         title="cv"
         description="Complete resume and CV for Alex Nodeland"
         pathname={location?.pathname}
+        type="profile"
+        // The full CV as a graph, whichever view is showing: the structured
+        // data describes the record, not the one-pager cut from it.
+        jsonLd={cvGraph(cvData)}
       />
       <CVPageBody
         data={data}

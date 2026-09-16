@@ -136,6 +136,12 @@ const HEROES: Record<string, () => React.ReactNode> = {
       <p>past work, and how an engagement runs.</p>
     </header>
   ),
+  '/vocab': () => (
+    <header className="consulting-page-header">
+      {crumbTitle('vocab')}
+      <p>the concepts the site is organised by.</p>
+    </header>
+  ),
   [NOT_FOUND_KEY]: () => (
     <header className="not-found-header">
       {crumbTitle('404')}
