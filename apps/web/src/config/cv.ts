@@ -201,7 +201,7 @@ export const cvSource: CVSource = {
     name: 'Alex Nodeland',
     title: 'Senior AI Engineer',
     email: 'alex@ournature.studio',
-    location: 'Upstate, New York, USA',
+    location: 'Stamford, NY',
     website: 'alexnodeland.com',
     summary:
       'Engineer and mathematician working on AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Interested in problems that need both mathematics and production engineering.',
@@ -222,6 +222,7 @@ export const cvSource: CVSource = {
     {
       title: 'Senior AI Engineer',
       company: 'Perch Insights',
+      engagement: 'full-time',
       // The most relevant role on every page, and the one the AI Engineer
       // variant spends most of its room on.
       variants: {
@@ -268,6 +269,7 @@ export const cvSource: CVSource = {
     {
       title: 'Head of AI',
       company: 'Influize',
+      engagement: 'full-time',
       variants: {
         resume: { maxBullets: 3 },
         fde: { maxBullets: 2 },
@@ -351,6 +353,7 @@ export const cvSource: CVSource = {
     {
       title: 'Tech Lead',
       company: 'Musiio (acquired by SoundCloud)',
+      engagement: 'freelance',
       variants: {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
@@ -390,6 +393,7 @@ export const cvSource: CVSource = {
     {
       title: 'CEO & Co-Founder',
       company: 'Archanan',
+      engagement: 'full-time',
       // Deliberately short on the IC-facing pages. The fundraising and board
       // bullets below are tagged `exec`, so those pages never see them and the
       // role reads as four years of shipping a hard product to demanding
@@ -440,6 +444,7 @@ export const cvSource: CVSource = {
     {
       title: 'Founder in Residence',
       company: 'Entrepreneur First',
+      engagement: 'full-time',
       location: 'Singapore, SG',
       duration: 'Jan 2018 - Jun 2018',
       achievements: [
@@ -460,6 +465,7 @@ export const cvSource: CVSource = {
     {
       title: 'CTO, Chief Mathematician',
       company: 'Scala Computing',
+      engagement: 'full-time',
       // A decade back. The role-specific pages cover the last eight years in
       // detail, so this one is collapsed to a single line there: it keeps the
       // history continuous without spending the page on it.
@@ -504,6 +510,7 @@ export const cvSource: CVSource = {
       // spelled out in `description` instead, where it has a line to itself.
       // `check-cv-text.js` fails on any entry that reproduces this.
       company: 'CEWIT, Stony Brook University',
+      engagement: 'part-time',
       description:
         'The Center of Excellence in Wireless Information Technology.',
       location: 'Stony Brook, NY',
@@ -525,6 +532,7 @@ export const cvSource: CVSource = {
     {
       title: 'Researcher',
       company: 'SUNY Research Foundation',
+      engagement: 'part-time',
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
       achievements: [
@@ -544,6 +552,7 @@ export const cvSource: CVSource = {
     {
       title: 'Assistant Product Engineer',
       company: 'Absara Audio',
+      engagement: 'full-time',
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
       description: 'My first software job, and my first hardware job.',
@@ -564,6 +573,7 @@ export const cvSource: CVSource = {
     {
       title: 'Technician',
       company: 'Absara Audio',
+      engagement: 'part-time',
       location: 'Port Jefferson, NY',
       duration: '2010 - 2014',
       achievements: [
@@ -647,7 +657,7 @@ export const cvSource: CVSource = {
   skills: {
     technical: [
       'Python',
-      'JavaScript/TypeScript',
+      'JavaScript',
       'React',
       'Node.js',
       'AWS',
@@ -674,7 +684,6 @@ export const cvSource: CVSource = {
     byVariant: {
       fde: [
         'Python',
-        'TypeScript',
         'LLMs',
         'Agents',
         'Evals',
@@ -690,16 +699,15 @@ export const cvSource: CVSource = {
         'CI/CD',
         'Observability',
         'Solution Architecture',
-        'Customer Discovery',
         'Technical Pre-Sales',
         'Linux',
       ],
       'ai-engineer': [
         'Python',
-        'TypeScript',
         'LLMs',
         'Agents',
         'Tool Use',
+        'MCP',
         'Evals',
         'RAG',
         'Vector Search',
@@ -713,7 +721,6 @@ export const cvSource: CVSource = {
         'Data Engineering',
         'Distributed Systems',
         'CI/CD',
-        'Rust',
         'Mathematics',
       ],
     },
@@ -725,7 +732,7 @@ export const cvSource: CVSource = {
   // libraries below.
   projects: {
     full: ['fugue', 'quiver', 'fugue-evo', 'principled', 'claude-telegram'],
-    fde: ['principled', 'claude-telegram', 'fugue'],
+    fde: ['fugue', 'reflex', 'principled'],
     'ai-engineer': ['reflex', 'principled', 'fugue'],
   },
 };
