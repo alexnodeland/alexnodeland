@@ -5,7 +5,7 @@ description: "Leaving the computational applied mathematics PhD at Stony Brook i
 category: 'Notes'
 ---
 
-i left the computational applied mathematics phd at stony brook in may 2017, a little over a year after starting a company out of it.
+the company came out of the research, and a year in it had taken the research's place.
 
 yuefan deng was my advisor. the research i was there for was [optimal wavelet bases for audio compression](/timeline/161101_optimal-wavelet-bases/), but he kept pointing me at a different problem: take what you know about graph theory and aim it at networks. resource allocation. task management in job scheduling.
 

@@ -5,9 +5,9 @@ description: 'SoundCloud acquired Musiio, the Singapore music-AI company founded
 category: 'Press'
 ---
 
-on 3 may 2022 soundcloud acquired musiio. i was in the office the day the papers were signed.
+the papers were signed on 3 may 2022, about a year after i had joined as tech lead.
 
-musiio's ai listens to music, which is harder than it sounds: audio reference search, automated tagging, playlisting, aimed at catalogues holding more tracks than any person will ever get through. hazel savage and aron pettersson founded it in june 2018, out of [entrepreneur first's third singapore cohort](/timeline/180724_ef-investor-day/), the same cohort archanan came out of, pitching at the same investor day. i had been tech lead there for about a year when the deal closed.
+musiio's ai listens to music, which is harder than it sounds: audio reference search, automated tagging, playlisting, aimed at catalogues holding more tracks than any person will ever get through. hazel savage and aron pettersson founded it in june 2018, out of [entrepreneur first's third singapore cohort](/timeline/180724_ef-investor-day/), the same cohort archanan came out of, pitching at the same investor day.
 
 <figure>
   <img

@@ -5,9 +5,7 @@ description: 'Scala Computing got into the Grand Central Tech accelerator in Aug
 category: 'Notes'
 ---
 
-scala got into grand central tech in august 2017, and the company moved from [the office at cewit](/timeline/170515_leaving-the-phd/) to 335 madison avenue, third floor, across the street from grand central terminal.
-
-we went from seven people to fifteen.
+three months after [leaving the phd](/timeline/170515_leaving-the-phd/), the company left cewit too. the new office was the third floor of 335 madison avenue, across the street from the terminal the accelerator is named for, and the team doubled in it.
 
 <figure>
   <img

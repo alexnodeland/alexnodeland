@@ -266,6 +266,9 @@
   }
 }
 
+// The card's one paragraph: the frontmatter description, which is also the
+// post's meta description. The excerpt that used to follow it is gone — every
+// post opens by saying what it is, so the card was saying it twice.
 .post-description {
   color: var(--text-secondary);
   font-size: var(--text-body);
@@ -273,15 +276,8 @@
   line-height: var(--leading-prose);
   // The frontmatter descriptions are written in sentence case — they are
   // also the meta descriptions, where that reads better — but on the page
-  // they sit directly above a lowercase excerpt, so they take the house
-  // case the way the headings do.
+  // they take the house case the way the headings do.
   text-transform: lowercase;
-}
-
-.post-excerpt {
-  color: var(--text-secondary);
-  line-height: var(--leading-prose);
-  margin-bottom: 0;
 }
 
 // The way in, parked at the far end of the title's own row. An arrow pointing

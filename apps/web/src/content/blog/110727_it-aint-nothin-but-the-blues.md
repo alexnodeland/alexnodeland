@@ -5,7 +5,7 @@ description: "Playing bass guitar and double bass from the side-stage pit for th
 category: 'Music'
 ---
 
-in the summer of 2011 i played bass guitar and double bass for [it ain't nothin' but the blues](https://en.wikipedia.org/wiki/It_Ain't_Nothin'_but_the_Blues), at new haarlem arts theatre in harlem, alongside my friend brett pontecorvo.
+i spent the summer of 2011 in the band for [it ain't nothin' but the blues](https://en.wikipedia.org/wiki/It_Ain't_Nothin'_but_the_Blues), alongside my friend brett pontecorvo.
 
 <figure>
   <img

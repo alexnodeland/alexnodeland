@@ -371,22 +371,47 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   flex-direction: column;
 
   // The title row: the name alone.
-  .cert-header,
+  .cert-header {
+    margin-bottom: var(--space-4);
+  }
 
-  .cert-name,
+  // The name, at the same size as every other card title, and free to wrap:
+  // a long name breaks onto a second line rather than pushing the card, and
+  // the page with it, wider than a phone.
+  .cert-name {
+    margin: 0;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: var(--text-h4);
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
 
   // The meta band every other card carries, at the same distance above its
-  // hairline.
-  .cert-meta,
+  // hairline: the issuer at one end, the date at the other, and the date
+  // wrapping under the issuer when the two cannot share a line.
+  .cert-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin-top: auto;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--hairline-interior);
+    font-size: var(--text-small);
+    color: var(--text-secondary);
+  }
 
-  .cert-issuer,
+  .cert-issuer {
+    min-width: 0;
+  }
 
+  // The one thing on the card that never breaks: a year is short enough.
   .cert-date {
     flex-shrink: 0;
     white-space: nowrap;
   }
-
-  // A project's one line of description, between the name and the band.
 
   // A credential id, where there is one, under the band in the value face.
   .cert-credential {

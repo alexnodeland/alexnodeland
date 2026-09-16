@@ -5,7 +5,7 @@ description: 'A piece for Asian Scientist arguing that the hard part of supercom
 category: 'Press'
 ---
 
-a piece for asian scientist, written while running archanan, arguing that the hard part of supercomputing is not the computing.
+written a year into archanan, which existed to close exactly this gap.
 
 picture a researcher with a simulation that works on their laptop and an allocation on a national machine. between those two things sits weeks of work that has nothing to do with their science: mpi topologies, schedulers, queue etiquette, and the first genuinely large run is usually also the first time anyone finds out whether the code scales. that run is expensive, and when it fails it usually fails for a reason that has nothing to do with the physics.
 

@@ -5,7 +5,7 @@ description: "HPCwire covers Archanan's emergence from stealth: a cloud platform
 category: 'Press'
 ---
 
-hpcwire covered our beta launch, the first detailed account of what archanan did.
+this was the beta launch, and the first time anyone outside the company had written down what we did in any detail.
 
 the problem we were built around: most supercomputing centers allocate ten percent or less of the machine to development work. if your production run needs thirty thousand cores, you are writing and debugging that code somewhere much smaller and hoping. plenty of organizations have no on-premise cycles for development at all, and anyone evaluating an architecture they do not own yet has nowhere to try it.
 

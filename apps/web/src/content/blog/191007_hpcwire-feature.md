@@ -5,7 +5,7 @@ description: 'A piece for HPCwire on emulating a supercomputer before you buy on
 category: 'Press'
 ---
 
-a follow-up piece for hpcwire, this one about procurement rather than development.
+six months after [hpcwire's launch coverage](/timeline/190426_archanan-launch/), a piece of my own for them, about the other use of an emulated machine: not developing for one you have, but choosing one you do not have yet.
 
 buying a supercomputer means committing tens of millions to a configuration chosen largely from benchmarks that are not your workload. get it wrong in one direction and you have paid for capability that sits idle; get it wrong in the other and the machine is saturated the month it arrives. the usual mitigations are vendor benchmarks, reference customers, a proof of concept on last generation's hardware, and none of them tell you how your own codes will behave on this machine.
 
