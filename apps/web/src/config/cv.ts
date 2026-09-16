@@ -651,7 +651,7 @@ export const cvSource: CVSource = {
       company: 'Absara Audio',
       engagement: 'full-time',
       variants: {
-        'music-tech': { maxBullets: 3 },
+        'music-tech': { maxBullets: 4 },
       },
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
