@@ -35,8 +35,10 @@ retrieved: 2026-09-16
 ```
 
 The sections hold bullets. An empty section says `- None listed separately.`
-and is skipped. The bullets under the last three sections are what the
-semantic score reads; the whole body is what the keyword score reads.
+and is skipped. The bullets under the last three sections are what both
+scores read. The paragraph under "About the role" is context for a reader and
+is not scored: a posting that describes its employer as a startup is not asking
+for startup experience, and a resume is not credited for the word.
 
 ## What is not in a profile
 
@@ -53,7 +55,7 @@ signal; the sources were the means.
 
 `lexicon.json` lists the terms the keyword score looks for, each with the
 spellings a posting or a resume might use for it. A term's weight in a family
-is how many of its profiles mention it, so a term no profile names costs a
+is how many of its profiles ask for it, so a term no profile names costs a
 resume nothing to leave off, and adding a term to the lexicon changes a score
 only if the profiles ask for it. Keep entries to skills, tools and ways of
 working; common English inflates every score equally and separates nothing.

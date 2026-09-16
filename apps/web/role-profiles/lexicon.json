@@ -127,7 +127,6 @@
     "guardrails": [
       "guardrails",
       "guardrail",
-      "grounding",
       "prompt injection",
       "hallucination"
     ],
@@ -239,10 +238,10 @@
     ],
     "technical discovery": [
       "technical discovery",
-      "discovery",
       "scoping",
       "scope",
-      "requirements gathering"
+      "requirements gathering",
+      "customer discovery"
     ],
     "proof of concept": [
       "proof of concept",
@@ -255,7 +254,10 @@
       "prototypes",
       "prototyping",
       "demo",
-      "demos"
+      "demos",
+      "prototyped",
+      "mvp",
+      "mvps"
     ],
     "pre-sales": [
       "pre-sales",
@@ -276,11 +278,14 @@
     ],
     "enterprise": ["enterprise", "enterprises"],
     "integrations": [
-      "integration",
       "integrations",
       "integrate",
       "integrating",
-      "connectors"
+      "connectors",
+      "platform integration",
+      "system integration",
+      "systems integration",
+      "enterprise integration"
     ],
     "identity and access": [
       "sso",
@@ -307,8 +312,7 @@
       "accelerators",
       "reference implementation",
       "reference implementations",
-      "cookbooks",
-      "templates"
+      "cookbooks"
     ],
     "technical leadership": [
       "technical leadership",
@@ -317,7 +321,13 @@
       "mentorship",
       "led engineering",
       "head of engineering",
-      "cto"
+      "cto",
+      "mentored",
+      "tech lead",
+      "technical lead",
+      "team lead",
+      "lead engineer",
+      "engineering lead"
     ],
     "stakeholders": [
       "stakeholder",
@@ -420,10 +430,12 @@
       "audio units",
       "daw",
       "daws",
-      "plugin",
-      "plugins",
       "web audio",
-      "webaudio"
+      "webaudio",
+      "audio plugin",
+      "audio plugins",
+      "plug-in",
+      "plug-ins"
     ],
     "music information retrieval": [
       "music information retrieval",
@@ -470,12 +482,14 @@
       "hardware"
     ],
     "research": [
-      "research",
       "researcher",
       "publications",
       "published",
       "phd",
-      "doctorate"
+      "doctorate",
+      "research experience",
+      "research background",
+      "applied research"
     ],
     "data science": [
       "data science",
