@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { navigate } from 'gatsby';
 import React from 'react';
@@ -69,13 +69,8 @@ describe('the generated role-variant pages', () => {
       expect(role.overviewCard).toBe(cv.overviewCard);
       expect(role.controlRow).toBe(cv.controlRow);
       expect(role.search).toBe(cv.search);
-      // Same sections, same order; certifications are full-CV only, and a
-      // variant that names no projects has no projects section.
-      const expected = cv.sections.filter(
-        id =>
-          id !== 'cv-certifications' &&
-          (id !== 'cv-projects' || !!buildVariant(variant).projects?.length)
-      );
+      // Same sections, same order; certifications are full-CV only.
+      const expected = cv.sections.filter(id => id !== 'cv-certifications');
       expect(role.sections).toEqual(expected);
       // The hero is generated in heroes.tsx, as /cv/'s lives there.
       expect(
@@ -115,34 +110,19 @@ describe('the generated role-variant pages', () => {
     expect(CV_ARTIFACTS[variant].maxPages).toBe(1);
   });
 
-  it('lists a variant’s projects as cards, in the order the variant names them', () => {
-    const fde = buildVariant('fde');
-    const { container } = renderRolePage('fde');
-    const cards = container.querySelectorAll('#cv-projects .cv-project-card');
+  it.each(ROLE_VARIANTS)(
+    '%s keeps its projects for the PDF and off the page',
+    variant => {
+      expect(buildVariant(variant).projects?.length).toBeGreaterThan(0);
+      const { container } = renderRolePage(variant);
+      expect(container.querySelector('#cv-projects')).toBeNull();
+    }
+  );
 
-    expect(
-      Array.from(cards).map(card => card.querySelector('h3')?.textContent)
-    ).toEqual(fde.projects?.map(project => project.name));
-    // Each card carries the projects page's marks, and the card itself
-    // follows the site where there is one and the repo where there is not.
-    Array.from(cards).forEach((card, index) => {
-      const project = fde.projects![index];
-      const repo = within(card as HTMLElement).getByRole('link', {
-        name: `view ${project.name} on github`,
-      });
-      expect(repo).toHaveAttribute('href', project.github);
-
-      const cardLink = (card as HTMLElement).querySelector('.is-card-link');
-      expect(cardLink).toHaveAttribute('href', project.url ?? project.github);
-      expect(repo.classList.contains('is-raised')).toBe(Boolean(project.url));
-    });
-  });
-
-  it('shows the full CV’s projects on /cv/ too', () => {
+  it('keeps projects off /cv/ too', () => {
+    expect(cvData.projects?.length).toBeGreaterThan(0);
     const { container } = render(<CVPage />);
-    expect(
-      container.querySelectorAll('#cv-projects .cv-project-card')
-    ).toHaveLength(cvData.projects?.length ?? 0);
+    expect(container.querySelector('#cv-projects')).toBeNull();
   });
 });
 
@@ -204,16 +184,11 @@ describe('CVControlBar without a view to switch', () => {
 });
 
 describe('searchCV', () => {
-  it('finds projects by name and by description, and points at their section', () => {
+  it('does not offer projects, which the page no longer shows', () => {
     const fde = buildVariant('fde');
-    const byName = searchCV(fde, 'reflex');
-    expect(byName).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ type: 'project', title: 'reflex' }),
-      ])
-    );
-
-    const byDescription = searchCV(fde, 'probabilistic programming');
-    expect(byDescription.map(result => result.title)).toContain('fugue');
+    expect(searchCV(fde, 'reflex')).toEqual([]);
+    expect(
+      searchCV(fde, 'probabilistic programming').map(result => result.title)
+    ).not.toContain('fugue');
   });
 });

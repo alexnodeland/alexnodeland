@@ -3,7 +3,7 @@ import { CVData } from '../../config/cv';
 import { scrollBehavior } from '../../lib/utils/motion';
 
 type CVSearchResultType =
-  'experience' | 'education' | 'skill' | 'project' | 'certification';
+  'experience' | 'education' | 'skill' | 'certification';
 
 interface CVSearchResult {
   id: string;
@@ -21,7 +21,6 @@ const SECTION_IDS: Record<CVSearchResultType, string> = {
   experience: 'cv-experience',
   education: 'cv-education',
   skill: 'cv-skills',
-  project: 'cv-projects',
   certification: 'cv-certifications',
 };
 
@@ -69,19 +68,6 @@ export const searchCV = (
         type: 'skill',
         title: skill,
         description: 'Technical skill',
-      });
-    }
-  });
-
-  resumeData.projects?.forEach((project, index) => {
-    const searchableText =
-      `${project.name} ${project.description} ${project.technologies.join(' ')}`.toLowerCase();
-    if (searchableText.includes(searchLower)) {
-      results.push({
-        id: `project-${index}`,
-        type: 'project',
-        title: project.name,
-        description: project.description,
       });
     }
   });
