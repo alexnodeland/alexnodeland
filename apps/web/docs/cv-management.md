@@ -70,7 +70,7 @@ personal: {
 
 The CV page has a **full cv / one page** toggle, and all three exports follow
 whichever is on screen. The two role-specific resumes are separate documents at
-`/cv/fde/` and `/cv/ai-engineer/`, unlinked from the nav. See [Export Options](#-export-options) for how the
+`/cv/fde/`, `/cv/ai-engineer/` and `/cv/music-tech/`, unlinked from the nav. See [Export Options](#-export-options) for how the
 one-pager is derived and where its layout lives.
 
 Every CV page renders one component, `src/components/cv/CVPageBody.tsx` — the
@@ -255,6 +255,7 @@ skills: {
 | `resume`      | `static/cv/alex-nodeland-resume.pdf`      | the neutral one-pager           |
 | `fde`         | `static/cv/alex-nodeland-fde.pdf`         | Forward Deployed Engineer roles |
 | `ai-engineer` | `static/cv/alex-nodeland-ai-engineer.pdf` | AI Engineer roles               |
+| `music-tech`  | `static/cv/alex-nodeland-music-tech.pdf`  | music technology roles          |
 
 The full CV takes everything in the order it is authored — nothing filtered,
 reordered or trimmed, because nothing has to fit. The other three keep only the

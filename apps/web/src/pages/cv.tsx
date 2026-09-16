@@ -8,7 +8,7 @@ type CVView = 'full' | 'resume';
 
 // The page is the one CV body (see CVPageBody) plus the one thing only this
 // address has: switching between the full CV and the one-pager in place. The
-// role resumes at /cv/fde/ and /cv/ai-engineer/ render the same body, and
+// role resumes at /cv/fde/, /cv/ai-engineer/ and /cv/music-tech/ render the same body, and
 // their menu navigates here instead.
 const CVPage: React.FC<{
   location?: { pathname?: string; search?: string };

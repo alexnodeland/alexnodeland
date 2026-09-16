@@ -43,7 +43,7 @@ export const isRoleVariant = (variant: string): variant is RoleVariant =>
  * those pages about the engineering. A bullet with no tags at all
  * is neutral and eligible everywhere.
  */
-export type AudienceTag = 'fde' | 'ai-eng' | 'exec' | 'hardware';
+export type AudienceTag = 'fde' | 'ai-eng' | 'music' | 'exec' | 'hardware';
 
 /**
  * How a role was held. Rendered beside the dates so overlapping entries read
@@ -239,6 +239,12 @@ export const cvSource: CVSource = {
       // stays about the systems.
       'ai-engineer':
         'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built a DAG-based framework that runs autonomous agents through multi-step data analysis, a correction-to-evaluation loop that improves the system without retraining, and lineage that traces every generated number back to its source. Earlier I built the RAG pipeline at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
+      // Audio at every layer, oldest work included: this is the one page
+      // where the pedal firmware and the wavelet research lead rather than
+      // trail, and the Rust libraries are the current work rather than a
+      // weekend note.
+      'music-tech':
+        'Engineer and mathematician who has worked on audio at every layer: firmware for digital guitar pedals, wavelet research on audio compression, synthesizer design at Stony Brook, and engineering leadership at Musiio, a music-ML company SoundCloud acquired. I maintain quiver, a modular audio synthesis library in Rust, and auracle, a synthesizer that evolves patches toward the ones you prefer.',
     },
   },
 
@@ -253,6 +259,7 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 3 },
         fde: { maxBullets: 3 },
         'ai-engineer': { maxBullets: 4 },
+        'music-tech': { maxBullets: 1 },
       },
       location: 'Remote, NY',
       duration: '2024 - Present',
@@ -346,6 +353,7 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 1, collapse: true },
+        'music-tech': { maxBullets: 1, collapse: true },
       },
       location: 'Remote, NY',
       duration: '2022 - Present',
@@ -388,6 +396,7 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 2 },
+        'music-tech': { maxBullets: 2 },
       },
       location: 'Singapore',
       duration: '2021 - 2022',
@@ -432,6 +441,7 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 3 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 2 },
+        'music-tech': { maxBullets: 1, collapse: true },
       },
       location: 'Singapore, SG',
       duration: '2018 - 2022',
@@ -543,13 +553,23 @@ export const cvSource: CVSource = {
       engagement: 'part-time',
       description:
         'The Center of Excellence in Wireless Information Technology.',
+      // Off every one-pager but the music-tech one, where it is the point.
+      variants: {
+        'music-tech': { maxBullets: 2 },
+      },
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Designed, prototyped, and tested audio synthesizers, including the circuit design',
+        {
+          text: 'Designed, prototyped, and tested audio synthesizers, including the circuit design',
+          tags: ['music'],
+        },
         'Led seminars on music and mathematics',
         'Turned research into pieces that could be performed',
-        'Collaborated with people from the music technology industry on novel audio hardware',
+        {
+          text: 'Collaborated with people from the music technology industry on novel audio hardware',
+          tags: ['music'],
+        },
       ],
       skills: [
         'Audio Engineering',
@@ -563,12 +583,21 @@ export const cvSource: CVSource = {
       title: 'Researcher',
       company: 'SUNY Research Foundation',
       engagement: 'part-time',
+      variants: {
+        'music-tech': { maxBullets: 2 },
+      },
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Researched optimal wavelet bases for audio compression, looking for a general selection procedure',
+        {
+          text: 'Researched optimal wavelet bases for audio compression, looking for a general selection procedure',
+          tags: ['music'],
+        },
         'Ran a supercomputing project funded by the High Performance Computing Consortium of New York',
-        'Performed real-time signal analysis on spectrum data',
+        {
+          text: 'Performed real-time signal analysis on spectrum data',
+          tags: ['music'],
+        },
         'Maintained project documentation and datasets for other researchers',
       ],
       skills: [
@@ -583,11 +612,17 @@ export const cvSource: CVSource = {
       title: 'Assistant Product Engineer',
       company: 'Absara Audio',
       engagement: 'full-time',
+      variants: {
+        'music-tech': { maxBullets: 1 },
+      },
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
       description: 'My first software job, and my first hardware job.',
       achievements: [
-        'Wrote production firmware for digital guitar pedals',
+        {
+          text: 'Wrote production firmware for digital guitar pedals',
+          tags: ['music'],
+        },
         "Shipped feature releases through the team's continuous integration process",
         "Followed the team's test practice to catch firmware defects before release",
         'Wrote the technical documentation and user manuals',
@@ -753,6 +788,27 @@ export const cvSource: CVSource = {
         'CI/CD',
         'Mathematics',
       ],
+      // Every term here is one a role or project above already carries; Rust
+      // is the language of quiver and auracle.
+      'music-tech': [
+        'Python',
+        'Rust',
+        'Signal Processing',
+        'Audio Engineering',
+        'Music Technology',
+        'Firmware Development',
+        'Embedded Systems',
+        'Circuit Design',
+        'Machine Learning',
+        'LLMs',
+        'Mathematics',
+        'Supercomputing',
+        'AWS',
+        'GCP',
+        'Docker',
+        'Container Orchestration',
+        'PostgreSQL',
+      ],
     },
   },
 
@@ -764,6 +820,7 @@ export const cvSource: CVSource = {
     full: ['fugue', 'quiver', 'fugue-evo', 'principled', 'claude-telegram'],
     fde: ['fugue', 'reflex', 'principled'],
     'ai-engineer': ['reflex', 'principled', 'fugue'],
+    'music-tech': ['quiver', 'auracle', 'llmcomposer'],
   },
 };
 
@@ -812,6 +869,7 @@ export const unknownProjectNames = (source: CVSource = cvSource): string[] => {
 const AUDIENCE: Record<RoleVariant, AudienceTag> = {
   fde: 'fde',
   'ai-engineer': 'ai-eng',
+  'music-tech': 'music',
 };
 
 const bulletText = (bullet: Bullet): string =>
@@ -937,6 +995,7 @@ export const CV_ARTIFACTS: Record<
   resume: { name: 'alex-nodeland-resume', maxPages: 1 },
   fde: { name: 'alex-nodeland-fde', maxPages: 1 },
   'ai-engineer': { name: 'alex-nodeland-ai-engineer', maxPages: 1 },
+  'music-tech': { name: 'alex-nodeland-music-tech', maxPages: 1 },
   full: { name: 'alex-nodeland-cv', maxPages: null },
 };
 
