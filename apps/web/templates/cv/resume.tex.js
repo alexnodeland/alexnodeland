@@ -38,7 +38,17 @@ const tex = (value = '') =>
     .replace(/['']/g, "'")
     .replace(/…/g, '\\ldots{}');
 
-const SEPARATOR = ' $\\cdot$ ';
+// The gap either side is set with \hspace rather than left to interword glue.
+// PDF text carries no space characters — a "space" is a positioning jump — so
+// every extractor decides where one word ends by measuring the gap against a
+// typical character width. At normal interword spacing the separator falls
+// under that threshold and the run either side of it is merged into a single
+// token: the contact line came out as "USA·alex@ournature.studio·alexnodeland.com",
+// one unsplittable string where an address, an email and a site should be, and
+// a role's dates came out glued to its location. Half an em clears the
+// threshold in every extractor tried here.
+const SEP_GAP = '0.5em';
+const SEPARATOR = `\\hspace{${SEP_GAP}}$\\cdot$\\hspace{${SEP_GAP}}`;
 
 /** The full CV is the only variant that runs to as many pages as it takes. */
 const isFull = variant => variant === 'full';
@@ -201,14 +211,6 @@ const experience = (data, variant) =>
           : '';
 
       const entry = `\\entry{${tex(role.title)}, ${tex(role.company)}}{${roleMeta(role)}}`;
-
-      // A collapsed role is the entry line and nothing else — enough to keep
-      // the history unbroken without spending the page on a decade-old job.
-      if (role.collapsed) {
-        return `${entry}
-\\vspace{\\rolesep}
-`;
-      }
 
       const bullets = role.achievements
         .map(item => `  \\item ${tex(item)}`)

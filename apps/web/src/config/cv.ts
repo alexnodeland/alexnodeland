@@ -51,8 +51,16 @@ export type Bullet =
 export interface RoleVariantRule {
   maxBullets: number;
   /**
-   * Render the role as a single line with no bullets — what the long-running
-   * freelance entry wants on a page that needs the room for current work.
+   * Cut the role to a single bullet, whatever `maxBullets` says — what the
+   * long-running freelance entry wants on a page that needs the room for
+   * current work.
+   *
+   * One bullet rather than none. An entry line with nothing under it leaves two
+   * entry lines back to back, and a parser that splits jobs on the gap between
+   * them cannot see the boundary: OpenResume merged the role below into this
+   * one and dropped it, on a page where every line of the text layer was
+   * correct. A single line under the title restores the rhythm and still saves
+   * most of the space.
    */
   collapse?: boolean;
 }
@@ -218,8 +226,8 @@ export const cvSource: CVSource = {
       // variant spends most of its room on.
       variants: {
         resume: { maxBullets: 3 },
-        fde: { maxBullets: 4 },
-        'ai-engineer': { maxBullets: 5 },
+        fde: { maxBullets: 3 },
+        'ai-engineer': { maxBullets: 4 },
       },
       location: 'Remote, NY',
       duration: '2024 - Present',
@@ -262,7 +270,7 @@ export const cvSource: CVSource = {
       company: 'Influize',
       variants: {
         resume: { maxBullets: 3 },
-        fde: { maxBullets: 3 },
+        fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 3 },
       },
       location: 'Remote, NY',
@@ -311,7 +319,7 @@ export const cvSource: CVSource = {
       variants: {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
-        'ai-engineer': { maxBullets: 0, collapse: true },
+        'ai-engineer': { maxBullets: 1, collapse: true },
       },
       location: 'Remote, NY',
       duration: '2022 - Present',
@@ -457,8 +465,8 @@ export const cvSource: CVSource = {
       // history continuous without spending the page on it.
       variants: {
         resume: { maxBullets: 2 },
-        fde: { maxBullets: 0, collapse: true },
-        'ai-engineer': { maxBullets: 0, collapse: true },
+        fde: { maxBullets: 1, collapse: true },
+        'ai-engineer': { maxBullets: 1, collapse: true },
       },
       location: 'New York, NY',
       duration: '2016 - 2017',
@@ -839,9 +847,11 @@ export const buildVariant = (
             {
               ...role,
               collapsed: rule.collapse,
-              achievements: rule.collapse
-                ? []
-                : selectBullets(achievements, variant, rule.maxBullets),
+              achievements: selectBullets(
+                achievements,
+                variant,
+                rule.collapse ? 1 : rule.maxBullets
+              ),
             },
           ];
         }
