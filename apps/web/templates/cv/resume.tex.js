@@ -46,9 +46,13 @@ const tex = (value = '') =>
 // under that threshold and the run either side of it is merged into a single
 // token: the contact line came out as "USA·alex@ournature.studio·alexnodeland.com",
 // one unsplittable string where an address, an email and a site should be, and
-// a role's dates came out glued to its location. Half an em clears the
-// threshold in every extractor tried here.
-const SEP_GAP = '0.5em';
+// a role's dates came out glued to its location. Half an em cleared the
+// threshold in every extractor tried at first, and then failed by a tenth of
+// a point on one page: OpenResume's threshold is the mean character width of
+// the page's commonest font, which moves with the page's text, and half an em
+// of 9pt is 4.5pt against a mean of about 4.5pt. Four fifths of an em is
+// clear of it on every page, with room for the mean to move.
+const SEP_GAP = '0.8em';
 const SEPARATOR = `\\hspace{${SEP_GAP}}$\\cdot$\\hspace{${SEP_GAP}}`;
 
 /** The full CV is the only variant that runs to as many pages as it takes. */

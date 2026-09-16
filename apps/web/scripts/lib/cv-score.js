@@ -9,7 +9,11 @@
  *     it did. Counted from OpenResume's output against the source.
  *
  *   keywords — of the lexicon terms the family's profiles ask for, weighted
- *     by how many profiles ask, how much the extracted text covers.
+ *     by how many profiles ask, how much the extracted text covers. A profile
+ *     asks for a term in its responsibility and qualification lines; the
+ *     paragraph describing the employer is not read, so a term that only
+ *     describes where the work happens ("a startup", "a music company") is
+ *     not credited to a resume that happens to say the same word.
  *
  *   semantic — for each requirement in the family's profiles, how close the
  *     nearest resume sentence comes, as a cosine between embeddings. The mean
@@ -23,6 +27,9 @@
 
 /**
  * Reads one role profile: its frontmatter and the bullets under its sections.
+ *
+ * `text` is what the keyword score reads: the requirement lines joined, not
+ * the whole body. See `requirementsOf` for which sections those are.
  *
  * @returns {{meta: object, sections: Record<string, string[]>, text: string}}
  */
@@ -55,10 +62,11 @@ const parseProfile = markdown => {
     }
   }
 
-  return { meta, sections, text: body };
+  const profile = { meta, sections };
+  return { ...profile, text: requirementsOf(profile).join('\n') };
 };
 
-/** The lines of a profile that describe the work, as the semantic score reads them. */
+/** The lines of a profile that describe the work, as both scores read them. */
 const requirementsOf = profile =>
   [
     'Responsibilities',
@@ -145,8 +153,9 @@ const keywordCoverage = (text, frequency, compiled) => {
 
 /**
  * The sentences of one resume, as the semantic score reads them: the
- * summary sentence by sentence, each bullet, each project with its
- * description, the skills as one line, and each role's title line.
+ * summary sentence by sentence, each role's title line, each bullet, each
+ * degree with its school, each project with its description, and the skills
+ * as one line.
  *
  * From the source rather than the extracted text. `check-cv-text.js` asserts
  * that every one of these lines survives extraction intact, so the source is
@@ -160,6 +169,9 @@ const resumeUnits = data => {
   for (const role of data.experience) {
     units.push(`${role.title}, ${role.company}`);
     for (const bullet of role.achievements) units.push(bullet);
+  }
+  for (const school of data.education) {
+    units.push(`${school.degree}, ${school.institution}`);
   }
   for (const project of data.projects || []) {
     units.push(`${project.name}: ${project.description}`);

@@ -62,8 +62,10 @@ describe('parseProfile', () => {
     expect(profile.sections['Preferred qualifications']).toEqual([]);
   });
 
-  it('keeps the whole body as text for the keyword score', () => {
-    expect(parseProfile(PROFILE).text).toContain('An engineer who ships.');
+  it('gives the keyword score the requirement lines, not the About paragraph', () => {
+    const { text } = parseProfile(PROFILE);
+    expect(text).toContain('Strong Python.');
+    expect(text).not.toContain('An engineer who ships.');
   });
 });
 
@@ -129,7 +131,7 @@ describe('the lexicon', () => {
 });
 
 describe('resumeUnits', () => {
-  it('reads the summary by sentence, every bullet, each project and the skills line', () => {
+  it('reads the summary by sentence, every bullet, each degree, each project and the skills line', () => {
     const units = resumeUnits({
       personal: { summary: 'One. Two! Three?' },
       experience: [
@@ -139,6 +141,7 @@ describe('resumeUnits', () => {
           achievements: ['Built X', 'Ran Y'],
         },
       ],
+      education: [{ degree: 'BS, Mathematics', institution: 'A University' }],
       projects: [{ name: 'fugue', description: 'a library' }],
       skills: { technical: ['Python', 'Rust'] },
     } as never);
@@ -149,6 +152,7 @@ describe('resumeUnits', () => {
       'Engineer, Acme',
       'Built X',
       'Ran Y',
+      'BS, Mathematics, A University',
       'fugue: a library',
       'Python, Rust',
     ]);

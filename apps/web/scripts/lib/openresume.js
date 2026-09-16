@@ -144,6 +144,18 @@ const installResolver = () => {
  * Mirrors their `read-pdf.ts` — same fields, same origin at the bottom left,
  * same soft-hyphen repair, same filtering of whitespace-only items — over the
  * legacy build, which is the one that runs outside a browser.
+ *
+ * Two departures, both about page breaks, which a one-page parser never had
+ * to think about. pdf.js does not mark the last item on a page as ending a
+ * line, so the parser — which splits lines on that mark alone — runs the
+ * first line of every page onto the last line of the page before, and the
+ * job or heading at the top of the page is gone: a five-page CV lost three
+ * jobs and its education section that way. A page end is a line end here.
+ * And their pages keep their own coordinates, so the top of page two sits
+ * *above* the bottom of page one and the gap the parser starts a new entry
+ * on is negative. Here the pages are unrolled into one tall column, each
+ * page's origin one page height below the last, so a page break reads as
+ * the large gap it is.
  */
 const readPdf = async pdfPath => {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
@@ -154,10 +166,13 @@ const readPdf = async pdfPath => {
   }).promise;
 
   const items = [];
+  let offset = 0;
 
   for (let page = 1; page <= doc.numPages; page++) {
     const pdfPage = await doc.getPage(page);
     const content = await pdfPage.getTextContent();
+    const [, top, , bottom] = pdfPage.view;
+    const pageHeight = Math.abs(bottom - top);
 
     // Font names come back as loaded ids ("g_d8_f1") until the operator list
     // has been walked; the parser scores bold titles by font name, so this is
@@ -179,13 +194,15 @@ const readPdf = async pdfPath => {
       items.push({
         text: String(str).replace(/-­‐/g, '-'),
         x: transform[4],
-        y: transform[5],
+        y: transform[5] - offset,
         width,
         height,
         fontName: resolvedFont,
         hasEOL: Boolean(hasEOL),
       });
     }
+    if (items.length > 0) items[items.length - 1].hasEOL = true;
+    offset += pageHeight;
   }
 
   return items.filter(item => item.hasEOL || item.text.trim() !== '');
@@ -216,4 +233,4 @@ const parseResumePdf = async pdfPath => {
   );
 };
 
-module.exports = { CLONE_DIR, PINNED, ensureClone, parseResumePdf };
+module.exports = { CLONE_DIR, PINNED, ensureClone, readPdf, parseResumePdf };
