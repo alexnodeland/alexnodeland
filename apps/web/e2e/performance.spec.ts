@@ -198,13 +198,15 @@ test.describe('structural performance guards', () => {
     // Hydration is what measures the band, and on a loaded runner it can land
     // after `settle`. Fold once and unfold, as proof the shell is live, before
     // the run that is measured.
+    // The hairline's top rides the clip line by its `top`, so where it is,
+    // is its box against the window's.
     const edgeAt = () =>
       page.evaluate(() => {
-        const transform = getComputedStyle(
-          document.querySelector('.window-edge')!
-        ).transform;
-        const matrix = transform.match(/matrix\(([^)]+)\)/);
-        return matrix ? parseFloat(matrix[1].split(',')[5]) : 0;
+        const edge = document.querySelector('.window-edge')!;
+        const layout = document.querySelector('.layout')!;
+        return (
+          edge.getBoundingClientRect().top - layout.getBoundingClientRect().top
+        );
       });
     const scrollTo = (top: number) =>
       page.evaluate(value => {
@@ -241,11 +243,8 @@ test.describe('structural performance guards', () => {
         const inset = clip.match(/inset\(([-\d.]+)px/);
         return inset ? parseFloat(inset[1]) : NaN;
       };
-      const translateY = (el: Element) => {
-        const transform = getComputedStyle(el).transform;
-        const matrix = transform.match(/matrix\(([^)]+)\)/);
-        return matrix ? parseFloat(matrix[1].split(',')[5]) : 0;
-      };
+      const edgeTop = (windowTop: number) =>
+        edge.getBoundingClientRect().top - windowTop;
       const scaleOf = (el: Element) => {
         const transform = getComputedStyle(el).transform;
         const matrix = transform.match(/matrix\(([^)]+)\)/);
@@ -272,7 +271,7 @@ test.describe('structural performance guards', () => {
           windowHeight: window_.height,
           heroHeight: hero.getBoundingClientRect().height,
           clip: clipTop(),
-          edge: translateY(edge),
+          edge: edgeTop(window_.top),
           contentTop: main.getBoundingClientRect().top - window_.top,
           scale: scaleOf(title),
         });
@@ -329,14 +328,13 @@ test.describe('structural performance guards', () => {
       const edge = document.querySelector('.window-edge') as HTMLElement;
       const main = document.querySelector('.main') as HTMLElement;
       const clip = getComputedStyle(frame).clipPath.match(/inset\(([-\d.]+)px/);
-      const transform =
-        getComputedStyle(edge).transform.match(/matrix\(([^)]+)\)/);
       return {
         pinned: document
           .querySelector('.stage')!
           .classList.contains('is-pinned'),
         clip: clip ? parseFloat(clip[1]) : NaN,
-        edge: transform ? parseFloat(transform[1].split(',')[5]) : 0,
+        edge:
+          edge.getBoundingClientRect().top - layout.getBoundingClientRect().top,
         band: (
           document.querySelector('.window-band') as HTMLElement
         ).getBoundingClientRect().height,

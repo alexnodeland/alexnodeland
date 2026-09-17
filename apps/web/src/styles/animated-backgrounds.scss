@@ -11,10 +11,23 @@
 // pale fields on anything lighter, while the dense ones — the PDE solver, the
 // spectrogram — barely move. One constant is what makes the six read as a set,
 // and it is what the white chrome layered over them already assumes.
+//
+// Depth. The stage, the arrival layer and the manager's fade overlay all sit
+// at z-index 0, in document order, and everything the visitor reads or taps
+// is a fixed layer at --z-stage or above. They used to be at -2 and -1, under
+// the page's own ground — which holds on the engines that paint the root's
+// background first and the negative layers over it, and does not hold on
+// iOS 26 Safari: there the body's near-black is composited over anything
+// below zero, and the whole field read as a flat black sheet, with the
+// simulation only showing at the foot when the page was pulled past its end
+// and the sheet came away from the fixed layers beneath. Nothing in the page
+// is in flow at the root, so the ground is painted first at zero and the
+// chrome, all of it positioned above --z-stage, lands over it on every
+// engine.
 .background-stage {
   position: fixed;
   inset: 0;
-  z-index: -2;
+  z-index: 0;
   pointer-events: none;
   background: var(--bg-stage);
 }
@@ -24,14 +37,17 @@
 // so a background appearing for the first time takes exactly as long as one
 // changing does.
 //
-// The box is the canvas's own — fixed, edge to edge, at z-index -1 and blind
-// to the pointer. It has to be: the fade makes a stacking context here, and a
-// plain wrapper would have resolved the canvas's negative z-index inside
-// itself and floated the whole simulation up over the page.
+// The box is the canvas's own — fixed, edge to edge, on the stage's depth
+// (see .background-stage) and blind to the pointer. The explicit z-index
+// makes it a stacking context in its own right, whether or not the arrival
+// animation is running (reduced motion turns it off): the canvas inside
+// positions itself at z-index -1, and that has to resolve in here, behind
+// nothing, rather than at the root, where it would fall under the page's
+// ground.
 .background-arrival {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   animation: background-in var(--duration-slow) var(--ease-out) forwards;
 }
