@@ -273,10 +273,10 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
 
             Inside the Suspense boundary on purpose: React commits this and the
             simulation in the same pass, so the fade starts when the picture
-            does rather than during the wait for it. Fixed and at the canvas's
-            own depth, because an opacity animation makes a stacking context of
-            whatever carries it — left as a plain wrapper, this would have
-            lifted the simulation out from behind the page. */}
+            does rather than during the wait for it. Fixed, on the stage's own
+            depth and a stacking context of its own (see .background-arrival),
+            so the canvas's negative z-index resolves in here rather than at
+            the root. */}
         <div
           className="background-arrival"
           style={{ animationDuration: `${fadeDurationMs}ms` }}
@@ -315,15 +315,17 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
           same in both themes rather than picking up the page colour. */}
       <div className="background-stage" aria-hidden="true" />
       {mounted && renderCurrentBackground()}
+      {/* The fade between two backgrounds. It follows the arrival layer in
+          the document at the same depth, so it covers the simulation and
+          nothing else — the page's chrome is fixed above --z-stage. Not a
+          negative z-index: see .background-stage for the engine that paints
+          the page's ground over those. */}
       {mounted && (
         <div
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            zIndex: -1,
+            inset: 0,
+            zIndex: 0,
             pointerEvents: 'none',
             backgroundColor: '#000',
             opacity: overlayOpacity,

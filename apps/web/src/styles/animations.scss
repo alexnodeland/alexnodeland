@@ -236,12 +236,13 @@
   }
 }
 
-// The window's top hairline and corners, riding the clip edge up.
+// The window's hairline, its top riding the clip edge up while its foot
+// stays on the frame's.
 @keyframes window-edge-fold {
   from {
-    transform: translateY(var(--fold-band, 0px));
+    top: var(--fold-band, 0px);
   }
   to {
-    transform: none;
+    top: 0;
   }
 }

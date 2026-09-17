@@ -404,12 +404,16 @@
 // into it by the band (see .site-hero.is-collapsible). The page never
 // scrolls; content scrolls in here.
 //
-// It is three layers. The frame carries the material — scrim, blur,
-// hairline, corners — and is clipped from the top by the fold's progress, so
-// at rest the band under the hero is bare field and the frame's edge rises
-// with the content as the window scrolls. The edge is the top hairline and
-// its corners on a layer of their own, translated to ride the clip: a border
-// cannot sit on a clip line. The scroller is transparent and sits over both.
+// It is three layers. The frame carries the material — scrim, blur, corners
+// — and is clipped from the top by the fold's progress, so at rest the band
+// under the hero is bare field and the frame's edge rises with the content
+// as the window scrolls. The edge is the hairline, all four sides of it, on
+// a layer of its own that starts at the clip line and reaches the frame's
+// foot: a border cannot sit on a clip line, and one under a rounded clip
+// fares no better — iOS Safari rasterises the clip as a mask and the sides
+// and foot of the hairline came out at half the weight of the top, which
+// was never clipped. So the frame draws no hairline at all, and the edge
+// draws the whole of it. The scroller is transparent and sits over both.
 .window {
   position: relative;
   flex: 1;
@@ -423,25 +427,27 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  // Never quite whole: the top hairline is the edge's, so the frame's own is
-  // always under the clip.
+  // The material's border stays for its geometry and loses its colour: the
+  // hairline is the edge's, so nothing here has to survive the clip.
+  border-color: transparent;
+  // Never quite whole: the top hairline is the edge's, so the frame's own
+  // top is always under the clip.
   clip-path: inset(
     max(1px, calc(var(--fold-band) * (1 - var(--hero-collapse, 0)))) 0 0 0 round
       var(--radius-lg)
   );
 }
 
+// The hairline. Its top rides the clip line — `top`, not a transform, so its
+// foot stays on the frame's — and it is never clipped itself, so the four
+// sides come out at one weight.
 .window-edge {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--radius-lg);
+  inset: 0;
+  top: calc(var(--fold-band) * (1 - var(--hero-collapse, 0)));
   border: 1px solid var(--window-border);
-  border-bottom: 0;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: var(--radius-lg);
   pointer-events: none;
-  transform: translateY(calc(var(--fold-band) * (1 - var(--hero-collapse, 0))));
 }
 
 // The frame and its edge on the scroll timeline, on the pages that fold.
@@ -532,7 +538,7 @@
   }
 
   .window-edge {
-    transform: none;
+    top: 0;
   }
 
   .window-band {
