@@ -82,8 +82,14 @@ jobs:
             ${{ runner.os }}-gatsby-build-${{ hashFiles('apps/web/package-lock.json') }}-
             ${{ runner.os }}-gatsby-build-
 
+      # onnxruntime-node's postinstall fetches its CUDA 12 binaries from
+      # nuget.org on linux/x64. The chat indexer embeds on the CPU, whose
+      # runtime ships in the npm package, so the download is never used — and
+      # a dropped TLS connection to nuget.org failed a deploy on it once.
       - name: Install dependencies
         run: npm ci
+        env:
+          ONNXRUNTIME_NODE_INSTALL: skip
 
       # The typeset CV PDFs, keyed on exactly their inputs. On a hit the
       # LaTeX toolchain is never installed: scripts/build-cv.js warns that
