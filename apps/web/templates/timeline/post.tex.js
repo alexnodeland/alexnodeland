@@ -49,6 +49,8 @@ const UNICODE = {
   '≤': '$\\leq$',
   '√': '$\\surd$',
   α: '$\\alpha$',
+  β: '$\\beta$',
+  τ: '$\\tau$',
 };
 
 /** Escapes the characters TeX would otherwise read as markup. */
