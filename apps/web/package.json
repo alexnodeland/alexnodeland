@@ -63,11 +63,11 @@
   "homepage": "https://github.com/alexnodeland/alexnodeland#readme",
   "description": "Portfolio website for Alex Nodeland - Senior AI Engineer & Technical Consultant specializing in AI system architecture, DevOps automation, and production-ready AI infrastructure.",
   "dependencies": {
-    "@huggingface/transformers": "^4.2.0",
+    "@huggingface/transformers": "^4.3.0",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@types/three": "^0.180.0",
-    "docx": "^9.7.1",
+    "docx": "^9.7.2",
     "file-saver": "^2.0.5",
     "gatsby": "^5.16.1",
     "gatsby-plugin-feed": "^5.16.0",
@@ -88,7 +88,7 @@
     "react-markdown": "^10.1.0",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
-    "three": "^0.186.0",
+    "three": "^0.186.1",
     "typescript": "^5.9.2"
   },
   "devDependencies": {
@@ -98,7 +98,7 @@
     "@babel/preset-typescript": "^7.27.1",
     "@babel/register": "^7.28.3",
     "@playwright/test": "^1.63.0",
-    "@testing-library/dom": "^10.4.1",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -119,8 +119,8 @@
     "lint-staged": "^16.2.0",
     "pdfjs-dist": "^6.3.289",
     "playwright": "^1.62.0",
-    "prettier": "^3.9.6",
-    "sass": "^1.104.0",
+    "prettier": "^3.9.9",
+    "sass": "^1.105.0",
     "webpack-cli": "^6.0.1"
   },
   "lint-staged": {
