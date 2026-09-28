@@ -95,7 +95,7 @@ export const projectsConfig: ProjectsConfig = {
       language: 'Rust',
       tags: ['app', 'synthesis', 'preference-learning'],
       url: 'https://github.com/alexnodeland/auracle',
-      site: 'https://alexnodeland.github.io/auracle/',
+      site: 'https://auracle.alexnodeland.com/',
       stars: 1,
       category: 'audio-dsp',
     },
@@ -143,6 +143,16 @@ export const projectsConfig: ProjectsConfig = {
     },
 
     // --- ai ---
+    {
+      name: 'stretto',
+      description:
+        'an mcp proxy that learns which reads your agent makes next and serves them in the same tool result, so it needs fewer llm turns.',
+      language: 'Rust',
+      tags: ['featured', 'tool', 'mcp', 'agents'],
+      url: 'https://github.com/alexnodeland/stretto',
+      site: 'https://stretto.alexnodeland.com/',
+      category: 'ai',
+    },
     {
       name: 'principled',
       description: 'claude code plugins for specification-first development.',
