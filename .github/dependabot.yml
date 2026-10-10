@@ -1,6 +1,6 @@
-# Weekly dependency updates, grouped so routine bumps arrive as one PR
-# rather than one per package. Majors stay separate: they are the ones
-# that need reading.
+# Weekly dependency updates, grouped so they arrive as few PRs as possible:
+# for the site, one for minor and patch bumps and one for majors. The model
+# app's majors stay separate (see below).
 version: 2
 updates:
   - package-ecosystem: npm
@@ -16,14 +16,13 @@ updates:
         update-types:
           - minor
           - patch
-      # Jest's packages move in lockstep: a major bump of one alone fails
-      # (#120, #121, #122 came apart), so they arrive as one PR.
-      jest:
-        patterns:
-          - jest
-          - babel-jest
-          - jest-environment-*
-          - '@types/jest'
+      # Every major in one weekly PR too. One at a time they arrived in waves
+      # of five (the open-PR limit), each close letting the next one in, and
+      # packages that only move together (jest, babel-jest and
+      # jest-environment-jsdom: #120, #121, #122) came apart. A major in the
+      # group that cannot land is dropped from it with
+      # `@dependabot ignore <package> major version` on the group's PR.
+      majors:
         update-types:
           - major
     # Majors Gatsby 5 cannot take. Its router (@gatsbyjs/reach-router) and
