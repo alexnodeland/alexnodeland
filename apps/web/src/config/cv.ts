@@ -110,7 +110,6 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
     names: [
       'LLMs',
       'Agents',
-      'Multi-agent',
       'Agent Memory',
       'Context Engineering',
       'Evals',
@@ -119,6 +118,16 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
       'MCP',
       'Vector Search',
       'Machine Learning',
+    ],
+  },
+  {
+    label: 'LLM tooling',
+    names: [
+      'Anthropic and OpenAI APIs',
+      'PydanticAI',
+      'LangGraph',
+      'DSPy',
+      'Claude Code',
     ],
   },
   {
@@ -893,8 +902,7 @@ export const cvSource: CVSource = {
       // guardrail cases. "Tool use" is in the eval bullet's own words, so it
       // does not need a place here too. The music-tech page keeps the plain
       // "Agents" and spends the rest of its line on audio.
-      { name: 'Agents', tags: ['music'], audienceOnly: true },
-      { name: 'Multi-agent', tags: ['fde', 'ai-eng'] },
+      'Agents',
       { name: 'Agent Memory', tags: ['fde', 'ai-eng'] },
       { name: 'Context Engineering', tags: ['fde', 'ai-eng'] },
       { name: 'Evals', tags: ['fde', 'ai-eng', 'music'] },
@@ -903,6 +911,13 @@ export const cvSource: CVSource = {
       { name: 'MCP', tags: ['fde', 'ai-eng'] },
       { name: 'Vector Search', tags: ['ai-eng'] },
       'Machine Learning',
+      // The tools the agents are built with, named because a filter for a
+      // framework does not match a category.
+      { name: 'Anthropic and OpenAI APIs', tags: ['fde', 'ai-eng'] },
+      { name: 'PydanticAI', tags: ['fde', 'ai-eng'] },
+      { name: 'LangGraph', tags: ['fde', 'ai-eng'] },
+      { name: 'DSPy', tags: ['ai-eng'] },
+      { name: 'Claude Code', tags: ['fde', 'ai-eng'] },
       // The data the agents stand on: the semantic layer at Perch, the graph
       // retrieval at Influize, the copilot's knowledge graph.
       'PostgreSQL',
@@ -914,7 +929,7 @@ export const cvSource: CVSource = {
       'AWS',
       { name: 'GCP', tags: ['fde', 'music'] },
       'Docker',
-      'CI/CD',
+      'CI/CD (GitHub Actions)',
       { name: 'WebSockets', tags: ['fde', 'ai-eng'] },
       { name: 'Distributed Systems', tags: ['fde', 'ai-eng'] },
       { name: 'Observability', tags: ['fde', 'ai-eng', 'music'] },
