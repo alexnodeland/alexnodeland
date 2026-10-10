@@ -472,7 +472,7 @@ export const cvSource: CVSource = {
         // Tagged for music too: it is the line that page keeps when the entry
         // collapses, in place of the keynote.
         {
-          text: "Built a knowledge-graph AI copilot over thousands of a consulting firm's documents: a graph UI, chatbot, and Claude Code plugin that answer with live queries and write reports and decks",
+          text: 'Built a knowledge-graph AI copilot over thousands of documents for a consulting firm: a graph UI, chatbot, and Claude Code plugin that query it live and write reports and decks',
           tags: ['fde', 'ai-eng', 'music'],
           metric: 'thousands of documents',
         },
@@ -510,7 +510,7 @@ export const cvSource: CVSource = {
       achievements: [
         // Tagged for every audience, so the team leads the entry everywhere.
         {
-          text: 'Led a cross-functional team of 5 to 10 engineers, alongside the music, research, and sales teams',
+          text: 'Led a team of 5 to 10 engineers, working with the music, research, and sales teams',
           tags: ['fde', 'ai-eng', 'music'],
           metric: '5 to 10',
         },
@@ -521,7 +521,7 @@ export const cvSource: CVSource = {
           audienceOnly: true,
         },
         {
-          text: 'Set technical direction and release plans with the founders against customer and partner requirements',
+          text: 'Planned the roadmap and releases with the founders around customer and partner needs',
           tags: ['fde'],
         },
         // The music work, shown to that audience only.
@@ -944,6 +944,24 @@ export const cvSource: CVSource = {
  * its reader. An unknown name is dropped rather than rendered empty; the CI
  * guard fails on it, so a typo surfaces in the build and not in a PDF.
  */
+/**
+ * Descriptions as a resume sets them. The projects page writes them in its
+ * own lowercase voice ("rust", "llm"), which on a resume reads as a typo, so
+ * every project a variant names gets a cased sentence here.
+ */
+const CV_PROJECT_DESCRIPTIONS: Record<string, string> = {
+  fugue: 'A type-safe, monadic probabilistic programming library for Rust.',
+  'fugue-evo':
+    'A probabilistic genetic algorithm library for Rust: evolution as inference.',
+  quiver: 'A modular audio synthesis library in Rust.',
+  auracle: 'A synthesizer that evolves patches toward the ones you prefer.',
+  llmcomposer: 'An experiment in composing music with an LLM.',
+  reflex: 'A template for real-time AI agent systems.',
+  principled: 'Claude Code plugins for specification-first development.',
+  'claude-telegram':
+    'A Telegram bridge to Claude Code, so you can drive it from your phone.',
+};
+
 const resolveProjects = (names?: string[]): ProjectItem[] | undefined => {
   if (!names || names.length === 0) return undefined;
 
@@ -953,7 +971,7 @@ const resolveProjects = (names?: string[]): ProjectItem[] | undefined => {
     return [
       {
         name: project.name,
-        description: project.description,
+        description: CV_PROJECT_DESCRIPTIONS[name] ?? project.description,
         technologies: [project.language],
         github: project.url,
         url: project.site,
