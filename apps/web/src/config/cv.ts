@@ -326,15 +326,13 @@ export const cvSource: CVSource = {
     summary:
       'Engineer and mathematician with 10+ years shipping software, now building AI systems at Perch Insights: agent harnesses, evaluation infrastructure, and the memory and semantic layer they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, growing it to 15 people, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook.',
     summaryByVariant: {
-      // Leads with the delivery work, and closes on the diagnosis from the
-      // consulting page — which is the argument for hiring someone to sit
-      // between a customer and a system that has to work in their hands.
-      fde: 'Engineer who takes LLM systems from a prototype to something that holds up in front of customers. At Perch Insights I built the agent harness behind an analytics product that cut analysis time by about 80%, and the agent that turns requests into scheduled business reviews sent to clients. Before that I co-founded a supercomputing startup in Singapore, took it from founding to launch in 14 months, and led engineering at a music-ML company SoundCloud acquired. Prototypes that demo well and break in production are usually failing on the data model, the evals, or how failures are handled, not on the model.',
+      // Leads with the delivery work: systems that hold up in front of customers.
+      fde: 'Engineer who takes LLM systems from a prototype to something that holds up in front of customers. At Perch Insights I built the agent harness behind an analytics product that cut analysis time by about 80%, and the agent that turns requests into scheduled business reviews sent to clients. Before that I co-founded a supercomputing startup in Singapore, took it from founding to launch in 14 months, and led engineering at a music-ML company SoundCloud acquired.',
       // Leads with shipped systems and names them concretely. The founder
       // years are one clause: enough to account for the time, while the page
       // stays about the systems.
       'ai-engineer':
-        'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), 1,000+ eval cases, and a namespaced memory architecture that unifies episodic, semantic, and procedural memory. Earlier I built hybrid semantic and graph retrieval at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
+        'AI engineer building production LLM systems: agent harnesses, evaluation infrastructure, and agent memory. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), 1,000+ eval cases, and a namespaced memory architecture that unifies episodic, semantic, and procedural memory. Earlier I built hybrid semantic and graph retrieval at Influize, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook.',
       // Audio at every layer, oldest work included: this is the one page
       // where the pedal firmware and the wavelet research lead rather than
       // trail, and the Rust libraries are the current work rather than a
@@ -368,7 +366,7 @@ export const cvSource: CVSource = {
         },
         // Replaced the earlier DAG framework and workflow DSL, both retired.
         {
-          text: "Single-handedly built the product's agent harness: 6 subagents and 50 tools, with reusable and scheduled workflows",
+          text: "Designed and built the product's agent harness: 6 subagents and 50 tools, with reusable and scheduled workflows",
           tags: ['fde', 'ai-eng', 'music'],
           metric: '6 subagents, 50 tools',
         },
