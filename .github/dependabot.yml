@@ -28,6 +28,11 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: '@babel/*'
         update-types: ['version-update:semver-major']
+      # eslint 10 drops .eslintrc for flat config, and Gatsby's bundled
+      # eslint-config-react-app does not accept it: `npm ci` fails (#118).
+      # Moving to eslint 9 and flat config is its own change.
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
     labels:
       - dependencies
 

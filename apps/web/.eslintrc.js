@@ -2,11 +2,7 @@ module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint', 'react', 'react-hooks'],
-  extends: [
-    'eslint:recommended',
-    'plugin:react/recommended',
-    'plugin:react-hooks/recommended',
-  ],
+  extends: ['eslint:recommended', 'plugin:react/recommended'],
   env: {
     browser: true,
     node: true,
@@ -18,6 +14,11 @@ module.exports = {
     },
   },
   rules: {
+    // The two hooks rules, named rather than taken from the plugin's preset:
+    // from v6 the preset also turns on the React Compiler rules, which this
+    // Gatsby 5, React 18 site does not compile with.
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
     'no-unused-vars': 'off',
