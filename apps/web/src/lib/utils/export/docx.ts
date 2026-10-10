@@ -175,8 +175,11 @@ const note = (text: string, m: Metrics, italics = false) =>
   });
 
 const header = (cvData: CVData, m: Metrics) => {
-  const { name, title, location, email, website, phone } = cvData.personal;
-  const contact = [location, email, website, phone].filter(Boolean);
+  const { name, title, location, email, website, linkedin, github, phone } =
+    cvData.personal;
+  const contact = [location, email, website, linkedin, github, phone].filter(
+    Boolean
+  );
 
   return [
     new Paragraph({

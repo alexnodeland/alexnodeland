@@ -207,11 +207,14 @@ ${
 };
 
 const header = data => {
-  const { name, title, location, email, website, phone } = data.personal;
+  const { name, title, location, email, website, linkedin, github, phone } =
+    data.personal;
   const contact = [
     tex(location),
     `\\href{mailto:${email}}{${tex(email)}}`,
     `\\href{https://${website}}{${tex(website)}}`,
+    linkedin ? `\\href{https://${linkedin}}{${tex(linkedin)}}` : null,
+    github ? `\\href{https://${github}}{${tex(github)}}` : null,
     phone ? `\\href{tel:${phone.replace(/\s/g, '')}}{${tex(phone)}}` : null,
   ]
     .filter(Boolean)
@@ -364,9 +367,16 @@ ${parts.join('\n')}
     .join('\n');
 
 const skills = (data, variant) => {
-  const lines = [
-    `\\textbf{Technical}\\quad ${tex(data.skills.technical.join(', '))}\\par`,
-  ];
+  // Set in labelled runs when the data carries them, so a reader finds the
+  // AI terms without reading past the languages and the infrastructure.
+  const groups =
+    data.skills.groups && data.skills.groups.length > 0
+      ? data.skills.groups
+      : [{ label: 'Technical', items: data.skills.technical }];
+  const lines = groups.map(
+    (group, index) =>
+      `${index > 0 ? '\\vspace{0.15em}' : ''}\\textbf{${tex(group.label)}}\\quad ${tex(group.items.join(', '))}\\par`
+  );
 
   // Soft skills read as filler next to fifteen achievement bullets, so the
   // one-pager spends its remaining lines on the technical list alone.

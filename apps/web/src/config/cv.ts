@@ -50,7 +50,7 @@ export type AudienceTag = 'fde' | 'ai-eng' | 'music' | 'exec' | 'hardware';
  * as concurrent commitments rather than as job-hopping.
  */
 export type EngagementType =
-  'full-time' | 'part-time' | 'advisory' | 'freelance';
+  'full-time' | 'part-time' | 'advisory' | 'freelance' | 'contract';
 
 /**
  * An achievement, either as bare prose or with the metadata the generator
@@ -88,6 +88,65 @@ export type Bullet =
  */
 export type Skill =
   string | { name: string; tags?: AudienceTag[]; audienceOnly?: boolean };
+
+/** A labelled run of the skills line, as the one-pagers set it. */
+export interface SkillGroup {
+  label: string;
+  items: string[];
+}
+
+/**
+ * The groups the skills line is set in, in order, each naming the terms it
+ * holds. Infrastructure is the catch-all: a term in `technical` that no group
+ * names lands there, so a new skill is never dropped.
+ */
+export const SKILL_GROUPS: { label: string; names: string[] }[] = [
+  { label: 'Core', names: ['Python', 'C++', 'SQL', 'Mathematics'] },
+  {
+    label: 'AI',
+    names: [
+      'Machine Learning',
+      'LLMs',
+      'Agents',
+      'Agent Memory',
+      'Evals',
+      'RAG',
+      'Tool Use',
+      'MCP',
+      'Prompt Engineering',
+      'Vector Search',
+      'Semantic Data Models',
+    ],
+  },
+  {
+    label: 'Audio',
+    names: [
+      'Signal Processing',
+      'Audio Synthesis',
+      'Audio Compression',
+      'Real-time Audio',
+    ],
+  },
+  { label: 'Infrastructure', names: [] },
+  {
+    label: 'Delivery',
+    names: ['Solution Architecture', 'Technical Pre-Sales'],
+  },
+];
+
+/** Splits a variant's skills line into `SKILL_GROUPS`, dropping empty groups. */
+export const groupSkills = (skills: string[]): SkillGroup[] => {
+  const fallback = SKILL_GROUPS.findIndex(g => g.label === 'Infrastructure');
+  const groups = SKILL_GROUPS.map(({ label }) => ({
+    label,
+    items: [] as string[],
+  }));
+  for (const skill of skills) {
+    const index = SKILL_GROUPS.findIndex(group => group.names.includes(skill));
+    groups[index === -1 ? fallback : index].items.push(skill);
+  }
+  return groups.filter(group => group.items.length > 0);
+};
 
 /** How one role is cut down for one variant. */
 export interface RoleVariantRule {
@@ -176,6 +235,10 @@ export interface CVData {
     phone?: string;
     location: string;
     website: string;
+    /** Bare host and path, as printed: `linkedin.com/in/...`. */
+    linkedin?: string;
+    /** Bare host and path, as printed: `github.com/...`. */
+    github?: string;
     summary: string;
   };
 
@@ -185,6 +248,8 @@ export interface CVData {
   projects?: ProjectItem[];
   skills: {
     technical: string[];
+    /** `technical`, split into `SKILL_GROUPS` for the typeset documents. */
+    groups?: SkillGroup[];
     soft?: string[];
     languages?: string[];
   };
@@ -250,13 +315,15 @@ export const cvSource: CVSource = {
     email: 'alex@ournature.studio',
     location: 'Stamford, NY',
     website: 'alexnodeland.com',
+    linkedin: 'linkedin.com/in/alexnodeland',
+    github: 'github.com/alexnodeland',
     summary:
       'Engineer and mathematician with 10+ years shipping software, now building AI systems at Perch Insights: agent harnesses, evaluation infrastructure, and the memory and semantic layer they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, growing it to 15 people, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook.',
     summaryByVariant: {
       // Leads with the delivery work, and closes on the diagnosis from the
       // consulting page — which is the argument for hiring someone to sit
       // between a customer and a system that has to work in their hands.
-      fde: 'Engineer who takes LLM systems from a prototype to something that holds up in front of customers. At Perch Insights I built the agent harness behind an analytics product that cut analysis time by about 80%, and the agent that turns requests into scheduled business reviews sent to clients. Before that I co-founded a supercomputing startup in Singapore, won Fortune 500 and national-government customers, and led engineering at a music-ML company SoundCloud acquired. Prototypes that demo well and break in production are usually failing on the data model, the evals, or how failures are handled, not on the model.',
+      fde: 'Engineer who takes LLM systems from a prototype to something that holds up in front of customers. At Perch Insights I built the agent harness behind an analytics product that cut analysis time by about 80%, and the agent that turns requests into scheduled business reviews sent to clients. Before that I co-founded a supercomputing startup in Singapore, took it from founding to launch in 14 months, and led engineering at a music-ML company SoundCloud acquired. Prototypes that demo well and break in production are usually failing on the data model, the evals, or how failures are handled, not on the model.',
       // Leads with shipped systems and names them concretely. The founder
       // years are one clause: enough to account for the time, while the page
       // stays about the systems.
@@ -347,7 +414,10 @@ export const cvSource: CVSource = {
       location: 'Remote, NY',
       duration: '2023 - 2024',
       achievements: [
-        'Started the AI function as its sole engineer and shipped its first systems to production',
+        {
+          text: 'Started the AI function as its sole engineer, with a first prototype in weeks and the first production workflow in 2 months',
+          metric: '2 months',
+        },
         {
           text: "Built the RAG pipeline behind the product's generated responses, covering retrieval, chunking, and grounding",
           tags: ['ai-eng'],
@@ -399,14 +469,17 @@ export const cvSource: CVSource = {
       location: 'Remote, NY',
       duration: '2022 - Present',
       achievements: [
+        // Leads the entry: of everything here, this is the AI system actually
+        // built, and the one line the AI Engineer page keeps when it collapses.
+        {
+          text: 'Built an ontology-powered knowledge platform and AI copilot for a management consulting firm, mapping client organizations, surfacing conflicts and gaps across documentation, and synthesizing reports',
+          tags: ['fde', 'ai-eng'],
+        },
         {
           text: 'Advise startups and established companies on where AI fits in their stack',
           tags: ['fde'],
         },
-        {
-          text: 'Delivered a virtual keynote to about 30 CIOs and founders, hosted by an Australian VC, on LLM architectures, guardrails for workflows, and feedback loops that let an organization build on automation',
-          metric: '30',
-        },
+        'Delivered a virtual keynote to about 30 CIOs and founders, hosted by an Australian VC, on LLM architectures, guardrails for workflows, and feedback loops that let an organization build on automation',
         {
           text: 'Codified organizational process for a blockchain unicorn: RACI matrices, documented processes, and access controls aligned across the org and built into internal tooling',
           tags: ['fde'],
@@ -416,12 +489,6 @@ export const cvSource: CVSource = {
           tags: ['fde'],
         },
         'Led migrations onto AI-integrated systems that reduced cost and manual work',
-        // Tagged for the AI Engineer page, where the Freelance entry collapses
-        // to one line: of everything here, this is the AI system actually built.
-        {
-          text: 'Built an ontology-powered knowledge platform and AI copilot for a management consulting firm, mapping client organizations, surfacing conflicts and gaps across documentation, and synthesizing reports',
-          tags: ['ai-eng'],
-        },
         'Developed personal knowledge management agents in Claude Code and Obsidian for non-technical founders, consultants, and creatives, covering capture, linking, reviews, and research across their notes',
         'Help early-stage startups choose a technology stack that will last',
       ],
@@ -435,7 +502,7 @@ export const cvSource: CVSource = {
     {
       title: 'Tech Lead',
       company: 'Musiio (acquired by SoundCloud)',
-      engagement: 'freelance',
+      engagement: 'contract',
       variants: {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
@@ -512,10 +579,6 @@ export const cvSource: CVSource = {
         {
           text: 'Took the product from founding to public launch in 14 months: a cloud platform that emulates supercomputer environments so teams can develop and test at scale without waiting for time on the real machine',
           metric: '14 months',
-        },
-        {
-          text: 'Won early customers, including Fortune 500 enterprises and national governments',
-          tags: ['fde', 'ai-eng'],
         },
         {
           text: 'Raised a seed round led by SGInnovate, with VC and angel investors',
@@ -685,7 +748,7 @@ export const cvSource: CVSource = {
       company: 'Absara Audio',
       engagement: 'full-time',
       variants: {
-        'music-tech': { maxBullets: 4 },
+        'music-tech': { maxBullets: 3 },
       },
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
@@ -814,13 +877,13 @@ export const cvSource: CVSource = {
     // the general documents carry every term that is not `audienceOnly`.
     technical: [
       'Python',
-      { name: 'C++', tags: ['music'] },
+      { name: 'C++', tags: ['music'], audienceOnly: true },
       'SQL',
       // A term is tagged away from a page whose family does not ask for it
       // and whose bullets already say it: the mathematics and the signal
       // processing are in the AI Engineer page's summary and off its list.
       { name: 'Mathematics', tags: ['fde', 'music'] },
-      { name: 'Signal Processing', tags: ['music'] },
+      { name: 'Signal Processing', tags: ['music'], audienceOnly: true },
       // Shown to the music-tech page only.
       { name: 'Audio Synthesis', tags: ['music'], audienceOnly: true },
       { name: 'Audio Compression', tags: ['music'], audienceOnly: true },
@@ -831,6 +894,7 @@ export const cvSource: CVSource = {
       // it; the general documents carry it because that work is the current
       // work, and the music-tech page does not spend its line on it.
       { name: 'Agents', tags: ['fde', 'ai-eng', 'music'] },
+      { name: 'Agent Memory', tags: ['fde', 'ai-eng'] },
       { name: 'Evals', tags: ['fde', 'ai-eng', 'music'] },
       { name: 'RAG', tags: ['fde', 'ai-eng'] },
       { name: 'Tool Use', tags: ['ai-eng'] },
@@ -849,12 +913,13 @@ export const cvSource: CVSource = {
       { name: 'Infrastructure as Code', tags: ['fde', 'ai-eng'] },
       'CI/CD',
       { name: 'API Development', tags: ['fde', 'ai-eng'] },
+      { name: 'WebSockets', tags: ['fde', 'ai-eng'] },
       // No web stack: a skills line is what the writer would stand behind in
       // an interview, and that is not it.
-      { name: 'Linux', tags: ['fde'] },
+      { name: 'Linux', tags: ['fde'], audienceOnly: true },
       // The customer-side of the FDE work. Pre-sales is a sales word, and
       // stays off the general documents.
-      { name: 'Solution Architecture', tags: ['fde'] },
+      { name: 'Solution Architecture', tags: ['fde'], audienceOnly: true },
       { name: 'Technical Pre-Sales', tags: ['fde'], audienceOnly: true },
     ],
   },
@@ -1058,6 +1123,7 @@ export const buildVariant = (
     projects: resolveProjects(source.projects?.[variant]),
     skills: {
       technical: selectSkills(source.skills.technical, variant),
+      groups: groupSkills(selectSkills(source.skills.technical, variant)),
       soft: source.skills.soft,
       languages: source.skills.languages,
     },
