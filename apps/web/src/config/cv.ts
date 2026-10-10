@@ -577,8 +577,8 @@ export const cvSource: CVSource = {
           metric: '14 months',
         },
         {
-          text: 'Raised a seed round from VCs and angels and grew the team from 3 to 15 across two offices in the first year',
-          metric: '3 to 15',
+          text: 'Raised a seed round from VCs and angels and grew the team to 15 across two offices',
+          metric: '15',
         },
         {
           text: 'Sold to national supercomputing centres and enterprise R&D teams across Asia-Pacific',
