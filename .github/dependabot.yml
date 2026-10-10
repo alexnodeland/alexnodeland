@@ -16,6 +16,16 @@ updates:
         update-types:
           - minor
           - patch
+      # Jest's packages move in lockstep: a major bump of one alone fails
+      # (#120, #121, #122 came apart), so they arrive as one PR.
+      jest:
+        patterns:
+          - jest
+          - babel-jest
+          - jest-environment-*
+          - '@types/jest'
+        update-types:
+          - major
     # Majors Gatsby 5 cannot take. Its router (@gatsbyjs/reach-router) and
     # react-helmet pin React 18, and it compiles with Babel 7, so these
     # bumps fail `npm ci` with ERESOLVE (#88, #90, #91). Gatsby 5.16.1 is the
@@ -33,6 +43,10 @@ updates:
       # Moving to eslint 9 and flat config is its own change.
       - dependency-name: eslint
         update-types: ['version-update:semver-major']
+      # typescript-eslint 8 accepts TypeScript <6.1, so 7 fails `npm ci` (#123).
+      # Only 7 and later are held: a TypeScript 6 bump can still arrive.
+      - dependency-name: typescript
+        versions: ['>=7']
     labels:
       - dependencies
 
