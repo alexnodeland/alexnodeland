@@ -251,7 +251,7 @@ export const cvSource: CVSource = {
     location: 'Stamford, NY',
     website: 'alexnodeland.com',
     summary:
-      'Engineer and mathematician working on AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Interested in problems that need both mathematics and production engineering.',
+      'Engineer and mathematician with 10+ years shipping software, now building AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, growing it to 15 people, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Interested in problems that need both mathematics and production engineering.',
     summaryByVariant: {
       // Leads with the delivery work, and closes on the diagnosis from the
       // consulting page — which is the argument for hiring someone to sit
@@ -388,7 +388,10 @@ export const cvSource: CVSource = {
           text: 'Advise startups and established companies on where AI fits in their stack',
           tags: ['fde'],
         },
-        'Delivered a virtual keynote to about 30 CIOs and founders, hosted by an Australian VC, on LLM architectures, guardrails for workflows, and feedback loops that let an organization build on automation',
+        {
+          text: 'Delivered a virtual keynote to about 30 CIOs and founders, hosted by an Australian VC, on LLM architectures, guardrails for workflows, and feedback loops that let an organization build on automation',
+          metric: '30',
+        },
         {
           text: 'Codified organizational process for a blockchain unicorn: RACI matrices, documented processes, and access controls aligned across the org and built into internal tooling',
           tags: ['fde'],
@@ -487,16 +490,23 @@ export const cvSource: CVSource = {
       location: 'Singapore, SG',
       duration: '2018 - 2022',
       achievements: [
-        'Took the product from concept to launch: a cloud platform that emulates supercomputer environments so teams can develop and test at scale without waiting for time on the real machine',
+        // February 2018 founding to the April 2019 launch HPCwire covered.
+        {
+          text: 'Took the product from founding to public launch in 14 months: a cloud platform that emulates supercomputer environments so teams can develop and test at scale without waiting for time on the real machine',
+          metric: '14 months',
+        },
         {
           text: 'Won early customers, including Fortune 500 enterprises and national governments',
           tags: ['fde', 'ai-eng'],
         },
         {
-          text: 'Raised early rounds from government, VC, and angel investors',
+          text: 'Raised a seed round led by SGInnovate, with VC and angel investors',
           tags: ['exec'],
         },
-        'Grew the team from 3 to 15 in the first year',
+        {
+          text: 'Grew the team from 3 to 15 in the first year, across offices in Singapore and Ho Chi Minh City',
+          metric: '3 to 15',
+        },
         {
           text: 'Set the business model, go-to-market strategy, and financial model',
           tags: ['exec'],
@@ -564,7 +574,10 @@ export const cvSource: CVSource = {
           text: 'Worked directly with clients on what to build next',
           tags: ['fde'],
         },
-        'Led the engineering team and set its code review and QA standards',
+        {
+          text: 'Led the engineering team and set its code review and QA standards as the company doubled from 7 to 15 people',
+          metric: '7 to 15',
+        },
         {
           text: 'Raised seed capital from VCs and angels',
           tags: ['exec'],
