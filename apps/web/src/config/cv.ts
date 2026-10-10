@@ -334,7 +334,7 @@ export const cvSource: CVSource = {
       // years are one clause: enough to account for the time, while the page
       // stays about the systems.
       'ai-engineer':
-        'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), 1,000+ eval cases, and a namespaced memory architecture that unifies episodic, semantic, and procedural memory. Earlier I built the RAG pipeline at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
+        'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), 1,000+ eval cases, and a namespaced memory architecture that unifies episodic, semantic, and procedural memory. Earlier I built hybrid semantic and graph retrieval at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
       // Audio at every layer, oldest work included: this is the one page
       // where the pedal firmware and the wavelet research lead rather than
       // trail, and the Rust libraries are the current work rather than a
@@ -360,10 +360,9 @@ export const cvSource: CVSource = {
       location: 'Remote, NY',
       duration: '2024 - Present',
       achievements: [
-        // The figures are approximate on purpose: the exact counts are not
-        // disclosable.
+        // Approximate on purpose: the exact counts are not disclosable.
         {
-          text: 'Lead AI engineering for the analytics product, cutting analysis time by about 80% for ~30 BI analysts serving 10 customers',
+          text: 'Lead AI engineering for the analytics product, cutting analysis time by about 80% across the BI analyst team',
           tags: ['fde', 'ai-eng'],
           metric: '80%',
         },
@@ -421,30 +420,25 @@ export const cvSource: CVSource = {
       duration: '2023 - 2024',
       achievements: [
         {
-          text: 'Started the AI function as its sole engineer, with a first prototype in weeks and the first production workflow in 2 months',
+          text: 'Started the AI function as its sole engineer, with a first prototype in weeks and production in 2 months',
           tags: ['fde', 'ai-eng'],
           metric: '2 months',
         },
         {
-          text: 'Built the RAG pipeline (retrieval, chunking, and grounding) behind every response the product generated',
-          tags: ['ai-eng'],
-        },
-        {
-          text: 'Designed the Supabase backend: Postgres schema, authentication, and access control, reworked as load grew',
+          text: "Built hybrid semantic and graph retrieval behind the product's generated content",
           tags: ['fde', 'ai-eng'],
         },
         {
-          text: 'Designed the API layer in front of the AI pipelines',
-          tags: ['ai-eng'],
+          text: 'Built the full backend: API, Postgres data model, auth, and AWS infrastructure (CloudFormation, GitHub Actions)',
+          tags: ['fde', 'ai-eng'],
         },
-        'Moved infrastructure to CloudFormation and CI/CD to GitHub Actions',
         {
           text: 'Added monitoring across the AI pipelines to catch quality regressions',
           tags: ['ai-eng'],
         },
         'Built ontological models to give the data model a consistent vocabulary',
         {
-          text: 'Coordinated with external development teams on platform integration, and ran project management out of GitHub',
+          text: 'Coordinated with external development teams on platform integration',
           tags: ['fde'],
         },
       ],
@@ -477,9 +471,11 @@ export const cvSource: CVSource = {
       achievements: [
         // Leads the entry: of everything here, this is the AI system actually
         // built, and the one line the AI Engineer page keeps when it collapses.
+        // Tagged for music too: it is the line that page keeps when the entry
+        // collapses, in place of the keynote.
         {
-          text: 'Built an ontology-backed AI copilot over thousands of documents for a consulting firm, surfacing conflicts and gaps',
-          tags: ['fde', 'ai-eng'],
+          text: "Built a knowledge-graph AI copilot over thousands of a consulting firm's documents: a graph UI, chatbot, and Claude Code plugin that answer with live queries and write reports and decks",
+          tags: ['fde', 'ai-eng', 'music'],
           metric: 'thousands of documents',
         },
         {
@@ -514,8 +510,17 @@ export const cvSource: CVSource = {
       location: 'Singapore',
       duration: '2021 - 2022',
       achievements: [
-        // The music-ML company. The two bullets below are the music work,
-        // and are shown to that audience only.
+        // Tagged for every audience, so the team leads the entry everywhere.
+        {
+          text: 'Led a cross-functional team of 5 to 10 engineers, alongside the music, research, and sales teams',
+          tags: ['fde', 'ai-eng', 'music'],
+          metric: '5 to 10',
+        },
+        {
+          text: 'Set technical direction and release plans with the founders against customer and partner requirements',
+          tags: ['fde', 'ai-eng'],
+        },
+        // The music work, shown to that audience only.
         {
           text: 'Built the audio ingestion pipelines',
           tags: ['music'],
@@ -526,25 +531,14 @@ export const cvSource: CVSource = {
           tags: ['music'],
           audienceOnly: true,
         },
-        // Tagged for every audience: the acquisition leads the entry everywhere.
         {
-          text: "Led a team of 5 to 10 engineers through SoundCloud's 2022 acquisition, with the platform holding up to due diligence",
-          tags: ['fde', 'ai-eng', 'music'],
-          metric: '5 to 10',
+          text: 'Ran experiments to validate models in-house',
+          tags: ['ai-eng', 'music'],
         },
         {
           text: 'Ran GCP on Kubernetes and Istio with Grafana and Prometheus, and rebuilt CI/CD on Jenkins with Cypress tests',
           tags: ['ai-eng'],
         },
-        {
-          text: 'Set technical direction against customer and partner requirements, planning releases with the founders',
-          tags: ['fde'],
-        },
-        {
-          text: 'Ran experiments to validate models in-house',
-          tags: ['ai-eng', 'music'],
-        },
-        'Worked alongside the music, research, and sales sides of the company',
         {
           text: 'Built a custom data ingestion pipeline and automated the manual steps around it',
           tags: ['ai-eng'],
@@ -579,9 +573,9 @@ export const cvSource: CVSource = {
       location: 'Singapore, SG',
       duration: '2018 - 2022',
       achievements: [
-        // February 2018 founding to the April 2019 launch HPCwire covered.
+        // February 2018 founding to the April 2019 launch.
         {
-          text: 'Launched a cloud platform emulating supercomputers 14 months after founding, covered by HPCwire',
+          text: 'Launched a cloud platform that emulates supercomputers, 14 months after founding',
           metric: '14 months',
         },
         {
@@ -589,7 +583,7 @@ export const cvSource: CVSource = {
           tags: ['exec'],
         },
         {
-          text: 'Grew the team from 3 to 15 in the first year, across offices in Singapore and Ho Chi Minh City',
+          text: 'Grew the team from 3 to 15 across two offices in the first year',
           metric: '3 to 15',
         },
         {
@@ -655,14 +649,13 @@ export const cvSource: CVSource = {
       achievements: [
         'Designed and built the MVPs, then the production cloud middleware that replaced them',
         "Directed algorithm development for the product's core computational problems",
+        'Worked directly with clients on what to build next',
         {
-          text: 'Worked directly with clients on what to build next',
-          tags: ['fde'],
+          text: 'Led engineering as the team grew from 2 to 20+ people',
+          tags: ['fde', 'ai-eng'],
+          metric: '2 to 20+',
         },
-        {
-          text: 'Led the engineering team and set its code review and QA standards as the company doubled from 7 to 15 people',
-          metric: '7 to 15',
-        },
+        'Set the code review and QA standards',
         {
           text: 'Raised seed capital from VCs and angels',
           tags: ['exec'],
