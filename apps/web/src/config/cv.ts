@@ -420,16 +420,16 @@ export const cvSource: CVSource = {
       duration: '2023 - 2024',
       achievements: [
         {
-          text: 'Started the AI function as its sole engineer, with a first prototype in weeks and production in 2 months',
+          text: 'Owned AI and backend engineering as sole engineer, taking the product from prototype to production in 2 months',
           tags: ['fde', 'ai-eng'],
           metric: '2 months',
         },
         {
-          text: "Built hybrid semantic and graph retrieval behind the product's generated content",
+          text: "Built hybrid semantic and graph retrieval to ground personalized, on-brand content in each customer's data",
           tags: ['fde', 'ai-eng'],
         },
         {
-          text: 'Built the full backend: API, Postgres data model, auth, and AWS infrastructure (CloudFormation, GitHub Actions)',
+          text: 'Built the platform the AI ran on: API, data model, auth, and AWS infrastructure as code',
           tags: ['fde', 'ai-eng'],
         },
         {
@@ -575,16 +575,16 @@ export const cvSource: CVSource = {
       achievements: [
         // February 2018 founding to the April 2019 launch.
         {
-          text: 'Launched a cloud platform that emulates supercomputers, 14 months after founding',
+          text: 'Set technical direction and prototyped a supercomputer-emulation platform with my co-founder, launched in 14 months',
           metric: '14 months',
         },
         {
-          text: 'Raised a seed round led by SGInnovate, with VC and angel investors',
-          tags: ['exec'],
+          text: 'Raised a seed round from VCs and angels and grew the team from 3 to 15 across two offices in the first year',
+          metric: '3 to 15',
         },
         {
-          text: 'Grew the team from 3 to 15 across two offices in the first year',
-          metric: '3 to 15',
+          text: 'Sold to national supercomputing centres and enterprise R&D teams across Asia-Pacific',
+          tags: ['fde', 'ai-eng'],
         },
         {
           text: 'Set the business model, go-to-market strategy, and financial model',
@@ -647,8 +647,8 @@ export const cvSource: CVSource = {
       location: 'New York, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Designed and built the MVPs, then the production cloud middleware that replaced them',
-        "Directed algorithm development for the product's core computational problems",
+        'Built job scheduling optimization for grid-style workflows on commodity hardware, then ported it to cloud and bare metal',
+        'Directed the algorithm work behind the scheduling optimization',
         'Worked directly with clients on what to build next',
         {
           text: 'Led engineering as the team grew from 2 to 20+ people',
