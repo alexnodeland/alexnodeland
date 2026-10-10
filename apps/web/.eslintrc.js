@@ -21,7 +21,12 @@ module.exports = {
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
     'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    // typescript-eslint 8 began checking caught errors by default; an unused
+    // `catch (err)` is how this codebase says "any failure, same fallback".
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_', caughtErrors: 'none' },
+    ],
     'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
   ignorePatterns: ['node_modules/', 'public/', '.cache/', 'dist/'],
