@@ -97,7 +97,7 @@ export interface SkillGroup {
 
 /**
  * The groups the skills line is set in, in order, each naming the terms it
- * holds. Infrastructure is the catch-all: a term in `technical` that no group
+ * holds. Infra is the catch-all: a term in `technical` that no group
  * names lands there, so a new skill is never dropped.
  */
 export const SKILL_GROUPS: { label: string; names: string[] }[] = [
@@ -112,7 +112,7 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
     ],
   },
   {
-    label: 'Python stack',
+    label: 'Python',
     names: [
       'FastAPI',
       'Pydantic',
@@ -135,13 +135,13 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
       'LLM-as-judge',
       'Guardrails',
       'RAG',
-      'MCP',
     ],
   },
   {
-    label: 'LLM tooling',
+    label: 'LLM tools',
     names: [
       'Anthropic and OpenAI APIs',
+      'MCP',
       'PydanticAI',
       'LangGraph',
       'DSPy',
@@ -172,7 +172,7 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
       'Data Engineering',
     ],
   },
-  { label: 'Infrastructure', names: [] },
+  { label: 'Infra', names: [] },
   {
     label: 'Delivery',
     names: ['Solution Architecture', 'Technical Pre-Sales'],
@@ -181,7 +181,7 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
 
 /** Splits a variant's skills line into `SKILL_GROUPS`, dropping empty groups. */
 export const groupSkills = (skills: string[]): SkillGroup[] => {
-  const fallback = SKILL_GROUPS.findIndex(g => g.label === 'Infrastructure');
+  const fallback = SKILL_GROUPS.findIndex(g => g.label === 'Infra');
   const groups = SKILL_GROUPS.map(({ label }) => ({
     label,
     items: [] as string[],
@@ -936,10 +936,10 @@ export const cvSource: CVSource = {
       { name: 'LLM-as-judge', tags: ['ai-eng'] },
       { name: 'Guardrails', tags: ['fde', 'ai-eng'] },
       { name: 'RAG', tags: ['fde', 'ai-eng'] },
-      { name: 'MCP', tags: ['fde', 'ai-eng'] },
       // The tools the agents are built with, named because a filter for a
       // framework does not match a category.
       { name: 'Anthropic and OpenAI APIs', tags: ['fde', 'ai-eng'] },
+      { name: 'MCP', tags: ['fde', 'ai-eng'] },
       { name: 'PydanticAI', tags: ['fde', 'ai-eng'] },
       { name: 'LangGraph', tags: ['fde', 'ai-eng'] },
       { name: 'DSPy', tags: ['ai-eng'] },

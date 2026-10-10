@@ -423,10 +423,24 @@ const skills = (data, variant) => {
     data.skills.groups && data.skills.groups.length > 0
       ? data.skills.groups
       : [{ label: 'Technical', items: data.skills.technical }];
-  const lines = groups.map(
-    (group, index) =>
-      `${index > 0 ? '\\vspace{0.15em}' : ''}\\textbf{${tex(group.label)}}\\quad ${tex(group.items.join(', '))}\\par`
-  );
+  // The labels sit in a column of their own, as wide as the widest label
+  // plus a gap, and every list starts at its right edge; a list that wraps
+  // hangs under its own first line, so the skills read as a second column.
+  // The gap is the separator's: wide enough that an extractor never merges
+  // a label with its first skill.
+  const labelWidth = groups
+    .map(
+      group =>
+        `\\settowidth{\\skilltmp}{\\textbf{${tex(group.label)}}}\\ifdim\\skilltmp>\\skilllabel\\setlength{\\skilllabel}{\\skilltmp}\\fi`
+    )
+    .join('\n');
+  const lines = [
+    `\\setlength{\\skilllabel}{0pt}\n${labelWidth}\n\\addtolength{\\skilllabel}{${SEP_GAP}}`,
+    ...groups.map(
+      (group, index) =>
+        `${index > 0 ? '\\vspace{0.15em}' : ''}{\\raggedright\\noindent\\hangindent=\\skilllabel\\hangafter=1\\makebox[\\skilllabel][l]{\\textbf{${tex(group.label)}}}${tex(group.items.join(', '))}\\par}`
+    ),
+  ];
 
   // Soft skills read as filler next to fifteen achievement bullets, so the
   // one-pager spends its remaining lines on the technical list alone.
@@ -492,6 +506,7 @@ const renderResumeTex = (data, { variant }) => {
   }
 
   return `${preamble(variant, data)}
+\\newlength{\\skilllabel}\\newlength{\\skilltmp}
 ${isFull(variant) ? '' : metaColumns(data)}
 \\begin{document}
 ${sections.join('\n')}
