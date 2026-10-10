@@ -503,7 +503,7 @@ export const cvSource: CVSource = {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 2 },
-        'music-tech': { maxBullets: 4 },
+        'music-tech': { maxBullets: 3 },
       },
       location: 'Singapore',
       duration: '2021 - 2022',
@@ -514,31 +514,29 @@ export const cvSource: CVSource = {
           tags: ['fde', 'ai-eng', 'music'],
           metric: '5 to 10',
         },
+        // The AI Engineer page's second line: the engineering under the models.
+        {
+          text: 'Built catalogue-scale audio ingestion pipelines, and designed the model validation process with the music team',
+          tags: ['ai-eng'],
+          audienceOnly: true,
+        },
         {
           text: 'Set technical direction and release plans with the founders against customer and partner requirements',
-          tags: ['fde', 'ai-eng'],
+          tags: ['fde'],
         },
         // The music work, shown to that audience only.
         {
-          text: 'Built the audio ingestion pipelines',
+          text: "Built the pipelines that ingested labels' and publishers' catalogues for AI tagging and search",
           tags: ['music'],
           audienceOnly: true,
         },
         {
-          text: 'Partnered with the music research team and in-house music experts to design labeling processes that produced unbiased, high-signal data',
+          text: 'Partnered with the music research team and in-house experts to design the labeling and model validation processes',
           tags: ['music'],
           audienceOnly: true,
-        },
-        {
-          text: 'Ran experiments to validate models in-house',
-          tags: ['ai-eng', 'music'],
         },
         {
           text: 'Ran GCP on Kubernetes and Istio with Grafana and Prometheus, and rebuilt CI/CD on Jenkins with Cypress tests',
-          tags: ['ai-eng'],
-        },
-        {
-          text: 'Built a custom data ingestion pipeline and automated the manual steps around it',
           tags: ['ai-eng'],
         },
         'Introduced Scrum and the planning practices around it',
