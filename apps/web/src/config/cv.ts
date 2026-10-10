@@ -110,16 +110,14 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
     names: [
       'LLMs',
       'Agents',
-      'Multi-agent Systems',
+      'Multi-agent',
       'Agent Memory',
       'Context Engineering',
       'Evals',
       'Guardrails',
       'RAG',
-      'Tool Use',
       'MCP',
       'Vector Search',
-      'Semantic Layers',
       'Machine Learning',
     ],
   },
@@ -130,6 +128,15 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
       'Audio Synthesis',
       'Audio Compression',
       'Real-time Audio',
+    ],
+  },
+  {
+    label: 'Data',
+    names: [
+      'PostgreSQL',
+      'Knowledge Graphs',
+      'Semantic Layers',
+      'Data Engineering',
     ],
   },
   { label: 'Infrastructure', names: [] },
@@ -883,33 +890,36 @@ export const cvSource: CVSource = {
       'LLMs',
       // The LLM-systems vocabulary, each term backed by a Perch or Influize
       // bullet: the harness's subagents, its memory, its eval suite and its
-      // guardrail cases. The music-tech page does not spend its line on it.
-      { name: 'Agents', tags: ['fde', 'ai-eng', 'music'] },
-      { name: 'Multi-agent Systems', tags: ['ai-eng'] },
+      // guardrail cases. "Tool use" is in the eval bullet's own words, so it
+      // does not need a place here too. The music-tech page keeps the plain
+      // "Agents" and spends the rest of its line on audio.
+      { name: 'Agents', tags: ['music'], audienceOnly: true },
+      { name: 'Multi-agent', tags: ['fde', 'ai-eng'] },
       { name: 'Agent Memory', tags: ['fde', 'ai-eng'] },
       { name: 'Context Engineering', tags: ['fde', 'ai-eng'] },
       { name: 'Evals', tags: ['fde', 'ai-eng', 'music'] },
       { name: 'Guardrails', tags: ['fde', 'ai-eng'] },
       { name: 'RAG', tags: ['fde', 'ai-eng'] },
-      { name: 'Tool Use', tags: ['ai-eng'] },
       { name: 'MCP', tags: ['fde', 'ai-eng'] },
       { name: 'Vector Search', tags: ['ai-eng'] },
-      { name: 'Semantic Layers', tags: ['fde', 'ai-eng'] },
       'Machine Learning',
-      // Named services rather than categories: a filter that wants
-      // "container orchestration" also matches ECS and Kubernetes.
-      'AWS (ECS, SQS, SNS)',
+      // The data the agents stand on: the semantic layer at Perch, the graph
+      // retrieval at Influize, the copilot's knowledge graph.
+      'PostgreSQL',
+      { name: 'Knowledge Graphs', tags: ['fde', 'ai-eng'] },
+      { name: 'Semantic Layers', tags: ['fde', 'ai-eng'] },
+      { name: 'Data Engineering', tags: ['fde', 'music'] },
+      // The platform. AWS is named once rather than by service: the list of
+      // services would be long, and the bullets say which ones mattered.
+      'AWS',
       { name: 'GCP', tags: ['fde', 'music'] },
       { name: 'Kubernetes', tags: ['fde', 'ai-eng', 'music'] },
       'Docker',
-      'PostgreSQL',
-      { name: 'Supabase', tags: ['fde', 'ai-eng'] },
-      { name: 'WebSockets', tags: ['fde', 'ai-eng'] },
       { name: 'CloudFormation', tags: ['fde', 'ai-eng'] },
       'CI/CD',
+      { name: 'WebSockets', tags: ['fde', 'ai-eng'] },
       { name: 'Distributed Systems', tags: ['fde', 'ai-eng'] },
       { name: 'Observability', tags: ['fde', 'ai-eng', 'music'] },
-      { name: 'Data Engineering', tags: ['fde', 'music'] },
       { name: 'Linux', tags: ['fde'], audienceOnly: true },
       // Used every week, but not claimed as expertise: they get a group of
       // their own rather than a place beside Python.
