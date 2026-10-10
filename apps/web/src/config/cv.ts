@@ -256,12 +256,12 @@ export const cvSource: CVSource = {
       // Leads with the delivery work, and closes on the diagnosis from the
       // consulting page — which is the argument for hiring someone to sit
       // between a customer and a system that has to work in their hands.
-      fde: 'Engineer who takes LLM systems from a prototype to something that holds up in front of customers. At Perch Insights I build the agent orchestration and evaluation infrastructure behind an analytics product, and designed the DSL non-technical users write their own analysis workflows in. Before that I co-founded a supercomputing startup in Singapore, won Fortune 500 and national-government customers, and led engineering at a music-ML company SoundCloud acquired. Prototypes that demo well and break in production are usually failing on the data model, the evals, or how failures are handled, not on the model.',
+      fde: 'Engineer who takes LLM systems from a prototype to something that holds up in front of customers. At Perch Insights I built the agent harness behind an analytics product that cut analysis time by about 80%, and the agent that turns requests into scheduled business reviews sent to clients. Before that I co-founded a supercomputing startup in Singapore, won Fortune 500 and national-government customers, and led engineering at a music-ML company SoundCloud acquired. Prototypes that demo well and break in production are usually failing on the data model, the evals, or how failures are handled, not on the model.',
       // Leads with shipped systems and names them concretely. The founder
       // years are one clause: enough to account for the time, while the page
       // stays about the systems.
       'ai-engineer':
-        'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built a DAG-based framework that runs autonomous agents through multi-step data analysis, a correction-to-evaluation loop that improves the system without retraining, and lineage that traces every generated number back to its source. Earlier I built the RAG pipeline at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
+        'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), a correction-to-evaluation loop with 1,000+ eval cases, and lineage that traces every generated number back to its source. Earlier I built the RAG pipeline at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
       // Audio at every layer, oldest work included: this is the one page
       // where the pedal firmware and the wavelet research lead rather than
       // trail, and the Rust libraries are the current work rather than a
@@ -294,24 +294,32 @@ export const cvSource: CVSource = {
           tags: ['fde', 'ai-eng'],
           metric: '80%',
         },
+        // Replaced the earlier DAG framework and workflow DSL, both retired.
         {
-          text: 'Built a DAG-based orchestration framework that lets autonomous agents carry out multi-step data analysis end to end',
-          tags: ['ai-eng', 'music'],
+          text: "Single-handedly built the product's agent harness: 6 subagents and 50 tools, with reusable and scheduled workflows",
+          tags: ['fde', 'ai-eng', 'music'],
+          metric: '6 subagents, 50 tools',
         },
         {
-          text: 'Designed a DSL that non-technical users write analysis workflows in, mixing LLM agents with conventional ML models in the same pipeline',
+          text: 'Built 1,000+ eval cases across subagents, tool use, end-to-end task completion, and guardrails',
+          tags: ['ai-eng'],
+          metric: '1,000+',
+        },
+        {
+          text: 'Built the agent that turns requests into scheduled workflows producing the weekly and monthly reviews sent to clients',
           tags: ['fde', 'ai-eng'],
         },
-        'Extended the semantic data model with ontological abstractions and higher-order business concepts, which automated root-cause analysis and data discovery are built on',
         {
-          text: 'Built a feedback loop that turns user corrections into evaluation data and few-shot examples, so the system improves without retraining',
+          text: 'Built an internal portal for monitoring, debugging, and managing agent runs',
           tags: ['ai-eng'],
         },
+        'Extended the semantic data model with ontological abstractions and higher-order business concepts, which automated root-cause analysis and data discovery are built on',
         {
           text: 'Wrote tabular insight agents on Jinja templates with full lineage and provenance, so every generated number can be traced back to its source',
           tags: ['ai-eng'],
         },
         'Ran a fault-tolerant distributed worker fleet on AWS (ECS/SNS/SQS) with dead-letter queue handling and zero-downtime deploys',
+        'Built a suite of agentic coding plugins for the engineering team',
       ],
       skills: [
         'Python',
