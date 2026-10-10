@@ -129,7 +129,7 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
       'LLMs',
       'Agents',
       'Agent Memory',
-      'Context Engineering',
+      'Prompt and Context Engineering',
       'Harness Engineering',
       'Evals',
       'LLM-as-judge',
@@ -469,7 +469,7 @@ export const cvSource: CVSource = {
           tags: ['fde', 'ai-eng'],
         },
         {
-          text: 'Built the platform the AI ran on (API, data model, auth), and onboarded an engineer onto DevOps and AWS infrastructure',
+          text: 'Built the platform the AI ran on (API, data model, authentication), and onboarded an engineer onto DevOps and AWS',
           tags: ['fde', 'ai-eng'],
         },
         {
@@ -553,7 +553,7 @@ export const cvSource: CVSource = {
       achievements: [
         // Tagged for every audience, so the team leads the entry everywhere.
         {
-          text: 'Led a team of 5 to 10 engineers, working with the music, research, and sales teams',
+          text: 'Led a cross-functional team of 5 to 10 engineers with the music, research, and sales teams',
           tags: ['fde', 'ai-eng', 'music'],
           metric: '5 to 10',
         },
@@ -917,10 +917,16 @@ export const cvSource: CVSource = {
       // The LLM-systems vocabulary, each term backed by a Perch or Influize
       // bullet: the harness, its memory, its eval suite and its guardrail
       // cases. "Tool use" is in the eval bullet's own words.
-      'LLMs',
-      'Agents',
+      // The bullets already say "agent" a dozen ways (harness, subagents,
+      // memory), and "LLM-as-judge" says LLM, both of which a keyword filter
+      // reads; the line spends its room on terms the rest of the page does not
+      // carry. The music-tech page has neither, so it keeps the plain terms.
+      { name: 'LLMs', tags: ['music'], audienceOnly: true },
+      { name: 'Agents', tags: ['music'], audienceOnly: true },
       { name: 'Agent Memory', tags: ['fde', 'ai-eng'] },
-      { name: 'Context Engineering', tags: ['fde', 'ai-eng'] },
+      // One term for two: a filter for "prompt" and one for "context
+      // engineering" both still match it.
+      { name: 'Prompt and Context Engineering', tags: ['fde', 'ai-eng'] },
       { name: 'Harness Engineering', tags: ['fde', 'ai-eng'] },
       { name: 'Evals', tags: ['fde', 'ai-eng', 'music'] },
       { name: 'LLM-as-judge', tags: ['ai-eng'] },
@@ -954,8 +960,7 @@ export const cvSource: CVSource = {
       { name: 'Celery', tags: ['ai-eng'] },
       { name: 'OpenTelemetry', tags: ['ai-eng'] },
       { name: 'Grafana', tags: ['ai-eng'] },
-      // The pages without OpenTelemetry and Grafana say it as a category.
-      { name: 'Observability', tags: ['fde', 'music'], audienceOnly: true },
+      'Observability',
       { name: 'Linux', tags: ['fde'], audienceOnly: true },
       // Used every week, but not claimed as expertise: said so in the term
       // itself, which a keyword filter still reads as both languages.

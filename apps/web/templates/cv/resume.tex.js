@@ -312,7 +312,25 @@ const experience = (data, variant) =>
         .map(item => `  \\item ${tex(item)}`)
         .join('\n');
 
-      return `${entry}
+      // On the full CV a role is never split across pages. A page that opens
+      // mid-role opens on a bullet or a Skills line, and OpenResume reads that
+      // stray line as a job of its own: the full CV parsed as 12 and then 14
+      // jobs against 11. Reserving the role's whole height before its title
+      // moves it to the next page intact. The height is estimated: a line per
+      // ~90 characters of each bullet, plus the title, description and Skills.
+      const reserve = isFull(variant)
+        ? `\\needspace{${
+            2 +
+            (role.description ? 1 : 0) +
+            (skills ? 1 : 0) +
+            role.achievements.reduce(
+              (lines, item) => lines + Math.ceil(item.length / 90),
+              0
+            )
+          }\\baselineskip}\n`
+        : '';
+
+      return `${reserve}${entry}
 ${description}\\begin{points}
 ${bullets}
 \\end{points}
