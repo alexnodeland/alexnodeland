@@ -700,7 +700,7 @@ export const cvSource: CVSource = {
         'Led seminars on music and mathematics',
         'Turned research into pieces that could be performed',
         {
-          text: 'Collaborated with people from the music technology industry on novel audio hardware',
+          text: "Collaborated on synthesis with Pigtronix, my startup Motiff Tech, and Stony Brook's digital arts center",
           tags: ['music'],
         },
       ],
@@ -717,7 +717,7 @@ export const cvSource: CVSource = {
       company: 'SUNY Research Foundation',
       engagement: 'part-time',
       variants: {
-        'music-tech': { maxBullets: 2 },
+        'music-tech': { maxBullets: 1 },
       },
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
@@ -727,10 +727,6 @@ export const cvSource: CVSource = {
           tags: ['music'],
         },
         'Ran a supercomputing project funded by the High Performance Computing Consortium of New York',
-        {
-          text: 'Performed real-time signal analysis on spectrum data',
-          tags: ['music'],
-        },
         'Maintained project documentation and datasets for other researchers',
       ],
       skills: [
@@ -746,23 +742,18 @@ export const cvSource: CVSource = {
       company: 'Absara Audio',
       engagement: 'full-time',
       variants: {
-        'music-tech': { maxBullets: 3 },
+        'music-tech': { maxBullets: 2 },
       },
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
       description: 'My first software job, and my first hardware job.',
       achievements: [
         {
-          text: 'Wrote production firmware for digital guitar pedals',
+          text: 'Wrote and tested production firmware for digital guitar pedals, building the test fixtures',
           tags: ['music'],
         },
         {
           text: 'Developed a digital tape loop emulator in Objective-C',
-          tags: ['music'],
-          audienceOnly: true,
-        },
-        {
-          text: 'Built test fixtures and ran quality assurance',
           tags: ['music'],
           audienceOnly: true,
         },
