@@ -505,7 +505,7 @@ export const cvSource: CVSource = {
         'ai-engineer': { maxBullets: 2 },
         'music-tech': { maxBullets: 3 },
       },
-      location: 'Singapore',
+      location: 'Singapore, SG',
       duration: '2021 - 2022',
       achievements: [
         // Tagged for every audience, so the team leads the entry everywhere.

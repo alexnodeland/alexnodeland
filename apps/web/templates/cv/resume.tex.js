@@ -236,11 +236,58 @@ const header = data => {
  * hopping — "Freelance" beside 2022–Present says the same years counted twice
  * are one person consulting on the side, not a CV that does not add up.
  */
-const roleMeta = role =>
-  [role.location, role.engagement, role.duration]
-    .filter(Boolean)
-    .map(tex)
-    .join(SEPARATOR);
+const roleMeta = (role, variant) =>
+  isFull(variant)
+    ? [role.location, role.engagement, role.duration]
+        .filter(Boolean)
+        .map(tex)
+        .join(SEPARATOR)
+    : [
+        `\\makebox[\\metaplace][r]{${tex(role.location)}}`,
+        `\\makebox[\\metaengage][l]{${tex(role.engagement)}}`,
+        `\\makebox[\\metadate][l]{${tex(role.duration)}}`,
+      ].join(SEPARATOR);
+
+/**
+ * The one-pagers' rail in three columns, sized to the widest value each takes
+ * on the page, so every role's place, engagement and dates start at the same x
+ * and the separators line up down the page. A school has no engagement: its
+ * name spans the first two columns, so its dates still line up with the roles'.
+ *
+ * The full CV keeps the rail ragged: its widest values (Port Jefferson, a
+ * month-to-month range) would push its longest titles onto a second line.
+ */
+const metaColumns = data => {
+  const places = data.experience.map(role => role.location);
+  const engagements = data.experience.map(role => role.engagement || '');
+  const dates = [
+    ...data.experience.map(role => role.duration),
+    ...data.education.map(entry => entry.duration),
+  ];
+  const schools = data.education.map(entry => entry.institution);
+  const widest = (length, values) =>
+    [...new Set(values)]
+      .map(
+        value =>
+          `\\settowidth{\\metatmp}{\\small ${tex(value)}}\\ifdim\\metatmp>${length}\\setlength{${length}}{\\metatmp}\\fi`
+      )
+      .join('\n');
+
+  return `% The right rail's columns (see metaColumns).
+\\newlength{\\metatmp}\\newlength{\\metasep}
+\\newlength{\\metaplace}\\newlength{\\metaengage}
+\\newlength{\\metadate}\\newlength{\\metaschool}
+\\AtBeginDocument{%
+\\settowidth{\\metasep}{\\small ${SEPARATOR}}
+${widest('\\metaplace', places)}
+${widest('\\metaengage', engagements)}
+${widest('\\metadate', dates)}
+\\setlength{\\metaschool}{\\dimexpr\\metaplace+\\metasep+\\metaengage\\relax}
+${widest('\\metaschool', schools)}
+\\setlength{\\metaplace}{\\dimexpr\\metaschool-\\metasep-\\metaengage\\relax}
+}
+`;
+};
 
 const experience = (data, variant) =>
   data.experience
@@ -257,7 +304,7 @@ const experience = (data, variant) =>
           ? `{\\small\\itshape ${tex(role.description)}}\\par\n`
           : '';
 
-      const entry = `\\entry{${tex(role.title)}, ${tex(role.company)}}{${roleMeta(role)}}`;
+      const entry = `\\entry{${tex(role.title)}, ${tex(role.company)}}{${roleMeta(role, variant)}}`;
 
       const bullets = role.achievements
         .map(item => `  \\item ${tex(item)}`)
@@ -359,7 +406,10 @@ const education = (data, variant) =>
         );
       }
 
-      return `\\entry{${tex(entry.degree)}}{${tex(entry.institution)}${SEPARATOR}${tex(entry.duration)}}
+      const meta = isFull(variant)
+        ? `${tex(entry.institution)}${SEPARATOR}${tex(entry.duration)}`
+        : `\\makebox[\\metaschool][r]{${tex(entry.institution)}}${SEPARATOR}\\makebox[\\metadate][l]{${tex(entry.duration)}}`;
+      return `\\entry{${tex(entry.degree)}}{${meta}}
 ${parts.join('\n')}
 \\vspace{\\rolesep}
 `;
@@ -442,6 +492,7 @@ const renderResumeTex = (data, { variant }) => {
   }
 
   return `${preamble(variant, data)}
+${isFull(variant) ? '' : metaColumns(data)}
 \\begin{document}
 ${sections.join('\n')}
 \\end{document}
