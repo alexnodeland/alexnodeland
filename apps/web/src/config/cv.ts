@@ -574,6 +574,7 @@ export const cvSource: CVSource = {
         // February 2018 founding to the April 2019 launch.
         {
           text: 'Set technical direction and prototyped a supercomputer-emulation platform with my co-founder, launched in 14 months',
+          tags: ['fde', 'ai-eng'],
           metric: '14 months',
         },
         {
@@ -645,12 +646,16 @@ export const cvSource: CVSource = {
       location: 'New York, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Built job scheduling optimization for grid-style workflows on commodity hardware, then ported it to cloud and bare metal',
+        // The line the role pages keep when they collapse this entry: what was
+        // built says more there than the team size does.
+        {
+          text: 'Built job scheduling optimization for grid-style workflows on commodity hardware, then ported it to cloud and bare metal',
+          tags: ['fde', 'ai-eng'],
+        },
         'Directed the algorithm work behind the scheduling optimization',
         'Worked directly with clients on what to build next',
         {
           text: 'Led engineering as the team grew from 2 to 20+ people',
-          tags: ['fde', 'ai-eng'],
           metric: '2 to 20+',
         },
         'Set the code review and QA standards',
