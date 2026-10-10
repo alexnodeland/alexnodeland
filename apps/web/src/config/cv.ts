@@ -418,7 +418,7 @@ export const cvSource: CVSource = {
       duration: '2023 - 2024',
       achievements: [
         {
-          text: 'Owned AI and backend engineering as sole engineer, taking the product from prototype to production in 2 months',
+          text: 'Owned AI and backend engineering, taking the product from prototype to production in 2 months',
           tags: ['fde', 'ai-eng'],
           metric: '2 months',
         },
@@ -427,7 +427,7 @@ export const cvSource: CVSource = {
           tags: ['fde', 'ai-eng'],
         },
         {
-          text: 'Built the platform the AI ran on: API, data model, auth, and AWS infrastructure as code',
+          text: 'Built the platform the AI ran on (API, data model, auth), and onboarded an engineer onto DevOps and AWS infrastructure',
           tags: ['fde', 'ai-eng'],
         },
         {
