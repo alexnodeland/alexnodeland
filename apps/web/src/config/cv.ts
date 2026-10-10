@@ -332,7 +332,7 @@ export const cvSource: CVSource = {
       // years are one clause: enough to account for the time, while the page
       // stays about the systems.
       'ai-engineer':
-        'AI engineer building production LLM systems: agent harnesses, evaluation infrastructure, and agent memory. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), 1,000+ eval cases, and a namespaced memory architecture that unifies episodic, semantic, and procedural memory. Earlier I built hybrid semantic and graph retrieval at Influize, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook.',
+        'AI engineer building production LLM systems: agent harnesses, evaluation infrastructure, and agent memory. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), 1,000+ eval cases, and an agent memory architecture spanning episodic, semantic, and procedural memory. Earlier I built hybrid semantic and graph retrieval at Influize, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook.',
       // Audio at every layer, oldest work included: this is the one page
       // where the pedal firmware and the wavelet research lead rather than
       // trail, and the Rust libraries are the current work rather than a
@@ -376,7 +376,7 @@ export const cvSource: CVSource = {
           metric: '1,000+',
         },
         {
-          text: 'Designed a namespaced memory architecture (episodic, semantic, and procedural) that unifies the semantic layer, agent memory, and workflows',
+          text: "Designed the agents' memory architecture (episodic, semantic, and procedural), unifying the semantic layer and workflows",
           tags: ['ai-eng'],
         },
         {
