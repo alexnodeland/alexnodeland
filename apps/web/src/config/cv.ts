@@ -103,7 +103,25 @@ export interface SkillGroup {
 export const SKILL_GROUPS: { label: string; names: string[] }[] = [
   {
     label: 'Core',
-    names: ['Python', 'C++', 'SQL', 'FastAPI', 'Pydantic', 'Mathematics'],
+    names: [
+      'Python',
+      'C++',
+      'SQL',
+      'Mathematics',
+      'TypeScript and Rust (working knowledge)',
+    ],
+  },
+  {
+    label: 'Python stack',
+    names: [
+      'FastAPI',
+      'Pydantic',
+      'SQLAlchemy',
+      'Alembic',
+      'asyncio',
+      'Polars',
+      'pytest',
+    ],
   },
   {
     label: 'AI',
@@ -112,12 +130,12 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
       'Agents',
       'Agent Memory',
       'Context Engineering',
+      'Harness Engineering',
       'Evals',
+      'LLM-as-judge',
       'Guardrails',
       'RAG',
       'MCP',
-      'Vector Search',
-      'Machine Learning',
     ],
   },
   {
@@ -127,6 +145,8 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
       'PydanticAI',
       'LangGraph',
       'DSPy',
+      'LiteLLM',
+      'Langfuse',
       'Claude Code',
     ],
   },
@@ -143,13 +163,16 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
     label: 'Data',
     names: [
       'PostgreSQL',
+      'pgvector',
+      'Redis',
+      'OpenSearch',
+      'Vector Search',
       'Knowledge Graphs',
       'Semantic Layers',
       'Data Engineering',
     ],
   },
   { label: 'Infrastructure', names: [] },
-  { label: 'Working knowledge', names: ['TypeScript', 'Rust'] },
   {
     label: 'Delivery',
     names: ['Solution Architecture', 'Technical Pre-Sales'],
@@ -881,63 +904,72 @@ export const cvSource: CVSource = {
     // platform under it, then the tooling. A tag offers a term to that page;
     // the general documents carry every term that is not `audienceOnly`.
     technical: [
+      // The deeper tooling is tagged `ai-eng`: the general resume and the AI
+      // Engineer page carry it, the FDE page keeps the essentials, and the
+      // music-tech page spends its lines on audio instead.
       'Python',
       { name: 'C++', tags: ['music'], audienceOnly: true },
       'SQL',
+      { name: 'Mathematics', tags: ['fde', 'music'] },
       // The Python service stack behind the Perch and Influize backends.
       { name: 'FastAPI', tags: ['fde', 'ai-eng'] },
       { name: 'Pydantic', tags: ['fde', 'ai-eng'] },
-      // A term is tagged away from a page whose family does not ask for it
-      // and whose bullets already say it: the mathematics and the signal
-      // processing are in the AI Engineer page's summary and off its list.
-      { name: 'Mathematics', tags: ['fde', 'music'] },
+      { name: 'SQLAlchemy', tags: ['ai-eng'] },
+      { name: 'Alembic', tags: ['ai-eng'] },
+      { name: 'asyncio', tags: ['ai-eng'] },
+      { name: 'Polars', tags: ['ai-eng'] },
+      { name: 'pytest', tags: ['fde', 'ai-eng'] },
       { name: 'Signal Processing', tags: ['music'], audienceOnly: true },
       // Shown to the music-tech page only.
       { name: 'Audio Synthesis', tags: ['music'], audienceOnly: true },
       { name: 'Audio Compression', tags: ['music'], audienceOnly: true },
       { name: 'Real-time Audio', tags: ['music'], audienceOnly: true },
-      'LLMs',
       // The LLM-systems vocabulary, each term backed by a Perch or Influize
-      // bullet: the harness's subagents, its memory, its eval suite and its
-      // guardrail cases. "Tool use" is in the eval bullet's own words, so it
-      // does not need a place here too. The music-tech page keeps the plain
-      // "Agents" and spends the rest of its line on audio.
+      // bullet: the harness, its memory, its eval suite and its guardrail
+      // cases. "Tool use" is in the eval bullet's own words.
+      'LLMs',
       'Agents',
       { name: 'Agent Memory', tags: ['fde', 'ai-eng'] },
       { name: 'Context Engineering', tags: ['fde', 'ai-eng'] },
+      { name: 'Harness Engineering', tags: ['fde', 'ai-eng'] },
       { name: 'Evals', tags: ['fde', 'ai-eng', 'music'] },
+      { name: 'LLM-as-judge', tags: ['ai-eng'] },
       { name: 'Guardrails', tags: ['fde', 'ai-eng'] },
       { name: 'RAG', tags: ['fde', 'ai-eng'] },
       { name: 'MCP', tags: ['fde', 'ai-eng'] },
-      { name: 'Vector Search', tags: ['ai-eng'] },
-      'Machine Learning',
       // The tools the agents are built with, named because a filter for a
       // framework does not match a category.
       { name: 'Anthropic and OpenAI APIs', tags: ['fde', 'ai-eng'] },
       { name: 'PydanticAI', tags: ['fde', 'ai-eng'] },
       { name: 'LangGraph', tags: ['fde', 'ai-eng'] },
       { name: 'DSPy', tags: ['ai-eng'] },
+      { name: 'LiteLLM', tags: ['ai-eng'] },
+      { name: 'Langfuse', tags: ['ai-eng'] },
       { name: 'Claude Code', tags: ['fde', 'ai-eng'] },
       // The data the agents stand on: the semantic layer at Perch, the graph
       // retrieval at Influize, the copilot's knowledge graph.
       'PostgreSQL',
+      { name: 'pgvector', tags: ['ai-eng'] },
+      { name: 'Redis', tags: ['ai-eng'] },
+      { name: 'OpenSearch', tags: ['ai-eng'] },
+      { name: 'Vector Search', tags: ['ai-eng'] },
       { name: 'Knowledge Graphs', tags: ['fde', 'ai-eng'] },
       { name: 'Semantic Layers', tags: ['fde', 'ai-eng'] },
       { name: 'Data Engineering', tags: ['fde', 'music'] },
       // The platform. AWS is named once rather than by service: the list of
       // services would be long, and the bullets say which ones mattered.
       'AWS',
-      { name: 'GCP', tags: ['fde', 'music'] },
       'Docker',
       'CI/CD (GitHub Actions)',
-      { name: 'WebSockets', tags: ['fde', 'ai-eng'] },
-      { name: 'Distributed Systems', tags: ['fde', 'ai-eng'] },
-      { name: 'Observability', tags: ['fde', 'ai-eng', 'music'] },
+      { name: 'Celery', tags: ['ai-eng'] },
+      { name: 'OpenTelemetry', tags: ['ai-eng'] },
+      { name: 'Grafana', tags: ['ai-eng'] },
+      // The pages without OpenTelemetry and Grafana say it as a category.
+      { name: 'Observability', tags: ['fde', 'music'], audienceOnly: true },
       { name: 'Linux', tags: ['fde'], audienceOnly: true },
-      // Used every week, but not claimed as expertise: they get a group of
-      // their own rather than a place beside Python.
-      'TypeScript',
-      'Rust',
+      // Used every week, but not claimed as expertise: said so in the term
+      // itself, which a keyword filter still reads as both languages.
+      'TypeScript and Rust (working knowledge)',
       // The customer-side of the FDE work. Pre-sales is a sales word, and
       // stays off the general documents.
       { name: 'Solution Architecture', tags: ['fde'], audienceOnly: true },
