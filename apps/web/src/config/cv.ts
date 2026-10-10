@@ -287,6 +287,13 @@ export const cvSource: CVSource = {
       location: 'Remote, NY',
       duration: '2024 - Present',
       achievements: [
+        // The figures are approximate on purpose: the exact counts are not
+        // disclosable.
+        {
+          text: 'Lead AI engineering for the analytics product, cutting analysis time by about 80% for ~30 BI analysts serving 10 customers',
+          tags: ['fde', 'ai-eng'],
+          metric: '80%',
+        },
         {
           text: 'Built a DAG-based orchestration framework that lets autonomous agents carry out multi-step data analysis end to end',
           tags: ['ai-eng', 'music'],
@@ -305,10 +312,6 @@ export const cvSource: CVSource = {
           tags: ['ai-eng'],
         },
         'Ran a fault-tolerant distributed worker fleet on AWS (ECS/SNS/SQS) with dead-letter queue handling and zero-downtime deploys',
-        {
-          text: 'Lead AI engineering for the analytics product, automating analyst workflows that were previously manual',
-          tags: ['fde'],
-        },
       ],
       skills: [
         'Python',
@@ -332,7 +335,7 @@ export const cvSource: CVSource = {
       location: 'Remote, NY',
       duration: '2023 - 2024',
       achievements: [
-        'Started the AI function and shipped its first systems to production',
+        'Started the AI function as its sole engineer and shipped its first systems to production',
         {
           text: "Built the RAG pipeline behind the product's generated responses, covering retrieval, chunking, and grounding",
           tags: ['ai-eng'],
@@ -446,7 +449,10 @@ export const cvSource: CVSource = {
           text: 'Set technical direction against customer and partner requirements, planning releases with the founders',
           tags: ['fde'],
         },
-        'Led a cross-functional engineering team, working alongside the music, research, and sales sides of the company',
+        {
+          text: 'Led a cross-functional team of 5 to 10 engineers, working alongside the music, research, and sales sides of the company',
+          metric: '5 to 10',
+        },
         {
           text: 'Ran experiments to validate models in-house',
           tags: ['ai-eng', 'music'],
