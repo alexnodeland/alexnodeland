@@ -101,21 +101,26 @@ export interface SkillGroup {
  * names lands there, so a new skill is never dropped.
  */
 export const SKILL_GROUPS: { label: string; names: string[] }[] = [
-  { label: 'Core', names: ['Python', 'C++', 'SQL', 'Mathematics'] },
+  {
+    label: 'Core',
+    names: ['Python', 'C++', 'SQL', 'FastAPI', 'Pydantic', 'Mathematics'],
+  },
   {
     label: 'AI',
     names: [
-      'Machine Learning',
       'LLMs',
       'Agents',
+      'Multi-agent Systems',
       'Agent Memory',
+      'Context Engineering',
       'Evals',
+      'Guardrails',
       'RAG',
       'Tool Use',
       'MCP',
-      'Prompt Engineering',
       'Vector Search',
-      'Semantic Data Models',
+      'Semantic Layers',
+      'Machine Learning',
     ],
   },
   {
@@ -128,6 +133,7 @@ export const SKILL_GROUPS: { label: string; names: string[] }[] = [
     ],
   },
   { label: 'Infrastructure', names: [] },
+  { label: 'Working knowledge', names: ['TypeScript', 'Rust'] },
   {
     label: 'Delivery',
     names: ['Solution Architecture', 'Technical Pre-Sales'],
@@ -416,18 +422,19 @@ export const cvSource: CVSource = {
       achievements: [
         {
           text: 'Started the AI function as its sole engineer, with a first prototype in weeks and the first production workflow in 2 months',
+          tags: ['fde', 'ai-eng'],
           metric: '2 months',
         },
         {
-          text: "Built the RAG pipeline behind the product's generated responses, covering retrieval, chunking, and grounding",
+          text: 'Built the RAG pipeline (retrieval, chunking, and grounding) behind every response the product generated',
           tags: ['ai-eng'],
         },
         {
-          text: 'Designed the Postgres schema and backend on Supabase, including authentication and access control',
+          text: 'Designed the Supabase backend: Postgres schema, authentication, and access control, reworked as load grew',
           tags: ['fde', 'ai-eng'],
         },
         {
-          text: 'Designed the API layer in front of the AI pipelines, improving latency and throughput',
+          text: 'Designed the API layer in front of the AI pipelines',
           tags: ['ai-eng'],
         },
         'Moved infrastructure to CloudFormation and CI/CD to GitHub Actions',
@@ -436,7 +443,6 @@ export const cvSource: CVSource = {
           tags: ['ai-eng'],
         },
         'Built ontological models to give the data model a consistent vocabulary',
-        'Restructured the Postgres schema as the access patterns became clear and load grew',
         {
           text: 'Coordinated with external development teams on platform integration, and ran project management out of GitHub',
           tags: ['fde'],
@@ -472,11 +478,12 @@ export const cvSource: CVSource = {
         // Leads the entry: of everything here, this is the AI system actually
         // built, and the one line the AI Engineer page keeps when it collapses.
         {
-          text: 'Built an ontology-powered knowledge platform and AI copilot for a management consulting firm, mapping client organizations, surfacing conflicts and gaps across documentation, and synthesizing reports',
+          text: 'Built an ontology-backed AI copilot over thousands of documents for a consulting firm, surfacing conflicts and gaps',
           tags: ['fde', 'ai-eng'],
+          metric: 'thousands of documents',
         },
         {
-          text: 'Advise startups and established companies on where AI fits in their stack',
+          text: 'Advise startups and established companies on AI strategy: technology assessments, build-versus-buy, and stack choices',
           tags: ['fde'],
         },
         'Delivered a virtual keynote to about 30 CIOs and founders, hosted by an Australian VC, on LLM architectures, guardrails for workflows, and feedback loops that let an organization build on automation',
@@ -484,13 +491,8 @@ export const cvSource: CVSource = {
           text: 'Codified organizational process for a blockchain unicorn: RACI matrices, documented processes, and access controls aligned across the org and built into internal tooling',
           tags: ['fde'],
         },
-        {
-          text: 'Run technology assessments and build-versus-buy analysis for teams committing to an AI direction',
-          tags: ['fde'],
-        },
         'Led migrations onto AI-integrated systems that reduced cost and manual work',
         'Developed personal knowledge management agents in Claude Code and Obsidian for non-technical founders, consultants, and creatives, covering capture, linking, reviews, and research across their notes',
-        'Help early-stage startups choose a technology stack that will last',
       ],
       skills: [
         'Strategic Planning',
@@ -524,23 +526,25 @@ export const cvSource: CVSource = {
           tags: ['music'],
           audienceOnly: true,
         },
+        // Tagged for every audience: the acquisition leads the entry everywhere.
+        {
+          text: "Led a team of 5 to 10 engineers through SoundCloud's 2022 acquisition, with the platform holding up to due diligence",
+          tags: ['fde', 'ai-eng', 'music'],
+          metric: '5 to 10',
+        },
+        {
+          text: 'Ran GCP on Kubernetes and Istio with Grafana and Prometheus, and rebuilt CI/CD on Jenkins with Cypress tests',
+          tags: ['ai-eng'],
+        },
         {
           text: 'Set technical direction against customer and partner requirements, planning releases with the founders',
           tags: ['fde'],
         },
         {
-          text: 'Led a cross-functional team of 5 to 10 engineers, working alongside the music, research, and sales sides of the company',
-          metric: '5 to 10',
-        },
-        {
           text: 'Ran experiments to validate models in-house',
           tags: ['ai-eng', 'music'],
         },
-        {
-          text: 'Ran GCP infrastructure: Kubernetes and Istio, monitored with Grafana and Prometheus',
-          tags: ['ai-eng'],
-        },
-        'Rebuilt CI/CD on Jenkins with Cypress end-to-end coverage',
+        'Worked alongside the music, research, and sales sides of the company',
         {
           text: 'Built a custom data ingestion pipeline and automated the manual steps around it',
           tags: ['ai-eng'],
@@ -577,7 +581,7 @@ export const cvSource: CVSource = {
       achievements: [
         // February 2018 founding to the April 2019 launch HPCwire covered.
         {
-          text: 'Took the product from founding to public launch in 14 months: a cloud platform that emulates supercomputer environments so teams can develop and test at scale without waiting for time on the real machine',
+          text: 'Launched a cloud platform emulating supercomputers 14 months after founding, covered by HPCwire',
           metric: '14 months',
         },
         {
@@ -879,6 +883,9 @@ export const cvSource: CVSource = {
       'Python',
       { name: 'C++', tags: ['music'], audienceOnly: true },
       'SQL',
+      // The Python service stack behind the Perch and Influize backends.
+      { name: 'FastAPI', tags: ['fde', 'ai-eng'] },
+      { name: 'Pydantic', tags: ['fde', 'ai-eng'] },
       // A term is tagged away from a page whose family does not ask for it
       // and whose bullets already say it: the mathematics and the signal
       // processing are in the AI Engineer page's summary and off its list.
@@ -888,35 +895,41 @@ export const cvSource: CVSource = {
       { name: 'Audio Synthesis', tags: ['music'], audienceOnly: true },
       { name: 'Audio Compression', tags: ['music'], audienceOnly: true },
       { name: 'Real-time Audio', tags: ['music'], audienceOnly: true },
-      'Machine Learning',
       'LLMs',
-      // The LLM-systems vocabulary. Perch and Influize are the work behind
-      // it; the general documents carry it because that work is the current
-      // work, and the music-tech page does not spend its line on it.
+      // The LLM-systems vocabulary, each term backed by a Perch or Influize
+      // bullet: the harness's subagents, its memory, its eval suite and its
+      // guardrail cases. The music-tech page does not spend its line on it.
       { name: 'Agents', tags: ['fde', 'ai-eng', 'music'] },
+      { name: 'Multi-agent Systems', tags: ['ai-eng'] },
       { name: 'Agent Memory', tags: ['fde', 'ai-eng'] },
+      { name: 'Context Engineering', tags: ['fde', 'ai-eng'] },
       { name: 'Evals', tags: ['fde', 'ai-eng', 'music'] },
+      { name: 'Guardrails', tags: ['fde', 'ai-eng'] },
       { name: 'RAG', tags: ['fde', 'ai-eng'] },
       { name: 'Tool Use', tags: ['ai-eng'] },
       { name: 'MCP', tags: ['fde', 'ai-eng'] },
-      { name: 'Prompt Engineering', tags: ['fde', 'ai-eng'] },
       { name: 'Vector Search', tags: ['ai-eng'] },
-      { name: 'Semantic Data Models', tags: ['ai-eng'] },
+      { name: 'Semantic Layers', tags: ['fde', 'ai-eng'] },
+      'Machine Learning',
+      // Named services rather than categories: a filter that wants
+      // "container orchestration" also matches ECS and Kubernetes.
+      'AWS (ECS, SQS, SNS)',
+      { name: 'GCP', tags: ['fde', 'music'] },
+      { name: 'Kubernetes', tags: ['fde', 'ai-eng', 'music'] },
+      'Docker',
+      'PostgreSQL',
+      { name: 'Supabase', tags: ['fde', 'ai-eng'] },
+      { name: 'WebSockets', tags: ['fde', 'ai-eng'] },
+      { name: 'CloudFormation', tags: ['fde', 'ai-eng'] },
+      'CI/CD',
+      { name: 'Distributed Systems', tags: ['fde', 'ai-eng'] },
       { name: 'Observability', tags: ['fde', 'ai-eng', 'music'] },
       { name: 'Data Engineering', tags: ['fde', 'music'] },
-      { name: 'Distributed Systems', tags: ['fde', 'ai-eng'] },
-      'AWS',
-      { name: 'GCP', tags: ['fde', 'music'] },
-      'Docker',
-      'Container Orchestration',
-      'PostgreSQL',
-      { name: 'Infrastructure as Code', tags: ['fde', 'ai-eng'] },
-      'CI/CD',
-      { name: 'API Development', tags: ['fde', 'ai-eng'] },
-      { name: 'WebSockets', tags: ['fde', 'ai-eng'] },
-      // No web stack: a skills line is what the writer would stand behind in
-      // an interview, and that is not it.
       { name: 'Linux', tags: ['fde'], audienceOnly: true },
+      // Used every week, but not claimed as expertise: they get a group of
+      // their own rather than a place beside Python.
+      'TypeScript',
+      'Rust',
       // The customer-side of the FDE work. Pre-sales is a sales word, and
       // stays off the general documents.
       { name: 'Solution Architecture', tags: ['fde'], audienceOnly: true },
