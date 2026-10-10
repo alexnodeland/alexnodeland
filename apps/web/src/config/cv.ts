@@ -64,12 +64,12 @@ export type Bullet =
       /** Audiences this bullet is for. Omit to leave it neutral. */
       tags?: AudienceTag[];
       /**
-       * Show this bullet only to the audiences in `tags`. A tagged bullet is
-       * otherwise still part of the record — the full CV carries it and the
-       * neutral one-pager may — which is right for a bullet written *for*
-       * an audience, and wrong for one that is only *about* it: the music
-       * detail that belongs on the music-tech page and would dilute every
-       * general document. Requires `tags`.
+       * Keep this bullet off the neutral one-pager and the role pages outside
+       * `tags`. A tagged bullet is otherwise offered to the neutral one-pager
+       * too — right for a bullet written *for* an audience, and wrong for one
+       * only *about* it: the music detail that belongs on the music-tech page
+       * and would dilute the general resume. The full CV carries it either
+       * way: it is the record every one-pager is a subset of. Requires `tags`.
        */
       audienceOnly?: boolean;
       /**
@@ -83,8 +83,8 @@ export type Bullet =
 /**
  * A keyword on the skills line. The object form carries the same audience
  * fields as a bullet, with the same meaning: `tags` offers it to those
- * variants, and `audienceOnly` keeps it off every document that selects no
- * audience — the full CV and the neutral one-pager.
+ * variants, and `audienceOnly` keeps it off the neutral one-pager. The full
+ * CV carries every term.
  */
 export type Skill =
   string | { name: string; tags?: AudienceTag[]; audienceOnly?: boolean };
@@ -557,20 +557,15 @@ export const cvSource: CVSource = {
           tags: ['fde', 'ai-eng', 'music'],
           metric: '5 to 10',
         },
-        // The AI Engineer page's second line: the engineering under the models.
-        {
-          text: 'Built catalogue-scale audio ingestion pipelines, and designed the model validation process with the music team',
-          tags: ['ai-eng'],
-          audienceOnly: true,
-        },
         {
           text: 'Planned the roadmap and releases with the founders around customer and partner needs',
           tags: ['fde'],
         },
-        // The music work, shown to that audience only.
+        // The engineering under the models: the second line on the AI Engineer
+        // page, and the music work on the music-tech page.
         {
           text: "Built the pipelines that ingested labels' and publishers' catalogues for AI tagging and search",
-          tags: ['music'],
+          tags: ['music', 'ai-eng'],
           audienceOnly: true,
         },
         {
@@ -896,7 +891,8 @@ export const cvSource: CVSource = {
     // list is what a keyword filter reads, not a wishlist. It is ordered once,
     // for every page: what the engineer is, then the AI work, then the
     // platform under it, then the tooling. A tag offers a term to that page;
-    // the general documents carry every term that is not `audienceOnly`.
+    // the neutral one-pager carries every term that is not `audienceOnly`, and
+    // the full CV every term.
     technical: [
       // The deeper tooling is tagged `ai-eng`: the general resume and the AI
       // Engineer page carry it, the FDE page keeps the essentials, and the
@@ -976,7 +972,17 @@ export const cvSource: CVSource = {
   // best-starred: they are two years old and read as dated demos next to the
   // libraries below.
   projects: {
-    full: ['fugue', 'quiver', 'fugue-evo', 'principled', 'claude-telegram'],
+    // Every project a one-pager names, so each is a subset of this one.
+    full: [
+      'fugue',
+      'reflex',
+      'principled',
+      'quiver',
+      'auracle',
+      'fugue-evo',
+      'llmcomposer',
+      'claude-telegram',
+    ],
     fde: ['fugue', 'reflex', 'principled'],
     'ai-engineer': ['reflex', 'principled', 'fugue'],
     'music-tech': ['quiver', 'auracle', 'llmcomposer'],
@@ -1085,6 +1091,11 @@ const isEligible = (
  * once, is the order on every page.
  */
 const selectSkills = (skills: Skill[], variant: CVVariant): string[] => {
+  if (variant === 'full') {
+    return skills.map(skill =>
+      typeof skill === 'string' ? skill : skill.name
+    );
+  }
   const audience = audienceOf(variant);
   const tagsOf = (skill: Skill): AudienceTag[] =>
     typeof skill === 'string' ? [] : (skill.tags ?? []);
@@ -1132,8 +1143,8 @@ const selectBullets = (
  * Resolves `cvSource` into the `CVData` one document renders from.
  *
  * The full CV takes everything in the order it is authored — nothing is
- * reordered or trimmed, because nothing has to fit, and nothing is filtered
- * but the bullets marked `audienceOnly`. Every other
+ * reordered, trimmed, or filtered, because nothing has to fit and it is the
+ * record each one-pager is a subset of. Every other
  * variant keeps only the roles that name it in `variants`, and only the
  * bullets `selectBullets` returns for it. Coursework and certifications go
  * unconditionally on the one-pagers: they are the first things to cost a page
@@ -1148,9 +1159,7 @@ export const buildVariant = (
   const experience: ExperienceItem[] = isFull
     ? source.experience.map(({ achievements, variants: _omit, ...role }) => ({
         ...role,
-        achievements: achievements
-          .filter(bullet => !isAudienceOnly(bullet))
-          .map(bulletText),
+        achievements: achievements.map(bulletText),
       }))
     : source.experience.flatMap(
         ({ achievements, variants, ...role }): ExperienceItem[] => {
