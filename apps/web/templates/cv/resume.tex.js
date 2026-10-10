@@ -128,10 +128,12 @@ const preamble = (variant, data) => {
 \\setlength{\\rolesep}{${roleSep}}
 
 % A section heading stranded at the foot of a page with its content overleaf
-% reads as a mistake. Reserve enough room for the heading, its rule, and the
-% first couple of lines under it, or start the page early.
+% reads as a mistake. Reserve room for the heading, its rule, and the first
+% entry's own reserve (\\entry asks for four lines): with less, the heading
+% fits, the entry's \\needspace then breaks the page, and the heading is left
+% alone at the foot of the one before, as Projects was on the full CV.
 \\let\\cvsection\\section
-\\renewcommand{\\section}[1]{\\needspace{5\\baselineskip}\\cvsection{#1}}
+\\renewcommand{\\section}[1]{\\needspace{7\\baselineskip}\\cvsection{#1}}
 
 % Title and organisation on the left, place and dates on the right, one line
 % each. Giving the location a line of its own costs eight lines across the
