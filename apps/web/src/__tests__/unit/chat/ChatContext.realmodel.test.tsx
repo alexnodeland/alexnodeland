@@ -82,17 +82,12 @@ describe('ChatContext Real Model Integration (Step 3C)', () => {
     it('should disable worker in SSR environment (no window)', () => {
       process.env.GATSBY_CHAT_WORKER = 'true';
 
-      // Simulate SSR by removing window from global
-      const originalWindow = (global as any).window;
-      delete (global as any).window;
-
-      const shouldEnable =
+      // Simulate SSR by shadowing window with undefined. Deleting the global
+      // no longer works: from Jest 30, jsdom's window is not configurable.
+      const shouldEnable = ((window: unknown) =>
         typeof window !== 'undefined' &&
-        process.env.GATSBY_CHAT_WORKER === 'true';
+        process.env.GATSBY_CHAT_WORKER === 'true')(undefined);
       expect(shouldEnable).toBe(false);
-
-      // Restore window for other tests
-      (global as any).window = originalWindow;
     });
   });
 
