@@ -251,7 +251,7 @@ export const cvSource: CVSource = {
     location: 'Stamford, NY',
     website: 'alexnodeland.com',
     summary:
-      'Engineer and mathematician with 10+ years shipping software, now building AI systems at Perch Insights: agent harnesses, evaluation infrastructure, and the memory and semantic layer they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, growing it to 15 people, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Interested in problems that need both mathematics and production engineering.',
+      'Engineer and mathematician with 10+ years shipping software, now building AI systems at Perch Insights: agent harnesses, evaluation infrastructure, and the memory and semantic layer they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, growing it to 15 people, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook.',
     summaryByVariant: {
       // Leads with the delivery work, and closes on the diagnosis from the
       // consulting page — which is the argument for hiring someone to sit
