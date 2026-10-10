@@ -913,9 +913,7 @@ export const cvSource: CVSource = {
       // services would be long, and the bullets say which ones mattered.
       'AWS',
       { name: 'GCP', tags: ['fde', 'music'] },
-      { name: 'Kubernetes', tags: ['fde', 'ai-eng', 'music'] },
       'Docker',
-      { name: 'CloudFormation', tags: ['fde', 'ai-eng'] },
       'CI/CD',
       { name: 'WebSockets', tags: ['fde', 'ai-eng'] },
       { name: 'Distributed Systems', tags: ['fde', 'ai-eng'] },
