@@ -251,7 +251,7 @@ export const cvSource: CVSource = {
     location: 'Stamford, NY',
     website: 'alexnodeland.com',
     summary:
-      'Engineer and mathematician with 10+ years shipping software, now building AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, growing it to 15 people, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Interested in problems that need both mathematics and production engineering.',
+      'Engineer and mathematician with 10+ years shipping software, now building AI systems at Perch Insights: agent harnesses, evaluation infrastructure, and the memory and semantic layer they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, growing it to 15 people, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Interested in problems that need both mathematics and production engineering.',
     summaryByVariant: {
       // Leads with the delivery work, and closes on the diagnosis from the
       // consulting page — which is the argument for hiring someone to sit
@@ -261,13 +261,13 @@ export const cvSource: CVSource = {
       // years are one clause: enough to account for the time, while the page
       // stays about the systems.
       'ai-engineer':
-        'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), a correction-to-evaluation loop with 1,000+ eval cases, and lineage that traces every generated number back to its source. Earlier I built the RAG pipeline at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
+        'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), 1,000+ eval cases, and a namespaced memory architecture that unifies episodic, semantic, and procedural memory. Earlier I built the RAG pipeline at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
       // Audio at every layer, oldest work included: this is the one page
       // where the pedal firmware and the wavelet research lead rather than
       // trail, and the Rust libraries are the current work rather than a
       // weekend note.
       'music-tech':
-        'Engineer and mathematician who has worked on audio at every layer: firmware for digital guitar pedals, wavelet research on audio compression, synthesizer design at Stony Brook, and engineering leadership at Musiio, a music-ML company SoundCloud acquired. I maintain quiver, a modular audio synthesis library in Rust, and auracle, a synthesizer that evolves patches toward the ones you prefer. Today I work on AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on.',
+        'Engineer and mathematician who has worked on audio at every layer: firmware for digital guitar pedals, wavelet research on audio compression, synthesizer design at Stony Brook, and engineering leadership at Musiio, a music-ML company SoundCloud acquired. I maintain quiver, a modular audio synthesis library in Rust, and auracle, a synthesizer that evolves patches toward the ones you prefer. Today I work on AI systems at Perch Insights: agent harnesses, evaluation infrastructure, and the memory and semantic layer they run on.',
     },
   },
 
@@ -306,6 +306,10 @@ export const cvSource: CVSource = {
           metric: '1,000+',
         },
         {
+          text: 'Designed a namespaced memory architecture (episodic, semantic, and procedural) that unifies the semantic layer, agent memory, and workflows',
+          tags: ['ai-eng'],
+        },
+        {
           text: 'Built the agent that turns requests into scheduled workflows producing the weekly and monthly reviews sent to clients',
           tags: ['fde', 'ai-eng'],
         },
@@ -313,7 +317,7 @@ export const cvSource: CVSource = {
           text: 'Built an internal portal for monitoring, debugging, and managing agent runs',
           tags: ['ai-eng'],
         },
-        'Extended the semantic data model with ontological abstractions and higher-order business concepts, which automated root-cause analysis and data discovery are built on',
+        'Extended the semantic data model with ontological abstractions and business concepts that root-cause analysis and data discovery are built on, and prototyped the internal tool for managing it',
         {
           text: 'Wrote tabular insight agents on Jinja templates with full lineage and provenance, so every generated number can be traced back to its source',
           tags: ['ai-eng'],
