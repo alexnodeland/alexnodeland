@@ -128,10 +128,12 @@ const preamble = (variant, data) => {
 \\setlength{\\rolesep}{${roleSep}}
 
 % A section heading stranded at the foot of a page with its content overleaf
-% reads as a mistake. Reserve enough room for the heading, its rule, and the
-% first couple of lines under it, or start the page early.
+% reads as a mistake. Reserve room for the heading, its rule, and the first
+% entry's own reserve (\\entry asks for four lines): with less, the heading
+% fits, the entry's \\needspace then breaks the page, and the heading is left
+% alone at the foot of the one before, as Projects was on the full CV.
 \\let\\cvsection\\section
-\\renewcommand{\\section}[1]{\\needspace{5\\baselineskip}\\cvsection{#1}}
+\\renewcommand{\\section}[1]{\\needspace{7\\baselineskip}\\cvsection{#1}}
 
 % Title and organisation on the left, place and dates on the right, one line
 % each. Giving the location a line of its own costs eight lines across the
@@ -207,11 +209,14 @@ ${
 };
 
 const header = data => {
-  const { name, title, location, email, website, phone } = data.personal;
+  const { name, title, location, email, website, linkedin, github, phone } =
+    data.personal;
   const contact = [
     tex(location),
     `\\href{mailto:${email}}{${tex(email)}}`,
     `\\href{https://${website}}{${tex(website)}}`,
+    linkedin ? `\\href{https://${linkedin}}{${tex(linkedin)}}` : null,
+    github ? `\\href{https://${github}}{${tex(github)}}` : null,
     phone ? `\\href{tel:${phone.replace(/\s/g, '')}}{${tex(phone)}}` : null,
   ]
     .filter(Boolean)
@@ -233,11 +238,58 @@ const header = data => {
  * hopping — "Freelance" beside 2022–Present says the same years counted twice
  * are one person consulting on the side, not a CV that does not add up.
  */
-const roleMeta = role =>
-  [role.location, role.engagement, role.duration]
-    .filter(Boolean)
-    .map(tex)
-    .join(SEPARATOR);
+const roleMeta = (role, variant) =>
+  isFull(variant)
+    ? [role.location, role.engagement, role.duration]
+        .filter(Boolean)
+        .map(tex)
+        .join(SEPARATOR)
+    : [
+        `\\makebox[\\metaplace][r]{${tex(role.location)}}`,
+        `\\makebox[\\metaengage][l]{${tex(role.engagement)}}`,
+        `\\makebox[\\metadate][l]{${tex(role.duration)}}`,
+      ].join(SEPARATOR);
+
+/**
+ * The one-pagers' rail in three columns, sized to the widest value each takes
+ * on the page, so every role's place, engagement and dates start at the same x
+ * and the separators line up down the page. A school has no engagement: its
+ * name spans the first two columns, so its dates still line up with the roles'.
+ *
+ * The full CV keeps the rail ragged: its widest values (Port Jefferson, a
+ * month-to-month range) would push its longest titles onto a second line.
+ */
+const metaColumns = data => {
+  const places = data.experience.map(role => role.location);
+  const engagements = data.experience.map(role => role.engagement || '');
+  const dates = [
+    ...data.experience.map(role => role.duration),
+    ...data.education.map(entry => entry.duration),
+  ];
+  const schools = data.education.map(entry => entry.institution);
+  const widest = (length, values) =>
+    [...new Set(values)]
+      .map(
+        value =>
+          `\\settowidth{\\metatmp}{\\small ${tex(value)}}\\ifdim\\metatmp>${length}\\setlength{${length}}{\\metatmp}\\fi`
+      )
+      .join('\n');
+
+  return `% The right rail's columns (see metaColumns).
+\\newlength{\\metatmp}\\newlength{\\metasep}
+\\newlength{\\metaplace}\\newlength{\\metaengage}
+\\newlength{\\metadate}\\newlength{\\metaschool}
+\\AtBeginDocument{%
+\\settowidth{\\metasep}{\\small ${SEPARATOR}}
+${widest('\\metaplace', places)}
+${widest('\\metaengage', engagements)}
+${widest('\\metadate', dates)}
+\\setlength{\\metaschool}{\\dimexpr\\metaplace+\\metasep+\\metaengage\\relax}
+${widest('\\metaschool', schools)}
+\\setlength{\\metaplace}{\\dimexpr\\metaschool-\\metasep-\\metaengage\\relax}
+}
+`;
+};
 
 const experience = (data, variant) =>
   data.experience
@@ -254,13 +306,31 @@ const experience = (data, variant) =>
           ? `{\\small\\itshape ${tex(role.description)}}\\par\n`
           : '';
 
-      const entry = `\\entry{${tex(role.title)}, ${tex(role.company)}}{${roleMeta(role)}}`;
+      const entry = `\\entry{${tex(role.title)}, ${tex(role.company)}}{${roleMeta(role, variant)}}`;
 
       const bullets = role.achievements
         .map(item => `  \\item ${tex(item)}`)
         .join('\n');
 
-      return `${entry}
+      // On the full CV a role is never split across pages. A page that opens
+      // mid-role opens on a bullet or a Skills line, and OpenResume reads that
+      // stray line as a job of its own: the full CV parsed as 12 and then 14
+      // jobs against 11. Reserving the role's whole height before its title
+      // moves it to the next page intact. The height is estimated: a line per
+      // ~90 characters of each bullet, plus the title, description and Skills.
+      const reserve = isFull(variant)
+        ? `\\needspace{${
+            2 +
+            (role.description ? 1 : 0) +
+            (skills ? 1 : 0) +
+            role.achievements.reduce(
+              (lines, item) => lines + Math.ceil(item.length / 90),
+              0
+            )
+          }\\baselineskip}\n`
+        : '';
+
+      return `${reserve}${entry}
 ${description}\\begin{points}
 ${bullets}
 \\end{points}
@@ -356,7 +426,10 @@ const education = (data, variant) =>
         );
       }
 
-      return `\\entry{${tex(entry.degree)}}{${tex(entry.institution)}${SEPARATOR}${tex(entry.duration)}}
+      const meta = isFull(variant)
+        ? `${tex(entry.institution)}${SEPARATOR}${tex(entry.duration)}`
+        : `\\makebox[\\metaschool][r]{${tex(entry.institution)}}${SEPARATOR}\\makebox[\\metadate][l]{${tex(entry.duration)}}`;
+      return `\\entry{${tex(entry.degree)}}{${meta}}
 ${parts.join('\n')}
 \\vspace{\\rolesep}
 `;
@@ -364,8 +437,29 @@ ${parts.join('\n')}
     .join('\n');
 
 const skills = (data, variant) => {
+  // Set in labelled runs when the data carries them, so a reader finds the
+  // AI terms without reading past the languages and the infrastructure.
+  const groups =
+    data.skills.groups && data.skills.groups.length > 0
+      ? data.skills.groups
+      : [{ label: 'Technical', items: data.skills.technical }];
+  // The labels sit in a column of their own, as wide as the widest label
+  // plus a gap, and every list starts at its right edge; a list that wraps
+  // hangs under its own first line, so the skills read as a second column.
+  // The gap is the separator's: wide enough that an extractor never merges
+  // a label with its first skill.
+  const labelWidth = groups
+    .map(
+      group =>
+        `\\settowidth{\\skilltmp}{\\textbf{${tex(group.label)}}}\\ifdim\\skilltmp>\\skilllabel\\setlength{\\skilllabel}{\\skilltmp}\\fi`
+    )
+    .join('\n');
   const lines = [
-    `\\textbf{Technical}\\quad ${tex(data.skills.technical.join(', '))}\\par`,
+    `\\setlength{\\skilllabel}{0pt}\n${labelWidth}\n\\addtolength{\\skilllabel}{${SEP_GAP}}`,
+    ...groups.map(
+      (group, index) =>
+        `${index > 0 ? '\\vspace{0.15em}' : ''}{\\raggedright\\noindent\\hangindent=\\skilllabel\\hangafter=1\\makebox[\\skilllabel][l]{\\textbf{${tex(group.label)}}}${tex(group.items.join(', '))}\\par}`
+    ),
   ];
 
   // Soft skills read as filler next to fifteen achievement bullets, so the
@@ -432,6 +526,8 @@ const renderResumeTex = (data, { variant }) => {
   }
 
   return `${preamble(variant, data)}
+\\newlength{\\skilllabel}\\newlength{\\skilltmp}
+${isFull(variant) ? '' : metaColumns(data)}
 \\begin{document}
 ${sections.join('\n')}
 \\end{document}

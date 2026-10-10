@@ -11,6 +11,6 @@ the problem we were built around: most supercomputing centers allocate ten perce
 
 what we sold was a functional replica. you develop against an emulation of your target machine's topology and interconnect, at the core count you will actually run on, through a web ide with a parallel debugger attached. it is explicitly not a performance model, since the layers of virtualization mean the timings are not the production timings, but it answers the question that burns allocation: does the code run at scale at all, and how does mpi behave when it does. at launch you could target emulated systems including nscc singapore's aspire-1, or specify a machine that did not exist yet.
 
-lukasz orlowski and i founded it in february 2018, raised a seed round led by sginnovate, and had john gustafson, of gustafson's law, as lead scientific advisor.
+lukasz orlowski and i founded it in february 2018, raised a seed round from vcs and angels, and had john gustafson, of gustafson's law, as lead scientific advisor.
 
 [read the full article](https://www.hpcwire.com/2019/04/26/singapore-startup-hatches-hpc-dev-cloud/)

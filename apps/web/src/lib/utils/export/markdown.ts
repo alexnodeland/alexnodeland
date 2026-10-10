@@ -14,6 +14,12 @@ export const exportCVAsMarkdown = (cvData: CVData): string => {
   markdown += `**Location:** ${cvData.personal.location}\n`;
   markdown += `**Email:** ${cvData.personal.email}\n`;
   markdown += `**Website:** ${cvData.personal.website}\n`;
+  if (cvData.personal.linkedin) {
+    markdown += `**LinkedIn:** ${cvData.personal.linkedin}\n`;
+  }
+  if (cvData.personal.github) {
+    markdown += `**GitHub:** ${cvData.personal.github}\n`;
+  }
   if (cvData.personal.phone) {
     markdown += `**Phone:** ${cvData.personal.phone}\n`;
   }

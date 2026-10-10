@@ -80,9 +80,9 @@ describe('buildVariant', () => {
       'exec one',
       'fde one',
       'fde with a metric, 40%',
+      'fde only',
     ]);
-    // Nothing is reordered when nothing has to fit, and nothing is filtered
-    // but the audience-only bullet.
+    // Nothing is reordered or filtered: the full CV is the whole record.
     expect(full.personal.summary).toBe('Default summary.');
     expect(full.personal.title).toBe('Default Title');
     expect(full.certifications).toHaveLength(1);
@@ -96,7 +96,7 @@ describe('buildVariant', () => {
     }
   });
 
-  it('keeps an audience-only bullet off every document but its audience’s', () => {
+  it('keeps an audience-only bullet off the one-pagers but its audience’s', () => {
     // Room for everything, so what is missing is withheld, not trimmed.
     const roomy: CVSource = {
       ...fixture,
@@ -108,9 +108,9 @@ describe('buildVariant', () => {
         },
       })),
     };
-    expect(
-      buildVariant('full', roomy).experience[0].achievements
-    ).not.toContain('fde only');
+    expect(buildVariant('full', roomy).experience[0].achievements).toContain(
+      'fde only'
+    );
     expect(
       buildVariant('resume', roomy).experience[0].achievements
     ).not.toContain('fde only');
@@ -134,10 +134,17 @@ describe('buildVariant', () => {
       'Default Skill',
       'FDE Skill',
     ]);
-    // The general documents carry a tagged skill and not an audience-only one.
+    // The neutral one-pager carries a tagged skill and not an audience-only
+    // one; the full CV carries every term.
+    expect(buildVariant('resume', fixture).skills.technical).toEqual([
+      'Default Skill',
+      'AI Skill',
+      'FDE Skill',
+    ]);
     expect(buildVariant('full', fixture).skills.technical).toEqual([
       'Default Skill',
       'AI Skill',
+      'AI Only Skill',
       'FDE Skill',
     ]);
   });
@@ -223,6 +230,51 @@ describe('buildVariant', () => {
 describe('the real CV source', () => {
   it('names only projects that exist', () => {
     expect(unknownProjectNames()).toEqual([]);
+  });
+
+  it('makes every one-pager a subset of the full CV', () => {
+    const full = buildVariant('full');
+    const fullBullets = new Map(
+      full.experience.map(role => [
+        `${role.title} @ ${role.company}`,
+        new Set(role.achievements),
+      ])
+    );
+    const fullSkills = new Set(full.skills.technical);
+    const fullProjects = new Set((full.projects ?? []).map(p => p.name));
+
+    for (const variant of [
+      'resume',
+      'fde',
+      'ai-engineer',
+      'music-tech',
+    ] as const) {
+      const built = buildVariant(variant);
+      for (const role of built.experience) {
+        const record = fullBullets.get(`${role.title} @ ${role.company}`);
+        expect(record).toBeDefined();
+        for (const bullet of role.achievements) {
+          expect([
+            variant,
+            record?.has(bullet) ? bullet : `missing: ${bullet}`,
+          ]).toEqual([variant, bullet]);
+        }
+      }
+      for (const skill of built.skills.technical) {
+        expect([
+          variant,
+          fullSkills.has(skill) ? skill : `missing: ${skill}`,
+        ]).toEqual([variant, skill]);
+      }
+      for (const project of built.projects ?? []) {
+        expect([
+          variant,
+          fullProjects.has(project.name)
+            ? project.name
+            : `missing: ${project.name}`,
+        ]).toEqual([variant, project.name]);
+      }
+    }
   });
 
   it('keeps every one-pager to the roles of the last decade', () => {

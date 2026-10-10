@@ -122,6 +122,32 @@ const CVPageBody: React.FC<CVPageBodyProps> = ({
                 {data.personal.website}
               </a>
             </div>
+            {data.personal.linkedin && (
+              <div className="contact-item">
+                <span className="contact-label">linkedin</span>
+                <a
+                  href={`https://${data.personal.linkedin}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="contact-value"
+                >
+                  {data.personal.linkedin}
+                </a>
+              </div>
+            )}
+            {data.personal.github && (
+              <div className="contact-item">
+                <span className="contact-label">github</span>
+                <a
+                  href={`https://${data.personal.github}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="contact-value"
+                >
+                  {data.personal.github}
+                </a>
+              </div>
+            )}
             {data.personal.phone && (
               <div className="contact-item">
                 <span className="contact-label">phone</span>

@@ -50,7 +50,7 @@ export type AudienceTag = 'fde' | 'ai-eng' | 'music' | 'exec' | 'hardware';
  * as concurrent commitments rather than as job-hopping.
  */
 export type EngagementType =
-  'full-time' | 'part-time' | 'advisory' | 'freelance';
+  'full-time' | 'part-time' | 'advisory' | 'freelance' | 'contract';
 
 /**
  * An achievement, either as bare prose or with the metadata the generator
@@ -64,12 +64,12 @@ export type Bullet =
       /** Audiences this bullet is for. Omit to leave it neutral. */
       tags?: AudienceTag[];
       /**
-       * Show this bullet only to the audiences in `tags`. A tagged bullet is
-       * otherwise still part of the record — the full CV carries it and the
-       * neutral one-pager may — which is right for a bullet written *for*
-       * an audience, and wrong for one that is only *about* it: the music
-       * detail that belongs on the music-tech page and would dilute every
-       * general document. Requires `tags`.
+       * Keep this bullet off the neutral one-pager and the role pages outside
+       * `tags`. A tagged bullet is otherwise offered to the neutral one-pager
+       * too — right for a bullet written *for* an audience, and wrong for one
+       * only *about* it: the music detail that belongs on the music-tech page
+       * and would dilute the general resume. The full CV carries it either
+       * way: it is the record every one-pager is a subset of. Requires `tags`.
        */
       audienceOnly?: boolean;
       /**
@@ -83,11 +83,115 @@ export type Bullet =
 /**
  * A keyword on the skills line. The object form carries the same audience
  * fields as a bullet, with the same meaning: `tags` offers it to those
- * variants, and `audienceOnly` keeps it off every document that selects no
- * audience — the full CV and the neutral one-pager.
+ * variants, and `audienceOnly` keeps it off the neutral one-pager. The full
+ * CV carries every term.
  */
 export type Skill =
   string | { name: string; tags?: AudienceTag[]; audienceOnly?: boolean };
+
+/** A labelled run of the skills line, as the one-pagers set it. */
+export interface SkillGroup {
+  label: string;
+  items: string[];
+}
+
+/**
+ * The groups the skills line is set in, in order, each naming the terms it
+ * holds. Infra is the catch-all: a term in `technical` that no group
+ * names lands there, so a new skill is never dropped.
+ */
+export const SKILL_GROUPS: { label: string; names: string[] }[] = [
+  {
+    label: 'Core',
+    names: [
+      'Python',
+      'C++',
+      'SQL',
+      'Mathematics',
+      'TypeScript and Rust (working knowledge)',
+    ],
+  },
+  {
+    label: 'Python',
+    names: [
+      'FastAPI',
+      'Pydantic',
+      'SQLAlchemy',
+      'Alembic',
+      'asyncio',
+      'Polars',
+      'pytest',
+    ],
+  },
+  {
+    label: 'AI',
+    names: [
+      'LLMs',
+      'Agents',
+      'Agent Memory',
+      'Prompt and Context Engineering',
+      'Harness Engineering',
+      'Evals',
+      'LLM-as-judge',
+      'Guardrails',
+      'RAG',
+    ],
+  },
+  {
+    label: 'LLM tools',
+    names: [
+      'Anthropic and OpenAI APIs',
+      'MCP',
+      'PydanticAI',
+      'LangGraph',
+      'DSPy',
+      'LiteLLM',
+      'Langfuse',
+      'Claude Code',
+    ],
+  },
+  {
+    label: 'Audio',
+    names: [
+      'Signal Processing',
+      'Audio Synthesis',
+      'Audio Compression',
+      'Real-time Audio',
+    ],
+  },
+  {
+    label: 'Data',
+    names: [
+      'PostgreSQL',
+      'pgvector',
+      'Redis',
+      'OpenSearch',
+      'Vector Search',
+      'Knowledge Graphs',
+      'Semantic Layers',
+      'Data Engineering',
+    ],
+  },
+  { label: 'Infra', names: [] },
+  {
+    label: 'Delivery',
+    names: ['Solution Architecture', 'Technical Pre-Sales'],
+  },
+];
+
+/** Splits a variant's skills line into `SKILL_GROUPS`, dropping empty groups. */
+export const groupSkills = (skills: string[]): SkillGroup[] => {
+  const fallback = SKILL_GROUPS.findIndex(g => g.label === 'Infra');
+  const groups = SKILL_GROUPS.map(({ label }) => ({
+    label,
+    items: [] as string[],
+  }));
+  for (const skill of skills) {
+    const index = SKILL_GROUPS.findIndex(group => group.names.includes(skill));
+    groups[index === -1 ? fallback : index].items.push(skill);
+  }
+  return groups.filter(group => group.items.length > 0);
+};
 
 /** How one role is cut down for one variant. */
 export interface RoleVariantRule {
@@ -176,6 +280,10 @@ export interface CVData {
     phone?: string;
     location: string;
     website: string;
+    /** Bare host and path, as printed: `linkedin.com/in/...`. */
+    linkedin?: string;
+    /** Bare host and path, as printed: `github.com/...`. */
+    github?: string;
     summary: string;
   };
 
@@ -185,6 +293,8 @@ export interface CVData {
   projects?: ProjectItem[];
   skills: {
     technical: string[];
+    /** `technical`, split into `SKILL_GROUPS` for the typeset documents. */
+    groups?: SkillGroup[];
     soft?: string[];
     languages?: string[];
   };
@@ -250,24 +360,24 @@ export const cvSource: CVSource = {
     email: 'alex@ournature.studio',
     location: 'Stamford, NY',
     website: 'alexnodeland.com',
+    linkedin: 'linkedin.com/in/alexnodeland',
+    github: 'github.com/alexnodeland',
     summary:
-      'Engineer and mathematician working on AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook. Interested in problems that need both mathematics and production engineering.',
+      'Engineer and mathematician with 10+ years shipping software, now building AI systems at Perch Insights: agent harnesses, evaluation infrastructure, and the memory and semantic layer they run on. Previously co-founded and ran a supercomputing startup in Singapore for four years, growing it to 15 people, led engineering at a music-ML company later acquired by SoundCloud, and researched audio compression on HPC clusters at Stony Brook.',
     summaryByVariant: {
-      // Leads with the delivery work, and closes on the diagnosis from the
-      // consulting page — which is the argument for hiring someone to sit
-      // between a customer and a system that has to work in their hands.
-      fde: 'Engineer who takes LLM systems from a prototype to something that holds up in front of customers. At Perch Insights I build the agent orchestration and evaluation infrastructure behind an analytics product, and designed the DSL non-technical users write their own analysis workflows in. Before that I co-founded a supercomputing startup in Singapore, won Fortune 500 and national-government customers, and led engineering at a music-ML company SoundCloud acquired. Prototypes that demo well and break in production are usually failing on the data model, the evals, or how failures are handled, not on the model.',
+      // Leads with the delivery work: systems that hold up in front of customers.
+      fde: 'Engineer who takes LLM systems from a prototype to something that holds up in front of customers. At Perch Insights I built the agent harness behind an analytics product that cut analysis time by about 80%, and the agent that turns requests into scheduled business reviews sent to clients. Before that I co-founded a supercomputing startup in Singapore, took it from founding to launch in 14 months, and led engineering at a music-ML company SoundCloud acquired.',
       // Leads with shipped systems and names them concretely. The founder
       // years are one clause: enough to account for the time, while the page
       // stays about the systems.
       'ai-engineer':
-        'AI engineer building production LLM systems: agent orchestration, evaluation infrastructure, and the feedback loops that keep them honest. At Perch Insights I built a DAG-based framework that runs autonomous agents through multi-step data analysis, a correction-to-evaluation loop that improves the system without retraining, and lineage that traces every generated number back to its source. Earlier I built the RAG pipeline at Influize, ran a fault-tolerant worker fleet on AWS, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook. Mathematician by training.',
+        'AI engineer building production LLM systems: agent harnesses, evaluation infrastructure, and agent memory. At Perch Insights I built the agent harness behind the product (6 subagents, 50 tools), 1,000+ eval cases, and an agent memory architecture spanning episodic, semantic, and procedural memory. Earlier I built hybrid semantic and graph retrieval at Influize, co-founded a supercomputing startup, and researched audio compression on HPC clusters at Stony Brook.',
       // Audio at every layer, oldest work included: this is the one page
       // where the pedal firmware and the wavelet research lead rather than
       // trail, and the Rust libraries are the current work rather than a
       // weekend note.
       'music-tech':
-        'Engineer and mathematician who has worked on audio at every layer: firmware for digital guitar pedals, wavelet research on audio compression, synthesizer design at Stony Brook, and engineering leadership at Musiio, a music-ML company SoundCloud acquired. I maintain quiver, a modular audio synthesis library in Rust, and auracle, a synthesizer that evolves patches toward the ones you prefer. Today I work on AI systems at Perch Insights: agent orchestration, evaluation infrastructure, and the semantic models they run on.',
+        'Engineer and mathematician who has worked on audio at every layer: firmware for digital guitar pedals, wavelet research on audio compression, synthesizer design at Stony Brook, and engineering leadership at Musiio, a music-ML company SoundCloud acquired. I maintain quiver, a modular audio synthesis library in Rust, and auracle, a synthesizer that evolves patches toward the ones you prefer. Today I work on AI systems at Perch Insights: agent harnesses, evaluation infrastructure, and the memory and semantic layer they run on.',
     },
   },
 
@@ -287,37 +397,54 @@ export const cvSource: CVSource = {
       location: 'Remote, NY',
       duration: '2024 - Present',
       achievements: [
+        // Approximate on purpose: the exact counts are not disclosable.
         {
-          text: 'Built a DAG-based orchestration framework that lets autonomous agents carry out multi-step data analysis end to end',
-          tags: ['ai-eng', 'music'],
-        },
-        {
-          text: 'Designed a DSL that non-technical users write analysis workflows in, mixing LLM agents with conventional ML models in the same pipeline',
+          text: 'Lead AI engineering for the analytics product, cutting analysis time by about 80% across the BI analyst team',
           tags: ['fde', 'ai-eng'],
+          metric: '80%',
         },
-        'Extended the semantic data model with ontological abstractions and higher-order business concepts, which automated root-cause analysis and data discovery are built on',
+        // Replaced the earlier DAG framework and workflow DSL, both retired.
         {
-          text: 'Built a feedback loop that turns user corrections into evaluation data and few-shot examples, so the system improves without retraining',
+          text: "Designed and built the product's agent harness: 6 subagents and 50 tools, with reusable and scheduled workflows",
+          tags: ['fde', 'ai-eng', 'music'],
+          metric: '6 subagents, 50 tools',
+        },
+        {
+          text: 'Built 1,000+ eval cases across subagents, tool use, end-to-end task completion, and guardrails',
+          tags: ['ai-eng'],
+          metric: '1,000+',
+        },
+        {
+          text: "Designed the agents' memory architecture (episodic, semantic, and procedural), unifying the semantic layer and workflows",
           tags: ['ai-eng'],
         },
         {
-          text: 'Wrote tabular insight agents on Jinja templates with full lineage and provenance, so every generated number can be traced back to its source',
+          text: 'Built the agent that turns requests into scheduled workflows producing the weekly and monthly reviews sent to clients',
+          tags: ['fde', 'ai-eng'],
+        },
+        {
+          text: 'Built an internal portal for monitoring, debugging, and managing agent runs',
+          tags: ['ai-eng'],
+        },
+        'Extended the semantic data model with ontological abstractions and business concepts that root-cause analysis and data discovery are built on, and prototyped the internal tool for managing it',
+        {
+          text: 'Built the first insight agents on Jinja templates, with lineage and provenance tracing every generated number to its source',
           tags: ['ai-eng'],
         },
         'Ran a fault-tolerant distributed worker fleet on AWS (ECS/SNS/SQS) with dead-letter queue handling and zero-downtime deploys',
-        {
-          text: 'Lead AI engineering for the analytics product, automating analyst workflows that were previously manual',
-          tags: ['fde'],
-        },
+        'Built a suite of agentic coding plugins for the engineering team',
       ],
       skills: [
         'Python',
+        'FastAPI',
+        'Pydantic',
+        'LLMs',
+        'Agents',
+        'Agent Memory',
+        'Evals',
+        'Semantic Layers',
         'AWS',
         'Docker',
-        'Container Orchestration',
-        'Machine Learning',
-        'LLMs',
-        'Data Engineering',
       ],
     },
     {
@@ -332,28 +459,26 @@ export const cvSource: CVSource = {
       location: 'Remote, NY',
       duration: '2023 - 2024',
       achievements: [
-        'Started the AI function and shipped its first systems to production',
         {
-          text: "Built the RAG pipeline behind the product's generated responses, covering retrieval, chunking, and grounding",
-          tags: ['ai-eng'],
+          text: 'Owned AI and backend engineering, taking the product from prototype to production in 2 months',
+          tags: ['fde', 'ai-eng'],
+          metric: '2 months',
         },
         {
-          text: 'Designed the Postgres schema and backend on Supabase, including authentication and access control',
+          text: "Built hybrid semantic and graph retrieval to ground personalized, on-brand content in each customer's data",
           tags: ['fde', 'ai-eng'],
         },
         {
-          text: 'Designed the API layer in front of the AI pipelines, improving latency and throughput',
-          tags: ['ai-eng'],
+          text: 'Built the platform the AI ran on (API, data model, authentication), and onboarded an engineer onto DevOps and AWS',
+          tags: ['fde', 'ai-eng'],
         },
-        'Moved infrastructure to CloudFormation and CI/CD to GitHub Actions',
         {
           text: 'Added monitoring across the AI pipelines to catch quality regressions',
           tags: ['ai-eng'],
         },
         'Built ontological models to give the data model a consistent vocabulary',
-        'Restructured the Postgres schema as the access patterns became clear and load grew',
         {
-          text: 'Coordinated with external development teams on platform integration, and ran project management out of GitHub',
+          text: 'Coordinated with an external app development team on integrating their app with the platform',
           tags: ['fde'],
         },
       ],
@@ -363,8 +488,9 @@ export const cvSource: CVSource = {
         'Supabase',
         'AWS',
         'RAG',
+        'Knowledge Graphs',
         'LLMs',
-        'Infrastructure as Code',
+        'GitHub Actions',
       ],
     },
     {
@@ -384,90 +510,82 @@ export const cvSource: CVSource = {
       location: 'Remote, NY',
       duration: '2022 - Present',
       achievements: [
+        // Leads the entry: of everything here, this is the AI system actually
+        // built, and the one line the AI Engineer page keeps when it collapses.
+        // Tagged for music too: it is the line that page keeps when the entry
+        // collapses, in place of the keynote.
         {
-          text: 'Advise startups and established companies on where AI fits in their stack',
+          text: 'Built a knowledge-graph AI copilot over thousands of documents for a consulting firm: a graph UI, chatbot, and Claude Code plugin that query it live and write reports and decks',
+          tags: ['fde', 'ai-eng', 'music'],
+          metric: 'thousands of documents',
+        },
+        {
+          text: 'Advise startups and established companies on AI strategy: technology assessments, build-versus-buy, and stack choices',
           tags: ['fde'],
         },
-        'Delivered a virtual keynote to about 30 CIOs and founders, hosted by an Australian VC, on LLM architectures, guardrails for workflows, and feedback loops that let an organization build on automation',
+        'Gave a keynote to about 30 CIOs and founders on LLM architectures, guardrails, and feedback loops',
         {
           text: 'Codified organizational process for a blockchain unicorn: RACI matrices, documented processes, and access controls aligned across the org and built into internal tooling',
           tags: ['fde'],
         },
-        {
-          text: 'Run technology assessments and build-versus-buy analysis for teams committing to an AI direction',
-          tags: ['fde'],
-        },
-        'Led migrations onto AI-integrated systems that reduced cost and manual work',
-        // Tagged for the AI Engineer page, where the Freelance entry collapses
-        // to one line: of everything here, this is the AI system actually built.
-        {
-          text: 'Built an ontology-powered knowledge platform and AI copilot for a management consulting firm, mapping client organizations, surfacing conflicts and gaps across documentation, and synthesizing reports',
-          tags: ['ai-eng'],
-        },
-        'Developed personal knowledge management agents in Claude Code and Obsidian for non-technical founders, consultants, and creatives, covering capture, linking, reviews, and research across their notes',
-        'Help early-stage startups choose a technology stack that will last',
+        'Built knowledge-management agents in Claude Code and Obsidian for founders, consultants, and creatives',
       ],
       skills: [
-        'Strategic Planning',
-        'AI Consulting',
+        'AI Strategy',
         'Technology Assessment',
-        'Business Development',
+        'Knowledge Graphs',
+        'Claude Code',
+        'Solution Architecture',
       ],
     },
     {
       title: 'Tech Lead',
       company: 'Musiio (acquired by SoundCloud)',
-      engagement: 'freelance',
+      engagement: 'contract',
       variants: {
         resume: { maxBullets: 2 },
         fde: { maxBullets: 2 },
         'ai-engineer': { maxBullets: 2 },
-        'music-tech': { maxBullets: 4 },
+        'music-tech': { maxBullets: 3 },
       },
-      location: 'Singapore',
+      location: 'Singapore, SG',
       duration: '2021 - 2022',
       achievements: [
-        // The music-ML company. The two bullets below are the music work,
-        // and are shown to that audience only.
+        // Tagged for every audience, so the team leads the entry everywhere.
         {
-          text: 'Built the audio ingestion pipelines',
-          tags: ['music'],
-          audienceOnly: true,
+          text: 'Led a cross-functional team of 5 to 10 engineers with the music, research, and sales teams',
+          tags: ['fde', 'ai-eng', 'music'],
+          metric: '5 to 10',
         },
         {
-          text: 'Partnered with the music research team and in-house music experts to design labeling processes that produced unbiased, high-signal data',
-          tags: ['music'],
-          audienceOnly: true,
-        },
-        {
-          text: 'Set technical direction against customer and partner requirements, planning releases with the founders',
+          text: 'Planned the roadmap and releases with the founders around customer and partner needs',
           tags: ['fde'],
         },
-        'Led a cross-functional engineering team, working alongside the music, research, and sales sides of the company',
+        // The engineering under the models: the second line on the AI Engineer
+        // page, and the music work on the music-tech page.
         {
-          text: 'Ran experiments to validate models in-house',
-          tags: ['ai-eng', 'music'],
+          text: "Built the pipelines that ingested labels' and publishers' catalogues for AI tagging and search",
+          tags: ['music', 'ai-eng'],
+          audienceOnly: true,
         },
         {
-          text: 'Ran GCP infrastructure: Kubernetes and Istio, monitored with Grafana and Prometheus',
+          text: 'Partnered with the music research team and in-house experts to design the labeling and model validation processes',
+          tags: ['music'],
+          audienceOnly: true,
+        },
+        {
+          text: 'Ran GCP on Kubernetes and Istio with Grafana and Prometheus, and rebuilt CI/CD on Jenkins with Cypress tests',
           tags: ['ai-eng'],
         },
-        'Rebuilt CI/CD on Jenkins with Cypress end-to-end coverage',
-        {
-          text: 'Built a custom data ingestion pipeline and automated the manual steps around it',
-          tags: ['ai-eng'],
-        },
-        'Introduced Scrum and the planning practices around it',
-        'Mentored engineers and ran training sessions based on operational reviews',
       ],
       skills: [
         'Python',
         'GCP',
-        'Container Orchestration',
+        'Kubernetes',
         'Docker',
+        'Grafana',
         'Jenkins',
         'Cypress',
-        'Agile',
         'Team Leadership',
       ],
     },
@@ -487,16 +605,20 @@ export const cvSource: CVSource = {
       location: 'Singapore, SG',
       duration: '2018 - 2022',
       achievements: [
-        'Took the product from concept to launch: a cloud platform that emulates supercomputer environments so teams can develop and test at scale without waiting for time on the real machine',
+        // February 2018 founding to the April 2019 launch.
         {
-          text: 'Won early customers, including Fortune 500 enterprises and national governments',
+          text: 'Set technical direction and prototyped a supercomputer-emulation platform with my co-founder, launched in 14 months',
+          tags: ['fde', 'ai-eng'],
+          metric: '14 months',
+        },
+        {
+          text: 'Raised a seed round from VCs and angels and grew the team to 15 across two offices',
+          metric: '15',
+        },
+        {
+          text: 'Sold to national supercomputing centres and enterprise R&D teams across Asia-Pacific',
           tags: ['fde', 'ai-eng'],
         },
-        {
-          text: 'Raised early rounds from government, VC, and angel investors',
-          tags: ['exec'],
-        },
-        'Grew the team from 3 to 15 in the first year',
         {
           text: 'Set the business model, go-to-market strategy, and financial model',
           tags: ['exec'],
@@ -516,9 +638,9 @@ export const cvSource: CVSource = {
       ],
       skills: [
         'Leadership',
-        'Business Strategy',
         'Fundraising',
-        'Product Management',
+        'Go-to-Market',
+        'Product Strategy',
         'Team Building',
       ],
     },
@@ -558,28 +680,29 @@ export const cvSource: CVSource = {
       location: 'New York, NY',
       duration: '2016 - 2017',
       achievements: [
-        'Designed and built the MVPs, then the production cloud middleware that replaced them',
-        "Directed algorithm development for the product's core computational problems",
+        // The line the role pages keep when they collapse this entry: what was
+        // built says more there than the team size does.
         {
-          text: 'Worked directly with clients on what to build next',
-          tags: ['fde'],
-        },
-        'Led the engineering team and set its code review and QA standards',
-        {
-          text: 'Raised seed capital from VCs and angels',
-          tags: ['exec'],
+          text: 'Built job scheduling optimization for grid-style workflows on commodity hardware, then ported it to cloud and bare metal',
+          tags: ['fde', 'ai-eng'],
         },
         {
-          text: 'Got the company into the Grand Central Tech accelerator',
+          text: 'Led engineering as the team grew from 2 to 20+ people, and set its code review and QA standards',
+          metric: '2 to 20+',
+        },
+        'Directed the scheduling algorithms, and worked directly with clients on what to build next',
+        {
+          text: 'Raised seed capital from VCs and angels, and got the company into the Grand Central Tech accelerator',
           tags: ['exec'],
         },
       ],
       skills: [
         'Mathematics',
-        'Software Development',
-        'Team Leadership',
         'Algorithm Design',
+        'Scheduling Optimization',
+        'Distributed Computing',
         'Cloud Computing',
+        'Team Leadership',
       ],
     },
     {
@@ -608,7 +731,7 @@ export const cvSource: CVSource = {
         'Led seminars on music and mathematics',
         'Turned research into pieces that could be performed',
         {
-          text: 'Collaborated with people from the music technology industry on novel audio hardware',
+          text: "Collaborated on synthesis with Pigtronix, my startup Motiff Tech, and Stony Brook's digital arts center",
           tags: ['music'],
         },
       ],
@@ -625,7 +748,7 @@ export const cvSource: CVSource = {
       company: 'SUNY Research Foundation',
       engagement: 'part-time',
       variants: {
-        'music-tech': { maxBullets: 2 },
+        'music-tech': { maxBullets: 1 },
       },
       location: 'Stony Brook, NY',
       duration: '2016 - 2017',
@@ -635,10 +758,6 @@ export const cvSource: CVSource = {
           tags: ['music'],
         },
         'Ran a supercomputing project funded by the High Performance Computing Consortium of New York',
-        {
-          text: 'Performed real-time signal analysis on spectrum data',
-          tags: ['music'],
-        },
         'Maintained project documentation and datasets for other researchers',
       ],
       skills: [
@@ -654,14 +773,14 @@ export const cvSource: CVSource = {
       company: 'Absara Audio',
       engagement: 'full-time',
       variants: {
-        'music-tech': { maxBullets: 4 },
+        'music-tech': { maxBullets: 2 },
       },
       location: 'Port Jefferson, NY',
       duration: '2014 - 2015',
       description: 'My first software job, and my first hardware job.',
       achievements: [
         {
-          text: 'Wrote production firmware for digital guitar pedals',
+          text: 'Wrote and tested production firmware for digital guitar pedals, building the test fixtures',
           tags: ['music'],
         },
         {
@@ -670,17 +789,11 @@ export const cvSource: CVSource = {
           audienceOnly: true,
         },
         {
-          text: 'Built test fixtures and ran quality assurance',
-          tags: ['music'],
-          audienceOnly: true,
-        },
-        {
           text: 'Turned customer service reports into technical reports, and worked with the engineering team to diagnose and triage the underlying issues',
           tags: ['music'],
           audienceOnly: true,
         },
-        "Shipped feature releases through the team's continuous integration process",
-        "Followed the team's test practice to catch firmware defects before release",
+        'Shipped firmware releases through CI and pre-release testing that caught defects before they reached customers',
         'Wrote the technical documentation and user manuals',
         'Fed customer feedback into product planning',
       ],
@@ -698,10 +811,8 @@ export const cvSource: CVSource = {
       location: 'Port Jefferson, NY',
       duration: '2010 - 2014',
       achievements: [
-        'Assembled and tested printed circuit boards for audio processing units',
-        'Was the customer service contact point, answering the calls and emails and handling repairs and returns',
-        'Serviced customer hardware sent back to the shop',
-        'Trained new staff on assembly and quality control',
+        'Assembled and tested circuit boards for audio processing units, and trained new staff on assembly and quality control',
+        "Handled customer service, repairs, and returns as the shop's first point of contact",
       ],
       skills: [
         'Hardware Assembly',
@@ -780,50 +891,83 @@ export const cvSource: CVSource = {
     // list is what a keyword filter reads, not a wishlist. It is ordered once,
     // for every page: what the engineer is, then the AI work, then the
     // platform under it, then the tooling. A tag offers a term to that page;
-    // the general documents carry every term that is not `audienceOnly`.
+    // the neutral one-pager carries every term that is not `audienceOnly`, and
+    // the full CV every term.
     technical: [
+      // The deeper tooling is tagged `ai-eng`: the general resume and the AI
+      // Engineer page carry it, the FDE page keeps the essentials, and the
+      // music-tech page spends its lines on audio instead.
       'Python',
-      { name: 'C++', tags: ['music'] },
+      { name: 'C++', tags: ['music'], audienceOnly: true },
       'SQL',
-      // A term is tagged away from a page whose family does not ask for it
-      // and whose bullets already say it: the mathematics and the signal
-      // processing are in the AI Engineer page's summary and off its list.
       { name: 'Mathematics', tags: ['fde', 'music'] },
-      { name: 'Signal Processing', tags: ['music'] },
+      // The Python service stack behind the Perch and Influize backends.
+      { name: 'FastAPI', tags: ['fde', 'ai-eng'] },
+      { name: 'Pydantic', tags: ['fde', 'ai-eng'] },
+      { name: 'SQLAlchemy', tags: ['ai-eng'] },
+      { name: 'Alembic', tags: ['ai-eng'] },
+      { name: 'asyncio', tags: ['ai-eng'] },
+      { name: 'Polars', tags: ['ai-eng'] },
+      { name: 'pytest', tags: ['fde', 'ai-eng'] },
+      { name: 'Signal Processing', tags: ['music'], audienceOnly: true },
       // Shown to the music-tech page only.
       { name: 'Audio Synthesis', tags: ['music'], audienceOnly: true },
       { name: 'Audio Compression', tags: ['music'], audienceOnly: true },
       { name: 'Real-time Audio', tags: ['music'], audienceOnly: true },
-      'Machine Learning',
-      'LLMs',
-      // The LLM-systems vocabulary. Perch and Influize are the work behind
-      // it; the general documents carry it because that work is the current
-      // work, and the music-tech page does not spend its line on it.
-      { name: 'Agents', tags: ['fde', 'ai-eng', 'music'] },
+      // The LLM-systems vocabulary, each term backed by a Perch or Influize
+      // bullet: the harness, its memory, its eval suite and its guardrail
+      // cases. "Tool use" is in the eval bullet's own words.
+      // The bullets already say "agent" a dozen ways (harness, subagents,
+      // memory), and "LLM-as-judge" says LLM, both of which a keyword filter
+      // reads; the line spends its room on terms the rest of the page does not
+      // carry. The music-tech page has neither, so it keeps the plain terms.
+      { name: 'LLMs', tags: ['music'], audienceOnly: true },
+      { name: 'Agents', tags: ['music'], audienceOnly: true },
+      { name: 'Agent Memory', tags: ['fde', 'ai-eng'] },
+      // One term for two: a filter for "prompt" and one for "context
+      // engineering" both still match it.
+      { name: 'Prompt and Context Engineering', tags: ['fde', 'ai-eng'] },
+      { name: 'Harness Engineering', tags: ['fde', 'ai-eng'] },
       { name: 'Evals', tags: ['fde', 'ai-eng', 'music'] },
+      { name: 'LLM-as-judge', tags: ['ai-eng'] },
+      { name: 'Guardrails', tags: ['fde', 'ai-eng'] },
       { name: 'RAG', tags: ['fde', 'ai-eng'] },
-      { name: 'Tool Use', tags: ['ai-eng'] },
+      // The tools the agents are built with, named because a filter for a
+      // framework does not match a category.
+      { name: 'Anthropic and OpenAI APIs', tags: ['fde', 'ai-eng'] },
       { name: 'MCP', tags: ['fde', 'ai-eng'] },
-      { name: 'Prompt Engineering', tags: ['fde', 'ai-eng'] },
-      { name: 'Vector Search', tags: ['ai-eng'] },
-      { name: 'Semantic Data Models', tags: ['ai-eng'] },
-      { name: 'Observability', tags: ['fde', 'ai-eng', 'music'] },
-      { name: 'Data Engineering', tags: ['fde', 'music'] },
-      { name: 'Distributed Systems', tags: ['fde', 'ai-eng'] },
-      'AWS',
-      { name: 'GCP', tags: ['fde', 'music'] },
-      'Docker',
-      'Container Orchestration',
+      { name: 'PydanticAI', tags: ['fde', 'ai-eng'] },
+      { name: 'LangGraph', tags: ['fde', 'ai-eng'] },
+      { name: 'DSPy', tags: ['ai-eng'] },
+      { name: 'LiteLLM', tags: ['ai-eng'] },
+      { name: 'Langfuse', tags: ['ai-eng'] },
+      { name: 'Claude Code', tags: ['fde', 'ai-eng'] },
+      // The data the agents stand on: the semantic layer at Perch, the graph
+      // retrieval at Influize, the copilot's knowledge graph.
       'PostgreSQL',
-      { name: 'Infrastructure as Code', tags: ['fde', 'ai-eng'] },
-      'CI/CD',
-      { name: 'API Development', tags: ['fde', 'ai-eng'] },
-      // No web stack: a skills line is what the writer would stand behind in
-      // an interview, and that is not it.
-      { name: 'Linux', tags: ['fde'] },
+      { name: 'pgvector', tags: ['ai-eng'] },
+      { name: 'Redis', tags: ['ai-eng'] },
+      { name: 'OpenSearch', tags: ['ai-eng'] },
+      { name: 'Vector Search', tags: ['ai-eng'] },
+      { name: 'Knowledge Graphs', tags: ['fde', 'ai-eng'] },
+      { name: 'Semantic Layers', tags: ['fde', 'ai-eng'] },
+      { name: 'Data Engineering', tags: ['fde', 'music'] },
+      // The platform. AWS is named once rather than by service: the list of
+      // services would be long, and the bullets say which ones mattered.
+      'AWS',
+      'Docker',
+      'CI/CD (GitHub Actions)',
+      { name: 'Celery', tags: ['ai-eng'] },
+      { name: 'OpenTelemetry', tags: ['ai-eng'] },
+      { name: 'Grafana', tags: ['ai-eng'] },
+      'Observability',
+      { name: 'Linux', tags: ['fde'], audienceOnly: true },
+      // Used every week, but not claimed as expertise: said so in the term
+      // itself, which a keyword filter still reads as both languages.
+      'TypeScript and Rust (working knowledge)',
       // The customer-side of the FDE work. Pre-sales is a sales word, and
       // stays off the general documents.
-      { name: 'Solution Architecture', tags: ['fde'] },
+      { name: 'Solution Architecture', tags: ['fde'], audienceOnly: true },
       { name: 'Technical Pre-Sales', tags: ['fde'], audienceOnly: true },
     ],
   },
@@ -833,7 +977,17 @@ export const cvSource: CVSource = {
   // best-starred: they are two years old and read as dated demos next to the
   // libraries below.
   projects: {
-    full: ['fugue', 'quiver', 'fugue-evo', 'principled', 'claude-telegram'],
+    // Every project a one-pager names, so each is a subset of this one.
+    full: [
+      'fugue',
+      'reflex',
+      'principled',
+      'quiver',
+      'auracle',
+      'fugue-evo',
+      'llmcomposer',
+      'claude-telegram',
+    ],
     fde: ['fugue', 'reflex', 'principled'],
     'ai-engineer': ['reflex', 'principled', 'fugue'],
     'music-tech': ['quiver', 'auracle', 'llmcomposer'],
@@ -850,6 +1004,24 @@ export const cvSource: CVSource = {
  * its reader. An unknown name is dropped rather than rendered empty; the CI
  * guard fails on it, so a typo surfaces in the build and not in a PDF.
  */
+/**
+ * Descriptions as a resume sets them. The projects page writes them in its
+ * own lowercase voice ("rust", "llm"), which on a resume reads as a typo, so
+ * every project a variant names gets a cased sentence here.
+ */
+const CV_PROJECT_DESCRIPTIONS: Record<string, string> = {
+  fugue: 'A type-safe, monadic probabilistic programming library for Rust.',
+  'fugue-evo':
+    'A probabilistic genetic algorithm library for Rust: evolution as inference.',
+  quiver: 'A modular audio synthesis library in Rust.',
+  auracle: 'A synthesizer that evolves patches toward the ones you prefer.',
+  llmcomposer: 'An experiment in composing music with an LLM.',
+  reflex: 'A template for real-time AI agent systems.',
+  principled: 'Claude Code plugins for specification-first development.',
+  'claude-telegram':
+    'A Telegram bridge to Claude Code, so you can drive it from your phone.',
+};
+
 const resolveProjects = (names?: string[]): ProjectItem[] | undefined => {
   if (!names || names.length === 0) return undefined;
 
@@ -859,7 +1031,7 @@ const resolveProjects = (names?: string[]): ProjectItem[] | undefined => {
     return [
       {
         name: project.name,
-        description: project.description,
+        description: CV_PROJECT_DESCRIPTIONS[name] ?? project.description,
         technologies: [project.language],
         github: project.url,
         url: project.site,
@@ -924,6 +1096,11 @@ const isEligible = (
  * once, is the order on every page.
  */
 const selectSkills = (skills: Skill[], variant: CVVariant): string[] => {
+  if (variant === 'full') {
+    return skills.map(skill =>
+      typeof skill === 'string' ? skill : skill.name
+    );
+  }
   const audience = audienceOf(variant);
   const tagsOf = (skill: Skill): AudienceTag[] =>
     typeof skill === 'string' ? [] : (skill.tags ?? []);
@@ -971,8 +1148,8 @@ const selectBullets = (
  * Resolves `cvSource` into the `CVData` one document renders from.
  *
  * The full CV takes everything in the order it is authored — nothing is
- * reordered or trimmed, because nothing has to fit, and nothing is filtered
- * but the bullets marked `audienceOnly`. Every other
+ * reordered, trimmed, or filtered, because nothing has to fit and it is the
+ * record each one-pager is a subset of. Every other
  * variant keeps only the roles that name it in `variants`, and only the
  * bullets `selectBullets` returns for it. Coursework and certifications go
  * unconditionally on the one-pagers: they are the first things to cost a page
@@ -987,9 +1164,7 @@ export const buildVariant = (
   const experience: ExperienceItem[] = isFull
     ? source.experience.map(({ achievements, variants: _omit, ...role }) => ({
         ...role,
-        achievements: achievements
-          .filter(bullet => !isAudienceOnly(bullet))
-          .map(bulletText),
+        achievements: achievements.map(bulletText),
       }))
     : source.experience.flatMap(
         ({ achievements, variants, ...role }): ExperienceItem[] => {
@@ -1027,6 +1202,7 @@ export const buildVariant = (
     projects: resolveProjects(source.projects?.[variant]),
     skills: {
       technical: selectSkills(source.skills.technical, variant),
+      groups: groupSkills(selectSkills(source.skills.technical, variant)),
       soft: source.skills.soft,
       languages: source.skills.languages,
     },
