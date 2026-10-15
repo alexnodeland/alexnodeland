@@ -144,13 +144,13 @@ export const projectsConfig: ProjectsConfig = {
 
     // --- ai ---
     {
-      name: 'stretto',
+      name: 'hoist',
       description:
         'an mcp proxy that learns which reads your agent makes next and serves them in the same tool result, so it needs fewer llm turns.',
       language: 'Rust',
       tags: ['featured', 'tool', 'mcp', 'agents'],
-      url: 'https://github.com/alexnodeland/stretto',
-      site: 'https://stretto.alexnodeland.com/',
+      url: 'https://github.com/alexnodeland/hoist',
+      site: 'https://hoist.alexnodeland.com/',
       category: 'ai',
     },
     {

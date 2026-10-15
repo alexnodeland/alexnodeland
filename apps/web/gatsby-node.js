@@ -166,6 +166,14 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
     redirects.set(`/blog${node.fields.slug}`, `/timeline${node.fields.slug}`);
   });
 
+  // A post whose file was renamed keeps its old addresses: the one under /timeline
+  // that its slug used to give it, and the /blog one before the move.
+  const renamedPosts = new Map([['/260927_stretto/', '/260927_hoist/']]);
+  for (const [oldSlug, newSlug] of renamedPosts) {
+    redirects.set(`/timeline${oldSlug}`, `/timeline${newSlug}`);
+    redirects.set(`/blog${oldSlug}`, `/timeline${newSlug}`);
+  }
+
   redirects.set('/blog/', '/timeline/');
 
   // The role-variant CV pages, one per entry in src/config/cv-pages.json. The
