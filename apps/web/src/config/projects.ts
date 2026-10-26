@@ -134,7 +134,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'qcsim',
       description:
-        'a simple quantum circuit simulator in python — fundamental gates and circuit assembly on numpy.',
+        'a small quantum circuit simulator in python, written for reading: fundamental gates and circuit assembly on numpy.',
       language: 'Python',
       tags: ['experiment', 'quantum-computing', 'simulation'],
       url: 'https://github.com/alexnodeland/QCSim',
@@ -175,7 +175,8 @@ export const projectsConfig: ProjectsConfig = {
     },
     {
       name: 'vanilla-react',
-      description: 'dead simple react agent framework written in python.',
+      description:
+        'a react agent loop in python with no framework underneath, kept short enough to read in one sitting.',
       language: 'Python',
       tags: ['library', 'agents', 'react-pattern'],
       url: 'https://github.com/alexnodeland/vanilla-react',
@@ -269,7 +270,7 @@ export const projectsConfig: ProjectsConfig = {
     {
       name: 'statusbar',
       description:
-        'swiftui menu bar app that monitors multiple status pages simultaneously.',
+        'a macos menu bar app that watches the status pages you depend on and shows the worst one at a glance.',
       language: 'Swift',
       tags: ['app', 'macos', 'menu-bar'],
       url: 'https://github.com/alexnodeland/StatusBar',

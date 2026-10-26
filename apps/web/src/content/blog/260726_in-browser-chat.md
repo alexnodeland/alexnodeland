@@ -7,8 +7,6 @@ category: 'Projects'
 
 there is a chat box on this site. when you open it, your browser downloads a 760mb language model and runs it on your gpu. nothing is sent anywhere, because there is no server to send it to. it answers questions about me from the pages you are already reading.
 
-this is how it works, and what the numbers look like.
-
 ## the shape of it
 
 the first version put my entire cv, about 4,500 tokens, in front of every question. it also ran two throwaway yes/no generations before each answer, to decide whether the question was on-topic at all. three model calls per question, and it knew nothing about the blog or the projects page.

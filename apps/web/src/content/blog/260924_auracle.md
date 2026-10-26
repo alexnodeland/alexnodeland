@@ -7,7 +7,7 @@ category: 'Projects'
 
 sound design tools make you pick. presets and randomizers are fast and shallow: you audition until something works, and nothing builds up. patching from scratch is deep and slow. genetic-algorithm synths tried to split the difference with star-a-generation workflows, but they forget everything between sessions and can't tell you why they suggest what they suggest.
 
-auracle treats it as inference. it generates patches, plays them to you, and asks which of two you prefer. from those answers, plus star ratings and your own hand edits, it fits a model of your taste, and that model changes how evolution _proposes_ the next patches, not only how it scores them. over a session it stops guessing and starts proposing.
+auracle treats it as inference. it generates patches, plays them to you, and asks which of two you prefer. from those answers, plus star ratings and your own hand edits, it fits a model of your taste, and that model changes how evolution _proposes_ the next patches, not only how it scores them. over a session, its proposals move toward the sounds you keep choosing.
 
 it is built on two of my other libraries. a patch is a term in a typed grammar over [quiver](https://quiver-dsp.com/)'s combinators: a tree whose types are signal kinds, so every mutation, crossover and hand edit gives you a valid, playable patch by construction. the search is typed metropolis–hastings from [fugue-evo](https://evo.fugue.run/), walking toward the grammar's prior times exp(β · utility). parsimony comes from the prior, how hard it searches is one dial, and locking a knob gives exact conditional refinement of everything else.
 

@@ -9,6 +9,6 @@ jpeg 2000 swapped the discrete cosine transform for wavelets and got visibly bet
 
 part of the answer is that nobody agrees on which wavelet to use. unlike the dct, which is one fixed transform, "wavelet" is a family, and the right member depends on the signal you are compressing. in practice people pick one that has worked before and tune around it.
 
-this research was an attempt at a procedure for picking the basis for a given class of audio, instead of choosing by taste: define what optimal means for that class, then search the space of admissible bases against a real corpus. the search needed the iacs supercomputers. the criterion needed the mathematics.
+this research was an attempt at a procedure for picking the basis for a given class of audio, instead of choosing by taste: define what optimal means for that class, then search the space of admissible bases against a real corpus. the search ran on the iacs supercomputers; defining what optimal meant was the mathematical work.
 
 [read the full article](https://www.cewit.org/programs/_documents/CEWITNewsletter_NOV2016.pdf), inside the november 2016 newsletter pdf.
