@@ -1,7 +1,7 @@
 ---
 title: 'What Is Running Behind This Page'
 date: '2025-09-28'
-description: "Six simulations render the backgrounds on this site: Conway's Life, a simulated-annealing graph search, an FM synthesizer, A*, and a finite-difference PDE solver. What each one computes and what the controls do."
+description: "Six simulations render the backgrounds on this site: Conway's Life, summed sine waves, a simulated-annealing graph search, an FM synthesizer, A*, and a finite-difference PDE solver. What each one computes and what the controls do."
 category: 'Projects'
 ---
 
@@ -36,7 +36,7 @@ turn `wave frequency` up and `wave speed` down to freeze the interference patter
 
 ## <a id="job-scheduling"></a>job scheduling
 
-the most interesting one, and the worst named.
+the most interesting one, and the worst named. the name comes from [the scheduler at scala computing](/timeline/170515_leaving-the-phd/), which placed jobs on well-connected groups of nodes. this is that search, with the jobs left out.
 
 it builds a clustered graph: nodes grouped into tight clusters with dense, high-bandwidth links inside each cluster and sparse, high-latency links between them. roughly the shape of a real datacenter. then it searches for the subgraph of size _n_ with the highest total conductivity, the best-connected group of that size.
 
@@ -78,7 +78,7 @@ explicit finite differences on a grid, solving either the heat equation `∂u/�
 
 the parameters that change the physics rather than the look are `boundary condition` and `initial condition`. dirichlet fixes the edge value, so waves reflect inverted. neumann sets the edge derivative to zero, so they reflect upright. periodic wraps, so anything leaving the right edge arrives at the left. pick a gaussian pulse on the wave equation and switch between the three. the difference in reflection is immediate. it is the clearest demonstration of boundary conditions i know of.
 
-you cannot make it explode. explicit schemes are only conditionally stable. heat needs `α·dt·(1/dx² + 1/dy²) ≤ 0.5` and wave needs the cfl condition `c·dt·√(1/dx² + 1/dy²) ≤ 1`, so the timestep is clamped to the stable maximum before every step. push thermal diffusivity to its limit and the simulation slows down rather than diverging.
+you cannot make it explode, even though explicit schemes are only conditionally stable. heat needs `α·dt·(1/dx² + 1/dy²) ≤ 0.5` and wave needs the cfl condition `c·dt·√(1/dx² + 1/dy²) ≤ 1`, so the timestep is clamped to the stable maximum before every step. push thermal diffusivity to its limit and the simulation slows down rather than diverging.
 
 ## on the whole thing
 

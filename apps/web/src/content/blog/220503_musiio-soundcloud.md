@@ -7,7 +7,7 @@ category: 'Press'
 
 the papers were signed on 3 may 2022, about a year after i had joined as tech lead.
 
-musiio's ai listens to music, which is harder than it sounds: audio reference search, automated tagging, playlisting, aimed at catalogues holding more tracks than any person will ever get through. hazel savage and aron pettersson founded it in june 2018, out of [entrepreneur first's third singapore cohort](/timeline/180724_ef-investor-day/), the same cohort archanan came out of, pitching at the same investor day.
+musiio's ai listens to music so that people do not have to: audio reference search, automated tagging and playlisting, for catalogues holding more tracks than any person will ever get through. hazel savage and aron pettersson founded it in june 2018, out of [entrepreneur first's third singapore cohort](/timeline/180724_ef-investor-day/), the same cohort archanan came out of, pitching at the same investor day.
 
 <figure>
   <img

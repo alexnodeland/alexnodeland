@@ -70,7 +70,8 @@ export const homepageConfig: HomepageConfig = {
     paragraphs: [
       'i build ai systems, mostly the infrastructure: agent orchestration, evaluation loops, and the data model everything else depends on. currently senior ai engineer at perch insights.',
       'before that i co-founded archanan in singapore and ran it as ceo for four years. we built cloud emulators of supercomputers so people could develop at scale without waiting for time on the real machine. i also led engineering at musiio, a music-ml company that soundcloud later acquired. before any of that i worked on wavelet bases for audio compression at stony brook, and wrote firmware for guitar pedals.',
-      'on the weekends, i maintain the fugue and quiver ecosystems, for probabilistic programming and audio synthesis in rust. the backgrounds on this site are simulations running in your browser, not video. the landscape icon in the corner opens their controls.',
+      'on weekends i maintain two rust libraries and the projects built on them: fugue, for probabilistic programming, and quiver, for audio synthesis.',
+      'the backgrounds on this site are simulations running in your browser, not video. the landscape icon in the corner opens their controls.',
     ],
     consultingNote: {
       before: 'i also take on a few',
@@ -89,19 +90,19 @@ export const homepageConfig: HomepageConfig = {
     steps: [
       {
         title: 'a conversation',
-        body: 'it starts with an initial conversation: what is there already, and what is actually painful.',
+        body: 'we talk through what you have already, and what is actually painful.',
       },
       {
         title: 'deciding what to address',
-        body: 'from there we decide what to address, and how to do it in a simple proof of concept.',
+        body: 'then we pick what to address first, and scope it as a simple proof of concept.',
       },
       {
         title: 'a quick proof of concept',
-        body: 'one to two weeks. small, but built as the structured foundation the rest can be built on over time.',
+        body: 'one to two weeks. small, but meant to be the foundation the rest is built on, not a demo that gets thrown away.',
       },
       {
         title: 'then, if it helps',
-        body: 'optionally, further engagement: the full implementation, or advising while the implementation happens.',
+        body: 'either the full implementation, or advising while it happens.',
       },
     ],
     // Six, so the grid lands in even rows at three columns and at two. Ordered
@@ -111,7 +112,7 @@ export const homepageConfig: HomepageConfig = {
       {
         title: 'a knowledge platform and ai copilot',
         client: 'a small management consulting firm',
-        body: 'built an ontology-powered knowledge platform and ai copilot for mapping client organizations: organizing references to documentation, identifying conflicts or gaps in understanding, and synthesizing insights and reports across the documents it can access. all packaged as a web app with chat, graph visualization, task tracking and document management.',
+        body: 'built a knowledge platform and ai copilot, structured by an ontology, for mapping how a client organization works: it links references to the documentation, flags conflicts and gaps in what is understood, and writes reports across the documents it can access. delivered as a web app with chat, graph visualization, task tracking and document management.',
       },
       {
         title: 'personal knowledge agents',
