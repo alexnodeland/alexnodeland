@@ -9,7 +9,7 @@ the stony brook press came to talk to me about synthesizers that listen back. i 
 
 two of them made the article. a bass synthesizer that tracks the pitch of whatever it hears and calculates the harmonically correct lower note in real time, so it stays in key and in time without being configured. and a convolution reverb, which takes an impulse response of a room and lets you play as though you were standing in it: carnegie hall, or the basement venue down the road, from a recording of the space.
 
-i had been building audio hardware at pigtronix on long island for a few years by then, so the pedals were real hardware. the new part was putting a learning system in the loop: something that proposes a sound, watches which ones you keep, and gets better at proposing. the version i was building was the neural compressor, an fpga-driven compression pedal and an early hardware precursor of [auracle](/timeline/260924_auracle/).
+i had been building audio hardware at pigtronix on long island for a few years by then, so the pedals were real hardware. the new part was putting a learning system in the loop: something that proposes a sound, watches which ones you keep, and gets better at proposing. the version i was building was the neural compressor, a compression pedal driven by a human-based genetic algorithm and an early hardware precursor of [auracle](/timeline/260924_auracle/).
 
 this was the motiff technologies era, my first company, run out of an undergraduate degree with pigtronix advising.
 
