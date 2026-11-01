@@ -1018,7 +1018,7 @@ const CV_PROJECT_DESCRIPTIONS: Record<string, string> = {
   quiver: 'A modular audio synthesis library in Rust.',
   auracle: 'A synthesizer that evolves patches toward the ones you prefer.',
   llmcomposer: 'An experiment in composing music with an LLM.',
-  lattice: 'Python libraries for apps where people and agents work together.',
+  lattice: 'Python libraries for human-in-the-loop agent applications.',
   hoist:
     "An MCP proxy that prefetches an agent's next reads, saving LLM turns.",
   principled: 'Claude Code plugins for specification-first development.',
