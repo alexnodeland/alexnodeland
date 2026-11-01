@@ -75,6 +75,35 @@ describe('ControlRow', () => {
     expect(screen.getByText('newest first')).toBeInTheDocument();
   });
 
+  // The row is pickers at the start and its last chip hung at the far end,
+  // past the way back to the top. A row whose only chip is its picker keeps
+  // it at the start.
+  it('hangs the last of several chips at the end, and keeps a lone one at the start', () => {
+    const order = (container: HTMLElement) =>
+      Array.from(
+        container.querySelectorAll('.timeline-control-bar > button')
+      ).map(node => node.getAttribute('aria-label') ?? node.textContent);
+
+    const several = render(
+      <div className="layout">
+        <div className="window-band" />
+        <ControlRow className="timeline-control-bar">
+          <button type="button">all</button>
+          <button type="button">search</button>
+        </ControlRow>
+      </div>
+    );
+    expect(order(several.container)).toEqual([
+      'all',
+      'back to the top',
+      'search',
+    ]);
+    several.unmount();
+
+    const { container } = mount(<button type="button">all</button>);
+    expect(order(container)).toEqual(['all', 'back to the top']);
+  });
+
   // The way back to the top is only ever wanted by someone who has left it,
   // and the moment it is wanted is the moment the row has finished arriving:
   // pinned to the window's edge, with the list running underneath.

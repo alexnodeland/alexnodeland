@@ -16,6 +16,7 @@ import {
   pageUrl,
   slugify,
   VOCABULARY,
+  appsGraph,
   blogPostingNode,
   breadcrumbNode,
   conceptFor,
@@ -314,18 +315,48 @@ describe('the pages', () => {
   });
 
   it('describes every project as source code about a concept', () => {
+    const onPage = projectsConfig.projects.filter(p => p.tier !== 'app');
     const nodes = projectsGraph();
     const projects = byType(nodes, 'SoftwareSourceCode');
-    expect(projects).toHaveLength(projectsConfig.projects.length);
+    expect(projects).toHaveLength(onPage.length);
     for (const node of projects) {
       expect(node.codeRepository).toMatch(/^https:\/\/github\.com\//);
       expect(node.author).toEqual({ '@id': LD.person });
       expect(node.about).toBeDefined();
+      expect(node.isPartOf).toEqual({ '@id': LD.projects });
     }
     const list = nodes.find(n => n['@id'] === LD.projects) as JsonLdNode;
-    expect(list.numberOfItems).toBe(projectsConfig.projects.length);
+    expect(list.numberOfItems).toBe(onPage.length);
     expect((list.itemListElement as JsonLdNode[])[0].item).toBe(
-      LD.project(projectsConfig.projects[0].name)
+      LD.project(onPage[0].name)
+    );
+  });
+
+  it('describes the apps on the apps page, with URIs that land there', () => {
+    const apps = projectsConfig.projects.filter(p => p.tier === 'app');
+    expect(apps.length).toBeGreaterThan(0);
+    const nodes = appsGraph();
+    const sources = byType(nodes, 'SoftwareSourceCode');
+    expect(sources).toHaveLength(apps.length);
+    for (const node of sources) {
+      expect(node['@id']).toMatch(new RegExp(`^${SITE}/apps/#project-`));
+      expect(node.isPartOf).toEqual({ '@id': LD.apps });
+    }
+    const list = nodes.find(n => n['@id'] === LD.apps) as JsonLdNode;
+    expect(list.numberOfItems).toBe(apps.length);
+    expect((list.itemListElement as JsonLdNode[])[0].item).toBe(
+      LD.project(apps[0].name, '/apps')
+    );
+    const page = byType(nodes, 'CollectionPage')[0];
+    expect(page.mainEntity).toEqual({ '@id': LD.apps });
+
+    // No project is on both pages, and none is on neither.
+    const listed = [
+      ...byType(projectsGraph(), 'SoftwareSourceCode'),
+      ...sources,
+    ].map(node => node.name);
+    expect([...listed].sort()).toEqual(
+      projectsConfig.projects.map(p => p.name).sort()
     );
   });
 
@@ -339,6 +370,7 @@ describe('the pages', () => {
       site: 'https://x.run/',
       stars: 12,
       category: 'math',
+      tier: 'flagship',
     });
     expect(starred.url).toBe('https://x.run/');
     expect(starred.interactionStatistic).toMatchObject({
@@ -351,6 +383,7 @@ describe('the pages', () => {
       tags: [],
       url: 'https://github.com/alexnodeland/y',
       category: 'misc',
+      tier: 'lab',
     });
     expect(bare.url).toBe('https://github.com/alexnodeland/y');
     expect(bare.interactionStatistic).toBeUndefined();

@@ -9,8 +9,9 @@ import Layout from '../../../components/layout';
 import { getAllSocialLinks } from '../../../config';
 import { isNotFound, markNotFound } from '../../../lib/notFound';
 
-// Mock the config. The hero registry reads homepageConfig and projectsConfig,
-// so this mock has to carry them too — Layout resolves its own hero now.
+// Mock the config. The hero registry reads homepageConfig, projectsConfig and
+// appsConfig, so this mock has to carry them too — Layout resolves its own
+// hero now.
 jest.mock('../../../config', () => ({
   siteConfig: {
     siteName: 'Test Site',
@@ -39,6 +40,10 @@ jest.mock('../../../config', () => ({
   projectsConfig: {
     title: 'projects',
     subtitle: 'open source projects, tools, and experiments.',
+  },
+  appsConfig: {
+    title: 'apps',
+    subtitle: 'small tools i use every day, and how to install them.',
   },
   getAllSocialLinks: jest.fn(() => [
     { platform: 'github', url: 'https://github.com/test' },
@@ -313,6 +318,14 @@ describe('Layout Component', () => {
         'projects',
         'open source projects, tools, and experiments.',
       ],
+      // The apps page wears the projects hero's class: one kind of list, one
+      // stylesheet dressing both heroes.
+      [
+        '/apps',
+        '.projects-header',
+        'apps',
+        'small tools i use every day, and how to install them.',
+      ],
       ['/cv', '.cv-page-header', 'cv', 'roles, research, and skills.'],
     ])(
       'should wear the %s crumb hero',
@@ -362,7 +375,7 @@ describe('Layout Component', () => {
     );
 
     it('should mark every real hero collapsible', () => {
-      ['/', '/timeline', '/projects', '/cv'].forEach(pathname => {
+      ['/', '/timeline', '/projects', '/apps', '/cv'].forEach(pathname => {
         const { unmount } = render(
           <TestWrapper pathname={pathname}>{mockChildren}</TestWrapper>
         );

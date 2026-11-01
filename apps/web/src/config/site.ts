@@ -94,6 +94,7 @@ export const siteConfig: SiteConfig = {
     main: [
       { name: 'timeline', href: '/timeline' },
       { name: 'projects', href: '/projects' },
+      { name: 'apps', href: '/apps' },
       { name: 'cv', href: '/cv' },
     ],
   },

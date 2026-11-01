@@ -1,6 +1,11 @@
 import { CVData, cvData, cvPdfPath } from './cv';
 import { homepageConfig } from './homepage';
-import { GitHubProject, projectsConfig } from './projects';
+import {
+  GitHubProject,
+  appsConfig,
+  pageForProject,
+  projectsConfig,
+} from './projects';
 import { siteConfig } from './site';
 
 /**
@@ -162,14 +167,16 @@ export const LD = {
   dataset: `${SITE}/#dataset`,
   blog: `${pageUrl('/timeline')}#blog`,
   projects: `${pageUrl('/projects')}#collection`,
+  apps: `${pageUrl('/apps')}#collection`,
   consulting: `${pageUrl('/consulting')}#service`,
   engagement: `${pageUrl('/consulting')}#engagement`,
   scheme: `${pageUrl('/vocab')}#scheme`,
   concept: (id: string): string => `${pageUrl('/vocab')}#${id}`,
   collection: (id: string): string => `${pageUrl('/vocab')}#${id}-collection`,
   post: (slug: string): string => `${postUrl(slug)}#post`,
-  project: (name: string): string =>
-    `${pageUrl('/projects')}#project-${slugify(name)}`,
+  /** A project, on the page that lists it: /projects, or /apps for an app. */
+  project: (name: string, page: '/projects' | '/apps' = '/projects'): string =>
+    `${pageUrl(page)}#project-${slugify(name)}`,
   role: (index: number): string => `${pageUrl('/cv')}#role-${index + 1}`,
   degree: (index: number): string => `${pageUrl('/cv')}#degree-${index + 1}`,
   organization: (name: string): string => `${SITE}/#org-${slugify(name)}`,
@@ -342,7 +349,8 @@ export const VOCABULARY: {
     {
       id: 'project-categories',
       label: 'project categories',
-      description: 'the sections of the projects page.',
+      description:
+        'what each project and app is about; the projects page is sectioned by them.',
       members: ['ai', 'math', 'audio-dsp', 'distributed-systems', 'misc'],
     },
     {
@@ -757,10 +765,22 @@ export function blogPostingNode(
   return node;
 }
 
+/** A project's URI, on whichever page lists it. */
+const projectId = (project: GitHubProject): string =>
+  LD.project(project.name, pageForProject(project));
+
+/** The projects the projects page lists: everything but the apps. */
+const onProjectsPage = (projects: GitHubProject[]): GitHubProject[] =>
+  projects.filter(project => project.tier !== 'app');
+
+/** The ones the apps page lists. */
+const onAppsPage = (projects: GitHubProject[]): GitHubProject[] =>
+  projects.filter(project => project.tier === 'app');
+
 /** A project, as the source code it is. */
 export function projectNode(project: GitHubProject): JsonLdNode {
   const node: JsonLdNode = {
-    '@id': LD.project(project.name),
+    '@id': projectId(project),
     '@type': 'SoftwareSourceCode',
     name: project.name,
     description: project.description,
@@ -772,7 +792,7 @@ export function projectNode(project: GitHubProject): JsonLdNode {
     },
     keywords: project.tags,
     author: personRef(),
-    isPartOf: { '@id': LD.projects },
+    isPartOf: { '@id': project.tier === 'app' ? LD.apps : LD.projects },
   };
   const concept = conceptRef(project.category);
   if (concept) node.about = concept;
@@ -786,9 +806,9 @@ export function projectNode(project: GitHubProject): JsonLdNode {
   return node;
 }
 
-/** The projects page's list: every project, in the page's order. */
+/** The projects page's list: every project on it, in the page's order. */
 export function projectsCollectionNode(
-  projects: GitHubProject[] = projectsConfig.projects
+  projects: GitHubProject[] = onProjectsPage(projectsConfig.projects)
 ): JsonLdNode {
   return {
     '@id': LD.projects,
@@ -800,7 +820,26 @@ export function projectsCollectionNode(
     itemListElement: projects.map((project, index) => ({
       '@type': 'ListItem',
       position: index + 1,
-      item: LD.project(project.name),
+      item: projectId(project),
+    })),
+  };
+}
+
+/** The apps page's list: every app, in the page's order. */
+export function appsCollectionNode(
+  apps: GitHubProject[] = onAppsPage(projectsConfig.projects)
+): JsonLdNode {
+  return {
+    '@id': LD.apps,
+    '@type': 'ItemList',
+    name: appsConfig.title,
+    description: appsConfig.subtitle,
+    numberOfItems: apps.length,
+    itemListOrder: 'https://schema.org/ItemListUnordered',
+    itemListElement: apps.map((app, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: projectId(app),
     })),
   };
 }
@@ -904,7 +943,7 @@ export function postGraph(post: PostSummary): JsonLdNode[] {
 
 /** The projects page: the list, and every project on it. */
 export function projectsGraph(
-  projects: GitHubProject[] = projectsConfig.projects
+  projects: GitHubProject[] = onProjectsPage(projectsConfig.projects)
 ): JsonLdNode[] {
   return [
     projectsCollectionNode(projects),
@@ -920,6 +959,24 @@ export function projectsGraph(
       HOME_CRUMB,
       { name: 'projects', path: '/projects' },
     ]),
+  ];
+}
+
+/** The apps page: the list, and every app on it. */
+export function appsGraph(
+  apps: GitHubProject[] = onAppsPage(projectsConfig.projects)
+): JsonLdNode[] {
+  return [
+    appsCollectionNode(apps),
+    ...apps.map(projectNode),
+    webPageNode({
+      path: '/apps',
+      name: appsConfig.title,
+      description: appsConfig.subtitle,
+      type: 'CollectionPage',
+      mainEntity: { '@id': LD.apps },
+    }),
+    breadcrumbNode('/apps', [HOME_CRUMB, { name: 'apps', path: '/apps' }]),
   ];
 }
 

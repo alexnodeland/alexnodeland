@@ -1,6 +1,6 @@
 import { Link } from 'gatsby';
 import React from 'react';
-import { homepageConfig, projectsConfig } from '../config';
+import { appsConfig, homepageConfig, projectsConfig } from '../config';
 import { CV_PAGES, RoleVariant } from '../config/cv';
 
 /**
@@ -121,6 +121,14 @@ const HEROES: Record<string, () => React.ReactNode> = {
     <header className="projects-header">
       {crumbTitle(projectsConfig.title)}
       <p>{projectsConfig.subtitle}</p>
+    </header>
+  ),
+  // The projects hero's class: the two pages are one kind of list, and the
+  // stylesheet that dresses the hero is the one both pages load.
+  '/apps': () => (
+    <header className="projects-header">
+      {crumbTitle(appsConfig.title)}
+      <p>{appsConfig.subtitle}</p>
     </header>
   ),
   '/cv': () => (

@@ -1,202 +1,116 @@
+import { graphql } from 'gatsby';
 import React from 'react';
 import ActivityPanel from '../components/ui/ActivityPanel';
 import ControlRow from '../components/ui/ControlRow';
 import Dropdown from '../components/ui/Dropdown';
-import { GitHubIcon, LinkIcon } from '../components/ui/EntryIcons';
-import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
-import { getLanguageColor, projectsConfig, projectsGraph } from '../config';
-import type { GitHubProject, ProjectCategory } from '../config';
-import { scrollBehavior } from '../lib/utils/motion';
+import {
+  LabList,
+  ProjectCard,
+  WritingList,
+} from '../components/projects/ProjectCard';
+import type { WritingEntry } from '../components/projects/ProjectCard';
+import useHashScroll from '../components/projects/useHashScroll';
+import { projectsConfig, projectsGraph, projectsInTier } from '../config';
+import type { ProjectCategory } from '../config';
 import '../styles/projects.scss';
 
-// The category filter's "no filter" option. The rest of the page keys off a
-// real ProjectCategory, so this is the stand-in the dropdown needs.
-const ALL_CATEGORIES = '__all__';
+// The flagship work, in sections by category, then the experiments as one
+// short list. The small tools are on /apps.
+const FLAGSHIP = projectsInTier('flagship');
+const LAB = projectsInTier('lab');
 
-type ProjectSort = 'curated' | 'stars' | 'name';
+// The picker's "no filter" option. The rest of the page keys off a real
+// ProjectCategory, so this is the stand-in the dropdown needs.
+const ALL = '__all__';
 
-// Curated is the config's own order — hand-ranked within each section — so it
-// is the default, and it is named rather than left implicit.
-const SORT_OPTIONS: DropdownOption[] = [
-  { value: 'curated', label: 'curated' },
-  { value: 'stars', label: 'most starred' },
-  { value: 'name', label: 'name a–z' },
-];
+// Only the categories something on this page is about — a project, or the
+// writing that stands in for one. The picker offering a category with nothing
+// in it would be a way to empty the page on purpose.
+const CATEGORIES = projectsConfig.categories.filter(
+  category =>
+    [...FLAGSHIP, ...LAB].some(project => project.category === category.id) ||
+    (projectsConfig.writing[category.id]?.posts.length ?? 0) > 0
+);
 
-const sortProjects = (
-  projects: GitHubProject[],
-  sort: ProjectSort
-): GitHubProject[] => {
-  if (sort === 'curated') return projects;
-  const sorted = [...projects];
-  if (sort === 'stars') {
-    // Unstarred repos are worth 0 rather than worth nothing, so they sort to
-    // the bottom instead of dropping out of the comparison.
-    sorted.sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0));
-  } else {
-    sorted.sort((a, b) => a.name.localeCompare(b.name));
-  }
-  return sorted;
-};
+interface PostNode {
+  fields: { slug: string };
+  frontmatter: { title: string; date: string; description?: string };
+}
 
-const matchesSearch = (project: GitHubProject, term: string): boolean => {
-  if (!term) return true;
-  const haystack =
-    `${project.name} ${project.description} ${project.tags.join(' ')}`.toLowerCase();
-  return haystack.includes(term);
-};
+export interface ProjectsPageProps {
+  /** The posts, for the categories whose section is writing; see the query. */
+  data?: { allMarkdownRemark: { nodes: PostNode[] } };
+  // What Gatsby hands every page; optional so the page can still be rendered
+  // bare (tests do).
+  location?: { pathname?: string };
+}
 
-const ProjectCard: React.FC<{ project: GitHubProject }> = ({ project }) => {
-  const languageColor = getLanguageColor(project.language);
-
-  return (
-    // Not an anchor any more: a card with a site of its own carries two ways
-    // out, and a link inside a link is not markup a browser will honour. The
-    // card is a plain box, and one of the two links at its foot stretches an
-    // overlay across the whole of it (see .is-card-link in projects.scss) —
-    // so the whole card is still a single target, and the other mark is a
-    // real link rather than a click handler wearing a link's clothes.
-    <article className="project-card">
-      <div className="project-card-content">
-        {/* The name, the body, the tags, and one meta band at the foot —
-            the blog preview's grammar. The name and body are grouped: a card
-            in a grid row is as tall as the tallest in that row, and this is
-            the block that takes up the difference, so the slack lands under
-            the description instead of inside it (see .project-card-body). */}
-        <div className="project-card-body">
-          <div className="project-header">
-            <h3 className="project-name">{project.name}</h3>
-          </div>
-
-          <p className="project-description">{project.description}</p>
-        </div>
-
-        {/* The tags as one quiet line, the way a cv card lists its key
-            skills — not a row of chips. */}
-        {project.tags.length > 0 && (
-          <p className="project-tags">{project.tags.join(' • ')}</p>
-        )}
-
-        {/* The language and the stars at one end, the ways out at the other,
-            in the link colour: the chain to the project's own site where
-            there is one, then the octocat. The chain sits inside the octocat
-            so the repo mark stays where it has always been, at the corner.
-            Whichever of the two the card as a whole follows — the site if the
-            project has one, the repo if it does not — is the one that
-            stretches across the card; the other stays a mark you hit
-            directly. */}
-        <div className="project-footer">
-          <div className="project-language">
-            <span
-              className="language-dot"
-              style={{ backgroundColor: languageColor }}
-            />
-            <span className="language-name">{project.language}</span>
-            {typeof project.stars === 'number' && project.stars > 0 && (
-              <span className="project-stars">★ {project.stars}</span>
-            )}
-          </div>
-          <div className="project-link-indicator">
-            {project.site && (
-              <a
-                href={project.site}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="project-out project-out-site is-card-link"
-              >
-                <LinkIcon />
-                <span className="sr-only">{`visit the ${project.name} site`}</span>
-              </a>
-            )}
-            <a
-              href={project.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`project-out project-out-repo ${
-                project.site ? 'is-raised' : 'is-card-link'
-              }`}
-            >
-              <GitHubIcon />
-              <span className="sr-only">{`view ${project.name} on github`}</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </article>
+/**
+ * The posts a category's writing names, in the order it names them. A slug
+ * with no post behind it is dropped rather than drawn as a dead row; the
+ * config test holds every slug to a file in src/content/blog.
+ */
+const writingFor = (
+  category: ProjectCategory,
+  nodes: PostNode[]
+): WritingEntry[] => {
+  const bySlug = new Map(
+    nodes.map(node => [node.fields.slug.replace(/^\/+|\/+$/g, ''), node])
   );
+  return (projectsConfig.writing[category]?.posts ?? []).flatMap(slug => {
+    const node = bySlug.get(slug);
+    if (!node) return [];
+    return [
+      {
+        slug,
+        title: node.frontmatter.title,
+        date: node.frontmatter.date,
+        description: node.frontmatter.description,
+      },
+    ];
+  });
 };
 
-// `location` is what Gatsby hands every page; optional here so the page can
-// still be rendered bare (tests do).
-const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
-  location,
-}) => {
+const ProjectsPage: React.FC<ProjectsPageProps> = ({ data, location }) => {
+  const nodes = data?.allMarkdownRemark.nodes;
   const [category, setCategory] = React.useState<ProjectCategory | null>(null);
-  const [sort, setSort] = React.useState<ProjectSort>('curated');
-  const [searchTerm, setSearchTerm] = React.useState('');
-  // Phone only: whether the search panel is folded out. Desktop ignores it.
-  const [searchOpen, setSearchOpen] = React.useState(false);
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
-  React.useEffect(() => {
-    if (searchOpen) searchInputRef.current?.focus();
-  }, [searchOpen]);
 
-  // The page scrolls inside the fixed window (.layout), not the document, so
-  // the browser's own fragment navigation has nothing to scroll. Resolve the
-  // hash to its section and scroll the container ourselves.
-  //
-  // The wait is long enough for the shell's navigation transition to settle
-  // (the hero peels, then the region eases to its new height, and the window
-  // resizes with it). Scrolling into a frame that is still growing lands in
-  // the wrong place, and the hero collapse would fight the reset; once the
-  // shell is still, the smooth scroll drives the collapse normally.
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const scrollToHash = () => {
-      const id = window.location.hash.slice(1);
-      if (!id) return;
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
-    };
-    const timer = window.setTimeout(scrollToHash, 420);
-    window.addEventListener('hashchange', scrollToHash);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener('hashchange', scrollToHash);
-    };
-  }, []);
-
-  const search = searchTerm.trim().toLowerCase();
+  useHashScroll();
 
   // Sections keep their ids and their order whatever the controls say — the
   // hero subtitle deep-links at them, so filtering renders fewer sections
   // rather than renumbering the ones that survive.
   const categorySections = React.useMemo(
     () =>
-      projectsConfig.categories
-        .filter(section => category === null || section.id === category)
+      CATEGORIES.filter(section => category === null || section.id === category)
         .map(section => ({
           ...section,
-          projects: sortProjects(
-            projectsConfig.projects.filter(
-              project =>
-                project.category === section.id &&
-                matchesSearch(project, search)
-            ),
-            sort
-          ),
+          projects: FLAGSHIP.filter(project => project.category === section.id),
+          writing: writingFor(section.id, nodes ?? []),
+          note: projectsConfig.writing[section.id]?.note,
         }))
-        // A section with nothing left in it is a heading over a gap, so it goes.
-        .filter(section => section.projects.length > 0),
-    [category, search, sort]
+        // A category only the experiments are about has no cards of its own,
+        // and a heading over a gap is not a section.
+        .filter(
+          section => section.projects.length > 0 || section.writing.length > 0
+        ),
+    [category, nodes]
+  );
+
+  // The experiments answer the same picker as the cards above them, so a
+  // category narrows the whole page, not only its top half.
+  const lab = React.useMemo(
+    () =>
+      LAB.filter(project => category === null || project.category === category),
+    [category]
   );
 
   const categoryOptions: DropdownOption[] = React.useMemo(
     () => [
-      { value: ALL_CATEGORIES, label: 'all' },
-      ...projectsConfig.categories.map(section => ({
+      { value: ALL, label: 'all' },
+      ...CATEGORIES.map(section => ({
         value: section.id,
         label: section.title,
       })),
@@ -205,95 +119,71 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
   );
 
   const categoryLabel =
-    categoryOptions.find(
-      option => option.value === (category ?? ALL_CATEGORIES)
-    )?.label ?? 'all';
-
-  const sortLabel =
-    SORT_OPTIONS.find(option => option.value === sort)?.label ?? 'curated';
+    categoryOptions.find(option => option.value === (category ?? ALL))?.label ??
+    'all';
 
   return (
     <>
       <SEO
         title="projects"
-        description="open source projects, experiments, and tools by alex nodeland"
+        description="open source libraries, systems, and experiments by alex nodeland"
         pathname={location?.pathname}
         jsonLd={projectsGraph()}
       />
       <div className="projects-page">
-        {/* The two pickers, left, and the way to the search box at the far
-            end: the one row every list page carries (see the cv and the
-            blog). Each picker resets itself through its own "all" or default
-            option, so there is no separate reset. */}
+        {/* The category picker, alone. Seven cards and a short list need
+            no sort and no search: the curated order is the one worth
+            reading, and everything is on screen within a scroll or two. The
+            picker resets itself through its own "all" option. */}
         <ControlRow className="projects-control-bar">
           <Dropdown
             ariaLabel="Filter projects by category"
             triggerLabel={categoryLabel}
             options={categoryOptions}
-            value={category ?? ALL_CATEGORIES}
+            value={category ?? ALL}
             onSelect={value =>
-              setCategory(
-                value === ALL_CATEGORIES ? null : (value as ProjectCategory)
-              )
+              setCategory(value === ALL ? null : (value as ProjectCategory))
             }
             className="projects-category-dropdown"
           />
-
-          <Dropdown
-            ariaLabel="Sort projects"
-            triggerLabel={sortLabel}
-            options={SORT_OPTIONS}
-            value={sort}
-            onSelect={value => setSort(value as ProjectSort)}
-            className="projects-sort-dropdown"
-          />
-
-          <SearchToggle
-            open={searchOpen}
-            onToggle={() => setSearchOpen(open => !open)}
-            controls="projects-search"
-          />
         </ControlRow>
 
-        {/* Somewhere to type rather than a piece of chrome, so it keeps its
-            own panel below the row, folded away behind the chip above until
-            it is asked for. */}
-        <div
-          id="projects-search"
-          className={`ui-search-panel projects-search-panel${
-            searchOpen ? ' is-open' : ''
-          }`}
-        >
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="search projects..."
-            aria-label="Search projects"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        {categorySections.length === 0 ? (
-          <p className="projects-empty">
-            no projects match &quot;{searchTerm.trim()}&quot;.
-          </p>
-        ) : (
-          categorySections.map(section => (
-            <section
-              key={section.id}
-              id={section.id}
-              className="projects-section"
-            >
-              <h2 className="section-title">{section.title}</h2>
-              <div className="projects-grid">
+        {categorySections.map(section => (
+          <section
+            key={section.id}
+            id={section.id}
+            className="projects-section"
+          >
+            <h2 className="section-title">{section.title}</h2>
+            {section.projects.length > 0 && (
+              <div className="projects-grid projects-grid--flagship">
                 {section.projects.map(project => (
                   <ProjectCard key={project.name} project={project} />
                 ))}
               </div>
-            </section>
-          ))
+            )}
+            {section.writing.length > 0 && (
+              <>
+                {section.note && (
+                  <p className="projects-section-note">{section.note}</p>
+                )}
+                <WritingList posts={section.writing} />
+              </>
+            )}
+          </section>
+        ))}
+
+        {lab.length > 0 && (
+          <section
+            id={projectsConfig.lab.id}
+            className="projects-section projects-lab"
+          >
+            <h2 className="section-title">{projectsConfig.lab.title}</h2>
+            <p className="projects-section-note">
+              {projectsConfig.lab.description}
+            </p>
+            <LabList projects={lab} />
+          </section>
         )}
 
         {/* The year of github work, after the catalogue it produced, with
@@ -306,5 +196,25 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
     </>
   );
 };
+
+// Every post's slug, title, date and description, for the sections whose
+// work is writing rather than code. A page query rather than a copy in the
+// config, so a retitled post retitles its row.
+export const query = graphql`
+  query ProjectsPageQuery {
+    allMarkdownRemark {
+      nodes {
+        fields {
+          slug
+        }
+        frontmatter {
+          title
+          date
+          description
+        }
+      }
+    }
+  }
+`;
 
 export default ProjectsPage;

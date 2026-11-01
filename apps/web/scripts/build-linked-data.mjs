@@ -322,6 +322,7 @@ function main() {
     ...ld.timelineGraph(allPosts),
     ...allPosts.flatMap(post => ld.postGraph(post)),
     ...ld.projectsGraph(),
+    ...ld.appsGraph(),
     ...ld.cvGraph(cvData),
     ...ld.consultingGraph(),
     ...ld.vocabGraph(),

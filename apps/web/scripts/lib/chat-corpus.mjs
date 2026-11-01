@@ -301,6 +301,14 @@ function homeChunks(homepageConfig) {
   return out;
 }
 
+// What a project's tier makes it, in the words a question would use: the
+// flagship work, a tool in daily use, or an experiment.
+const TIER_PHRASES = {
+  flagship: 'one of his flagship projects, on the projects page',
+  app: 'one of the small apps he uses every day, on the apps page',
+  lab: 'a smaller experiment, listed at the foot of the projects page',
+};
+
 function projectChunks(projectsConfig) {
   return projectsConfig.projects.map(p => ({
     id: `project:${p.name}`,
@@ -308,10 +316,14 @@ function projectChunks(projectsConfig) {
     title: p.name,
     url: p.url,
     text: `Alex's open-source project "${p.name}" (written in ${p.language}${
-      p.featured ? ', a featured project' : ''
+      TIER_PHRASES[p.tier] ? `, ${TIER_PHRASES[p.tier]}` : ''
     }): ${p.description} Topics: ${p.tags.join(', ')}.${
       typeof p.stars === 'number' && p.stars > 0
         ? ` ${p.stars} stars on GitHub.`
+        : ''
+    }${
+      p.install
+        ? ` Install${p.installLabel ? ` (${p.installLabel})` : ''}: ${p.install}`
         : ''
     } Source: ${p.url}`,
   }));

@@ -972,15 +972,17 @@ export const cvSource: CVSource = {
     ],
   },
 
-  // Named from `src/config/projects.ts`. The CrewAI-era experiments are
-  // deliberately absent from every resume variant despite being the
-  // best-starred: they are two years old and read as dated demos next to the
-  // libraries below.
+  // Named from `src/config/projects.ts`, and drawn from its flagship tier
+  // except where a variant's reader wants something narrower (llmcomposer for
+  // music, claude-telegram on the full cv). lattice is where reflex went: the
+  // repo was renamed reflexr and then folded into lattice's monorepo, and its
+  // old site is gone.
   projects: {
     // Every project a one-pager names, so each is a subset of this one.
     full: [
       'fugue',
-      'reflex',
+      'lattice',
+      'hoist',
       'principled',
       'quiver',
       'auracle',
@@ -988,8 +990,8 @@ export const cvSource: CVSource = {
       'llmcomposer',
       'claude-telegram',
     ],
-    fde: ['fugue', 'reflex', 'principled'],
-    'ai-engineer': ['reflex', 'principled', 'fugue'],
+    fde: ['fugue', 'lattice', 'principled'],
+    'ai-engineer': ['lattice', 'hoist', 'principled', 'fugue'],
     'music-tech': ['quiver', 'auracle', 'llmcomposer'],
   },
 };
@@ -1016,7 +1018,9 @@ const CV_PROJECT_DESCRIPTIONS: Record<string, string> = {
   quiver: 'A modular audio synthesis library in Rust.',
   auracle: 'A synthesizer that evolves patches toward the ones you prefer.',
   llmcomposer: 'An experiment in composing music with an LLM.',
-  reflex: 'A template for real-time AI agent systems.',
+  lattice: 'Python libraries for human-in-the-loop agent applications.',
+  hoist:
+    "An MCP proxy that prefetches an agent's next reads, saving LLM turns.",
   principled: 'Claude Code plugins for specification-first development.',
   'claude-telegram':
     'A Telegram bridge to Claude Code, so you can drive it from your phone.',

@@ -103,7 +103,8 @@ vim src/config/homepage.ts
 # from the same data — see docs/cv-management.md.
 vim src/config/cv.ts
 
-# Project cards
+# Projects and apps: one list, and each entry's tier decides its page —
+# flagship and lab on /projects, app on /apps
 vim src/config/projects.ts
 
 # Name, description, social links, navigation

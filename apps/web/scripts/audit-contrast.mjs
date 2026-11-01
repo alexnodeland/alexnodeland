@@ -185,9 +185,15 @@ async function discoverPages(page) {
     ).find(a => a.getAttribute('href') !== '/timeline/');
     return link ? link.getAttribute('href') : null;
   });
-  return ['/', '/timeline/', '/projects/', '/cv/', '/404/', post].filter(
-    Boolean
-  );
+  return [
+    '/',
+    '/timeline/',
+    '/projects/',
+    '/apps/',
+    '/cv/',
+    '/404/',
+    post,
+  ].filter(Boolean);
 }
 
 const browser = await chromium.launch();

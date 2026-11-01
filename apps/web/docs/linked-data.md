@@ -64,6 +64,7 @@ or from the page a person reads.
 | `/timeline/`   | `Blog` with every `BlogPosting` (headline, date, tag as a concept), `CollectionPage`.                                             |
 | a post         | `BlogPosting` in full (its PDF as `encoding`), `WebPage`, `BreadcrumbList`.                                                       |
 | `/projects/`   | `ItemList` of `SoftwareSourceCode` (repository, language, tags, stars, category as a concept), `CollectionPage`.                  |
+| `/apps/`       | The same, for the projects whose tier is `app`.                                                                                   |
 | `/cv/`         | `Person` in full: `OrganizationRole`s on `worksFor`, `EducationalOccupationalCredential`s, `alumniOf`, the CV PDF, `ProfilePage`. |
 | `/consulting/` | `Service` with a `ScheduleAction`, and the steps as a `HowTo`.                                                                    |
 | `/vocab/`      | The SKOS `ConceptScheme`, its `Collection`s and every `Concept`.                                                                  |
@@ -84,6 +85,7 @@ description:
 | the blog        | `https://alexnodeland.com/timeline/#blog`           |
 | a post          | `https://alexnodeland.com/timeline/<slug>/#post`    |
 | a project       | `https://alexnodeland.com/projects/#project-<name>` |
+| an app          | `https://alexnodeland.com/apps/#project-<name>`     |
 | a role          | `https://alexnodeland.com/cv/#role-<n>`             |
 | an organization | `https://alexnodeland.com/#org-<name>`              |
 | a concept       | `https://alexnodeland.com/vocab/#<id>`              |
