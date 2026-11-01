@@ -7,11 +7,11 @@
 // reader consults once. This is the whole of that information behind `?`,
 // plus a quiet line at the foot of the screen so it is still discoverable.
 
-// The hint. Bottom-centre of the field, on the same row as the two pills —
-// its box spans the rail height so its text sits centred on their line. At
-// rest it is the key cap on its own; the word unrolls beside it on hover and
-// on keyboard focus, and rolls back the same way.
-.shortcuts-hint {
+// The hints' row. Bottom-centre of the field, on the same row as the two
+// pills — its box spans the rail height so the hints sit centred on their
+// line. It holds the way to the search and the way to the shortcuts, side by
+// side; the search's own look is in search.scss.
+.rail-hints {
   position: fixed;
   // The rail's bottom offset — this sits on the pills' own line.
   bottom: var(--rail-inset-bottom);
@@ -19,6 +19,15 @@
   transform: translateX(-50%);
   height: var(--rail-height);
   z-index: var(--z-stage);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+// A hint. At rest it is its key caps on their own; the word unrolls beside
+// them on hover and on keyboard focus, and rolls back the same way.
+.rail-hint {
+  height: 100%;
   display: flex;
   align-items: center;
   padding: var(--space-1) var(--space-2);
@@ -46,7 +55,7 @@
   // both directions, like the rest of the chrome. The margin is on the label
   // rather than a gap on the button so the closed state has no dangling space
   // after the cap.
-  .shortcuts-hint-label {
+  .rail-hint-label {
     display: block;
     max-width: 0;
     margin-left: 0;
@@ -59,8 +68,8 @@
       opacity var(--transition-normal);
   }
 
-  &:hover .shortcuts-hint-label,
-  &:focus-visible .shortcuts-hint-label {
+  &:hover .rail-hint-label,
+  &:focus-visible .rail-hint-label {
     // Comfortably past the word's own width; it is the cap the box grows off,
     // and the text never wraps, so the extra costs nothing.
     max-width: 6rem;
@@ -165,7 +174,7 @@
 
 // The word still arrives, it just arrives already there.
 @media (prefers-reduced-motion: reduce) {
-  .shortcuts-hint .shortcuts-hint-label {
+  .rail-hint .rail-hint-label {
     transition: none;
   }
 }

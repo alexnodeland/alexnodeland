@@ -4,6 +4,7 @@ import { isTypingTarget } from '../lib/utils/keys';
 import { prefersReducedMotion } from '../lib/utils/motion';
 import '../styles/shortcuts.scss';
 import CloseIcon from './ui/CloseIcon';
+import { SearchHint } from './search/SearchPalette';
 
 /**
  * The site's keyboard shortcuts, in one place.
@@ -21,6 +22,8 @@ interface Shortcut {
 }
 
 const SHORTCUTS: Shortcut[] = [
+  { keys: ['⌘', 'K'], label: 'search the site' },
+  { keys: ['/'], label: 'search, too' },
   { keys: ['←', '→'], label: 'switch background' },
   { keys: ['S'], label: 'background settings' },
   { keys: ['H'], label: 'hide chrome' },
@@ -103,24 +106,33 @@ const Shortcuts: React.FC = () => {
   return (
     <>
       {/* Bottom-centre of the field, below the spectrogram's audio indicator
-          rather than beside it. At rest it is the key cap alone — the word is
-          a caption for a glyph that already says what it is — and it unrolls
-          on hover or keyboard focus. The name is carried by the label rather
-          than by the text, so it reads the same whether the word is out or
-          not. A button, because it does something. */}
-      <button
-        type="button"
-        className="shortcuts-hint"
-        onClick={toggle}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label="keyboard shortcuts"
-      >
-        <kbd>?</kbd>
-        <span className="shortcuts-hint-label" aria-hidden="true">
-          shortcuts
-        </span>
-      </button>
+          rather than beside it: the way to the search, then the way to this
+          list. One fixed box holds both, so they sit side by side on the
+          pills' line however wide either one's word unrolls. At rest each is
+          its key caps alone — the word is a caption for a glyph that already
+          says what it is — and it unrolls on hover or keyboard focus. The
+          name is carried by the label rather than by the text, so it reads
+          the same whether the word is out or not. Buttons, because they do
+          something. */}
+      <div className="rail-hints">
+        <SearchHint />
+        <button
+          type="button"
+          className="rail-hint shortcuts-hint"
+          onClick={toggle}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label="keyboard shortcuts"
+        >
+          <kbd>?</kbd>
+          <span
+            className="rail-hint-label shortcuts-hint-label"
+            aria-hidden="true"
+          >
+            shortcuts
+          </span>
+        </button>
+      </div>
 
       {open && (
         <div

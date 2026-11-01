@@ -83,6 +83,9 @@
 // its hairline eases brighter and eases back (see `card-highlight` in
 // mixins.scss).
 .project-card {
+  // A card is an anchor too (a search result, a linked-data URI), and one
+  // landed on by its fragment has to clear the sticky control row.
+  scroll-margin-top: var(--sticky-row-clearance);
   @include outline-block;
   @include card-highlight;
   border-radius: var(--radius-lg);
@@ -288,6 +291,7 @@
 // rule being drawn, not a row being picked.
 .lab-item {
   position: relative;
+  scroll-margin-top: var(--sticky-row-clearance);
   display: flex;
   align-items: center;
   justify-content: space-between;

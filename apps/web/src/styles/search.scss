@@ -1,0 +1,178 @@
+@use 'mixins' as *;
+
+// The site-wide search: its hint at the foot of the field, and the palette
+// it opens. The hint shares its row and its manner with the shortcuts hint
+// (see .rail-hints and .rail-hint in shortcuts.scss); what is here is only
+// what is the search's own.
+
+// On a desktop, the chord's key caps, side by side; the magnifier waits for a
+// screen with no keyboard.
+.search-hint {
+  .search-hint-keys {
+    display: inline-flex;
+    gap: 0.125rem;
+  }
+
+  .search-hint-glyph {
+    display: none;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// The palette hangs in the upper third rather than the middle: the results
+// grow downward from the box as they arrive, and a box that stays where it
+// opened is one the eye does not have to follow.
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 14vh;
+  // No scrim, as for the shortcuts: the overlay is here to catch the outside
+  // click, and the field behind is the point of the site.
+  background: none;
+}
+
+.search-panel {
+  @include floating-panel;
+  box-shadow: var(--shadow-panel);
+  width: 36rem;
+  max-width: calc(100vw - 2 * var(--window-inset));
+  overflow: hidden;
+}
+
+// The box: a magnifier, the field, and the way out as a key cap.
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--hairline-interior);
+}
+
+.search-field-glyph {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.search-input-field {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+.search-esc {
+  @include key-cap;
+  color: var(--text-muted);
+}
+
+.search-status {
+  margin: 0;
+  padding: var(--space-4);
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+
+// The results: a title and what kind of thing it is on one line, the line
+// that says what it is under it. Tall enough for the eight a query returns,
+// and it scrolls past that rather than growing off the screen.
+.search-results {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  max-height: min(60vh, 32rem);
+  overflow-y: auto;
+}
+
+.search-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+
+  // The current one — under the pointer or under the arrows, which are the
+  // same thing here — takes the wash every control does.
+  &.is-active {
+    background-color: var(--wash-active);
+  }
+}
+
+.search-result-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.search-result-title {
+  color: var(--text-primary);
+  font-size: var(--text-small);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result-kind {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: lowercase;
+}
+
+.search-result-summary {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  // No keyboard to press the chord on, so no chord: the hint is a tap
+  // target on the pills' line, in the pills' housing, with a magnifier in it.
+  .search-hint {
+    @include capsule-housing;
+    width: var(--rail-height);
+    padding: 0;
+    justify-content: center;
+    color: var(--text-primary);
+    text-shadow: none;
+
+    .search-hint-keys,
+    .rail-hint-label {
+      display: none;
+    }
+
+    .search-hint-glyph {
+      display: block;
+    }
+  }
+
+  // A phone's keyboard comes up under the box, so it sits higher.
+  .search-overlay {
+    padding-top: 10vh;
+  }
+
+  .search-esc {
+    display: none;
+  }
+}

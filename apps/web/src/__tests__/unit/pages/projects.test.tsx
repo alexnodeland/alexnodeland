@@ -143,6 +143,16 @@ describe('Projects Page', () => {
     expect(repo).toHaveAttribute('href', firstProject.url);
   });
 
+  it('anchors every card and row at the fragment its search result and URI use', () => {
+    const { container } = render(<ProjectsPage data={DATA} />);
+    for (const project of [...FLAGSHIP, ...LAB]) {
+      const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      expect(container.querySelector(`#project-${slug}`)).toHaveTextContent(
+        project.name
+      );
+    }
+  });
+
   describe('the ways out of a card', () => {
     const cardFor = (name: string) =>
       screen.getByText(name).closest('.project-card') as HTMLElement;
