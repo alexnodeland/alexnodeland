@@ -982,6 +982,7 @@ export const cvSource: CVSource = {
     full: [
       'fugue',
       'lattice',
+      'hoist',
       'principled',
       'quiver',
       'auracle',
@@ -990,7 +991,7 @@ export const cvSource: CVSource = {
       'claude-telegram',
     ],
     fde: ['fugue', 'lattice', 'principled'],
-    'ai-engineer': ['lattice', 'principled', 'fugue'],
+    'ai-engineer': ['lattice', 'hoist', 'principled', 'fugue'],
     'music-tech': ['quiver', 'auracle', 'llmcomposer'],
   },
 };
@@ -1018,6 +1019,8 @@ const CV_PROJECT_DESCRIPTIONS: Record<string, string> = {
   auracle: 'A synthesizer that evolves patches toward the ones you prefer.',
   llmcomposer: 'An experiment in composing music with an LLM.',
   lattice: 'Python libraries for apps where people and agents work together.',
+  hoist:
+    "An MCP proxy that prefetches an agent's next reads, saving LLM turns.",
   principled: 'Claude Code plugins for specification-first development.',
   'claude-telegram':
     'A Telegram bridge to Claude Code, so you can drive it from your phone.',
