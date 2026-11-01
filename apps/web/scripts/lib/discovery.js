@@ -17,7 +17,7 @@
  *   summary: string,
  *   pages: Array<{ title: string, url: string, description: string }>,
  *   posts: Array<{ title: string, url: string, description?: string, date: string, category?: string }>,
- *   projects: Array<{ name: string, url: string, site?: string, description: string, language: string, tier?: 'flagship' | 'app' | 'lab', install?: string }>,
+ *   projects: Array<{ name: string, url: string, site?: string, description: string, language: string, tier?: 'flagship' | 'app' | 'lab', install?: string, installLabel?: string }>,
  *   machine: Array<{ title: string, url: string, description: string }>,
  * }} SiteSummary
  */
@@ -30,7 +30,9 @@ const projectLine = p =>
     p.name,
     p.site || p.url,
     `${p.description} (${p.language.toLowerCase()}${p.site ? `, source at ${p.url}` : ''})${
-      p.install ? ` install: \`${p.install}\`` : ''
+      p.install
+        ? ` install${p.installLabel ? ` (${p.installLabel})` : ''}: \`${p.install}\``
+        : ''
     }`
   );
 

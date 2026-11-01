@@ -49,6 +49,12 @@ export interface GitHubProject {
    * tap it names, so a card never tells someone to run a command that fails.
    */
   install?: string;
+  /**
+   * A few words over the install line, for when it is not a shell command
+   * that installs something: where it is typed ("in claude code"), or what
+   * it does instead ("start an app").
+   */
+  installLabel?: string;
   /** The timeline post about it, by its slug (the file name, no extension). */
   post?: string;
 }
@@ -59,6 +65,12 @@ export interface ProjectsConfig {
   categories: { id: ProjectCategory; title: string }[];
   /** The experiments' list at the foot of the projects page. */
   lab: { id: string; title: string; description: string };
+  /**
+   * Writing in place of code, for a category whose work was never public:
+   * a line saying so, and the timeline posts about it, by slug. The page
+   * reads each post's title, date and description from the post itself.
+   */
+  writing: Partial<Record<ProjectCategory, { note: string; posts: string[] }>>;
   projects: GitHubProject[];
 }
 
@@ -121,12 +133,41 @@ export const projectsConfig: ProjectsConfig = {
     description:
       'smaller pieces: studies, one-offs, and things built to learn something.',
   },
+  // The hpc and parallel computing years — Stony Brook's supercomputers,
+  // InfiniCortex, Archanan — left no public repos, and the homepage subtitle
+  // links here all the same, so the section is what was written instead.
+  writing: {
+    'distributed-systems': {
+      note: 'no public code from this era. this is what i wrote, and what was written about it.',
+      posts: [
+        '160201_hpc-audio-research',
+        '161114_infinicortex',
+        '190301_hpc-accessibility',
+        '190426_archanan-launch',
+        '191007_hpcwire-feature',
+      ],
+    },
+  },
   projects: withFetchedStars([
     // ======================================================================
     // flagship — /projects, in sections by category
     // ======================================================================
 
     // --- ai ---
+    {
+      name: 'lattice',
+      description:
+        'python libraries for apps where people and agents work together: shared artifacts, rules over event streams, typed evals, access control, and the stack they run on.',
+      language: 'Python',
+      tags: ['agents', 'event-driven', 'evaluation', 'human-in-the-loop'],
+      url: 'https://github.com/alexnodeland/lattice',
+      site: 'https://lattice.alexnodeland.com/',
+      stars: 1,
+      category: 'ai',
+      tier: 'flagship',
+      install: 'uvx copier copy gh:alexnodeland/lattice my-app',
+      installLabel: 'start an app',
+    },
     {
       name: 'hoist',
       description:
@@ -152,6 +193,7 @@ export const projectsConfig: ProjectsConfig = {
       category: 'ai',
       tier: 'flagship',
       install: '/plugin marketplace add alexnodeland/principled',
+      installLabel: 'in claude code',
     },
 
     // --- math ---
@@ -209,21 +251,6 @@ export const projectsConfig: ProjectsConfig = {
       category: 'audio-dsp',
       tier: 'flagship',
       post: '260924_auracle',
-    },
-
-    // --- distributed systems ---
-    {
-      name: 'lattice',
-      description:
-        'python libraries for apps where people and agents work together: shared artifacts, rules over event streams, typed evals, access control, and the stack they run on.',
-      language: 'Python',
-      tags: ['agents', 'event-driven', 'evaluation', 'human-in-the-loop'],
-      url: 'https://github.com/alexnodeland/lattice',
-      site: 'https://lattice.alexnodeland.com/',
-      stars: 1,
-      category: 'distributed-systems',
-      tier: 'flagship',
-      install: 'uvx copier copy gh:alexnodeland/lattice my-app',
     },
 
     // ======================================================================
@@ -292,7 +319,7 @@ export const projectsConfig: ProjectsConfig = {
       name: 'tome',
       description:
         'an offline library for technical documentation: save any docs site, search it, and let your agent read it over mcp.',
-      language: 'HTML',
+      language: 'Rust',
       tags: ['documentation', 'local-first', 'mcp'],
       url: 'https://github.com/alexnodeland/tome',
       category: 'misc',
@@ -357,6 +384,8 @@ export const projectsConfig: ProjectsConfig = {
       category: 'misc',
       tier: 'app',
       platform: 'plugins',
+      install: 'settings → community plugins → browse → github projects',
+      installLabel: 'in obsidian',
     },
     {
       name: 'claude-telegram',
@@ -459,8 +488,7 @@ export const appsConfig: AppsConfig = {
       note: {
         before: 'they install from my',
         link: { label: 'homebrew tap', href: TAP },
-        after:
-          '. none of them is signed, so macos stops the first launch, and brew prints the way past it.',
+        after: '.',
       },
     },
     { id: 'cli', title: 'command line' },

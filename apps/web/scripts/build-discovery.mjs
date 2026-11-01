@@ -126,6 +126,7 @@ function main() {
       language: p.language,
       tier: p.tier,
       install: p.install,
+      installLabel: p.installLabel,
     })),
     machine: [
       {

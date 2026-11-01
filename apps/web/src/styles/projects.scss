@@ -7,20 +7,13 @@
   position: relative;
 }
 
-// The projects row of chrome: category on the left, sort beside it, the way to
-// the search box at the far end. No bar groups them — they float as loose
-// chips, each carrying its own frosting, so they still read while cards scroll
-// underneath. Geometry and material are the shared ones; see
-// `sticky-control-row` in mixins.scss and .ui-dropdown / .ui-chip-button /
-// .ui-search-panel in controls.scss.
+// The projects row of chrome: the category (or, on /apps, the platform)
+// picker, alone. No bar holds it — it floats as a loose chip carrying its own
+// frosting, so it still reads while cards scroll underneath. Geometry and
+// material are the shared ones; see `sticky-control-row` in mixins.scss and
+// .ui-dropdown in controls.scss.
 .projects-control-bar {
   @include sticky-control-row;
-}
-
-// A search that empties the page still has to say so, rather than leaving the
-// controls floating over nothing.
-.projects-empty {
-  @include empty-state;
 }
 
 // The page hero, rendered on the field above the window (see .site-hero in
@@ -194,6 +187,16 @@
   position: relative;
   z-index: 1;
   margin: 0 0 var(--space-4);
+
+  // Where the line is typed, or what it does, when it is not a shell
+  // install: the tag line's voice, just over the box.
+  .project-install-label {
+    display: block;
+    margin-bottom: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-transform: lowercase;
+  }
 
   code {
     display: block;

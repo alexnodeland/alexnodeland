@@ -1,18 +1,16 @@
+import { graphql } from 'gatsby';
 import React from 'react';
 import ActivityPanel from '../components/ui/ActivityPanel';
 import ControlRow from '../components/ui/ControlRow';
 import Dropdown from '../components/ui/Dropdown';
-import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
-import { LabList, ProjectCard } from '../components/projects/ProjectCard';
 import {
-  ALL,
-  ProjectSort,
-  SORT_OPTIONS,
-  matchesSearch,
-  sortProjects,
-} from '../components/projects/catalogue';
+  LabList,
+  ProjectCard,
+  WritingList,
+} from '../components/projects/ProjectCard';
+import type { WritingEntry } from '../components/projects/ProjectCard';
 import useHashScroll from '../components/projects/useHashScroll';
 import { projectsConfig, projectsGraph, projectsInTier } from '../config';
 import type { ProjectCategory } from '../config';
@@ -23,36 +21,63 @@ import '../styles/projects.scss';
 const FLAGSHIP = projectsInTier('flagship');
 const LAB = projectsInTier('lab');
 
-// Only the categories something on this page is about. The picker offering a
-// category with nothing in it would be a way to empty the page on purpose.
-const CATEGORIES = projectsConfig.categories.filter(category =>
-  [...FLAGSHIP, ...LAB].some(project => project.category === category.id)
+// The picker's "no filter" option. The rest of the page keys off a real
+// ProjectCategory, so this is the stand-in the dropdown needs.
+const ALL = '__all__';
+
+// Only the categories something on this page is about — a project, or the
+// writing that stands in for one. The picker offering a category with nothing
+// in it would be a way to empty the page on purpose.
+const CATEGORIES = projectsConfig.categories.filter(
+  category =>
+    [...FLAGSHIP, ...LAB].some(project => project.category === category.id) ||
+    (projectsConfig.writing[category.id]?.posts.length ?? 0) > 0
 );
 
-// `location` is what Gatsby hands every page; optional here so the page can
-// still be rendered bare (tests do).
-const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
-  location,
-}) => {
+interface PostNode {
+  fields: { slug: string };
+  frontmatter: { title: string; date: string; description?: string };
+}
+
+export interface ProjectsPageProps {
+  /** The posts, for the categories whose section is writing; see the query. */
+  data?: { allMarkdownRemark: { nodes: PostNode[] } };
+  // What Gatsby hands every page; optional so the page can still be rendered
+  // bare (tests do).
+  location?: { pathname?: string };
+}
+
+/**
+ * The posts a category's writing names, in the order it names them. A slug
+ * with no post behind it is dropped rather than drawn as a dead row; the
+ * config test holds every slug to a file in src/content/blog.
+ */
+const writingFor = (
+  category: ProjectCategory,
+  nodes: PostNode[]
+): WritingEntry[] => {
+  const bySlug = new Map(
+    nodes.map(node => [node.fields.slug.replace(/^\/+|\/+$/g, ''), node])
+  );
+  return (projectsConfig.writing[category]?.posts ?? []).flatMap(slug => {
+    const node = bySlug.get(slug);
+    if (!node) return [];
+    return [
+      {
+        slug,
+        title: node.frontmatter.title,
+        date: node.frontmatter.date,
+        description: node.frontmatter.description,
+      },
+    ];
+  });
+};
+
+const ProjectsPage: React.FC<ProjectsPageProps> = ({ data, location }) => {
+  const nodes = data?.allMarkdownRemark.nodes;
   const [category, setCategory] = React.useState<ProjectCategory | null>(null);
-  const [sort, setSort] = React.useState<ProjectSort>('curated');
-  const [searchTerm, setSearchTerm] = React.useState('');
-  // Phone only: whether the search panel is folded out. Desktop ignores it.
-  const [searchOpen, setSearchOpen] = React.useState(false);
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
-  React.useEffect(() => {
-    if (searchOpen) searchInputRef.current?.focus();
-  }, [searchOpen]);
 
   useHashScroll();
-
-  const search = searchTerm.trim().toLowerCase();
-
-  const shown = React.useCallback(
-    (project: { category: ProjectCategory }) =>
-      category === null || project.category === category,
-    [category]
-  );
 
   // Sections keep their ids and their order whatever the controls say — the
   // hero subtitle deep-links at them, so filtering renders fewer sections
@@ -62,29 +87,24 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
       CATEGORIES.filter(section => category === null || section.id === category)
         .map(section => ({
           ...section,
-          projects: sortProjects(
-            FLAGSHIP.filter(
-              project =>
-                project.category === section.id &&
-                matchesSearch(project, search)
-            ),
-            sort
-          ),
+          projects: FLAGSHIP.filter(project => project.category === section.id),
+          writing: writingFor(section.id, nodes ?? []),
+          note: projectsConfig.writing[section.id]?.note,
         }))
-        // A section with nothing left in it is a heading over a gap, so it goes.
-        .filter(section => section.projects.length > 0),
-    [category, search, sort]
+        // A category only the experiments are about has no cards of its own,
+        // and a heading over a gap is not a section.
+        .filter(
+          section => section.projects.length > 0 || section.writing.length > 0
+        ),
+    [category, nodes]
   );
 
-  // The experiments answer the same controls as the cards above them, so a
-  // category or a search narrows the whole page, not only its top half.
+  // The experiments answer the same picker as the cards above them, so a
+  // category narrows the whole page, not only its top half.
   const lab = React.useMemo(
     () =>
-      sortProjects(
-        LAB.filter(project => shown(project) && matchesSearch(project, search)),
-        sort
-      ),
-    [shown, search, sort]
+      LAB.filter(project => category === null || project.category === category),
+    [category]
   );
 
   const categoryOptions: DropdownOption[] = React.useMemo(
@@ -102,11 +122,6 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
     categoryOptions.find(option => option.value === (category ?? ALL))?.label ??
     'all';
 
-  const sortLabel =
-    SORT_OPTIONS.find(option => option.value === sort)?.label ?? 'curated';
-
-  const nothing = categorySections.length === 0 && lab.length === 0;
-
   return (
     <>
       <SEO
@@ -116,10 +131,10 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
         jsonLd={projectsGraph()}
       />
       <div className="projects-page">
-        {/* The two pickers, left, and the way to the search box at the far
-            end: the one row every list page carries (see the cv and the
-            blog). Each picker resets itself through its own "all" or default
-            option, so there is no separate reset. */}
+        {/* The category picker, alone. Seven cards and a short list need
+            no sort and no search: the curated order is the one worth
+            reading, and everything is on screen within a scroll or two. The
+            picker resets itself through its own "all" option. */}
         <ControlRow className="projects-control-bar">
           <Dropdown
             ariaLabel="Filter projects by category"
@@ -131,77 +146,44 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
             }
             className="projects-category-dropdown"
           />
-
-          <Dropdown
-            ariaLabel="Sort projects"
-            triggerLabel={sortLabel}
-            options={SORT_OPTIONS}
-            value={sort}
-            onSelect={value => setSort(value as ProjectSort)}
-            className="projects-sort-dropdown"
-          />
-
-          <SearchToggle
-            open={searchOpen}
-            onToggle={() => setSearchOpen(open => !open)}
-            controls="projects-search"
-          />
         </ControlRow>
 
-        {/* Somewhere to type rather than a piece of chrome, so it keeps its
-            own panel below the row, folded away behind the chip above until
-            it is asked for. */}
-        <div
-          id="projects-search"
-          className={`ui-search-panel projects-search-panel${
-            searchOpen ? ' is-open' : ''
-          }`}
-        >
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="search projects..."
-            aria-label="Search projects"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        {nothing ? (
-          <p className="projects-empty">
-            no projects match &quot;{searchTerm.trim()}&quot;.
-          </p>
-        ) : (
-          <>
-            {categorySections.map(section => (
-              <section
-                key={section.id}
-                id={section.id}
-                className="projects-section"
-              >
-                <h2 className="section-title">{section.title}</h2>
-                <div className="projects-grid projects-grid--flagship">
-                  {section.projects.map(project => (
-                    <ProjectCard key={project.name} project={project} />
-                  ))}
-                </div>
-              </section>
-            ))}
-
-            {lab.length > 0 && (
-              <section
-                id={projectsConfig.lab.id}
-                className="projects-section projects-lab"
-              >
-                <h2 className="section-title">{projectsConfig.lab.title}</h2>
-                <p className="projects-section-note">
-                  {projectsConfig.lab.description}
-                </p>
-                <LabList projects={lab} />
-              </section>
+        {categorySections.map(section => (
+          <section
+            key={section.id}
+            id={section.id}
+            className="projects-section"
+          >
+            <h2 className="section-title">{section.title}</h2>
+            {section.projects.length > 0 && (
+              <div className="projects-grid projects-grid--flagship">
+                {section.projects.map(project => (
+                  <ProjectCard key={project.name} project={project} />
+                ))}
+              </div>
             )}
-          </>
+            {section.writing.length > 0 && (
+              <>
+                {section.note && (
+                  <p className="projects-section-note">{section.note}</p>
+                )}
+                <WritingList posts={section.writing} />
+              </>
+            )}
+          </section>
+        ))}
+
+        {lab.length > 0 && (
+          <section
+            id={projectsConfig.lab.id}
+            className="projects-section projects-lab"
+          >
+            <h2 className="section-title">{projectsConfig.lab.title}</h2>
+            <p className="projects-section-note">
+              {projectsConfig.lab.description}
+            </p>
+            <LabList projects={lab} />
+          </section>
         )}
 
         {/* The year of github work, after the catalogue it produced, with
@@ -214,5 +196,25 @@ const ProjectsPage: React.FC<{ location?: { pathname?: string } }> = ({
     </>
   );
 };
+
+// Every post's slug, title, date and description, for the sections whose
+// work is writing rather than code. A page query rather than a copy in the
+// config, so a retitled post retitles its row.
+export const query = graphql`
+  query ProjectsPageQuery {
+    allMarkdownRemark {
+      nodes {
+        fields {
+          slug
+        }
+        frontmatter {
+          title
+          date
+          description
+        }
+      }
+    }
+  }
+`;
 
 export default ProjectsPage;

@@ -321,7 +321,11 @@ function projectChunks(projectsConfig) {
       typeof p.stars === 'number' && p.stars > 0
         ? ` ${p.stars} stars on GitHub.`
         : ''
-    }${p.install ? ` Install: ${p.install}` : ''} Source: ${p.url}`,
+    }${
+      p.install
+        ? ` Install${p.installLabel ? ` (${p.installLabel})` : ''}: ${p.install}`
+        : ''
+    } Source: ${p.url}`,
   }));
 }
 

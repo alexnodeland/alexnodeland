@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import fs from 'fs';
+import path from 'path';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import ProjectsPage from '../../../pages/projects';
@@ -26,13 +28,50 @@ const APPS = projectsInTier('app');
 
 // The categories the page has something in, in the config's order — the
 // picker's options and the sections both follow it.
-const PAGE_CATEGORIES = projectsConfig.categories.filter(category =>
-  [...FLAGSHIP, ...LAB].some(p => p.category === category.id)
+const PAGE_CATEGORIES = projectsConfig.categories.filter(
+  category =>
+    [...FLAGSHIP, ...LAB].some(p => p.category === category.id) ||
+    (projectsConfig.writing[category.id]?.posts.length ?? 0) > 0
 );
+
+// The sections the page draws at "all": a category with cards or writing,
+// then the experiments.
+const SECTION_IDS = [
+  ...PAGE_CATEGORIES.filter(
+    c =>
+      FLAGSHIP.some(p => p.category === c.id) ||
+      (projectsConfig.writing[c.id]?.posts.length ?? 0) > 0
+  ).map(c => c.id),
+  projectsConfig.lab.id,
+];
+
+// What the page query hands the page: every post the writing names, with a
+// title and date of its own, plus one post nothing names.
+const WRITTEN = Object.values(projectsConfig.writing).flatMap(
+  w => w?.posts ?? []
+);
+const DATA = {
+  allMarkdownRemark: {
+    nodes: [
+      ...WRITTEN.map((slug, i) => ({
+        fields: { slug: `/${slug}/` },
+        frontmatter: {
+          title: `Post ${slug}`,
+          date: `${2016 + i}-01-01T00:00:00.000Z`,
+          description: `About ${slug}.`,
+        },
+      })),
+      {
+        fields: { slug: '/999999_unrelated/' },
+        frontmatter: { title: 'Unrelated', date: '2026-01-01' },
+      },
+    ],
+  },
+};
 
 describe('Projects Page', () => {
   it('renders SEO and its sections, and no hero of its own', () => {
-    render(<ProjectsPage />);
+    render(<ProjectsPage data={DATA} />);
     expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'projects');
     // The "alex → projects" title and the tagline live in the hero registry
     // the shell reads; the page owns the control row and the catalogue.
@@ -44,7 +83,7 @@ describe('Projects Page', () => {
   });
 
   it('renders a section per category with flagship work, carrying its anchor id', () => {
-    const { container } = render(<ProjectsPage />);
+    const { container } = render(<ProjectsPage data={DATA} />);
     projectsConfig.categories.forEach(category => {
       const hasFlagship = FLAGSHIP.some(p => p.category === category.id);
       if (hasFlagship) {
@@ -59,14 +98,14 @@ describe('Projects Page', () => {
 
   it('keeps every anchor the homepage subtitle links to', () => {
     // math → audio dsp → distributed systems → ai: each one a section here.
-    const { container } = render(<ProjectsPage />);
+    const { container } = render(<ProjectsPage data={DATA} />);
     for (const id of ['math', 'audio-dsp', 'distributed-systems', 'ai']) {
       expect(container.querySelector(`#${id}`)).toBeInTheDocument();
     }
   });
 
   it('renders the flagship work as cards and the experiments as a list', () => {
-    const { container } = render(<ProjectsPage />);
+    const { container } = render(<ProjectsPage data={DATA} />);
     const cards = Array.from(
       container.querySelectorAll('.project-card .project-name')
     ).map(node => node.textContent);
@@ -84,14 +123,14 @@ describe('Projects Page', () => {
   });
 
   it('leaves the apps to the apps page', () => {
-    render(<ProjectsPage />);
+    render(<ProjectsPage data={DATA} />);
     for (const app of APPS) {
       expect(screen.queryByText(app.name)).not.toBeInTheDocument();
     }
   });
 
   it('renders external links with target=_blank and rel=noopener noreferrer', () => {
-    render(<ProjectsPage />);
+    render(<ProjectsPage data={DATA} />);
     const firstProject = FLAGSHIP[0];
     // The card is a box, not a link: the ways out are the marks at its foot.
     const card = screen
@@ -111,7 +150,7 @@ describe('Projects Page', () => {
     it('links to the site as well as the repo, when there is one', () => {
       const withSite = FLAGSHIP.find(project => project.site);
       if (!withSite) throw new Error('no flagship project carries a site');
-      render(<ProjectsPage />);
+      render(<ProjectsPage data={DATA} />);
       const card = cardFor(withSite.name);
 
       const site = card.querySelector('.project-out-site') as HTMLElement;
@@ -130,7 +169,7 @@ describe('Projects Page', () => {
     it('draws no chain on a project with no site of its own', () => {
       const noSite = FLAGSHIP.find(project => !project.site);
       if (!noSite) throw new Error('every flagship project carries a site');
-      render(<ProjectsPage />);
+      render(<ProjectsPage data={DATA} />);
       expect(
         cardFor(noSite.name).querySelector('.project-out-site')
       ).toBeNull();
@@ -140,7 +179,7 @@ describe('Projects Page', () => {
       const withSite = FLAGSHIP.find(project => project.site);
       const noSite = FLAGSHIP.find(project => !project.site);
       if (!withSite || !noSite) throw new Error('need one of each');
-      render(<ProjectsPage />);
+      render(<ProjectsPage data={DATA} />);
 
       // The card's link is the one that stretches across it. With a site,
       // that is the chain, and the octocat is lifted clear so it can still be
@@ -160,7 +199,7 @@ describe('Projects Page', () => {
     it('leads with the arrow into the post, where there is one, lifted clear', () => {
       const withPost = FLAGSHIP.find(project => project.post);
       if (!withPost) throw new Error('no flagship project has a post');
-      render(<ProjectsPage />);
+      render(<ProjectsPage data={DATA} />);
       const card = cardFor(withPost.name);
 
       const post = card.querySelector('.project-out-post') as HTMLElement;
@@ -176,12 +215,28 @@ describe('Projects Page', () => {
       const installable = FLAGSHIP.find(project => project.install);
       const bare = FLAGSHIP.find(project => !project.install);
       if (!installable || !bare) throw new Error('need one of each');
-      render(<ProjectsPage />);
+      render(<ProjectsPage data={DATA} />);
 
       expect(
         cardFor(installable.name).querySelector('.project-install code')
       ).toHaveTextContent(installable.install as string);
       expect(cardFor(bare.name).querySelector('.project-install')).toBeNull();
+    });
+
+    it('says where a command is typed when it is not a shell install', () => {
+      const labelled = FLAGSHIP.find(project => project.installLabel);
+      const plain = FLAGSHIP.find(
+        project => project.install && !project.installLabel
+      );
+      if (!labelled || !plain) throw new Error('need one of each');
+      render(<ProjectsPage data={DATA} />);
+
+      expect(
+        cardFor(labelled.name).querySelector('.project-install-label')
+      ).toHaveTextContent(labelled.installLabel as string);
+      expect(
+        cardFor(plain.name).querySelector('.project-install-label')
+      ).toBeNull();
     });
 
     it('points every site link at a real address', () => {
@@ -195,9 +250,6 @@ describe('Projects Page', () => {
   describe('control row', () => {
     const categoryTrigger = () =>
       screen.getByRole('button', { name: 'Filter projects by category' });
-    const sortTrigger = () =>
-      screen.getByRole('button', { name: 'Sort projects' });
-    const searchField = () => screen.getByPlaceholderText('search projects...');
 
     const pick = async (
       user: ReturnType<typeof userEvent.setup>,
@@ -219,25 +271,36 @@ describe('Projects Page', () => {
       );
 
     const labNames = () =>
-      Array.from(document.querySelectorAll('.lab-item-name')).map(
-        node => node.textContent
-      );
+      Array.from(
+        document.querySelectorAll(`#${projectsConfig.lab.id} .lab-item-name`)
+      ).map(node => node.textContent);
 
-    // Cards render grouped by section, so "curated" is the config's project
-    // order read section by section — not the raw projects array.
-    const curatedOrder = () =>
-      projectsConfig.categories.flatMap(category =>
-        FLAGSHIP.filter(p => p.category === category.id).map(p => p.name)
-      );
-
-    it('offers only the categories the page has something in, behind "all"', async () => {
-      const user = userEvent.setup();
-      render(<ProjectsPage />);
-
-      // The row is the two pickers and the search: no reset chip.
+    it('is the category picker alone: no sort, no search', () => {
+      render(<ProjectsPage data={DATA} />);
+      expect(
+        screen.queryByRole('button', { name: 'Sort projects' })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText('search projects...')
+      ).not.toBeInTheDocument();
       expect(
         screen.queryByRole('button', { name: 'clear filters' })
       ).not.toBeInTheDocument();
+    });
+
+    it('lists the cards in the config order, section by section', () => {
+      render(<ProjectsPage data={DATA} />);
+      expect(cardNames()).toEqual(
+        projectsConfig.categories.flatMap(category =>
+          FLAGSHIP.filter(p => p.category === category.id).map(p => p.name)
+        )
+      );
+      expect(labNames()).toEqual(LAB.map(p => p.name));
+    });
+
+    it('offers only the categories the page has something in, behind "all"', async () => {
+      const user = userEvent.setup();
+      render(<ProjectsPage data={DATA} />);
 
       expect(categoryTrigger()).toHaveTextContent('all');
       await user.click(categoryTrigger());
@@ -250,7 +313,7 @@ describe('Projects Page', () => {
 
     it('filters down to one category, keeping its anchor id intact', async () => {
       const user = userEvent.setup();
-      const { container } = render(<ProjectsPage />);
+      const { container } = render(<ProjectsPage data={DATA} />);
 
       const target = PAGE_CATEGORIES.find(category =>
         FLAGSHIP.some(p => p.category === category.id)
@@ -278,14 +341,9 @@ describe('Projects Page', () => {
 
     it('renders every section again at "all", so deep links still resolve', async () => {
       const user = userEvent.setup();
-      const { container } = render(<ProjectsPage />);
+      const { container } = render(<ProjectsPage data={DATA} />);
 
-      const withProjects = [
-        ...projectsConfig.categories
-          .filter(c => FLAGSHIP.some(p => p.category === c.id))
-          .map(c => c.id),
-        projectsConfig.lab.id,
-      ];
+      const withProjects = SECTION_IDS;
 
       expect(sectionIds(container)).toEqual(withProjects);
 
@@ -295,84 +353,9 @@ describe('Projects Page', () => {
       expect(sectionIds(container)).toEqual(withProjects);
     });
 
-    it('sorts within a section by stars and by name', async () => {
-      const user = userEvent.setup();
-      render(<ProjectsPage />);
-
-      // Curated is the config's own order and the default.
-      expect(sortTrigger()).toHaveTextContent('curated');
-      expect(cardNames()).toEqual(curatedOrder());
-      expect(labNames()).toEqual(LAB.map(p => p.name));
-
-      const section = PAGE_CATEGORIES.find(
-        category => FLAGSHIP.filter(p => p.category === category.id).length > 1
-      )!;
-      const inSection = FLAGSHIP.filter(p => p.category === section.id);
-
-      await pick(user, categoryTrigger(), section.title);
-
-      await pick(user, sortTrigger(), 'name a–z');
-      expect(cardNames()).toEqual(
-        [...inSection]
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map(p => p.name)
-      );
-
-      await pick(user, sortTrigger(), 'most starred');
-      const byStars = [...inSection].sort(
-        (a, b) => (b.stars ?? 0) - (a.stars ?? 0)
-      );
-      expect(cardNames()).toEqual(byStars.map(p => p.name));
-      // Descending, with unstarred repos at the bottom rather than dropped.
-      expect(cardNames()).toHaveLength(inSection.length);
-    });
-
-    it('searches name, description and tags, hiding sections it empties', () => {
-      const { container } = render(<ProjectsPage />);
-
-      const target = FLAGSHIP[0];
-      fireEvent.change(searchField(), { target: { value: target.name } });
-
-      expect(cardNames()).toContain(target.name);
-      // Only sections with a surviving card are still on the page.
-      expect(sectionIds(container).length).toBeGreaterThan(0);
-      expect(sectionIds(container).length).toBeLessThanOrEqual(
-        PAGE_CATEGORIES.length + 1
-      );
-
-      // A tag match finds the card even though the name does not contain it.
-      const tagged = FLAGSHIP.find(p => p.tags.length > 0)!;
-      fireEvent.change(searchField(), {
-        target: { value: tagged.tags[0].toUpperCase() },
-      });
-      expect(cardNames()).toContain(tagged.name);
-    });
-
-    it('searches the experiments too', () => {
-      const { container } = render(<ProjectsPage />);
-      const target = LAB[0];
-      fireEvent.change(searchField(), { target: { value: target.name } });
-
-      expect(labNames()).toContain(target.name);
-      expect(sectionIds(container)).toContain(projectsConfig.lab.id);
-    });
-
-    it('says so when a search matches nothing', () => {
-      const { container } = render(<ProjectsPage />);
-
-      fireEvent.change(searchField(), {
-        target: { value: 'zzzz-no-such-project' },
-      });
-
-      expect(container.querySelectorAll('.projects-section')).toHaveLength(0);
-      expect(
-        screen.getByText(/no projects match "zzzz-no-such-project"/)
-      ).toBeInTheDocument();
-    });
-
     it('drives the category picker from the keyboard', async () => {
       const user = userEvent.setup();
-      render(<ProjectsPage />);
+      render(<ProjectsPage data={DATA} />);
 
       categoryTrigger().focus();
       await user.keyboard('{ArrowDown}');
@@ -383,6 +366,59 @@ describe('Projects Page', () => {
 
       expect(categoryTrigger()).toHaveFocus();
       expect(categoryTrigger()).toHaveTextContent(PAGE_CATEGORIES[0].title);
+    });
+  });
+
+  describe('writing in place of code', () => {
+    it('names only posts that exist', () => {
+      const blog = path.join(__dirname, '../../../content/blog');
+      for (const slug of WRITTEN) {
+        expect(fs.existsSync(path.join(blog, `${slug}.md`))).toBe(true);
+      }
+    });
+
+    it('draws a row per post, in the order the config names them', () => {
+      const { container } = render(<ProjectsPage data={DATA} />);
+      for (const [id, writing] of Object.entries(projectsConfig.writing)) {
+        if (!writing) continue;
+        const section = container.querySelector(`#${id}`) as HTMLElement;
+        expect(section).toBeInTheDocument();
+        expect(within(section).getByText(writing.note)).toBeInTheDocument();
+        const rows = Array.from(
+          section.querySelectorAll('.writing-list .lab-item')
+        );
+        expect(
+          rows.map(row => row.querySelector('.lab-item-name')?.textContent)
+        ).toEqual(writing.posts.map(slug => `Post ${slug}`));
+
+        // The year, and the arrow into the post covering the whole row.
+        const first = rows[0] as HTMLElement;
+        expect(first).toHaveTextContent(
+          DATA.allMarkdownRemark.nodes[0].frontmatter.date.slice(0, 4)
+        );
+        const link = first.querySelector('.project-out-post') as HTMLElement;
+        expect(link).toHaveAttribute('href', `/timeline/${writing.posts[0]}/`);
+        expect(link).toHaveClass('is-card-link');
+      }
+    });
+
+    it('drops a named post the query does not have, rather than a dead row', () => {
+      const [dropped, ...kept] = DATA.allMarkdownRemark.nodes;
+      const { container } = render(
+        <ProjectsPage data={{ allMarkdownRemark: { nodes: kept } }} />
+      );
+      expect(container.textContent).not.toContain(dropped.frontmatter.title);
+      expect(
+        container.querySelectorAll('.writing-list .lab-item')
+      ).toHaveLength(WRITTEN.length - 1);
+    });
+
+    it('renders bare, with no query data, and leaves the writing out', () => {
+      const { container } = render(<ProjectsPage />);
+      expect(container.querySelectorAll('.writing-list')).toHaveLength(0);
+      expect(container.querySelectorAll('.project-card')).toHaveLength(
+        FLAGSHIP.length
+      );
     });
   });
 });

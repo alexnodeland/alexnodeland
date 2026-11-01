@@ -100,6 +100,11 @@ export const ProjectCard: React.FC<{ project: GitHubProject }> = ({
           — rather than following the card's link out. */}
       {project.install && (
         <p className="project-install">
+          {project.installLabel && (
+            <span className="project-install-label">
+              {project.installLabel}
+            </span>
+          )}
           <code>{project.install}</code>
         </p>
       )}
@@ -136,6 +141,47 @@ export const LabList: React.FC<{ projects: GitHubProject[] }> = ({
         <div className="lab-item-meta">
           <ProjectLanguage project={project} />
           <ProjectWaysOut project={project} />
+        </div>
+      </li>
+    ))}
+  </ul>
+);
+
+/** A timeline post, as much of it as a list row needs. */
+export interface WritingEntry {
+  slug: string;
+  title: string;
+  date: string;
+  description?: string;
+}
+
+/**
+ * Posts in place of projects, for a category whose work left no public
+ * code: the same outlined list as the experiments, a row per post — its
+ * title, the line about it, the year, and the arrow into it, which covers
+ * the whole row.
+ */
+export const WritingList: React.FC<{ posts: WritingEntry[] }> = ({ posts }) => (
+  <ul className="lab-list writing-list">
+    {posts.map(post => (
+      <li key={post.slug} className="lab-item">
+        <div className="lab-item-text">
+          <h3 className="lab-item-name">{post.title}</h3>
+          {post.description && (
+            <p className="lab-item-description">{post.description}</p>
+          )}
+        </div>
+        <div className="lab-item-meta">
+          <span className="language-name">{post.date.slice(0, 4)}</span>
+          <div className="project-link-indicator">
+            <Link
+              to={postPath(post.slug)}
+              className="project-out project-out-post is-card-link"
+            >
+              <ArrowOutIcon />
+              <span className="sr-only">{`read ${post.title}`}</span>
+            </Link>
+          </div>
         </div>
       </li>
     ))}

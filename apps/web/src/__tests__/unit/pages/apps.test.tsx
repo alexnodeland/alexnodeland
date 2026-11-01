@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import AppsPage from '../../../pages/apps';
@@ -124,17 +124,13 @@ describe('Apps Page', () => {
     expect(cardNames()).toHaveLength(APPS.length);
   });
 
-  it('searches, and says so when nothing matches', () => {
+  it('is the platform picker alone: no sort, no search', () => {
     render(<AppsPage />);
-    const field = screen.getByPlaceholderText('search apps...');
-
-    fireEvent.change(field, { target: { value: APPS[0].name } });
-    expect(cardNames()).toContain(APPS[0].name);
-
-    fireEvent.change(field, { target: { value: 'zzzz-no-such-app' } });
-    expect(cardNames()).toHaveLength(0);
     expect(
-      screen.getByText(/no apps match "zzzz-no-such-app"/)
-    ).toBeInTheDocument();
+      screen.queryByRole('button', { name: 'Sort apps' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText('search apps...')
+    ).not.toBeInTheDocument();
   });
 });

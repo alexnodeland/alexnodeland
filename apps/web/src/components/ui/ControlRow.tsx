@@ -112,7 +112,10 @@ const ControlRow: React.FC<ControlRowProps> = ({ className, children }) => {
   // between the two groups, where there was nothing, and every other chip in
   // the row stays exactly where it was.
   const items = React.Children.toArray(children);
-  const hung = items.pop();
+  // The last chip hangs at the far end, past the way back to the top. A row
+  // of one has nothing to hang: its one picker stays at the start, where a
+  // row's pickers always are, and the way back to the top takes the end.
+  const hung = items.length > 1 ? items.pop() : null;
 
   return (
     <div
