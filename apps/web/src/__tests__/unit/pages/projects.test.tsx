@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import ProjectsPage from '../../../pages/projects';
-import { projectsConfig } from '../../../config/projects';
+import { projectsConfig, projectsInTier } from '../../../config/projects';
 
 // Mock components barrel to avoid animated backgrounds
 jest.mock('../../../components/seo', () => ({
@@ -20,6 +20,16 @@ jest.mock('../../../components/ui/ActivityPanel', () => ({
 // Mock SCSS
 jest.mock('../../../styles/projects.scss', () => ({}));
 
+const FLAGSHIP = projectsInTier('flagship');
+const LAB = projectsInTier('lab');
+const APPS = projectsInTier('app');
+
+// The categories the page has something in, in the config's order — the
+// picker's options and the sections both follow it.
+const PAGE_CATEGORIES = projectsConfig.categories.filter(category =>
+  [...FLAGSHIP, ...LAB].some(p => p.category === category.id)
+);
+
 describe('Projects Page', () => {
   it('renders SEO and its sections, and no hero of its own', () => {
     render(<ProjectsPage />);
@@ -33,13 +43,11 @@ describe('Projects Page', () => {
     expect(screen.getByTestId('activity-panel')).toBeInTheDocument();
   });
 
-  it('renders a section per category with projects, carrying its anchor id', () => {
+  it('renders a section per category with flagship work, carrying its anchor id', () => {
     const { container } = render(<ProjectsPage />);
     projectsConfig.categories.forEach(category => {
-      const hasProjects = projectsConfig.projects.some(
-        p => p.category === category.id
-      );
-      if (hasProjects) {
+      const hasFlagship = FLAGSHIP.some(p => p.category === category.id);
+      if (hasFlagship) {
         expect(
           screen.getByRole('heading', { level: 2, name: category.title })
         ).toBeInTheDocument();
@@ -49,16 +57,42 @@ describe('Projects Page', () => {
     });
   });
 
-  it('renders project names from config', () => {
+  it('keeps every anchor the homepage subtitle links to', () => {
+    // math → audio dsp → distributed systems → ai: each one a section here.
+    const { container } = render(<ProjectsPage />);
+    for (const id of ['math', 'audio-dsp', 'distributed-systems', 'ai']) {
+      expect(container.querySelector(`#${id}`)).toBeInTheDocument();
+    }
+  });
+
+  it('renders the flagship work as cards and the experiments as a list', () => {
+    const { container } = render(<ProjectsPage />);
+    const cards = Array.from(
+      container.querySelectorAll('.project-card .project-name')
+    ).map(node => node.textContent);
+    const rows = Array.from(
+      container.querySelectorAll(
+        `#${projectsConfig.lab.id} .lab-item .lab-item-name`
+      )
+    ).map(node => node.textContent);
+
+    expect([...cards].sort()).toEqual(FLAGSHIP.map(p => p.name).sort());
+    expect(rows).toEqual(LAB.map(p => p.name));
+    expect(
+      screen.getByRole('heading', { level: 2, name: projectsConfig.lab.title })
+    ).toBeInTheDocument();
+  });
+
+  it('leaves the apps to the apps page', () => {
     render(<ProjectsPage />);
-    projectsConfig.projects.forEach(project => {
-      expect(screen.getByText(project.name)).toBeInTheDocument();
-    });
+    for (const app of APPS) {
+      expect(screen.queryByText(app.name)).not.toBeInTheDocument();
+    }
   });
 
   it('renders external links with target=_blank and rel=noopener noreferrer', () => {
     render(<ProjectsPage />);
-    const firstProject = projectsConfig.projects[0];
+    const firstProject = FLAGSHIP[0];
     // The card is a box, not a link: the ways out are the marks at its foot.
     const card = screen
       .getByText(firstProject.name)
@@ -75,8 +109,8 @@ describe('Projects Page', () => {
       screen.getByText(name).closest('.project-card') as HTMLElement;
 
     it('links to the site as well as the repo, when there is one', () => {
-      const withSite = projectsConfig.projects.find(project => project.site);
-      if (!withSite) throw new Error('no project carries a site');
+      const withSite = FLAGSHIP.find(project => project.site);
+      if (!withSite) throw new Error('no flagship project carries a site');
       render(<ProjectsPage />);
       const card = cardFor(withSite.name);
 
@@ -86,19 +120,16 @@ describe('Projects Page', () => {
       expect(site).toHaveAttribute('rel', 'noopener noreferrer');
       expect(site).toHaveAccessibleName(`visit the ${withSite.name} site`);
 
-      // The chain sits to the left of the octocat.
+      // The chain sits to the left of the octocat, which keeps the corner.
       const marks = Array.from(
         card.querySelectorAll('.project-link-indicator > a')
-      );
-      expect(marks.map(mark => mark.className.split(' ')[1])).toEqual([
-        'project-out-site',
-        'project-out-repo',
-      ]);
+      ).map(mark => mark.className.split(' ')[1]);
+      expect(marks.slice(-2)).toEqual(['project-out-site', 'project-out-repo']);
     });
 
     it('draws no chain on a project with no site of its own', () => {
-      const noSite = projectsConfig.projects.find(project => !project.site);
-      if (!noSite) throw new Error('every project carries a site');
+      const noSite = FLAGSHIP.find(project => !project.site);
+      if (!noSite) throw new Error('every flagship project carries a site');
       render(<ProjectsPage />);
       expect(
         cardFor(noSite.name).querySelector('.project-out-site')
@@ -106,8 +137,8 @@ describe('Projects Page', () => {
     });
 
     it('follows the site with the whole card, and the repo where there is none', () => {
-      const withSite = projectsConfig.projects.find(project => project.site);
-      const noSite = projectsConfig.projects.find(project => !project.site);
+      const withSite = FLAGSHIP.find(project => project.site);
+      const noSite = FLAGSHIP.find(project => !project.site);
       if (!withSite || !noSite) throw new Error('need one of each');
       render(<ProjectsPage />);
 
@@ -124,6 +155,33 @@ describe('Projects Page', () => {
       expect(repoOnly.querySelector('.project-out-repo')).toHaveClass(
         'is-card-link'
       );
+    });
+
+    it('leads with the arrow into the post, where there is one, lifted clear', () => {
+      const withPost = FLAGSHIP.find(project => project.post);
+      if (!withPost) throw new Error('no flagship project has a post');
+      render(<ProjectsPage />);
+      const card = cardFor(withPost.name);
+
+      const post = card.querySelector('.project-out-post') as HTMLElement;
+      expect(post).toHaveAttribute('href', `/timeline/${withPost.post}/`);
+      expect(post).toHaveClass('is-raised');
+      // An internal page: it opens in place, not in a new tab.
+      expect(post).not.toHaveAttribute('target');
+      expect(post).toHaveAccessibleName(`read the post about ${withPost.name}`);
+      expect(card.querySelector('.project-link-indicator > a')).toBe(post);
+    });
+
+    it('shows the install line where a project has one', () => {
+      const installable = FLAGSHIP.find(project => project.install);
+      const bare = FLAGSHIP.find(project => !project.install);
+      if (!installable || !bare) throw new Error('need one of each');
+      render(<ProjectsPage />);
+
+      expect(
+        cardFor(installable.name).querySelector('.project-install code')
+      ).toHaveTextContent(installable.install as string);
+      expect(cardFor(bare.name).querySelector('.project-install')).toBeNull();
     });
 
     it('points every site link at a real address', () => {
@@ -160,16 +218,19 @@ describe('Projects Page', () => {
         node => node.textContent
       );
 
+    const labNames = () =>
+      Array.from(document.querySelectorAll('.lab-item-name')).map(
+        node => node.textContent
+      );
+
     // Cards render grouped by section, so "curated" is the config's project
     // order read section by section — not the raw projects array.
     const curatedOrder = () =>
       projectsConfig.categories.flatMap(category =>
-        projectsConfig.projects
-          .filter(p => p.category === category.id)
-          .map(p => p.name)
+        FLAGSHIP.filter(p => p.category === category.id).map(p => p.name)
       );
 
-    it('offers every configured category behind an "all" default', async () => {
+    it('offers only the categories the page has something in, behind "all"', async () => {
       const user = userEvent.setup();
       render(<ProjectsPage />);
 
@@ -183,43 +244,52 @@ describe('Projects Page', () => {
 
       expect(screen.getAllByRole('option').map(o => o.textContent)).toEqual([
         'all',
-        ...projectsConfig.categories.map(c => c.title),
+        ...PAGE_CATEGORIES.map(c => c.title),
       ]);
     });
 
-    it('filters down to one section, keeping its anchor id intact', async () => {
+    it('filters down to one category, keeping its anchor id intact', async () => {
       const user = userEvent.setup();
       const { container } = render(<ProjectsPage />);
 
-      const target = projectsConfig.categories.find(category =>
-        projectsConfig.projects.some(p => p.category === category.id)
+      const target = PAGE_CATEGORIES.find(category =>
+        FLAGSHIP.some(p => p.category === category.id)
       )!;
 
       await pick(user, categoryTrigger(), target.title);
 
-      expect(sectionIds(container)).toEqual([target.id]);
+      // The category's section, and the experiments' list only if one of
+      // them is about it too.
+      const labInCategory = LAB.filter(p => p.category === target.id);
+      expect(sectionIds(container)).toEqual([
+        target.id,
+        ...(labInCategory.length > 0 ? [projectsConfig.lab.id] : []),
+      ]);
       // The hero subtitle deep-links at this id; filtering must not rename it.
       expect(container.querySelector(`#${target.id}`)).toBeInTheDocument();
       expect(categoryTrigger()).toHaveTextContent(target.title);
 
-      // Only that category's projects survive.
-      const expected = projectsConfig.projects.filter(
-        p => p.category === target.id
+      // Only that category's projects survive, cards and rows alike.
+      expect(cardNames()).toEqual(
+        FLAGSHIP.filter(p => p.category === target.id).map(p => p.name)
       );
-      expect(cardNames()).toEqual(expected.map(p => p.name));
+      expect(labNames()).toEqual(labInCategory.map(p => p.name));
     });
 
     it('renders every section again at "all", so deep links still resolve', async () => {
       const user = userEvent.setup();
       const { container } = render(<ProjectsPage />);
 
-      const withProjects = projectsConfig.categories
-        .filter(c => projectsConfig.projects.some(p => p.category === c.id))
-        .map(c => c.id);
+      const withProjects = [
+        ...projectsConfig.categories
+          .filter(c => FLAGSHIP.some(p => p.category === c.id))
+          .map(c => c.id),
+        projectsConfig.lab.id,
+      ];
 
       expect(sectionIds(container)).toEqual(withProjects);
 
-      await pick(user, categoryTrigger(), withProjects[0]);
+      await pick(user, categoryTrigger(), PAGE_CATEGORIES[0].title);
       await pick(user, categoryTrigger(), 'all');
 
       expect(sectionIds(container)).toEqual(withProjects);
@@ -232,15 +302,12 @@ describe('Projects Page', () => {
       // Curated is the config's own order and the default.
       expect(sortTrigger()).toHaveTextContent('curated');
       expect(cardNames()).toEqual(curatedOrder());
+      expect(labNames()).toEqual(LAB.map(p => p.name));
 
-      const section = projectsConfig.categories.find(
-        category =>
-          projectsConfig.projects.filter(p => p.category === category.id)
-            .length > 1
+      const section = PAGE_CATEGORIES.find(
+        category => FLAGSHIP.filter(p => p.category === category.id).length > 1
       )!;
-      const inSection = projectsConfig.projects.filter(
-        p => p.category === section.id
-      );
+      const inSection = FLAGSHIP.filter(p => p.category === section.id);
 
       await pick(user, categoryTrigger(), section.title);
 
@@ -263,22 +330,31 @@ describe('Projects Page', () => {
     it('searches name, description and tags, hiding sections it empties', () => {
       const { container } = render(<ProjectsPage />);
 
-      const target = projectsConfig.projects[0];
+      const target = FLAGSHIP[0];
       fireEvent.change(searchField(), { target: { value: target.name } });
 
       expect(cardNames()).toContain(target.name);
       // Only sections with a surviving card are still on the page.
       expect(sectionIds(container).length).toBeGreaterThan(0);
       expect(sectionIds(container).length).toBeLessThanOrEqual(
-        projectsConfig.categories.length
+        PAGE_CATEGORIES.length + 1
       );
 
       // A tag match finds the card even though the name does not contain it.
-      const tagged = projectsConfig.projects.find(p => p.tags.length > 0)!;
+      const tagged = FLAGSHIP.find(p => p.tags.length > 0)!;
       fireEvent.change(searchField(), {
         target: { value: tagged.tags[0].toUpperCase() },
       });
       expect(cardNames()).toContain(tagged.name);
+    });
+
+    it('searches the experiments too', () => {
+      const { container } = render(<ProjectsPage />);
+      const target = LAB[0];
+      fireEvent.change(searchField(), { target: { value: target.name } });
+
+      expect(labNames()).toContain(target.name);
+      expect(sectionIds(container)).toContain(projectsConfig.lab.id);
     });
 
     it('says so when a search matches nothing', () => {
@@ -306,9 +382,7 @@ describe('Projects Page', () => {
       await user.keyboard('{ArrowDown}{Enter}');
 
       expect(categoryTrigger()).toHaveFocus();
-      expect(categoryTrigger()).toHaveTextContent(
-        projectsConfig.categories[0].title
-      );
+      expect(categoryTrigger()).toHaveTextContent(PAGE_CATEGORIES[0].title);
     });
   });
 });

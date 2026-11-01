@@ -44,7 +44,9 @@ const OUT = path.resolve(
 
 const { siteConfig } = require(path.join(ROOT, 'src/config/site.ts'));
 const { homepageConfig } = require(path.join(ROOT, 'src/config/homepage.ts'));
-const { projectsConfig } = require(path.join(ROOT, 'src/config/projects.ts'));
+const { appsConfig, projectsConfig } = require(
+  path.join(ROOT, 'src/config/projects.ts')
+);
 const { cvData } = require(path.join(ROOT, 'src/config/cv.ts'));
 const { LD, VOCABULARY, pageUrl, postUrl } = require(
   path.join(ROOT, 'src/config/linked-data.ts')
@@ -95,6 +97,11 @@ function main() {
         description: projectsConfig.subtitle,
       },
       {
+        title: 'apps',
+        url: pageUrl('/apps'),
+        description: appsConfig.subtitle,
+      },
+      {
         title: 'cv',
         url: pageUrl('/cv'),
         description: `${cvData.personal.title.toLowerCase()}. roles, research, and skills; also a pdf at ${SITE}/cv/alex-nodeland-cv.pdf.`,
@@ -117,6 +124,8 @@ function main() {
       site: p.site,
       description: p.description,
       language: p.language,
+      tier: p.tier,
+      install: p.install,
     })),
     machine: [
       {

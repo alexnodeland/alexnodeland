@@ -1,9 +1,22 @@
-// The sections mirror the hero subtitle — math → audio dsp → distributed
-// systems → ai — plus a misc catch-all, and the subtitle links here by
-// anchor. The old groupings (featured / apps / tools / libraries /
-// experiments) live on as tags on each card.
+// Every public project, on one list, split two ways.
+//
+// The tier says what kind of thing it is, and so which page carries it: the
+// flagship work is /projects, the small tools used every day are /apps, and
+// the experiments are a short list at the foot of /projects. One list rather
+// than one per page, because the CV, the chat's index, the linked data and
+// the discovery file all name projects from here, and none of them should
+// have to know which page a project happens to sit on.
+//
+// The category says what it is about. The projects page's sections mirror the
+// hero subtitle — math → audio dsp → distributed systems → ai — plus a misc
+// catch-all, and the subtitle links there by anchor.
 export type ProjectCategory =
   'math' | 'audio-dsp' | 'distributed-systems' | 'ai' | 'misc';
+
+export type ProjectTier = 'flagship' | 'app' | 'lab';
+
+/** Where an app runs, which is how the apps page is grouped. */
+export type AppPlatform = 'macos' | 'cli' | 'web' | 'plugins' | 'hardware';
 
 export interface GitHubProject {
   name: string;
@@ -20,18 +33,51 @@ export interface GitHubProject {
   site?: string;
   stars?: number;
   category: ProjectCategory;
+  tier: ProjectTier;
+  /** Apps only: the section of the apps page it sits in. */
+  platform?: AppPlatform;
+  /**
+   * The one line that installs it, where there is one line. Written exactly
+   * as it is typed, and only after checking it against the registry or the
+   * tap it names, so a card never tells someone to run a command that fails.
+   */
+  install?: string;
+  /** The timeline post about it, by its slug (the file name, no extension). */
+  post?: string;
 }
 
 export interface ProjectsConfig {
   title: string;
   subtitle: string;
   categories: { id: ProjectCategory; title: string }[];
+  /** The experiments' list at the foot of the projects page. */
+  lab: { id: string; title: string; description: string };
   projects: GitHubProject[];
 }
 
+export interface AppsConfig {
+  title: string;
+  subtitle: string;
+  platforms: {
+    id: AppPlatform;
+    title: string;
+    /**
+     * A line under the section title, for what a reader needs first. Split
+     * around its one link, the way the homepage's consulting line is.
+     */
+    note?: {
+      before: string;
+      link?: { label: string; href: string };
+      after?: string;
+    };
+  }[];
+}
+
+const TAP = 'https://github.com/alexnodeland/homebrew-tap';
+
 export const projectsConfig: ProjectsConfig = {
   title: 'projects',
-  subtitle: 'open source projects, tools, and experiments.',
+  subtitle: 'libraries, systems, and a few experiments.',
   // Section order is by current identity — ai first — not by the hero
   // subtitle's chronology; the subtitle links land on anchors, so order here
   // is free to differ.
@@ -42,105 +88,16 @@ export const projectsConfig: ProjectsConfig = {
     { id: 'distributed-systems', title: 'distributed systems' },
     { id: 'misc', title: 'misc' },
   ],
+  lab: {
+    id: 'experiments',
+    title: 'experiments',
+    description:
+      'smaller pieces: studies, one-offs, and things built to learn something.',
+  },
   projects: [
-    // --- math ---
-    {
-      name: 'fugue',
-      description:
-        'a type-safe, monadic probabilistic programming library for rust.',
-      language: 'Rust',
-      tags: ['featured', 'library', 'ppl', 'probabilistic-programming'],
-      url: 'https://github.com/alexnodeland/fugue',
-      site: 'https://fugue.run/',
-      stars: 12,
-      category: 'math',
-    },
-    {
-      name: 'fugue-evo',
-      description:
-        'a probabilistic genetic algorithm library for rust: evolution as inference.',
-      language: 'Rust',
-      tags: ['library', 'evolutionary-algorithms', 'inference'],
-      url: 'https://github.com/alexnodeland/fugue-evo',
-      site: 'https://evo.fugue.run/',
-      stars: 2,
-      category: 'math',
-    },
-    {
-      name: 'bentokaze',
-      description:
-        'a linear programming calculator that minimizes bento cost while meeting nutritional requirements.',
-      language: 'Python',
-      tags: ['experiment', 'linear-programming', 'optimization'],
-      url: 'https://github.com/alexnodeland/bentokaze',
-      stars: 2,
-      category: 'math',
-    },
-
-    // --- audio dsp ---
-    {
-      name: 'quiver',
-      description: 'a modular audio synthesis library in rust.',
-      language: 'Rust',
-      tags: ['featured', 'library', 'category-theory', 'modular-synthesizers'],
-      url: 'https://github.com/alexnodeland/quiver',
-      site: 'https://quiver-dsp.com/',
-      stars: 3,
-      category: 'audio-dsp',
-    },
-    {
-      name: 'auracle',
-      description:
-        'a synthesizer that evolves patches toward the ones you prefer.',
-      language: 'Rust',
-      tags: ['app', 'synthesis', 'preference-learning'],
-      url: 'https://github.com/alexnodeland/auracle',
-      site: 'https://auracle.alexnodeland.com/',
-      stars: 1,
-      category: 'audio-dsp',
-    },
-    {
-      name: 'sleeve',
-      description: 'slices one long video into a properly tagged album.',
-      language: 'Rust',
-      tags: ['tool', 'cli', 'audio'],
-      url: 'https://github.com/alexnodeland/sleeve',
-      site: 'https://alexnodeland.github.io/sleeve/',
-      stars: 1,
-      category: 'misc',
-    },
-    {
-      name: 'llmcomposer',
-      description: 'an experiment in composing music with an llm.',
-      language: 'Python',
-      tags: ['experiment', 'music', 'llm'],
-      url: 'https://github.com/alexnodeland/llmcomposer',
-      site: 'https://alexnodeland.github.io/llmcomposer/',
-      stars: 1,
-      category: 'audio-dsp',
-    },
-
-    // --- distributed systems ---
-    {
-      name: 'reflex',
-      description: 'a template for real-time ai agent systems.',
-      language: 'Python',
-      tags: ['tool', 'real-time', 'agents'],
-      url: 'https://github.com/alexnodeland/reflex',
-      site: 'https://alexnodeland.github.io/reflex/',
-      stars: 4,
-      category: 'distributed-systems',
-    },
-    {
-      name: 'qcsim',
-      description:
-        'a small quantum circuit simulator in python, written for reading: fundamental gates and circuit assembly on numpy.',
-      language: 'Python',
-      tags: ['experiment', 'quantum-computing', 'simulation'],
-      url: 'https://github.com/alexnodeland/QCSim',
-      stars: 1,
-      category: 'distributed-systems',
-    },
+    // ======================================================================
+    // flagship — /projects, in sections by category
+    // ======================================================================
 
     // --- ai ---
     {
@@ -148,147 +105,357 @@ export const projectsConfig: ProjectsConfig = {
       description:
         'an mcp proxy that learns which reads your agent makes next and serves them in the same tool result, so it needs fewer llm turns.',
       language: 'Rust',
-      tags: ['featured', 'tool', 'mcp', 'agents'],
+      tags: ['mcp', 'agents', 'prefetching'],
       url: 'https://github.com/alexnodeland/hoist',
       site: 'https://hoist.alexnodeland.com/',
+      stars: 2,
       category: 'ai',
+      tier: 'flagship',
+      install: 'brew install alexnodeland/tap/hoist',
+      post: '260927_hoist',
     },
     {
       name: 'principled',
-      description: 'claude code plugins for specification-first development.',
+      description:
+        'claude code plugins for specification-first development: the docs drive the plans agents execute, the review checklists, and the releases.',
       language: 'Shell',
-      tags: ['featured', 'tool', 'claude-code', 'spec-driven'],
+      tags: ['claude-code', 'spec-driven', 'agents'],
       url: 'https://github.com/alexnodeland/principled',
-      stars: 3,
+      stars: 4,
       category: 'ai',
-    },
-    {
-      name: 'curator',
-      description:
-        'a local search index over any markdown vault, served to agents over mcp, plus a digest of new notes ranked against your current interests.',
-      language: 'Rust',
-      tags: ['tool', 'mcp', 'local-first'],
-      url: 'https://github.com/alexnodeland/curator',
-      site: 'https://alexnodeland.github.io/curator/',
-      stars: 1,
-      category: 'ai',
-    },
-    {
-      name: 'vanilla-react',
-      description:
-        'a react agent loop in python with no framework underneath, kept short enough to read in one sitting.',
-      language: 'Python',
-      tags: ['library', 'agents', 'react-pattern'],
-      url: 'https://github.com/alexnodeland/vanilla-react',
-      stars: 8,
-      category: 'ai',
-    },
-    {
-      name: 'crewlit',
-      description:
-        'crewai in the browser: define agents, tasks, and crews in a streamlit ui instead of a python file.',
-      language: 'Python',
-      tags: ['app', 'multi-agent', 'streamlit'],
-      url: 'https://github.com/alexnodeland/crewlit',
-      stars: 26,
-      category: 'ai',
-    },
-    {
-      name: 'finance-crew',
-      description:
-        'a crewai system for market analysis: agents that pull data, propose a strategy, and assess its risk.',
-      language: 'Python',
-      tags: ['tool', 'multi-agent', 'finance'],
-      url: 'https://github.com/alexnodeland/finance-crew',
-      stars: 12,
-      category: 'ai',
-    },
-    {
-      name: 'resume-crew',
-      description:
-        'a crewai system that tailors a resume to a job posting and generates interview questions for it.',
-      language: 'Python',
-      tags: ['tool', 'multi-agent'],
-      url: 'https://github.com/alexnodeland/resume-crew',
-      stars: 9,
-      category: 'ai',
+      tier: 'flagship',
+      install: '/plugin marketplace add alexnodeland/principled',
     },
 
-    // --- misc ---
+    // --- math ---
     {
-      name: 'md-share',
+      name: 'fugue',
       description:
-        'a markdown renderer that supports six dialects, has text-to-speech, and compresses the whole document into a shareable url. no backend.',
-      language: 'TypeScript',
-      tags: ['app', 'markdown', 'url-sharing'],
-      url: 'https://github.com/alexnodeland/md-share',
-      site: 'https://alexnodeland.github.io/md-share/',
-      stars: 2,
-      category: 'misc',
+        'a type-safe, monadic probabilistic programming library for rust.',
+      language: 'Rust',
+      tags: ['library', 'ppl', 'probabilistic-programming'],
+      url: 'https://github.com/alexnodeland/fugue',
+      site: 'https://fugue.run/',
+      stars: 15,
+      category: 'math',
+      tier: 'flagship',
+      install: 'cargo add fugue-ppl',
+      post: '250819_fugue',
     },
     {
-      name: 'curio-rss',
+      name: 'fugue-evo',
+      description:
+        'a probabilistic genetic algorithm library for rust, built on fugue: evolution as inference.',
+      language: 'Rust',
+      tags: ['library', 'evolutionary-algorithms', 'inference'],
+      url: 'https://github.com/alexnodeland/fugue-evo',
+      site: 'https://evo.fugue.run/',
+      stars: 2,
+      category: 'math',
+      tier: 'flagship',
+      install: 'cargo add fugue-evo',
+    },
+
+    // --- audio dsp ---
+    {
+      name: 'quiver',
+      description:
+        'a modular audio synthesis library in rust: arrow-style combinators and graph-based patching.',
+      language: 'Rust',
+      tags: ['library', 'category-theory', 'modular-synthesizers'],
+      url: 'https://github.com/alexnodeland/quiver',
+      site: 'https://quiver-dsp.com/',
+      stars: 4,
+      category: 'audio-dsp',
+      tier: 'flagship',
+      install: 'cargo add quiver-dsp',
+    },
+    {
+      name: 'auracle',
+      description:
+        'a synthesizer that evolves patches toward the ones you prefer, built on fugue-evo and quiver. it runs in the browser.',
+      language: 'Rust',
+      tags: ['synthesis', 'preference-learning', 'webassembly'],
+      url: 'https://github.com/alexnodeland/auracle',
+      site: 'https://auracle.alexnodeland.com/',
+      stars: 1,
+      category: 'audio-dsp',
+      tier: 'flagship',
+      post: '260924_auracle',
+    },
+
+    // --- distributed systems ---
+    {
+      name: 'lattice',
+      description:
+        'python libraries for apps where people and agents work together: shared artifacts, rules over event streams, typed evals, access control, and the stack they run on.',
+      language: 'Python',
+      tags: ['agents', 'event-driven', 'evaluation', 'human-in-the-loop'],
+      url: 'https://github.com/alexnodeland/lattice',
+      site: 'https://lattice.alexnodeland.com/',
+      stars: 1,
+      category: 'distributed-systems',
+      tier: 'flagship',
+      install: 'uvx copier copy gh:alexnodeland/lattice my-app',
+    },
+
+    // ======================================================================
+    // apps — /apps, in sections by platform
+    // ======================================================================
+
+    // --- macos ---
+    {
+      name: 'curio',
       description:
         'a local-first rss and read-later reader for macos that keeps everything in your notes as plain markdown. no telemetry.',
       language: 'Rust',
-      tags: ['app', 'rss', 'local-first', 'macos'],
+      tags: ['rss', 'local-first', 'markdown'],
       url: 'https://github.com/alexnodeland/curio-rss',
       site: 'https://alexnodeland.github.io/curio-rss/',
-      stars: 2,
+      stars: 3,
       category: 'misc',
-    },
-    {
-      name: 'tome',
-      description:
-        'an offline library for technical documentation: save any docs site, search it, and let your agent read it over mcp.',
-      language: 'HTML',
-      tags: ['app', 'documentation', 'local-first', 'mcp'],
-      url: 'https://github.com/alexnodeland/tome',
-      category: 'misc',
-    },
-    {
-      name: 'no-doze',
-      description:
-        'a menu bar wrapper around caffeinate that keeps your mac awake.',
-      language: 'Swift',
-      tags: ['app', 'macos', 'menu-bar'],
-      url: 'https://github.com/alexnodeland/no-doze',
-      site: 'https://alexnodeland.github.io/no-doze/',
-      stars: 1,
-      category: 'misc',
-    },
-    {
-      name: 'claude-telegram',
-      description:
-        'a telegram bridge to claude code, so you can drive it from your phone.',
-      language: 'TypeScript',
-      tags: ['tool', 'claude-code', 'telegram'],
-      url: 'https://github.com/alexnodeland/claude-telegram',
-      stars: 4,
-      category: 'misc',
+      tier: 'app',
+      platform: 'macos',
+      install: 'brew install --cask alexnodeland/tap/curio',
     },
     {
       name: 'statusbar',
       description:
         'a macos menu bar app that watches the status pages you depend on and shows the worst one at a glance.',
       language: 'Swift',
-      tags: ['app', 'macos', 'menu-bar'],
+      tags: ['menu-bar', 'monitoring'],
       url: 'https://github.com/alexnodeland/StatusBar',
       site: 'https://alexnodeland.github.io/StatusBar/',
-      stars: 2,
+      stars: 3,
       category: 'misc',
+      tier: 'app',
+      platform: 'macos',
+      install: 'brew install --cask alexnodeland/tap/statusbar',
+      post: '260913_statusbar',
     },
     {
-      name: 'homebrew-tap',
-      description: 'homebrew tap for alexnodeland projects.',
-      language: 'Ruby',
-      tags: ['tool', 'homebrew', 'packaging'],
-      url: 'https://github.com/alexnodeland/homebrew-tap',
+      name: 'whisk',
+      description:
+        'a rule-driven folder tidier in the macos menu bar: a small, scriptable take on hazel.',
+      language: 'Swift',
+      tags: ['menu-bar', 'automation'],
+      url: 'https://github.com/alexnodeland/whisk',
+      site: 'https://alexnodeland.github.io/whisk/',
       stars: 1,
       category: 'misc',
+      tier: 'app',
+      platform: 'macos',
+      install: 'brew install --cask alexnodeland/tap/whisk',
+    },
+    {
+      name: 'no-doze',
+      description:
+        'a menu bar wrapper around caffeinate that keeps your mac awake.',
+      language: 'Swift',
+      tags: ['menu-bar'],
+      url: 'https://github.com/alexnodeland/no-doze',
+      site: 'https://alexnodeland.github.io/no-doze/',
+      stars: 1,
+      category: 'misc',
+      tier: 'app',
+      platform: 'macos',
+      install: 'brew install --cask alexnodeland/tap/no-doze',
+    },
+    {
+      name: 'tome',
+      description:
+        'an offline library for technical documentation: save any docs site, search it, and let your agent read it over mcp.',
+      language: 'HTML',
+      tags: ['documentation', 'local-first', 'mcp'],
+      url: 'https://github.com/alexnodeland/tome',
+      category: 'misc',
+      tier: 'app',
+      platform: 'macos',
+      install: 'brew install --cask alexnodeland/tap/tome',
+    },
+
+    // --- command line ---
+    {
+      name: 'curator',
+      description:
+        'a local search index over any markdown vault, served to agents over mcp, plus a digest of new notes ranked against your current interests.',
+      language: 'Rust',
+      tags: ['mcp', 'local-first', 'search'],
+      url: 'https://github.com/alexnodeland/curator',
+      site: 'https://alexnodeland.github.io/curator/',
+      stars: 1,
+      category: 'ai',
+      tier: 'app',
+      platform: 'cli',
+      install: 'brew install alexnodeland/tap/curator',
+    },
+    {
+      name: 'sleeve',
+      description: 'slices one long video into a properly tagged album.',
+      language: 'Rust',
+      tags: ['audio', 'tagging'],
+      url: 'https://github.com/alexnodeland/sleeve',
+      site: 'https://alexnodeland.github.io/sleeve/',
+      stars: 1,
+      category: 'misc',
+      tier: 'app',
+      platform: 'cli',
+    },
+
+    // --- web ---
+    {
+      name: 'md-share',
+      description:
+        'a markdown renderer that supports six dialects, has text-to-speech, and compresses the whole document into a shareable url. no backend.',
+      language: 'TypeScript',
+      tags: ['markdown', 'url-sharing'],
+      url: 'https://github.com/alexnodeland/md-share',
+      site: 'https://md.alexnodeland.com/',
+      stars: 5,
+      category: 'misc',
+      tier: 'app',
+      platform: 'web',
+    },
+
+    // --- plugins and bridges ---
+    {
+      name: 'obsidian-github-projects',
+      description:
+        'an obsidian plugin for github projects: the boards, as kanban, inside your vault.',
+      language: 'TypeScript',
+      tags: ['obsidian', 'kanban'],
+      url: 'https://github.com/alexnodeland/obsidian-github-projects',
+      site: 'https://alexnodeland.github.io/obsidian-github-projects/',
+      stars: 6,
+      category: 'misc',
+      tier: 'app',
+      platform: 'plugins',
+    },
+    {
+      name: 'claude-telegram',
+      description:
+        'a telegram bridge to claude code, so you can drive it from your phone.',
+      language: 'TypeScript',
+      tags: ['claude-code', 'telegram'],
+      url: 'https://github.com/alexnodeland/claude-telegram',
+      stars: 4,
+      category: 'misc',
+      tier: 'app',
+      platform: 'plugins',
+      install: 'bun add -g @alexnodeland/claude-telegram',
+    },
+
+    // --- hardware ---
+    {
+      name: 'lynx',
+      description:
+        'an open pan/tilt camera on an esp32, about $43 in parts, with a home assistant integration and an mcp server so an agent can aim it.',
+      language: 'C++',
+      tags: ['open-hardware', 'home-assistant', 'mcp'],
+      url: 'https://github.com/alexnodeland/lynx',
+      site: 'https://alexnodeland.github.io/lynx/',
+      stars: 3,
+      category: 'misc',
+      tier: 'app',
+      platform: 'hardware',
+    },
+
+    // ======================================================================
+    // lab — the experiments list at the foot of /projects
+    // ======================================================================
+    {
+      name: 'two-machines',
+      description:
+        'a guide to tape-delay looping, taught by letting you play it in the page.',
+      language: 'TypeScript',
+      tags: ['tape-delay', 'web-audio'],
+      url: 'https://github.com/alexnodeland/two-machines',
+      site: 'https://alexnodeland.github.io/two-machines/',
+      category: 'audio-dsp',
+      tier: 'lab',
+    },
+    {
+      name: 'llmcomposer',
+      description: 'an experiment in composing music with an llm.',
+      language: 'Python',
+      tags: ['music', 'llm'],
+      url: 'https://github.com/alexnodeland/llmcomposer',
+      site: 'https://alexnodeland.github.io/llmcomposer/',
+      stars: 1,
+      category: 'audio-dsp',
+      tier: 'lab',
+    },
+    {
+      name: 'pqc-ai-survey',
+      description:
+        'an interactive dashboard on quantum threats to ai systems and the post-quantum cryptography that answers them.',
+      language: 'JavaScript',
+      tags: ['post-quantum', 'security'],
+      url: 'https://github.com/alexnodeland/pqc-ai-survey',
+      site: 'https://alexnodeland.github.io/pqc-ai-survey/',
+      category: 'ai',
+      tier: 'lab',
+    },
+    {
+      name: 'qcsim',
+      description:
+        'a small quantum circuit simulator in python, written for reading: fundamental gates and circuit assembly on numpy.',
+      language: 'Python',
+      tags: ['quantum-computing', 'simulation'],
+      url: 'https://github.com/alexnodeland/QCSim',
+      stars: 1,
+      category: 'math',
+      tier: 'lab',
+      post: '200817_qcsim-quantum-simulator',
+    },
+    {
+      name: 'bentokaze',
+      description:
+        'a linear programming calculator that minimizes bento cost while meeting nutritional requirements.',
+      language: 'Python',
+      tags: ['linear-programming', 'optimization'],
+      url: 'https://github.com/alexnodeland/bentokaze',
+      stars: 2,
+      category: 'math',
+      tier: 'lab',
     },
   ],
 };
+
+export const appsConfig: AppsConfig = {
+  title: 'apps',
+  subtitle: 'small tools i use every day, and how to install them.',
+  platforms: [
+    {
+      id: 'macos',
+      title: 'mac apps',
+      note: {
+        before: 'they install from my',
+        link: { label: 'homebrew tap', href: TAP },
+        after:
+          '. none of them is signed, so macos stops the first launch, and brew prints the way past it.',
+      },
+    },
+    { id: 'cli', title: 'command line' },
+    { id: 'web', title: 'web' },
+    { id: 'plugins', title: 'plugins and bridges' },
+    { id: 'hardware', title: 'hardware' },
+  ],
+};
+
+/** The projects of one tier, in the config's (curated) order. */
+export const projectsInTier = (
+  tier: ProjectTier,
+  projects: GitHubProject[] = projectsConfig.projects
+): GitHubProject[] => projects.filter(project => project.tier === tier);
+
+/** The page a project is listed on. */
+export const pageForProject = (
+  project: GitHubProject
+): '/projects' | '/apps' => (project.tier === 'app' ? '/apps' : '/projects');
+
+/** A post's address on the site, from its slug. */
+export const postPath = (slug: string): string => `/timeline/${slug}/`;
 
 // Helper function to get language color (GitHub-style)
 export const getLanguageColor = (language: string): string => {

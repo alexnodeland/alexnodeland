@@ -89,6 +89,54 @@ describe('llms.txt', () => {
     );
   });
 
+  it('splits the projects into the sections the site lists them in', () => {
+    const tiered = renderLlmsTxt({
+      name: 'alex nodeland',
+      url: 'https://alexnodeland.com',
+      description: 'd.',
+      author: 'alex nodeland',
+      summary: 's.',
+      pages: [],
+      posts: [],
+      projects: [
+        {
+          name: 'fugue',
+          url: 'https://github.com/alexnodeland/fugue',
+          description: 'a ppl.',
+          language: 'Rust',
+          tier: 'flagship',
+        },
+        {
+          name: 'whisk',
+          url: 'https://github.com/alexnodeland/whisk',
+          description: 'tidies folders.',
+          language: 'Swift',
+          tier: 'app',
+          install: 'brew install --cask alexnodeland/tap/whisk',
+        },
+        {
+          name: 'qcsim',
+          url: 'https://github.com/alexnodeland/QCSim',
+          description: 'a simulator.',
+          language: 'Python',
+          tier: 'lab',
+        },
+      ],
+      machine: [],
+    });
+    const at = (heading: string) => tiered.indexOf(heading);
+    expect(at('## projects')).toBeGreaterThan(-1);
+    expect(at('## projects')).toBeLessThan(at('## apps'));
+    expect(at('## apps')).toBeLessThan(at('## experiments'));
+    expect(tiered.slice(at('## apps'), at('## experiments'))).toContain(
+      '- [whisk](https://github.com/alexnodeland/whisk): tidies folders. (swift) install: `brew install --cask alexnodeland/tap/whisk`'
+    );
+    expect(tiered.slice(at('## experiments'))).toContain('[qcsim]');
+    expect(tiered.slice(at('## projects'), at('## apps'))).not.toContain(
+      '[qcsim]'
+    );
+  });
+
   it('ends with the Optional section the spec reserves for the extras', () => {
     const optional = text.slice(text.indexOf('## Optional'));
     expect(optional).toContain('graph.ttl');

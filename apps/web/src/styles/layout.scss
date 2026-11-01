@@ -823,10 +823,19 @@
 // Narrowest phones (iPhone SE and friends). The shave is on the pills, not on
 // the nav's own gutter: the gutter is the site's one alignment line and cannot
 // move at a single breakpoint without the brand pill sliding out from under
-// the hero title. Brand plus three links is ~215px of intrinsic width at this
-// padding against ~270px of column, so it still holds one row.
+// the hero title. Four links at this padding leave the folded "alex" about
+// 50px of clear row on a 375px screen.
 @media (max-width: 380px) {
   .nav-link {
     padding-inline: 0.45rem;
+  }
+}
+
+// The first-generation SE's 320px. With four links the capsule reached to
+// within 2px of the folded "alex" at the padding above, so the room either
+// side of each word gives again — the same trade the steps above make.
+@media (max-width: 340px) {
+  .nav-link {
+    padding-inline: 0.28rem;
   }
 }

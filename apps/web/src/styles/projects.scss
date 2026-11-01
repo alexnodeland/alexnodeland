@@ -77,6 +77,14 @@
   gap: var(--stack-gap);
 }
 
+// The flagship sections hold one or two projects each, and three tracks for
+// two cards leaves a hole the width of a card at the end of every row. Two
+// wider tracks instead, so the work the page is for gets the room, and a
+// section of one still sits on the same grid as its neighbours.
+.projects-grid--flagship {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+}
+
 // Project Card — the blog preview's grammar in a grid cell: the name, the
 // body, then one meta band at the foot. It does not move under the pointer;
 // its hairline eases brighter and eases back (see `card-highlight` in
@@ -175,6 +183,34 @@
   word-break: break-word;
 }
 
+// The one line that installs the project, as it is typed — the listing wash
+// a post gives a code block, at the size of the tag line under it. It is the
+// one thing on a card meant to be copied, so it is lifted above the card's
+// stretched link (see `project-ways-out` in mixins.scss) and one click
+// selects the whole command. A long one wraps rather than scrolling: the site
+// hides its scrollbars, so a line cut off at the card's edge would read as
+// the whole command. The wrap is only drawn; the copy is the one line.
+.project-install {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 var(--space-4);
+
+  code {
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    background: var(--wash-field);
+    border: 1px solid var(--hairline-interior);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    line-height: var(--leading-chrome);
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: all;
+    cursor: text;
+  }
+}
+
 // The meta band, the same shape the blog card carries: quiet facts on the
 // left, the way out parked at the far end, one hairline above it. One row at
 // every width — a language, a star count and a glyph never need more.
@@ -212,6 +248,86 @@
   font-size: var(--text-small);
   color: var(--text-muted);
   margin-left: var(--space-1);
+}
+
+// A line under a section title: what the section is, or what a reader needs
+// to know before using what is in it (the apps page's mac section says how
+// the apps install). The hero tagline's colour, at body size.
+.projects-section-note {
+  margin: calc(var(--stack-gap) * -0.5) 0 var(--stack-gap);
+  max-width: 60ch;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+  line-height: var(--leading-prose);
+  @include over-background;
+
+  a {
+    @include text-link;
+  }
+}
+
+// The experiments: one outlined box with a row per project, the interior
+// hairline between rows — a list, so it reads as smaller than the cards
+// above it without needing a word to say so.
+.lab-list {
+  @include outline-block;
+  border-radius: var(--radius-lg);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  // The rows' wash stays inside the box's corners.
+  overflow: hidden;
+}
+
+// A row is one target the way a card is: its site or its repo stretches
+// across it. It lights with the card's wash and not the card's hairline — a
+// row only owns the divider above it, and a lit divider alone reads as a
+// rule being drawn, not a row being picked.
+.lab-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-4) var(--card-pad);
+  transition: background-color var(--transition-normal);
+
+  & + & {
+    border-top: 1px solid var(--hairline-interior);
+  }
+
+  @include reading-emphasis {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  &:focus-within {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.lab-item-text {
+  min-width: 0;
+}
+
+.lab-item-name {
+  font-size: var(--text-body);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+.lab-item-description {
+  font-size: var(--text-small);
+  line-height: var(--leading-prose);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.lab-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-shrink: 0;
 }
 
 // The ways out at the footer's far end — the chain and the octocat, and the
@@ -413,6 +529,16 @@
   // One column on a phone; the gap is the site's rhythm at every width.
   .projects-grid {
     grid-template-columns: 1fr;
+  }
+
+  // A row's meta drops under its text, so the description keeps the width.
+  .lab-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lab-item-meta {
+    justify-content: space-between;
   }
 
   // On a phone the year's grid is 740px wide behind a sideways scroll that

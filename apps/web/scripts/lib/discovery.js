@@ -17,13 +17,54 @@
  *   summary: string,
  *   pages: Array<{ title: string, url: string, description: string }>,
  *   posts: Array<{ title: string, url: string, description?: string, date: string, category?: string }>,
- *   projects: Array<{ name: string, url: string, site?: string, description: string, language: string }>,
+ *   projects: Array<{ name: string, url: string, site?: string, description: string, language: string, tier?: 'flagship' | 'app' | 'lab', install?: string }>,
  *   machine: Array<{ title: string, url: string, description: string }>,
  * }} SiteSummary
  */
 
 const line = (title, url, description) =>
   description ? `- [${title}](${url}): ${description}` : `- [${title}](${url})`;
+
+const projectLine = p =>
+  line(
+    p.name,
+    p.site || p.url,
+    `${p.description} (${p.language.toLowerCase()}${p.site ? `, source at ${p.url}` : ''})${
+      p.install ? ` install: \`${p.install}\`` : ''
+    }`
+  );
+
+/**
+ * The projects in the sections the site lists them in: the flagship work on
+ * /projects, the apps on /apps, the experiments at the foot of /projects. A
+ * project with no tier is flagship, so a summary built before the tiers
+ * existed still renders as one list. A section with nothing in it is left out.
+ */
+const projectSections = projects => {
+  const groups = [
+    { title: 'projects', tier: 'flagship', lead: [] },
+    {
+      title: 'apps',
+      tier: 'app',
+      lead: [
+        'small tools in daily use, with the one line that installs each where there is one.',
+        '',
+      ],
+    },
+    { title: 'experiments', tier: 'lab', lead: [] },
+  ];
+  return groups.flatMap(group => {
+    const members = projects.filter(p => (p.tier || 'flagship') === group.tier);
+    if (members.length === 0) return [];
+    return [
+      `## ${group.title}`,
+      '',
+      ...group.lead,
+      ...members.map(projectLine),
+      '',
+    ];
+  });
+};
 
 /**
  * @param {SiteSummary} site
@@ -57,16 +98,7 @@ function renderLlmsTxt(site) {
       )
     ),
     '',
-    '## projects',
-    '',
-    ...site.projects.map(p =>
-      line(
-        p.name,
-        p.site || p.url,
-        `${p.description} (${p.language.toLowerCase()}${p.site ? `, source at ${p.url}` : ''})`
-      )
-    ),
-    '',
+    ...projectSections(site.projects),
     '## machine-readable',
     '',
     'the same content as data, for anything that would rather not parse html.',

@@ -140,10 +140,11 @@ const VocabPage: React.FC<{ location?: { pathname?: string } }> = ({
         <section className="vocab-section vocab-uses">
           <h2>where it is used</h2>
           <p className="vocab-section-description">
-            the <Link to="/projects">projects</Link> are each about one of the
-            project categories, every <Link to="/timeline">timeline</Link> post
-            carries one of the post categories, and each{' '}
-            <Link to="/cv">cv</Link> role page selects its lines by an audience.
+            the <Link to="/projects">projects</Link> and the{' '}
+            <Link to="/apps">apps</Link> are each about one of the project
+            categories, every <Link to="/timeline">timeline</Link> post carries
+            one of the post categories, and each <Link to="/cv">cv</Link> role
+            page selects its lines by an audience.
           </p>
         </section>
       </div>
