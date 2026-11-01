@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Builds `src/data/activity.json` — the GitHub activity snapshot the projects
- * page renders as the contribution heatmap and metric tiles.
+ * page renders as the contribution heatmap and metric tiles, and the star
+ * count of every public repo, which the project and app cards read in place
+ * of the counts typed into src/config/projects.ts.
  *
  * Fetching happens here, at build time, never in the visitor's browser. The
  * token stays in CI; the site only ever ships the aggregated numbers. A
@@ -162,6 +164,57 @@ async function fetchCommitCount() {
   return data.total_count;
 }
 
+/**
+ * Every public repo's star count, by name in lowercase — the key
+ * src/config/projects.ts looks a project up by. Public only: a private repo's
+ * name has no business in a file the site ships.
+ */
+async function fetchStars() {
+  const stars = {};
+  let cursor = null;
+  do {
+    const data = await graphql(
+      `
+        query ($login: String!, $cursor: String) {
+          user(login: $login) {
+            repositories(
+              first: 100
+              after: $cursor
+              privacy: PUBLIC
+              ownerAffiliations: OWNER
+            ) {
+              nodes {
+                name
+                stargazerCount
+              }
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+            }
+          }
+        }
+      `,
+      { login: LOGIN, cursor }
+    );
+    const page = data.user.repositories;
+    for (const repo of page.nodes) {
+      stars[repo.name.toLowerCase()] = repo.stargazerCount;
+    }
+    cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
+  } while (cursor);
+  return stars;
+}
+
+/** The snapshot already on disk, if there is one and it parses. */
+function previousSnapshot() {
+  try {
+    return JSON.parse(fs.readFileSync(OUT, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   if (!TOKEN) {
     if (fs.existsSync(OUT)) {
@@ -179,10 +232,19 @@ async function main() {
     );
   }
 
-  const [calendar, prs, commits] = await Promise.all([
+  // The stars are a garnish on the cards, not the panel itself: if they fail
+  // to come back, the build keeps the last counts it had (or none, and the
+  // cards fall back to the typed ones) rather than failing the deploy.
+  const [calendar, prs, commits, stars] = await Promise.all([
     fetchCalendar(),
     fetchMergedPRs(),
     fetchCommitCount(),
+    fetchStars().catch(err => {
+      console.warn(
+        `activity: star counts not fetched (${err.message || err}); keeping the last ones`
+      );
+      return previousSnapshot()?.stars;
+    }),
   ]);
 
   const snapshot = {
@@ -196,13 +258,15 @@ async function main() {
       linesDeleted: prs.deletions,
       linesCountedOverPRs: prs.counted,
     },
+    ...(stars ? { stars } : {}),
   };
 
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(snapshot, null, 2) + '\n');
   console.log(
     `activity: ${calendar.total} contributions, ${commits} commits, ` +
-      `${prs.total} merged PRs, +${prs.additions}/-${prs.deletions} lines → ${path.relative(ROOT, OUT)}`
+      `${prs.total} merged PRs, +${prs.additions}/-${prs.deletions} lines, ` +
+      `stars for ${stars ? Object.keys(stars).length : 0} repos → ${path.relative(ROOT, OUT)}`
   );
 }
 

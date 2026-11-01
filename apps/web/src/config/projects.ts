@@ -1,3 +1,5 @@
+import activity from '../data/activity.json';
+
 // Every public project, on one list, split two ways.
 //
 // The tier says what kind of thing it is, and so which page carries it: the
@@ -31,6 +33,11 @@ export interface GitHubProject {
    * so a project that never gets a site never gets a dead mark.
    */
   site?: string;
+  /**
+   * The count as last typed here. The deploy fetches the real counts into
+   * the activity snapshot (see scripts/build-activity.mjs), and a fetched
+   * count wins; this one is what a build without a snapshot falls back to.
+   */
   stars?: number;
   category: ProjectCategory;
   tier: ProjectTier;
@@ -75,6 +82,26 @@ export interface AppsConfig {
 
 const TAP = 'https://github.com/alexnodeland/homebrew-tap';
 
+// The star counts the deploy fetched, by repository name in lowercase. Absent
+// from a snapshot written before the counts were fetched, and from any build
+// that has never had a token, so every lookup has the typed count to fall
+// back to.
+const FETCHED_STARS: Record<string, number> =
+  (activity as { stars?: Record<string, number> }).stars ?? {};
+
+/** A repository's name, from its github url. */
+const repoName = (url: string): string =>
+  url.replace(/\/+$/, '').split('/').pop()?.toLowerCase() ?? '';
+
+function withFetchedStars(projects: GitHubProject[]): GitHubProject[] {
+  return projects.map(project => {
+    const fetched = FETCHED_STARS[repoName(project.url)];
+    return typeof fetched === 'number'
+      ? { ...project, stars: fetched }
+      : project;
+  });
+}
+
 export const projectsConfig: ProjectsConfig = {
   title: 'projects',
   subtitle: 'libraries, systems, and a few experiments.',
@@ -94,7 +121,7 @@ export const projectsConfig: ProjectsConfig = {
     description:
       'smaller pieces: studies, one-offs, and things built to learn something.',
   },
-  projects: [
+  projects: withFetchedStars([
     // ======================================================================
     // flagship — /projects, in sections by category
     // ======================================================================
@@ -419,7 +446,7 @@ export const projectsConfig: ProjectsConfig = {
       category: 'math',
       tier: 'lab',
     },
-  ],
+  ]),
 };
 
 export const appsConfig: AppsConfig = {
