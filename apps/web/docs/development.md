@@ -123,6 +123,9 @@ there is a rename of a contract between two apps, not of a word on a page.
 Every old `/blog/...` address is answered by a redirect page the build writes
 (see `onPostBuild` in `gatsby-node.js`).
 
+The site-wide search (⌘K) indexes all of it at build time; see
+[search.md](./search.md).
+
 See [homepage-management.md](./homepage-management.md),
 [cv-management.md](./cv-management.md), and
 [chat-management.md](./chat-management.md) for the details of each. The

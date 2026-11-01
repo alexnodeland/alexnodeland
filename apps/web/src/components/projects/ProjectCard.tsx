@@ -1,6 +1,7 @@
 import { Link } from 'gatsby';
 import React from 'react';
 import { getLanguageColor, postPath } from '../../config';
+import { slugify } from '../../config/linked-data';
 import type { GitHubProject } from '../../config';
 import { ArrowOutIcon, GitHubIcon, LinkIcon } from '../ui/EntryIcons';
 
@@ -53,6 +54,14 @@ export const ProjectWaysOut: React.FC<{ project: GitHubProject }> = ({
   </div>
 );
 
+/**
+ * The fragment a project is found at — `/projects/#project-fugue`. The same
+ * slug the linked data mints a project's URI with, so that URI lands on the
+ * card, and so does a search result.
+ */
+export const projectAnchor = (name: string): string =>
+  `project-${slugify(name)}`;
+
 /** The language's dot and name, then the stars where there are any. */
 const ProjectLanguage: React.FC<{ project: GitHubProject }> = ({ project }) => (
   <div className="project-language">
@@ -81,7 +90,7 @@ const ProjectLanguage: React.FC<{ project: GitHubProject }> = ({ project }) => (
 export const ProjectCard: React.FC<{ project: GitHubProject }> = ({
   project,
 }) => (
-  <article className="project-card">
+  <article className="project-card" id={projectAnchor(project.name)}>
     <div className="project-card-content">
       {/* The name and body are grouped: a card in a grid row is as tall as
           the tallest in that row, and this is the block that takes up the
@@ -133,7 +142,11 @@ export const LabList: React.FC<{ projects: GitHubProject[] }> = ({
 }) => (
   <ul className="lab-list">
     {projects.map(project => (
-      <li key={project.name} className="lab-item">
+      <li
+        key={project.name}
+        id={projectAnchor(project.name)}
+        className="lab-item"
+      >
         <div className="lab-item-text">
           <h3 className="lab-item-name">{project.name}</h3>
           <p className="lab-item-description">{project.description}</p>

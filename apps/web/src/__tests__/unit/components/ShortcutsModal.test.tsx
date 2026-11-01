@@ -4,6 +4,7 @@ import React from 'react';
 import Shortcuts from '../../../components/ShortcutsModal';
 
 jest.mock('../../../styles/shortcuts.scss', () => ({}));
+jest.mock('../../../styles/search.scss', () => ({}));
 
 const press = (key: string, target: Element | Window = window) =>
   fireEvent.keyDown(target, { key });
@@ -21,6 +22,15 @@ describe('Shortcuts', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('shares its row with the way to the search, which comes first', () => {
+    const { container } = render(<Shortcuts />);
+    const row = container.querySelector('.rail-hints') as HTMLElement;
+    const hints = Array.from(row.querySelectorAll('button')).map(button =>
+      button.getAttribute('aria-label')
+    );
+    expect(hints).toEqual(['search the site', 'keyboard shortcuts']);
+  });
+
   it('opens on ? and closes on ? again', () => {
     render(<Shortcuts />);
 
@@ -31,6 +41,7 @@ describe('Shortcuts', () => {
     expect(screen.getByText('switch background')).toBeInTheDocument();
     expect(screen.getByText('chat')).toBeInTheDocument();
     expect(screen.getByText('hide chrome')).toBeInTheDocument();
+    expect(screen.getByText('search the site')).toBeInTheDocument();
 
     press('?');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

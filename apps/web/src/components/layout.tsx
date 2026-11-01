@@ -16,6 +16,7 @@ import ChatIcon from './chat/ChatIcon';
 import KeyboardShortcuts from './chat/KeyboardShortcuts';
 import { heroKeyFor, NOT_FOUND_KEY, resolveHero } from './heroes';
 import Shortcuts from './ShortcutsModal';
+import SearchPalette from './search/SearchPalette';
 import { GitHubIcon } from './ui/EntryIcons';
 
 // The modal carries the markdown renderer and the syntax highlighter, and
@@ -980,6 +981,9 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
               quiet line on the field that says so. It lives in the shell, so
               it is reachable from every page and mounts once. */}
           <Shortcuts />
+          {/* The site-wide search (⌘K, or `/`), beside the shortcuts and for
+              the same reason: one box for every page, mounted once. */}
+          <SearchPalette />
         </>
       )}
 

@@ -79,6 +79,8 @@ static/*.wasm
 # at build time like the worker bundle and the CV PDFs, so the base64 vector
 # blob does not churn in diffs on every content edit.
 static/chat-index.json
+# The search index, built by scripts/build-search-index.mjs
+static/search-index.json
 
 # Eval run artifacts. Scored JSON per run, used by --baseline for regression
 # gating and by any automated search over prompts or configs. Machine output,
