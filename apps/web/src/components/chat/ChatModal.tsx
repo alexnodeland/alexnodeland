@@ -114,9 +114,14 @@ const ChatModal: React.FC = () => {
     .join(' ');
 
   return (
-    <div className={modalClasses}>
+    // A panel beside the page, not a dialog over it: the page stays live and
+    // in reach, so it is a landmark of its own — somewhere a screen reader
+    // can jump to and name — rather than a modal.
+    <aside className={modalClasses} aria-labelledby="chat-title">
       <div className="chat-header">
-        <h3 className="chat-title">chat</h3>
+        <h3 className="chat-title" id="chat-title">
+          chat
+        </h3>
         <div className="chat-header-controls">
           <ThinkingToggle key="thinking-toggle" />
           {/* A picker with one option is a control that does nothing. */}
@@ -346,7 +351,7 @@ const ChatModal: React.FC = () => {
           }
         }}
       />
-    </div>
+    </aside>
   );
 };
 

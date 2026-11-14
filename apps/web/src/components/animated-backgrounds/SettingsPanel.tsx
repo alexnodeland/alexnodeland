@@ -124,7 +124,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   // all of them. It also could not be opened at all by touch, being shown on
   // hover. So it is one box, a sibling of the scroller rather than a descendant
   // of it, placed against the mark that asked for it.
-  const panelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const [help, setHelp] = useState<{
     key: string;
     text: string;
@@ -519,8 +519,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const description = currentBackgroundDescription?.toLowerCase?.() || '';
 
   return (
-    <div
+    // A landmark, like the chat panel across from it: a panel beside the
+    // page that a screen reader can find by name.
+    <aside
       ref={panelRef}
+      aria-label="background settings"
       className={[
         'settings-sidebar',
         isMobile && 'settings-sheet',
@@ -800,7 +803,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {help.text}
         </div>
       )}
-    </div>
+    </aside>
   );
 };
 

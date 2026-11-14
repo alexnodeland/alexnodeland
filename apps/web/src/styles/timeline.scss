@@ -564,9 +564,21 @@
       text-align: left;
       border-bottom: 1px solid var(--hairline-interior);
       vertical-align: top;
+
+      // The outer columns sit on the text column's own edges: a table is
+      // set in the same measure as the paragraphs either side of it, not a
+      // step in from them.
+      &:first-child {
+        padding-left: 0;
+      }
+
+      &:last-child {
+        padding-right: 0;
+      }
     }
 
-    th {
+    // What a column is: over it, in the brighter ink, on the firmer rule.
+    thead th {
       text-transform: lowercase;
       letter-spacing: -0.02em;
       color: var(--text-primary);
@@ -574,11 +586,17 @@
       white-space: nowrap;
     }
 
-    td {
+    // What a row is: its first cell, in a table of labels and values. A
+    // header to a screen reader and a cell like any other to the eye — the
+    // table was written without a header row, and is drawn without one (see
+    // plugins/gatsby-remark-headerless-tables).
+    td,
+    tbody th {
       color: var(--text-secondary);
+      font-weight: inherit;
     }
 
-    tbody tr:last-child td {
+    tbody tr:last-child > * {
       border-bottom: none;
     }
   }
