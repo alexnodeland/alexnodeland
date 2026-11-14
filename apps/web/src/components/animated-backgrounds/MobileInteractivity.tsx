@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useBackground } from '../BackgroundProvider';
 import { useSettingsPanel } from '../SettingsPanelContext';
 import CloseIcon from '../ui/CloseIcon';
+import { ChevronIcon } from '../ui/EntryIcons';
 import { useIsMobileViewport } from './core/useIsMobileViewport';
 import '../../styles/mobile-interactivity.scss';
 
@@ -193,7 +194,9 @@ const MobileInteractivity: React.FC = () => {
             onClick={switchToPreviousBackground}
             aria-label="Previous background"
           >
-            ‹
+            <span className="mobile-explore-chevron is-previous">
+              <ChevronIcon />
+            </span>
           </button>
           <button
             type="button"
@@ -211,7 +214,9 @@ const MobileInteractivity: React.FC = () => {
             onClick={switchToNextBackground}
             aria-label="Next background"
           >
-            ›
+            <span className="mobile-explore-chevron is-next">
+              <ChevronIcon />
+            </span>
           </button>
         </div>
 

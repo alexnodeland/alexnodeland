@@ -28,7 +28,7 @@ export const openSearch = (): void => {
 };
 
 /** ⌘ on a Mac, ctrl everywhere else: the key the shortcut is actually on. */
-const useModifierLabel = (): string => {
+export const useModifierLabel = (): string => {
   // The server renders the Mac's, and the browser corrects it after mount, so
   // the first paint and the hydrated tree agree.
   const [label, setLabel] = React.useState('⌘');

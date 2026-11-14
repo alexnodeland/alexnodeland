@@ -172,4 +172,23 @@ describe('ControlRow', () => {
       )
     );
   });
+
+  // The draw-in is the stylesheet's, off the window's scroll timeline — except
+  // where the browser cannot read one, and then this is the same arrangement
+  // the hero's fold keeps: a progress number published per frame. jsdom has no
+  // CSS.supports, so this is the published path.
+  it('publishes the draw-in for a browser with no scroll timeline', () => {
+    const { container, panel } = mount();
+    const row = container.querySelector('.timeline-control-bar') as HTMLElement;
+
+    expect(row.style.getPropertyValue('--row-fold')).toBe('0');
+
+    scrollTo(panel, BAND / 2);
+    expect(row.style.getPropertyValue('--row-fold')).toBe('0.5');
+
+    // Past the band it is finished, not overshooting: the transform it drives
+    // is a fixed distance, not a rate.
+    scrollTo(panel, BAND * 3);
+    expect(row.style.getPropertyValue('--row-fold')).toBe('1');
+  });
 });

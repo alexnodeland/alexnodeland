@@ -535,11 +535,7 @@
   min-height: 0; // Let the flex child actually shrink so `overflow` can work
   display: flex;
   flex-direction: column;
-  // Down, and never sideways. Nothing in a page is wider than its column —
-  // what could be (a code listing, a table) scrolls inside its own box — and
-  // a sticky control row's bar deliberately overhangs the column to reach the
-  // frame (see `sticky-control-row`): clipped, that is all it does.
-  overflow: hidden auto;
+  overflow: auto;
   // The window's scroll ends at the window. Left to chain, a drag past either
   // end is handed to the document — which has nowhere to go, so a phone
   // answers with its own gesture instead: the page rubber-bands under the
@@ -674,9 +670,7 @@
 // would run under a matched footprint on a narrow desktop.
 .nav-menu {
   display: flex;
-  // Named, because the search segment's hairline centres itself in it.
-  --nav-gap: 0.125rem;
-  gap: var(--nav-gap);
+  gap: 0.125rem;
   align-items: center;
   justify-content: space-evenly;
   flex-wrap: nowrap;
@@ -724,19 +718,15 @@
 }
 
 // The capsule's last segment: the way to the site's search. A mark where the
-// others are words, set off from them by a hairline — it is in the capsule
-// because that is where a site's search is looked for, and it is not a page.
-// The segment is a link's own height (the same line and the same padding), so
+// others are words — it is in the capsule because that is where a site's
+// search is looked for, and being a mark is what says it is not a page. The
+// segment is a link's own height (the same line and the same padding), so
 // the capsule is not a pixel taller for having it.
 .nav-search {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  // The hairline sits in the middle of this room (and the capsule's own gap
-  // before it), clear of both washes.
-  --divider-room: calc(var(--space-2) + 1px);
-  margin: 0 0 0 var(--divider-room);
+  margin: 0;
   padding: var(--space-2) 0.7rem;
   background: none;
   border: none;
@@ -746,15 +736,6 @@
   transition:
     color var(--transition-fast),
     background-color var(--transition-fast);
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: var(--space-2);
-    bottom: var(--space-2);
-    left: calc((var(--divider-room) + var(--nav-gap)) / -2 - 0.5px);
-    border-left: 1px solid var(--hairline);
-  }
 
   svg {
     display: block;
@@ -924,7 +905,7 @@
   // part a narrow screen is actually short of: the capsule is four words and
   // the way to the search now, and the folded "alex" has to fit beside it.
   .nav-menu {
-    --nav-gap: 0px;
+    gap: 0;
   }
 
   .nav-link,
@@ -960,10 +941,9 @@
 }
 
 // The narrowest: a 360px Android down to the first-generation SE's 320px. The
-// words give a size as well as their padding, and the hairline before the
-// search gives half its margin — the same trade the steps above make, taken
-// once more, and what keeps a clear word's width between the capsule and the
-// folded "alex" on a 320px screen.
+// words give a size as well as their padding — the same trade the steps
+// above make, taken once more, and what keeps a clear word's width between
+// the capsule and the folded "alex" on a 320px screen.
 @media (max-width: 360px) {
   .nav-link {
     font-size: var(--text-small);
@@ -974,13 +954,9 @@
     padding-inline: 0.28rem;
   }
 
-  .nav-search {
-    --divider-room: calc(var(--space-1) + 1px);
-
-    svg {
-      width: 1rem;
-      height: 1rem;
-      padding: 0;
-    }
+  .nav-search svg {
+    width: 1rem;
+    height: 1rem;
+    padding: 0;
   }
 }

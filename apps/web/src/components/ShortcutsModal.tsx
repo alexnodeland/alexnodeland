@@ -3,6 +3,7 @@ import { DURATION_FAST_MS, EASE_OUT } from '../config/motion';
 import { isTypingTarget } from '../lib/utils/keys';
 import { prefersReducedMotion } from '../lib/utils/motion';
 import '../styles/shortcuts.scss';
+import { useModifierLabel } from './search/SearchPalette';
 import CloseIcon from './ui/CloseIcon';
 
 /**
@@ -20,8 +21,11 @@ interface Shortcut {
   label: string;
 }
 
-const SHORTCUTS: Shortcut[] = [
-  { keys: ['⌘', 'K'], label: 'search the site' },
+// The search's chord is on ⌘ on a Mac and on ctrl everywhere else; the list
+// is built with whichever this keyboard has, so it never names a key the
+// reader does not own.
+const shortcutsFor = (modifier: string): Shortcut[] => [
+  { keys: [modifier, 'K'], label: 'search the site' },
   { keys: ['/'], label: 'search, too' },
   { keys: ['←', '→'], label: 'switch background' },
   { keys: ['S'], label: 'background settings' },
@@ -36,6 +40,7 @@ const OPEN_MS = DURATION_FAST_MS;
 
 const Shortcuts: React.FC = () => {
   const [open, setOpen] = React.useState(false);
+  const shortcuts = shortcutsFor(useModifierLabel());
   const panelRef = React.useRef<HTMLDivElement>(null);
   const closeButtonRef = React.useRef<HTMLButtonElement>(null);
   // Where focus was when the dialog took it, so it can be handed back.
@@ -159,7 +164,7 @@ const Shortcuts: React.FC = () => {
               </button>
             </div>
             <ul className="shortcuts-list">
-              {SHORTCUTS.map(shortcut => (
+              {shortcuts.map(shortcut => (
                 <li key={shortcut.label}>
                   <span className="shortcuts-keys">
                     {shortcut.keys.map(key => (

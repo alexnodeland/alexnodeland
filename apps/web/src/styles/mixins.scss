@@ -255,7 +255,11 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 
 // A sticky row of controls at the top of the window's own scroll: the page's
 // toolbar at the start and a second one hung at the far end (see ControlRow
-// and .ui-toolbar in controls.scss).
+// and .ui-toolbar in controls.scss). There is no bar behind them, at rest or
+// afloat: the row itself is nothing but a flex container, the two housings
+// float over the list on their own frosting, and the room between them is
+// dead to the pointer, so scroll and clicks aimed at the page pass straight
+// through instead of being caught by an invisible strip.
 //
 // The row starts where it ends up. The window's column pads its content off
 // the frame (--main-pad-top on .main), and the row cancels that padding for
@@ -266,15 +270,6 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 // reaches the top of the scroll in the same distance the hero takes to fold,
 // so the frame's edge arrives under it rather than after it. Everything
 // below scrolls as it did; only the room above the row is gone.
-//
-// It has two states. At rest it is part of the column and there is nothing
-// behind it: the two housings sit on the window's own surface, their ends
-// flush with the cards below. Afloat (ControlRow marks it), the list runs
-// underneath, and the row is a bar — the window's scrim again and the heavy
-// blur, edge to edge, closed by a hairline — so what passes under it is gone
-// at a clean line. It used to stay bar-less afloat, the controls floating
-// loose over the list, and the list showed through between them and around
-// them: a heading sliding past was half behind a control and half beside it.
 @mixin sticky-control-row {
   position: sticky;
   top: 0;
@@ -288,52 +283,61 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
   // One row, strictly — a picker that cannot fit shrinks and ellipsizes
   // (see .ui-toolbar in controls.scss) rather than ever dropping below.
   flex-wrap: nowrap;
-  // The least air between the two housings.
-  gap: var(--space-2);
+  // The least air between the two housings. Named, because the row's two
+  // ends draw in by the same measure the moment it goes afloat.
+  --control-gap: var(--space-2);
+  gap: var(--control-gap);
   // The window's rhythm, above the row and below it alike, so it sits in a
   // band of even air rather than riding high in it — and the same gap the
   // list underneath keeps between its cards (--stack-gap in variables.scss).
   //
-  // Nothing at the sides: the row's ends are flush with the ends of the cards
-  // below, at rest and afloat alike — the column reads as one edge from the
-  // row down.
+  // Nothing at the sides at rest: the row is the first thing in the page and
+  // there is nothing under it, so its ends want to be flush with the ends of
+  // the cards below — the column reading as one edge from the row down.
   padding: var(--stack-gap) 0;
-  // The room between the two housings is dead to the pointer, so a scroll or
-  // a click aimed at the page passes straight through it.
   pointer-events: none;
+
+  // The draw-in. At rest the row is part of the column: its ends line up with
+  // the cards below because there is nothing below them yet. By the time the
+  // row is pinned to the window's top edge there is — the list runs
+  // underneath it — and flush stopped reading: a housing's hairline landed
+  // exactly on the border of the card passing beneath, and the two made one
+  // thickened line. So the ends draw in by the row's own gap.
+  //
+  // It travels on the window's scroll, over exactly the band that carries the
+  // row from the column to the frame's edge — the same distance, the same
+  // timeline and the same two paths as the hero's fold above it (see
+  // .site-hero.is-collapsible in layout.scss). Transforms, not padding: the
+  // row is a flex container, and a scroll-linked inset would have laid it out
+  // once per frame. The housing at the start moves right and the one at the
+  // far end moves left, each by the whole gap.
+  --row-fold: 0;
 
   > * {
     pointer-events: auto;
+    transform: translateX(calc(var(--row-fold) * var(--control-gap)));
   }
 
-  // The bar. It reaches past the column's gutters to the window's own edges
-  // — further than any of them is wide; the window clips what is left over
-  // (see .layout) — so it reads as the window's header rather than as a
-  // panel laid on the column. Behind the housings, and not there at rest.
-  &::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    inset: 0 -3rem;
-    // Two coats of the scrim, like any panel that hangs over the page (see
-    // `floating-panel`): one alone left the list legible through the bar.
-    background-color: var(--window-scrim);
-    background-image: linear-gradient(var(--window-scrim), var(--window-scrim));
-    backdrop-filter: blur(var(--blur-chip));
-    -webkit-backdrop-filter: blur(var(--blur-chip)); // Safari ≤17
-    border-bottom: 1px solid var(--hairline-interior);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--transition-normal);
+  > .ui-toolbar-end {
+    transform: translateX(calc(-1 * var(--row-fold) * var(--control-gap)));
   }
 
-  &.is-afloat::before {
-    opacity: 1;
-  }
+  // The compositor path: it reads the scroll itself and nothing runs on a
+  // scroll frame. Longhands only — the `animation` shorthand resets the
+  // timeline and the range, and the build's minifier sorts declarations.
+  @supports (animation-timeline: scroll()) and (timeline-scope: --window) {
+    > * {
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --window;
+      // Never a zero-length range: an animation across no distance reports
+      // itself finished. Same floor the fold's own ranges carry.
+      animation-range: 0 max(1px, var(--fold-band));
+      animation-name: control-draw-in;
+    }
 
-  @media (prefers-reduced-motion: reduce) {
-    &::before {
-      transition: none;
+    > .ui-toolbar-end {
+      animation-name: control-draw-out;
     }
   }
 }
@@ -343,12 +347,31 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 // down, and a second coat made the control rows the one piece of chrome on the
 // site darker than everything around them. So the control is the surface it
 // sits on, and the blur does alone what the second coat was there for: it is
-// well past the window's own, so a heading scrolling under a sticky toolbar
+// well past the window's own, so a heading scrolling under a floating toolbar
 // smears into a wash instead of reading through the labels.
+//
+// The blur is worn by a layer behind the control rather than by the control
+// itself. A backdrop filter makes its element the root of every backdrop
+// inside it, and a picker's menu hangs inside its toolbar: filtered on the
+// housing, the menu's own blur had only the toolbar to look through, and the
+// page behind it read straight through the list.
 @mixin frosted {
+  position: relative;
   background: transparent;
-  backdrop-filter: blur(var(--blur-chip));
-  -webkit-backdrop-filter: blur(var(--blur-chip)); // Safari ≤17
+
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    // Inside the hairline, not over it: the layer is painted after the
+    // control's own outline, and a blur laid across that outline takes it
+    // for part of the backdrop and smears it away.
+    inset: 0;
+    border-radius: inherit;
+    backdrop-filter: blur(var(--blur-chip));
+    -webkit-backdrop-filter: blur(var(--blur-chip)); // Safari ≤17
+    pointer-events: none;
+  }
 
   // Without a backdrop filter there is nothing at all between a label and
   // whatever passes under it, so the scrim comes back on those engines alone —
@@ -358,6 +381,18 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
     (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
   ) {
     background: var(--window-scrim);
+  }
+}
+
+// Somewhere to type, on a device with a touch screen. iOS zooms the whole
+// page in when a field set smaller than 16px takes focus, and does not zoom
+// back out when it loses it — a visitor who tapped the chat box was left
+// with a page a third wider than their screen. The fix is the size and not
+// `maximum-scale` on the viewport, which would take pinch-zoom away from
+// everyone who needs it. A pointer stays at whatever the field was set in.
+@mixin touch-field {
+  @media (pointer: coarse) {
+    font-size: 1rem;
   }
 }
 

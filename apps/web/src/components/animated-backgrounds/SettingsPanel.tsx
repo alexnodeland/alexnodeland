@@ -11,6 +11,7 @@ import {
   SettingsSchema,
 } from '../../types/animated-backgrounds';
 import CloseIcon from '../ui/CloseIcon';
+import { ChevronIcon } from '../ui/EntryIcons';
 import { useIsMobileViewport } from './core/useIsMobileViewport';
 
 interface SettingsPanelProps {
@@ -685,14 +686,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="section-header">
               <div className="section-left">
                 <button
-                  className="section-action"
+                  className={`section-action${customAnyOpen ? ' is-open' : ''}`}
                   onClick={toggleCustomSection}
                   aria-label={
                     customAnyOpen ? 'Collapse all custom' : 'Expand all custom'
                   }
                   title={customAnyOpen ? 'collapse all' : 'expand all'}
                 >
-                  {customAnyOpen ? '▾' : '▸'}
+                  <ChevronIcon />
                 </button>
                 <div className="section-title">custom settings</div>
               </div>
@@ -705,7 +706,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   aria-expanded={!!openCategories[category]}
                 >
                   <span className="category-left">
-                    <span className="category-toggle" aria-hidden="true" />
+                    <span className="category-toggle">
+                      <ChevronIcon />
+                    </span>
                     <span className="category-title">
                       {category?.toLowerCase?.() || ''}
                     </span>
@@ -725,7 +728,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="section-header">
               <div className="section-left">
                 <button
-                  className="section-action"
+                  className={`section-action${standardAnyOpen ? ' is-open' : ''}`}
                   onClick={toggleStandardSection}
                   aria-label={
                     standardAnyOpen
@@ -734,7 +737,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   }
                   title={standardAnyOpen ? 'collapse all' : 'expand all'}
                 >
-                  {standardAnyOpen ? '▾' : '▸'}
+                  <ChevronIcon />
                 </button>
                 <div className="section-title">standard settings</div>
               </div>
@@ -747,7 +750,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   aria-expanded={!!openCategories[category]}
                 >
                   <span className="category-left">
-                    <span className="category-toggle" aria-hidden="true" />
+                    <span className="category-toggle">
+                      <ChevronIcon />
+                    </span>
                     <span className="category-title">
                       {category?.toLowerCase?.() || ''}
                     </span>

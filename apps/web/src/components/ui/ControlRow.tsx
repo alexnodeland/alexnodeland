@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { scrollBehavior } from '../../lib/utils/motion';
+import { scrollBehavior, supportsScrollTimeline } from '../../lib/utils/motion';
 import { ArrowUpIcon } from './EntryIcons';
 
 interface ControlRowProps {
@@ -30,13 +30,24 @@ interface ControlRowProps {
  * its own.
  *
  * The row has two states, and they are not the same object. At rest it is
- * part of the column: the first thing in the page, with nothing behind it.
- * Afloat, it is chrome over moving content — the list runs underneath — and
- * it becomes a bar the list disappears under (see `sticky-control-row` in
- * mixins.scss), and its far housing grows the way back to the top, which is
- * only ever wanted by someone who has left it. This component is what knows
- * which state it is in: the row is afloat from the moment it pins, with the
- * reader demonstrably away from the top.
+ * part of the column: its ends line up with the cards underneath because
+ * there is nothing underneath — the row is the first thing in the page.
+ * Afloat, the two housings float loose over the list — no bar behind them,
+ * only their own frosting — and flush stopped reading: a housing's hairline
+ * landed exactly on the border of the card passing under it, and the two made
+ * one thickened line. So the row draws in by the gap it keeps between its own
+ * housings, and the far one grows the way back to the top, which is only ever
+ * wanted by someone who has left it.
+ *
+ * The draw-in is the stylesheet's (see `sticky-control-row` in mixins.scss):
+ * it runs on the window's own scroll timeline, over exactly the band that
+ * carries the row from the column to the frame's edge, which is the same
+ * distance and the same machinery the hero folds on. What is here is the other
+ * half of that arrangement — the progress published per frame for the browsers
+ * that cannot read a scroll timeline — and the way back, which is not a scrub
+ * but a thing that is there or is not. It arrives at the end of the same
+ * travel: the row pinned, the list running under it, the reader demonstrably
+ * away from the top.
  */
 const ControlRow: React.FC<ControlRowProps> = ({
   className,
@@ -64,16 +75,29 @@ const ControlRow: React.FC<ControlRowProps> = ({
     const band = panel.querySelector<HTMLElement>('.window-band');
     let travel = Math.max(band?.offsetHeight ?? 0, 1);
 
+    // Where the draw-in comes from. On the compositor path the stylesheet runs
+    // it off the window's own scroll timeline and this writes nothing; the
+    // publisher below is for the browsers that cannot, and it is the same
+    // arrangement the hero's fold above the window keeps (see layout.tsx).
+    const published = !supportsScrollTimeline();
+
     let frame = 0;
+    let last = '';
     const read = () => {
       frame = 0;
-      // Afloat is a thing that is so or is not, and the moment it is so is
-      // the moment the row has finished arriving: pinned, with the list
-      // running under it.
-      setAfloat(panel.scrollTop >= travel);
+      const progress = Math.min(Math.max(panel.scrollTop / travel, 0), 1);
+      // The way back is a thing that is there or is not, and the moment it is
+      // wanted is the moment the row has finished arriving: pinned, with the
+      // list running under it.
+      setAfloat(progress >= 1);
+      if (!published) return;
+      const value = String(Math.round(progress * 1000) / 1000);
+      if (value === last) return;
+      last = value;
+      row.style.setProperty('--row-fold', value);
     };
-    // Once per animation frame, and all it does is read a number and hand
-    // React a boolean it usually already has.
+    // Once per animation frame, and on the compositor path all it does is read
+    // a number and hand React a boolean it usually already has.
     const onScroll = () => {
       if (!frame) frame = window.requestAnimationFrame(read);
     };
@@ -81,11 +105,12 @@ const ControlRow: React.FC<ControlRowProps> = ({
     read();
     panel.addEventListener('scroll', onScroll, { passive: true });
 
-    // A rotation changes the band, and with it how far the row travels before
-    // it pins.
+    // A rotation changes the band, and with it the distance the row draws in
+    // over.
     const observer = band
       ? new ResizeObserver(() => {
           travel = Math.max(band.offsetHeight, 1);
+          last = '';
           read();
         })
       : null;
@@ -95,6 +120,7 @@ const ControlRow: React.FC<ControlRowProps> = ({
       panel.removeEventListener('scroll', onScroll);
       observer?.disconnect();
       if (frame) window.cancelAnimationFrame(frame);
+      row.style.removeProperty('--row-fold');
     };
   }, []);
 

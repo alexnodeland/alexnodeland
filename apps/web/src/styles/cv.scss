@@ -296,14 +296,13 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   }
 }
 
-// Separator between the summary and what it opens. Inset from the card edges
-// so it reads as a divider rather than a seam, and with the same buffer above
-// and below the rule as the summary keeps under its own last line. The body
-// closes the card too (see collapse.ts), so the pointer says so across it.
+// What a summary opens, directly under it: no rule between the two — the
+// card is one outline, and the opened body is the rest of the same card. The
+// body closes the card too (see collapse.ts), so the pointer says so across
+// it.
 .cv-collapse-details {
   margin: 0 var(--card-pad);
-  padding: var(--space-3) 0 var(--space-4);
-  border-top: 1px solid var(--hairline-interior);
+  padding: 0 0 var(--card-pad);
   cursor: pointer;
 }
 

@@ -107,6 +107,17 @@ export const FeedIcon: React.FC = () => (
   </svg>
 );
 
+/**
+ * A star, in outline: a repo's stars. Drawn, because the ★ it replaces is not
+ * in the site's typeface — each platform set it from whatever symbol font it
+ * had to hand, at whatever size and weight that was.
+ */
+export const StarIcon: React.FC = () => (
+  <svg {...iconProps}>
+    <path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z" />
+  </svg>
+);
+
 /** The octocat, in outline: the way out to a repo on github. */
 export const GitHubIcon: React.FC = () => (
   <svg {...iconProps}>

@@ -251,9 +251,17 @@
 }
 
 .project-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   font-size: var(--text-small);
   color: var(--text-muted);
   margin-left: var(--space-1);
+
+  svg {
+    width: 13px;
+    height: 13px;
+  }
 }
 
 // A line under a section title: what the section is, or what a reader needs
@@ -272,8 +280,8 @@
   }
 }
 
-// The experiments: one outlined box with a row per project, the interior
-// hairline between rows — a list, so it reads as smaller than the cards
+// The experiments: one outlined box with a row per project and nothing
+// drawn between the rows — a list, so it reads as smaller than the cards
 // above it without needing a word to say so.
 .lab-list {
   @include outline-block;
@@ -286,9 +294,8 @@
 }
 
 // A row is one target the way a card is: its site or its repo stretches
-// across it. It lights with the card's wash and not the card's hairline — a
-// row only owns the divider above it, and a lit divider alone reads as a
-// rule being drawn, not a row being picked.
+// across it. It lights with the card's wash and not the card's hairline —
+// the box's outline belongs to the whole list, not to a row.
 .lab-item {
   position: relative;
   scroll-margin-top: var(--sticky-row-clearance);
@@ -298,10 +305,6 @@
   gap: var(--space-2) var(--space-5);
   padding: var(--space-3) var(--card-pad);
   transition: background-color var(--transition-normal);
-
-  & + & {
-    border-top: 1px solid var(--hairline-interior);
-  }
 
   @include reading-emphasis {
     background-color: rgba(255, 255, 255, 0.03);
@@ -433,15 +436,13 @@
   transform: translate(-50%, 6px);
 }
 
-// Three quiet facts under the graph, divided by the same interior hairline
-// the card footers use.
+// Three quiet facts under the graph, set apart from it and from each other
+// by space alone.
 .activity-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4);
   margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--hairline-interior);
 }
 
 .activity-metric {
@@ -449,11 +450,6 @@
   flex-direction: column;
   gap: var(--space-1);
   min-width: 0;
-
-  & + & {
-    border-left: 1px solid var(--hairline-interior);
-    padding-left: var(--space-4);
-  }
 }
 
 // A display number at the h3 size, in the site's one weight: prominence from

@@ -11,17 +11,19 @@
 
 // --- The toolbar ------------------------------------------------------------
 // One housing with segments — a single control, not a run of loose boxes. It
-// is the capsule of page links in the corner, at a control row's scale: one
-// hairline around the lot, a quieter one between each segment and the next,
-// and nothing else drawn. The row used to be up to five separate chips, each
-// with a border of its own and a gap either side: ten vertical lines to say
-// what three say here.
+// is the capsule of page links in the corner, at a control row's scale, and
+// built the way that is: one hairline around the lot, a hair of padding
+// inside it, and segments that are nothing but a word or a mark until the
+// pointer finds them. No line is drawn between one segment and the next. The
+// row used to be up to five separate chips, each with a border of its own and
+// a gap either side: ten vertical lines to say what the one outline says
+// here.
 //
 // It carries no scrim: the window under it has already laid the site's one
-// coat down, and the blur its segments wear (see `frosted` in mixins.scss) is
-// what keeps a heading from reading through the labels once the row is
-// afloat.
+// coat down, and the blur (see `frosted` in mixins.scss) is what keeps a
+// heading from reading through the labels once the row is afloat.
 .ui-toolbar {
+  @include frosted;
   display: inline-flex;
   align-items: stretch;
   // Shrinkable: a control row is strictly one line, so when the row runs out
@@ -29,49 +31,21 @@
   // ever wrapping under its neighbours.
   flex: 0 1 auto;
   min-width: 0;
+  // The housing's own padding: the hair between its outline and a segment's
+  // wash, on every side.
+  padding: 0.1875rem;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
   // What a segment is padded by, and so how tall the row is: a segment is a
   // 1.25rem line in this much room, whether it holds a word or a mark. The
   // phone's chrome opens it up (below).
-  --item-pad: var(--space-2);
-
-  // The line between one segment and the next. On the wrapper a picker comes
-  // in (see .ui-dropdown) as much as on a bare segment, since either can be a
-  // child here.
-  > * + * {
-    border-left: 1px solid var(--hairline-interior);
-  }
-
-  // The housing's corners, taken by whatever sits in them, so a segment's
-  // wash stops where the hairline turns. A step inside the housing's own
-  // radius, for the hairline between them.
-  --toolbar-corner: calc(var(--radius-md) - 1px);
-
-  > :first-child,
-  > :first-child > .ui-toolbar-item {
-    border-top-left-radius: var(--toolbar-corner);
-    border-bottom-left-radius: var(--toolbar-corner);
-  }
-
-  > :last-child,
-  > :last-child > .ui-toolbar-item {
-    border-top-right-radius: var(--toolbar-corner);
-    border-bottom-right-radius: var(--toolbar-corner);
-  }
+  --item-pad: 0.3125rem;
 }
 
 // A segment: a picker's trigger, a link, a button. Words in the capsules'
 // size, so the toolbar and the rail read as one kit; a mark where the verb is
 // a picture (`.is-icon`).
-//
-// The frosting is the segment's and not the housing's, although between them
-// the segments cover the whole of it. A backdrop filter makes its element the
-// root of every backdrop inside it, and a picker's menu hangs inside the
-// housing: filtered there, the menu's own blur had only the toolbar to look
-// through, and the page behind it read straight through the list.
 .ui-toolbar-item {
-  @include frosted;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -84,6 +58,8 @@
   padding: var(--item-pad) var(--space-3);
   background: transparent;
   border: none;
+  // A nested corner inside the housing's, as a segment of the capsule has.
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--text-control);
@@ -105,8 +81,9 @@
     text-decoration: none;
   }
 
-  // The ring, drawn inside the segment: outside, it would run under its
-  // neighbour on one side and over the housing's hairline on the other.
+  // The ring, drawn on the segment's own edge: outside it, it would run
+  // under its neighbour on one side and over the housing's hairline on the
+  // other.
   &:focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: -2px;
@@ -191,16 +168,17 @@
   }
 }
 
-// The menu. It hangs a hairline's breadth clear of the toolbar, from the
-// housing's own edge rather than the segment's — so the two outlines line up.
+// The menu. It hangs clear of the toolbar, from the housing's own edge
+// rather than the segment's — so the two outlines line up. (The offsets step
+// back out across the housing's padding and its hairline.)
 .ui-dropdown-menu {
   @include floating-panel;
   border-radius: var(--radius-md);
   position: absolute;
-  top: calc(100% + var(--space-1) + 1px);
-  left: -1px;
+  top: calc(100% + var(--space-2));
+  left: calc(-0.1875rem - 1px);
   z-index: 20;
-  min-width: calc(100% + 2px);
+  min-width: calc(100% + 0.375rem + 2px);
   // A long list scrolls inside the panel rather than running off the window.
   max-height: min(60vh, 20rem);
   overflow-y: auto;
@@ -217,7 +195,7 @@
   // instead of off the window.
   .ui-dropdown.align-end & {
     left: auto;
-    right: -1px;
+    right: calc(-0.1875rem - 1px);
   }
 
   // The list takes focus so the arrow keys reach it; the option is what is
@@ -318,8 +296,8 @@
 // the top, so at rest it is not there. Beside an action it opens inside the
 // housing, on the inner side — the action keeps the place it has at rest and
 // nothing else in the row moves — and "not there" is, again, a state: no
-// width, no ink, no line. The max-width is comfortably past the segment's
-// own, so open it is the segment's natural size and not a clamp on it.
+// width and no ink. The max-width is comfortably past the segment's own, so
+// open it is the segment's natural size and not a clamp on it.
 .ui-toolbar-end:not(.is-bare) > .ui-scroll-top {
   max-width: 0;
   min-width: 0;
@@ -327,6 +305,8 @@
   opacity: 0;
   visibility: hidden;
   overflow: hidden;
+  // Not transform: the row's draw-in already owns that on each housing (see
+  // `sticky-control-row`).
   transition:
     max-width var(--transition-normal),
     min-width var(--transition-normal),
@@ -336,30 +316,6 @@
     color var(--transition-fast),
     background-color var(--transition-fast),
     visibility 0s linear var(--duration-normal);
-
-  // The line between it and the action belongs to it, so the two arrive
-  // together: left on the action, it stood at the housing's inner edge at
-  // rest, a second hairline beside the first. And while it is away, the
-  // action is the housing's first segment in everything but the markup, so
-  // it takes the corner.
-  & + *,
-  & + * > .ui-toolbar-item {
-    border-top-left-radius: var(--toolbar-corner);
-    border-bottom-left-radius: var(--toolbar-corner);
-    transition:
-      border-radius var(--transition-normal),
-      color var(--transition-fast),
-      background-color var(--transition-fast);
-  }
-
-  & + * {
-    border-left-width: 0;
-    transition:
-      border-left-width var(--transition-normal),
-      border-radius var(--transition-normal),
-      color var(--transition-fast),
-      background-color var(--transition-fast);
-  }
 }
 
 .is-afloat > .ui-toolbar-end:not(.is-bare) > .ui-scroll-top {
@@ -369,26 +325,16 @@
   opacity: 1;
   visibility: visible;
   transition-delay: 0s;
-
-  & + *,
-  & + * > .ui-toolbar-item {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
-
-  & + * {
-    border-left-width: 1px;
-  }
 }
 
 // --- On a phone -------------------------------------------------------------
-// A segment is 36px of housing under a pointer, which is a comfortable target
+// A toolbar is 38px of housing under a pointer, which is a comfortable target
 // for a cursor and a mean one for a thumb. With the phone's chrome the
 // padding opens up until the row clears 44px, without changing the type or
 // the frosting, so it reads exactly the same and is simply easier to hit.
 @include compact {
   .ui-toolbar {
-    --item-pad: var(--space-3);
+    --item-pad: 0.5625rem;
   }
 
   // Options are hit with the same thumb, so the menu opens up with the row.
@@ -417,9 +363,7 @@
   // The row's two states still differ; it just arrives in them rather than
   // travelling between them.
   .ui-toolbar-end.is-bare,
-  .ui-toolbar-end > .ui-scroll-top,
-  .ui-toolbar-end > .ui-scroll-top + *,
-  .ui-toolbar-end > .ui-scroll-top + * > .ui-toolbar-item {
+  .ui-toolbar-end > .ui-scroll-top {
     transition: none;
   }
 }
