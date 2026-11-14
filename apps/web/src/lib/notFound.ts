@@ -49,3 +49,21 @@ const subscribe = (listener: () => void) => {
 
 export const useNotFound = (): boolean =>
   useSyncExternalStore(subscribe, isNotFound, isNotFound);
+
+/**
+ * The mark on the document while the 404 is up — what the chrome's
+ * stylesheet is keyed off (src/styles/404.scss). The page sets it as it
+ * mounts; the 404's own document is served already carrying it (below).
+ */
+export const NOT_FOUND_ATTRIBUTE = 'data-not-found';
+
+/**
+ * Whether a path is the 404's own document. Gatsby builds the page at both
+ * of these, and a host serves the first for every address that is not a
+ * page — so this is the markup a visitor to a missing page is sent, whatever
+ * they typed. It is how the build knows to mark that document from its first
+ * byte: without it the frame of an empty window is drawn, and then taken
+ * away once the page has mounted and said what it is.
+ */
+export const isNotFoundPath = (pathname = ''): boolean =>
+  /^\/404(\.html|\/)?$/.test(pathname);

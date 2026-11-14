@@ -32,6 +32,35 @@ describe('the site-wide head', () => {
     );
   });
 
+  it('marks the 404’s own document as one, and no other', () => {
+    // The frame of an empty window is not drawn on a 404, and the document
+    // has to say so itself: the page can only say it once it has mounted,
+    // which is a frame of an empty box later.
+    const attributesFor = (pathname?: string) => {
+      const setHtmlAttributes = jest.fn();
+      onRenderBody({
+        pathname,
+        setHtmlAttributes,
+        setHeadComponents: jest.fn(),
+      });
+      return setHtmlAttributes.mock.calls[0][0] as Record<string, string>;
+    };
+    for (const pathname of ['/404.html', '/404/', '/404']) {
+      expect(attributesFor(pathname)).toEqual({
+        lang: 'en',
+        'data-not-found': '',
+      });
+    }
+    for (const pathname of [
+      '/',
+      '/timeline/',
+      '/timeline/404-in-a-slug/',
+      undefined,
+    ]) {
+      expect(attributesFor(pathname)).toEqual({ lang: 'en' });
+    }
+  });
+
   describe('the typeface', () => {
     const preloads = (pathname?: string) =>
       headComponents(pathname).filter(el => props(el).rel === 'preload');
