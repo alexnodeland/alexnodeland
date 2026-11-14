@@ -86,7 +86,7 @@ const CVPageBody: React.FC<CVPageBodyProps> = ({
         {/* Second-level headings, like "Experience" and the sections after
             it: these two are sections of the page, not of anything above
             them, and an h3 here put a third level directly under the page's
-            title. Their size is the card's own (see .cv-overview-contact). */}
+            title. Set as the section titles are (see .cv-overview-contact). */}
         <div className="overview-section">
           <h2>overview</h2>
           <p>{data.personal.summary}</p>

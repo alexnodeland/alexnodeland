@@ -31,20 +31,24 @@
   }
 }
 
-// CV Overview and Contact Combined
+// The overview and the contact line: the page's opening section, set
+// straight in the window. It was an outlined card, alone above the sections —
+// one block in a box inside the box the window already is. The cards below
+// keep their outlines, being lists of separate things; this is the page
+// introducing itself, the way the about text does on the home page.
 .cv-overview-contact {
-  @include outline-block;
-  padding: var(--card-pad);
-  border-radius: var(--radius-lg);
   // The same step the sections below keep between each other.
   margin-bottom: var(--stack-gap);
   position: relative;
 
+  // A section of the page, like "experience" and the ones after it, so its
+  // title is set as theirs are (see .cv-section-title): it used to take a
+  // card title's size, being the title of a card.
   h2 {
-    font-size: var(--text-h4);
-    margin-bottom: var(--space-2);
+    font-size: var(--text-h3);
+    margin-bottom: var(--stack-gap);
     color: var(--text-primary);
-    letter-spacing: -0.01em;
+    @include over-background;
   }
 
   // A description, so it takes the descriptions' italic — and the house case:
