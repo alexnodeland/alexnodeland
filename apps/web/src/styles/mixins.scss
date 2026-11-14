@@ -177,6 +177,32 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
     0 0 12px rgba(0, 0, 0, 0.6);
 }
 
+// The current item, where the reader's own colours have taken over. Forced
+// colours take every background away, and with it the wash that says which
+// item is the current one: the page in the capsule, the option under the
+// arrows in a menu or in the search's results, the open tab in the settings.
+// The state is still announced, but it has stopped being drawn. So there the
+// item opts back out and is painted the way the reader's scheme paints "this
+// one" — its highlight colour, and the ink that goes on it. Not an outline:
+// the focus ring is one, on these same items, and a second line in its place
+// would be the ring going missing.
+//
+// Included inside the rule that draws the wash, so it follows that rule in
+// the cascade wherever the stylesheet ends up in the bundle.
+@mixin current-in-forced-colors {
+  @media (forced-colors: active) {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+
+    // What is inside can carry inks of its own, chosen for the site's dark
+    // ground and not for this one.
+    * {
+      color: inherit;
+    }
+  }
+}
+
 // Every content block inside the window — card, panel, chip, control — is an
 // outline rather than a fill. The window is a translucent scrim with a
 // simulation running through it, and a solid panel laid over that reads as a

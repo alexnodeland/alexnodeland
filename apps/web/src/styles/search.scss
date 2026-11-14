@@ -95,6 +95,7 @@
   // same thing here — takes the wash every control does.
   &.is-active {
     background-color: var(--wash-active);
+    @include current-in-forced-colors;
   }
 }
 

@@ -962,6 +962,7 @@
 
       &.active {
         @include control-active;
+        @include current-in-forced-colors;
       }
     }
   }

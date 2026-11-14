@@ -571,6 +571,27 @@
   }
 }
 
+// Forced colours repaint every border in the system's own ink, the
+// transparent ones included. On a control that is the point of a transparent
+// border — the box is there to be drawn when the reader's colours take over —
+// but the two above are geometry, not lines, and drawn they were a second box
+// around the hero, outside the window's real edge. The frame gives its border
+// up, having nothing inside it to hold in. The scroller's border was doing
+// two jobs, and both are restated: padding keeps the content its inset, and a
+// clip keeps it inside the hairline — without one, a line of text scrolling
+// out at the foot of the window is painted across the hairline's own row.
+@media (forced-colors: active) {
+  .window-frame {
+    border: 0;
+  }
+
+  .layout {
+    border: 0;
+    padding: 1px;
+    clip-path: inset(1px round calc(var(--radius-lg) - 1px));
+  }
+}
+
 // Focusable for the skip link alone, and for the same reason ringless: the
 // link says where focus has gone, and a ring around the whole column of the
 // page says nothing more.
@@ -714,6 +735,7 @@
   &.active {
     color: var(--text-primary);
     background-color: var(--wash-active);
+    @include current-in-forced-colors;
   }
 }
 

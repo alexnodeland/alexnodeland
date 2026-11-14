@@ -234,6 +234,7 @@
   &.is-active {
     color: var(--text-primary);
     background-color: var(--wash-hover);
+    @include current-in-forced-colors;
   }
 
   // The current value is a value, not a hover: brighter type, and a tick at
@@ -265,6 +266,7 @@
 // allowed to mean anything. The trigger stays neutral chrome either way.
 .ui-dropdown.tone-action .ui-dropdown-option.is-active {
   color: var(--ink-primary);
+  @include current-in-forced-colors;
 }
 
 // --- The far end of a row ---------------------------------------------------
