@@ -9,6 +9,10 @@ test.describe('Site search', () => {
     test.skip(isMobile, 'a phone has no keyboard chord; see the next test');
     const errors = trackCriticalErrors(page);
     await page.goto('/timeline');
+    // The chord is the shell's to hear, and the shell is listening once it
+    // has hydrated: a key pressed on the bare markup of a fast static build
+    // goes to nobody.
+    await page.waitForLoadState('networkidle');
 
     await page.keyboard.press('ControlOrMeta+k');
     const dialog = page.getByRole('dialog', { name: 'search the site' });

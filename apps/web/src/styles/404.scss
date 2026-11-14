@@ -16,17 +16,13 @@
 // with nothing behind it the footer stands on the field the way the hero
 // does.
 //
-// Coming from a page inside the site the frame fades rather than cuts, and
-// fades back in on the way out; the transition is on the two layers at all
-// times for that, and a cold load, which starts in one state or the other,
-// never runs it.
-.window-frame,
-.window-edge {
-  transition:
-    opacity var(--transition-slow),
-    visibility 0s;
-}
-
+// Coming from a page inside the site the frame fades rather than cuts. The
+// transition is declared in this state and nowhere else: on every other page
+// the frame and its edge are moved by the scroll and by nothing in time (the
+// fold, see layout.scss), and a transition left standing on them is one more
+// thing for that to be measured against. So the way out of a 404 is a cut —
+// the frame arrives with the page it frames, which arrives at once too — and
+// a cold load, which starts in this state, runs nothing.
 html[data-not-found] {
   .window-frame,
   .window-edge {
@@ -125,14 +121,12 @@ html[data-not-found] {
 // backgrounds handle that), the chrome staying exactly where it is, and the
 // frame simply not being there rather than fading.
 @media (prefers-reduced-motion: reduce) {
-  .window-frame,
-  .window-edge,
-  html[data-not-found] .window-frame,
-  html[data-not-found] .window-edge {
-    transition: none;
-  }
-
   html[data-not-found] {
+    .window-frame,
+    .window-edge {
+      transition: none;
+    }
+
     .nav,
     .site-hero .hero-crumb-rest,
     .site-hero p {

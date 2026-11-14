@@ -38,10 +38,16 @@ test.describe('Projects Page', () => {
     await expect(firstRepo).toHaveAttribute('href', /^https:\/\/github\.com\//);
 
     // Whichever mark the card as a whole follows covers the whole card, so a
-    // click on the body of it lands on that link rather than on nothing.
+    // click on the body of it lands on that link rather than on nothing. The
+    // body is probed at the description, not at the box's middle: a card with
+    // an install line has that line lifted above the link on purpose, so the
+    // command on it can be selected, and where it falls is the layout's
+    // business.
     const covered = await cards.first().evaluate(card => {
       const link = card.querySelector('.is-card-link') as HTMLElement;
-      const box = card.getBoundingClientRect();
+      const box = card
+        .querySelector('.project-description')!
+        .getBoundingClientRect();
       const hit = document.elementFromPoint(
         box.left + box.width / 2,
         box.top + box.height / 2
