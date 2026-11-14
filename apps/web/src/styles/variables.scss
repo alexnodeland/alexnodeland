@@ -84,11 +84,12 @@
   );
   // The bottom inset is deeper than the sides: the floating pills (background
   // label bottom-left, chat bottom-right) live on the field below the window,
-  // not on top of it. A pill is 2.875rem of housing sitting 2rem off the
-  // bottom, so the stack tops out at ~4.9rem and the window clears it with
-  // room to spare rather than by a hairline. The safe area is added on top
-  // because the pills are pushed up by exactly that much (see --rail-inset-*).
-  --window-inset-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  // not on top of it. A pill is 2.875rem of housing sitting 1.5rem off the
+  // bottom, so the stack tops out at ~4.4rem and the window clears it by the
+  // gap a card keeps from the next rather than by a hairline. The safe area
+  // is added on top because the pills are pushed up by exactly that much (see
+  // --rail-inset-*).
+  --window-inset-bottom: calc(5.125rem + env(safe-area-inset-bottom, 0px));
   --window-scrim: rgba(7, 8, 10, 0.38);
   --window-border: var(--hairline);
   // The two sidebars — the settings panel on the left, the chat on the right —
@@ -111,7 +112,7 @@
   // take these rather than the window's own offsets, so their right edges
   // agree at every viewport width — the window's side inset opens up on wide
   // displays and would pull them apart.
-  --rail-inset: 2rem;
+  --rail-inset: 1.5rem;
   // The same offset, resolved against the display's own unusable edges. The
   // viewport runs corner to corner here — src/html.js asks for
   // `viewport-fit=cover` so the simulations reach the physical edge — which
@@ -141,12 +142,12 @@
   --rail-clearance: calc(
     var(--rail-inset-top) + var(--rail-height) + var(--space-2)
   );
-  // What an anchor target inside the window has to clear: the sticky row of
-  // control chips at the top of the window's scroll (its padding and a chip,
-  // ~51px on a desktop and ~67px on a phone, where the chips open up for a
+  // What an anchor target inside the window has to clear: the sticky control
+  // row at the top of the window's scroll (its padding and a toolbar, ~54px
+  // on a desktop and ~62px on a phone, where the segments open up for a
   // thumb) and a breath. One number for every page and every width, so a
-  // section arriving from a link never parks its heading under the chips.
-  --sticky-row-clearance: 5rem;
+  // section arriving from a link never parks its heading under the row.
+  --sticky-row-clearance: 4.5rem;
 
   // --- The column -----------------------------------------------------------
   // One content width for the whole site — the projects page's, which was the
@@ -162,7 +163,12 @@
   // no page container inside .main adds any of its own. That is what makes the
   // left edge of a hero title, the left edge of the brand pill and the left
   // edge of a card inside the window land on the same x at every width.
-  --gutter: var(--space-6);
+  //
+  // A step tighter than it was at every width. The window's frame, this, a
+  // card's own outline and the card's padding are four insets one inside the
+  // other, and at the old measures a phone's 390 points had 308 left for the
+  // words: the column was being squeezed to make room for its own margins.
+  --gutter: var(--space-5);
 
   // --- Layering -------------------------------------------------------------
   // One ladder. The stage (hero and window) is the floor; the rail floats
@@ -215,17 +221,17 @@
   // and the air below it, and it is the gap between the stacked items of every
   // list page — so a page reads as an even column rather than as bands of
   // different depths. One value at every width on purpose: a rhythm that
-  // changes at a breakpoint is not a rhythm, and this is the number the pages
-  // were tuned to on a phone.
-  --stack-gap: var(--space-4);
+  // changes at a breakpoint is not a rhythm. Tight: the cards are outlines,
+  // and an outline needs far less air around it than a filled slab does to
+  // read as its own object.
+  --stack-gap: var(--space-2);
 
-  // The coat of air inside a card — a blog preview, a project, a cv entry, a
-  // panel. One value at every width, the rhythm's own: a card's inside and the
-  // space around it are the same distance, so a column of cards reads as an
-  // even weave rather than as slabs with wide margins. It was a step wider on
-  // a desktop and a step narrower on a phone, which made the same card two
-  // different objects.
-  --card-pad: var(--space-4);
+  // The coat of air inside a card — a timeline entry, a project, a cv entry,
+  // a panel. One value at every width: it was a step wider on a desktop and a
+  // step narrower on a phone, which made the same card two different objects.
+  // A step past the gap between cards, so a card's text sits clear of its own
+  // outline while the cards themselves sit close.
+  --card-pad: var(--space-3);
 
   // --- Type -----------------------------------------------------------------
   // JetBrains Mono, shipped from fonts.scss. What follows it is what a reader
@@ -267,7 +273,7 @@
   // Line heights: headings and labels, chrome, prose.
   --leading-tight: 1.3;
   --leading-chrome: 1.5;
-  --leading-prose: 1.7;
+  --leading-prose: 1.6;
 
   // --- Motion ---------------------------------------------------------------
   // Two curves and three durations, and nothing else. What arrives or settles
@@ -289,11 +295,10 @@
 
   @include compact {
     --window-inset: 0.75rem;
-    // Pills move to 1rem and the chat icon shrinks to a 3rem disc. The bottom
-    // inset is unchanged: the hint rows were already hidden at this width, so
-    // there was nothing there to reclaim.
-    --window-inset-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
-    --gutter: var(--space-5);
+    // The launchers move to 1rem off the bottom and are 3rem squares, so the
+    // stack tops out at 4rem and the window clears it by the cards' own gap.
+    --window-inset-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    --gutter: var(--space-4);
     // The rail moves in with the pills, and the capsule takes its natural
     // width rather than the pill's footprint (the pill is a 3rem disc here).
     --rail-inset: 1rem;
@@ -308,8 +313,7 @@
 
   @media (max-width: 480px) {
     --window-inset: 0.5rem;
-    --window-inset-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
-    --gutter: var(--space-4);
+    --gutter: var(--space-3);
   }
 }
 

@@ -35,26 +35,21 @@ test.describe('CV Page', () => {
     await expect(page.getByRole('option', { name: 'markdown' })).toBeVisible();
   });
 
-  test('should have search functionality', async ({ page }) => {
+  test('is found by the site search, which is the only search it has', async ({
+    page,
+  }) => {
     await page.goto('/cv');
 
-    // On a phone the search panel is folded away behind a chip in the
-    // control row; unfold it first. A desktop never draws the chip.
-    const toggle = page.locator('.ui-search-toggle');
-    if (await toggle.isVisible()) await toggle.click();
+    // The page has no box of its own to type in: the row is a length and a
+    // download.
+    await expect(page.locator('.cv input')).toHaveCount(0);
 
-    // Look for search input (any input should work)
-    const searchInput = page.locator('input').first();
-    if ((await searchInput.count()) > 0) {
-      await searchInput.fill('react');
-      // Just verify the page still loads after search
-      await expect(
-        page
-          .getByText(/alex nodeland/i)
-          .filter({ visible: true })
-          .first()
-      ).toBeVisible();
-    }
+    // The capsule's last segment opens the one search, on a phone and on a
+    // desktop alike, and a role is in it.
+    await page.getByRole('button', { name: 'search the site' }).click();
+    const dialog = page.getByRole('dialog', { name: 'search the site' });
+    await dialog.getByRole('combobox').fill('perch');
+    await expect(dialog.getByRole('option').first()).toBeVisible();
   });
 
   // Opens the download menu and takes one format. The menu closes itself

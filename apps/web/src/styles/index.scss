@@ -72,7 +72,7 @@
   position: relative;
 
   p {
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-4);
     line-height: var(--leading-prose);
     // Ragged right at every width. The column is only wide enough to justify
     // cleanly when no sidebar is open; with the settings panel and the chat
@@ -96,13 +96,12 @@
   margin-bottom: var(--space-5);
   position: relative;
 
-  // Above and below alike — see the note on .about.
   h2 {
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-3);
   }
 
   p {
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-5);
     line-height: var(--leading-prose);
     color: var(--text-secondary);
   }
@@ -131,10 +130,10 @@
   margin-bottom: var(--space-5);
 
   // A section title inside the window, like the CV's and the projects page's:
-  // the halo, since the simulation runs behind the scrim it sits on. Its air is
-  // the same above and below — see the note on .about.
+  // the halo, since the simulation runs behind the scrim it sits on. It opens
+  // a group of cards, and sits close over them.
   h2 {
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-3);
     @include over-background;
   }
 }
@@ -143,8 +142,8 @@
 // markers come off, and the grid's gap is the only space between the items.
 .expertise-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: var(--stack-gap);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -152,27 +151,34 @@
 
 // A static schematic panel — no hover, no reading emphasis, no wipe: the cards
 // state what the work is, and the icons carry the only motion.
+//
+// A row, not a poster: the drawing at the start, the title and its line
+// beside it. Each used to be a centred stack — a 64px drawing over a title
+// over a line, in a deep coat of padding — and six of them were two screens
+// of a phone for six short sentences.
 .expertise-item {
   @include outline-block;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-3);
+  align-items: start;
   margin: 0;
-  padding: var(--space-6) var(--space-5);
+  padding: var(--card-pad);
   border-radius: var(--radius-lg);
-  text-align: center;
   position: relative;
-  overflow: hidden;
 
   // The icons are inline svg drawn as a set: one stroke weight, colour taken
-  // from the surrounding text colour rather than baked in.
+  // from the surrounding text colour rather than baked in. The drawing spans
+  // both of the text's rows.
   .expertise-icon {
-    margin-bottom: var(--space-4);
+    grid-row: span 2;
     display: block;
     color: var(--text-primary);
 
     svg {
-      width: 64px;
-      height: 64px;
-      display: inline-block;
-      vertical-align: middle;
+      display: block;
+      width: 40px;
+      height: 40px;
     }
   }
 
@@ -180,8 +186,8 @@
   // than the page scale's: both take the global margins off.
   .expertise-title {
     font-size: var(--text-h4);
-    margin: 0 0 var(--space-2);
-    line-height: var(--leading-prose);
+    margin: 0;
+    line-height: var(--leading-chrome);
     color: var(--text-primary);
     letter-spacing: -0.01em;
   }
@@ -196,12 +202,6 @@
 }
 
 @media (max-width: 768px) {
-  .about,
-  .consulting,
-  .expertise {
-    margin-bottom: var(--space-7);
-  }
-
   .cta-buttons {
     flex-direction: column;
     align-items: center;
@@ -211,21 +211,6 @@
   .cta-button {
     width: 100%;
     max-width: 280px;
-  }
-
-  .expertise-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-4);
-  }
-
-  .expertise-item {
-    padding: var(--space-5) var(--space-4);
-  }
-}
-
-@media (max-width: 480px) {
-  .expertise-item {
-    padding: var(--space-4);
   }
 }
 

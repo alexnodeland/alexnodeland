@@ -158,13 +158,21 @@ describe('BlogPost Template', () => {
 
   it('offers the typeset copy and one way to pass it on', () => {
     const { container } = render(<BlogPost data={mockData as any} />);
-    expect(container.querySelector('.post-download')).toHaveAttribute(
+    expect(container.querySelector('.post-download a')).toHaveAttribute(
       'href',
       '/timeline/pdf/my-post.pdf'
     );
     const chips = container.querySelectorAll('.pass-along-chip');
     expect(chips).toHaveLength(1);
     expect(chips[0].tagName).toBe('BUTTON');
+    // Each is a one-segment toolbar: the same housing a list page's row wears.
+    for (const control of [
+      chips[0],
+      container.querySelector('.post-download a'),
+    ]) {
+      expect(control).toHaveClass('ui-toolbar-item');
+      expect(control?.parentElement).toHaveClass('ui-toolbar');
+    }
   });
 
   // The reason it is a button and not a link, and the reason this test is

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import TimelinePage from '../../../pages/timeline';
@@ -117,7 +117,7 @@ describe('Timeline Page', () => {
       screen.queryByRole('button', { name: 'ai' })
     ).not.toBeInTheDocument();
 
-    // The row is the two pickers and the search: no reset chip. Each picker
+    // The row is the two pickers and the feed: no reset chip. Each picker
     // resets itself through its own "all" or default option.
     expect(
       screen.queryByRole('button', { name: 'clear filters' })
@@ -161,12 +161,19 @@ describe('Timeline Page', () => {
     const feed = screen.getByRole('link', { name: 'rss feed' });
     expect(feed).toHaveAttribute('href', '/rss.xml');
     expect(feed).toHaveAttribute('type', 'application/rss+xml');
-    // In the row, in the chips' chrome, right after the sort picker.
+    // In the row's far housing, with what can be taken away — not in among
+    // the pickers, which are about what is shown.
     const row = document.querySelector('.timeline-control-bar') as HTMLElement;
-    expect(row).toContainElement(feed);
-    expect(feed).toHaveClass('ui-chip-button');
-    const sort = row.querySelector('.timeline-sort-dropdown') as HTMLElement;
-    expect(sort.nextElementSibling).toBe(feed);
+    expect(row.querySelector('.ui-toolbar-end')).toContainElement(feed);
+    expect(feed).toHaveClass('ui-toolbar-item');
+    const pickers = row.querySelector(
+      '.ui-toolbar:not(.ui-toolbar-end)'
+    ) as HTMLElement;
+    expect(
+      Array.from(pickers.children).map(
+        child => child.className.match(/timeline-\w+-dropdown/)?.[0]
+      )
+    ).toEqual(['timeline-tag-dropdown', 'timeline-sort-dropdown']);
   });
 
   it('filters by tag through the dropdown', async () => {
@@ -198,16 +205,15 @@ describe('Timeline Page', () => {
     expect(titlesInOrder()).toEqual(['Alpha Post', 'Zeta Post']);
   });
 
-  it('still filters by search, from its own panel', () => {
-    render(<TimelinePage data={mockData as any} />);
-
-    const search = screen.getByPlaceholderText(
-      'search posts...'
-    ) as HTMLInputElement;
-    fireEvent.change(search, { target: { value: 'alpha' } });
-
-    expect(screen.getAllByRole('article')).toHaveLength(1);
-    expect(screen.getByText('Alpha Post')).toBeInTheDocument();
+  it('has no search box of its own', () => {
+    // The site has one search, in the capsule of page links on every page,
+    // and it finds a post by its body as well as its title. A second box
+    // here, behind a second magnifier, was the same question asked twice.
+    const { container } = render(<TimelinePage data={mockData as any} />);
+    expect(container.querySelector('input')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /search/i })
+    ).not.toBeInTheDocument();
   });
 
   it('drives the pickers from the keyboard', async () => {
@@ -314,7 +320,7 @@ describe('Timeline Page', () => {
 
   it('comes back to the tag and the order it was left on', () => {
     (window.sessionStorage.getItem as jest.Mock).mockReturnValue(
-      JSON.stringify({ tag: 'AI', sort: 'asc', search: '', scrollTop: 0 })
+      JSON.stringify({ tag: 'AI', sort: 'asc', scrollTop: 0 })
     );
 
     render(<TimelinePage data={mockData as any} />);

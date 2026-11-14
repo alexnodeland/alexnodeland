@@ -8,10 +8,8 @@
 }
 
 // The projects row of chrome: the category (or, on /apps, the platform)
-// picker, alone. No bar holds it — it floats as a loose chip carrying its own
-// frosting, so it still reads while cards scroll underneath. Geometry and
-// material are the shared ones; see `sticky-control-row` in mixins.scss and
-// .ui-dropdown in controls.scss.
+// picker, alone. Geometry and material are the shared ones; see
+// `sticky-control-row` in mixins.scss and .ui-toolbar in controls.scss.
 .projects-control-bar {
   @include sticky-control-row;
 }
@@ -43,7 +41,9 @@
 // do — the window's one gap — and an anchor target lands clear of the sticky
 // control chips.
 .projects-section {
-  margin-bottom: var(--stack-gap);
+  // A section's worth of air: more than the cards inside one keep between
+  // themselves, so the sections read as groups.
+  margin-bottom: var(--space-5);
   scroll-margin-top: var(--sticky-row-clearance);
 }
 
@@ -141,7 +141,7 @@
 // The title row: the name alone. Every card on the page is a repo, and the
 // octocat at the foot already says where it leads.
 .project-header {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-2);
 }
 
 // The card title, at the blog preview's size. A repo name is the one thing on
@@ -161,7 +161,7 @@
   font-size: var(--text-body);
   color: var(--text-secondary);
   line-height: var(--leading-prose);
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-3);
 }
 
 // The tags, as one line directly above the meta foot — the same quiet band
@@ -189,7 +189,7 @@
 .project-install {
   position: relative;
   z-index: 1;
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-3);
 
   // Where the line is typed, or what it does, when it is not a shell
   // install: the tag line's voice, just over the box.
@@ -217,17 +217,17 @@
   }
 }
 
-// The meta band, the same shape the blog card carries: quiet facts on the
-// left, the way out parked at the far end, one hairline above it. One row at
-// every width — a language, a star count and a glyph never need more.
+// The meta line that closes the card: quiet facts on the left, the ways out
+// parked at the far end. One row at every width — a language, a star count
+// and a glyph never need more. No rule above it: the card's own outline is
+// the line that says where it ends, and a second one a few pixels inside it
+// drew the same boundary twice.
 .project-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-2) var(--space-4);
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--hairline-interior);
+  margin-top: var(--space-3);
 }
 
 .project-language {
@@ -296,7 +296,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2) var(--space-5);
-  padding: var(--space-4) var(--card-pad);
+  padding: var(--space-3) var(--card-pad);
   transition: background-color var(--transition-normal);
 
   & + & {
@@ -363,7 +363,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-3);
 }
 
 .activity-title {
@@ -439,8 +439,8 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4);
-  margin-top: var(--space-5);
-  padding-top: var(--space-5);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--hairline-interior);
 }
 
@@ -476,7 +476,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
-  margin-top: var(--space-5);
+  margin-top: var(--space-3);
 }
 
 // The legend and the way out, together at the far end of the foot.

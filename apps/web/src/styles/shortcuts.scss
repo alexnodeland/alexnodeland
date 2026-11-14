@@ -7,10 +7,10 @@
 // reader consults once. This is the whole of that information behind `?`,
 // plus a quiet line at the foot of the screen so it is still discoverable.
 
-// The hints' row. Bottom-centre of the field, on the same row as the two
-// pills — its box spans the rail height so the hints sit centred on their
-// line. It holds the way to the search and the way to the shortcuts, side by
-// side; the search's own look is in search.scss.
+// The hint's row. Bottom-centre of the field, on the same row as the two
+// pills — its box spans the rail height so the hint sits centred on their
+// line. It holds the way to the shortcuts, and nothing else: the way to the
+// search is in the capsule of page links.
 .rail-hints {
   position: fixed;
   // The rail's bottom offset — this sits on the pills' own line.
@@ -180,9 +180,9 @@
 }
 
 @include compact {
-  // The rail's controls are tap targets at this width and there is no
-  // keyboard to shortcut with.
-  .shortcuts-hint {
+  // There is no keyboard on a phone to list the shortcuts of. The foot of
+  // the field is the two launchers and the room between them.
+  .rail-hints {
     display: none;
   }
 }

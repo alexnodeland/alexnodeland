@@ -1,5 +1,4 @@
 import React, {
-  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -11,7 +10,6 @@ import ControlRow from '../components/ui/ControlRow';
 import Dropdown from '../components/ui/Dropdown';
 import { ArrowOutIcon } from '../components/ui/EntryIcons';
 import FeedLink from '../components/ui/FeedLink';
-import SearchToggle from '../components/ui/SearchToggle';
 import SEO from '../components/seo';
 import { DropdownOption } from '../components/ui/Dropdown';
 import { formatMonthDay, yearOf } from '../lib/utils/dates';
@@ -70,25 +68,10 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
     post => post.parent && post.parent.sourceInstanceName === 'blog'
   );
 
-  // State for search, filtering, and sorting
-  const [searchTerm, setSearchTerm] = useState('');
-  // Phone only: whether the search panel is folded out. Desktop ignores it.
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  // The view: a tag and an order. There is no search box of its own here —
+  // the site's one search is in the capsule of page links, on every page, and
+  // it finds a post by its body as well as its title.
   const pageRef = useRef<HTMLDivElement>(null);
-  // Focus follows the reader's own hand on the chip, and only that. The panel
-  // also opens on arrival when there is a restored search term to show, and
-  // focusing then would both steal the caret and scroll the field into view —
-  // which is the one thing the restore below is trying to decide.
-  const openedByReader = useRef(false);
-  useEffect(() => {
-    if (searchOpen && openedByReader.current) searchInputRef.current?.focus();
-    openedByReader.current = false;
-  }, [searchOpen]);
-  const toggleSearch = useCallback(() => {
-    openedByReader.current = true;
-    setSearchOpen(open => !open);
-  }, []);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   // Whether the session's view has been read back yet. Nothing is written to
@@ -105,10 +88,6 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
     if (saved) {
       setSelectedCategory(saved.tag);
       setSortOrder(saved.sort);
-      setSearchTerm(saved.search);
-      // A filter the reader cannot see is a page that looks broken, so a
-      // restored term brings its panel back out with it.
-      if (saved.search) setSearchOpen(true);
     }
     setRestored(true);
   }, []);
@@ -154,12 +133,8 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
   // The pickers, as they are changed.
   useEffect(() => {
     if (!restored) return;
-    saveTimelineView({
-      tag: selectedCategory,
-      sort: sortOrder,
-      search: searchTerm,
-    });
-  }, [restored, selectedCategory, sortOrder, searchTerm]);
+    saveTimelineView({ tag: selectedCategory, sort: sortOrder });
+  }, [restored, selectedCategory, sortOrder]);
 
   // The offset, once — on the way out. A write per scroll frame would be a
   // JSON round trip per frame for a number that is only ever read after the
@@ -196,25 +171,13 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
     return cats;
   }, [allPosts]);
 
-  // Filter and sort posts based on search term, category, and sort order
+  // The posts the tag lets through, in the order asked for.
   const filteredPosts = useMemo(() => {
-    const filtered = allPosts.filter(post => {
-      const matchesSearch =
-        searchTerm === '' ||
-        post.frontmatter.title
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        post.frontmatter.description
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesCategory =
+    const filtered = allPosts.filter(
+      post =>
         selectedCategory === null ||
-        post.frontmatter.category === selectedCategory;
-
-      return matchesSearch && matchesCategory;
-    });
+        post.frontmatter.category === selectedCategory
+    );
 
     // Sort by date
     return filtered.sort((a, b) => {
@@ -223,7 +186,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
 
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-  }, [allPosts, searchTerm, selectedCategory, sortOrder]);
+  }, [allPosts, selectedCategory, sortOrder]);
 
   // Which card a year break falls above: the first of each run of them, in
   // whatever order the list is currently in. Derived from the sorted list
@@ -287,11 +250,16 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
         )}
       />
       <div className="timeline-page" ref={pageRef}>
-        {/* The two pickers and the feed, left, and the way to the search box
-            at the far end: the one row every list page carries (see the cv
-            and projects). Each picker resets itself through its own "all" or
-            default option, so there is no separate reset. */}
-        <ControlRow className="timeline-control-bar">
+        {/* The one row every list page carries (see the cv and projects):
+            what is shown, at the start — here a tag and an order — and what
+            can be taken away, at the far end — here the feed. Each picker
+            resets itself through its own "all" or default option, so there is
+            no separate reset. */}
+        <ControlRow
+          className="timeline-control-bar"
+          // The feed: the same list, for a reader.
+          actions={<FeedLink href="/rss.xml" className="timeline-feed-link" />}
+        >
           <Dropdown
             ariaLabel="Filter posts by tag"
             triggerLabel={tagLabel}
@@ -311,36 +279,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
             onSelect={value => setSortOrder(value as 'desc' | 'asc')}
             className="timeline-sort-dropdown"
           />
-
-          {/* The feed, beside the pickers: the same list, for a reader. */}
-          <FeedLink href="/rss.xml" className="timeline-feed-link" />
-
-          <SearchToggle
-            open={searchOpen}
-            onToggle={toggleSearch}
-            controls="timeline-search"
-          />
         </ControlRow>
-
-        {/* Somewhere to type rather than a piece of chrome, so it keeps its
-            own panel below the row, folded away behind the chip above until
-            it is asked for. */}
-        <div
-          id="timeline-search"
-          className={`ui-search-panel timeline-search-panel${
-            searchOpen ? ' is-open' : ''
-          }`}
-        >
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="search posts..."
-            aria-label="Search posts"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
 
         <div className="timeline-content">
           {filteredPosts.length === 0 ? (
@@ -348,7 +287,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
               <p>
                 {allPosts.length === 0
                   ? 'nothing here yet.'
-                  : 'no posts match. clear the search or pick another category.'}
+                  : 'no posts carry that tag. pick another.'}
               </p>
             </div>
           ) : (

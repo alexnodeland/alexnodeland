@@ -24,18 +24,17 @@ describe('Shortcuts', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('shares its row with the way to the search, which comes first', () => {
+  it('has the foot of the field to itself', () => {
+    // The way to the search used to sit beside it. That is in the capsule of
+    // page links now, where a site's search is looked for.
     const { container } = render(<Shortcuts />);
     const row = container.querySelector('.rail-hints') as HTMLElement;
     const hints = Array.from(row.querySelectorAll('button')).map(button =>
       button.getAttribute('aria-label')
     );
-    // Each is named with what is drawn on it: the caps are part of what the
-    // button is called, so someone who speaks what they see reaches it.
-    expect(hints).toEqual([
-      'search the site (ctrl K)',
-      'keyboard shortcuts (?)',
-    ]);
+    // Named with what is drawn on it: the cap is part of what the button is
+    // called, so someone who speaks what they see reaches it.
+    expect(hints).toEqual(['keyboard shortcuts (?)']);
   });
 
   it('opens on ? and closes on ? again', () => {

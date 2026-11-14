@@ -35,16 +35,25 @@ test.describe('Site search', () => {
     expect(errors).toHaveLength(0);
   });
 
-  test('opens from the magnifier on a phone', async ({ page, isMobile }) => {
-    test.skip(!isMobile, 'the desktop hint is covered by the chord test');
+  test('opens from the capsule of page links, on a phone and on a desktop', async ({
+    page,
+  }) => {
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'search the site' }).tap();
+    // The capsule's last segment, at every width: there is one way to the
+    // search for a pointer or a thumb, and it is where the page links are.
+    const button = page.getByRole('button', { name: 'search the site' });
+    await expect(page.locator('.nav-menu')).toContainText('cv');
+    await expect(page.locator('.nav-menu > :last-child')).toHaveAttribute(
+      'aria-label',
+      'search the site'
+    );
+    await button.click();
     const dialog = page.getByRole('dialog', { name: 'search the site' });
     await expect(dialog).toBeVisible();
 
     await dialog.getByRole('combobox').fill('apps');
-    await dialog.getByRole('option').first().tap();
+    await dialog.getByRole('option').first().click();
     await expect(page).toHaveURL(/\/apps\/?$/);
   });
 });

@@ -1,10 +1,15 @@
 # Site search
 
 One search box over the whole site, opened with **⌘K** (**Ctrl+K** off a Mac)
-or **/**, from any page. On a phone, the magnifier between the two pills at the
-foot of the screen opens it. It finds pages, posts, projects, apps, experiments
-and CV roles, and a result goes straight to its page, or for a project or an
-app, to its card.
+or **/**, from any page, or from the magnifier that closes the capsule of page
+links — on a phone and on a desktop alike. It finds pages, posts, projects,
+apps, experiments and CV roles, and a result goes straight to its page, or for
+a project or an app, to its card.
+
+It is the site's only search. The timeline and the CV used to carry a box of
+their own behind a second magnifier; a list page's control row is now what is
+shown (its pickers) and what can be taken away (a feed, a download), and
+nothing to type into.
 
 ## How it works
 
@@ -32,13 +37,13 @@ An empty search lists the pages, as a way to go somewhere.
 
 ## Where things live
 
-| What                     | Where                                                               |
-| ------------------------ | ------------------------------------------------------------------- |
-| The palette and its hint | `src/components/search/SearchPalette.tsx`, `src/styles/search.scss` |
-| The hints' row           | `src/components/ShortcutsModal.tsx`, `src/styles/shortcuts.scss`    |
-| Ranking and loading      | `src/lib/search.ts`                                                 |
-| The documents            | `scripts/lib/search-docs.js`, `scripts/lib/search-corpus.mjs`       |
-| A project's card anchor  | `projectAnchor` in `src/components/projects/ProjectCard.tsx`        |
+| What                       | Where                                                                             |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| The palette and its button | `src/components/search/SearchPalette.tsx`, `src/styles/search.scss`               |
+| Where the button sits      | the nav in `src/components/layout.tsx`, `.nav-search` in `src/styles/layout.scss` |
+| Ranking and loading        | `src/lib/search.ts`                                                               |
+| The documents              | `scripts/lib/search-docs.js`, `scripts/lib/search-corpus.mjs`                     |
+| A project's card anchor    | `projectAnchor` in `src/components/projects/ProjectCard.tsx`                      |
 
 A project's card carries the same `#project-<name>` fragment its linked-data
 URI uses, so `/projects/#project-fugue` lands on the card from a search result

@@ -1,24 +1,7 @@
 @use 'mixins' as *;
 
-// The site-wide search: its hint at the foot of the field, and the palette
-// it opens. The hint shares its row and its manner with the shortcuts hint
-// (see .rail-hints and .rail-hint in shortcuts.scss); what is here is only
-// what is the search's own.
-
-// On a desktop, the chord's key caps, side by side; the magnifier waits for a
-// screen with no keyboard.
-.search-hint {
-  .search-hint-keys {
-    display: inline-flex;
-    gap: 0.125rem;
-  }
-
-  .search-hint-glyph {
-    display: none;
-    width: 18px;
-    height: 18px;
-  }
-}
+// The site-wide search: the palette. The way to it is the last segment of the
+// capsule of page links (see .nav-search in layout.scss).
 
 // The palette hangs in the upper third rather than the middle: the results
 // grow downward from the box as they arrive, and a box that stays where it
@@ -148,26 +131,6 @@
 }
 
 @include compact {
-  // No keyboard to press the chord on, so no chord: the hint is a tap
-  // target on the pills' line, in the pills' housing, with a magnifier in it.
-  .search-hint {
-    @include capsule-housing;
-    width: var(--rail-height);
-    padding: 0;
-    justify-content: center;
-    color: var(--text-primary);
-    text-shadow: none;
-
-    .search-hint-keys,
-    .rail-hint-label {
-      display: none;
-    }
-
-    .search-hint-glyph {
-      display: block;
-    }
-  }
-
   // A phone's keyboard comes up under the box, so it sits higher.
   .search-overlay {
     padding-top: 10vh;

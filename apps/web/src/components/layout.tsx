@@ -16,7 +16,7 @@ import ChatIcon from './chat/ChatIcon';
 import KeyboardShortcuts from './chat/KeyboardShortcuts';
 import { heroKeyFor, NOT_FOUND_KEY, resolveHero } from './heroes';
 import Shortcuts from './ShortcutsModal';
-import SearchPalette from './search/SearchPalette';
+import SearchPalette, { SearchButton } from './search/SearchPalette';
 import { GitHubIcon } from './ui/EntryIcons';
 import { MAIN_ID } from './ui/SkipLink';
 
@@ -846,8 +846,11 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
               control as the chat pill in the opposite corner — same housing,
               same footprint, same viewport offset — so the two read as one
               right-hand rail on the field rather than as page chrome. The way
-              home is not in it: that is the breadcrumb in the hero title. */}
-          <nav className={navClasses}>
+              home is not in it: that is the breadcrumb in the hero title. Its
+              last segment is the way to the search — the site's one search,
+              where a site's search is looked for, on every page and at every
+              width. */}
+          <nav className={navClasses} aria-label="site">
             <div className="nav-menu">
               {siteConfig.navigation.main.map(item => (
                 // partiallyActive keeps the segment lit on subpages
@@ -862,6 +865,7 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                   {item.name}
                 </Link>
               ))}
+              <SearchButton />
             </div>
           </nav>
           <div className={stageClasses} ref={stageRef}>

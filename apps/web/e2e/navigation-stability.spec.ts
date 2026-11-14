@@ -239,10 +239,14 @@ test.describe('navigation stability', () => {
       .poll(scrollTop, { message: 'PageDown should page the window' })
       .toBeGreaterThan(0);
 
-    // A field still keeps its own keys. The search box is folded away behind
-    // the chip in the control row until it is asked for.
-    await page.click('.ui-search-toggle');
-    await page.click('#timeline-search .search-input');
+    // A field still keeps its own keys: with the search open and its box
+    // focused, the arrows move through its results and not the page.
+    await page.getByRole('button', { name: 'search the site' }).click();
+    await expect(
+      page
+        .getByRole('dialog', { name: 'search the site' })
+        .getByRole('combobox')
+    ).toBeFocused();
     const parked = await scrollTop();
     await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(200);

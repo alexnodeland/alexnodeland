@@ -75,33 +75,65 @@ describe('ControlRow', () => {
     expect(screen.getByText('newest first')).toBeInTheDocument();
   });
 
-  // The row is pickers at the start and its last chip hung at the far end,
-  // past the way back to the top. A row whose only chip is its picker keeps
-  // it at the start.
-  it('hangs the last of several chips at the end, and keeps a lone one at the start', () => {
-    const order = (container: HTMLElement) =>
-      Array.from(
-        container.querySelectorAll('.timeline-control-bar > button')
-      ).map(node => node.getAttribute('aria-label') ?? node.textContent);
-
-    const several = render(
+  // Two housings and no third place: what is shown, at the start, and what
+  // can be taken away, at the far end — with the way back to the top opening
+  // on the inner side of that one, so nothing at the row's end moves.
+  it('houses the pickers at the start, and the actions with the way back at the end', () => {
+    const { container } = render(
       <div className="layout">
         <div className="window-band" />
-        <ControlRow className="timeline-control-bar">
+        <ControlRow
+          className="timeline-control-bar"
+          actions={<a href="/rss.xml">feed</a>}
+        >
           <button type="button">all</button>
-          <button type="button">search</button>
+          <button type="button">newest first</button>
         </ControlRow>
       </div>
     );
-    expect(order(several.container)).toEqual([
-      'all',
-      'back to the top',
-      'search',
-    ]);
-    several.unmount();
+    const housings = Array.from(
+      container.querySelectorAll('.timeline-control-bar > .ui-toolbar')
+    );
+    expect(housings).toHaveLength(2);
+    const named = (housing: Element) =>
+      Array.from(housing.children).map(
+        node => node.getAttribute('aria-label') ?? node.textContent
+      );
+    expect(named(housings[0])).toEqual(['all', 'newest first']);
+    expect(housings[1]).toHaveClass('ui-toolbar-end');
+    expect(housings[1]).not.toHaveClass('is-bare');
+    expect(named(housings[1])).toEqual(['back to the top', 'feed']);
+  });
 
+  it('marks the far housing bare when the way back is all it holds', () => {
+    // Bare, it is not drawn at all until the row is afloat: an empty housing
+    // at the end of a row at rest would be a box around nothing.
     const { container } = mount(<button type="button">all</button>);
-    expect(order(container)).toEqual(['all', 'back to the top']);
+    const end = container.querySelector('.ui-toolbar-end') as HTMLElement;
+    expect(end).toHaveClass('is-bare');
+    expect(end.children).toHaveLength(1);
+    expect(end.firstElementChild).toHaveAttribute(
+      'aria-label',
+      'back to the top'
+    );
+  });
+
+  it('draws no housing for pickers a row does not have', () => {
+    // A role page's CV is one document: nothing to pick, only to take away.
+    const { container } = render(
+      <div className="layout">
+        <div className="window-band" />
+        <ControlRow
+          className="cv-control-bar"
+          actions={<button type="button">download</button>}
+        />
+      </div>
+    );
+    const housings = container.querySelectorAll(
+      '.cv-control-bar > .ui-toolbar'
+    );
+    expect(housings).toHaveLength(1);
+    expect(housings[0]).toHaveClass('ui-toolbar-end');
   });
 
   // The way back to the top is only ever wanted by someone who has left it,
@@ -139,24 +171,5 @@ describe('ControlRow', () => {
         expect.objectContaining({ top: 0 })
       )
     );
-  });
-
-  // The draw-in is the stylesheet's, off the window's scroll timeline — except
-  // where the browser cannot read one, and then this is the same arrangement
-  // the hero's fold keeps: a progress number published per frame. jsdom has no
-  // CSS.supports, so this is the published path.
-  it('publishes the draw-in for a browser with no scroll timeline', () => {
-    const { container, panel } = mount();
-    const row = container.querySelector('.timeline-control-bar') as HTMLElement;
-
-    expect(row.style.getPropertyValue('--row-fold')).toBe('0');
-
-    scrollTo(panel, BAND / 2);
-    expect(row.style.getPropertyValue('--row-fold')).toBe('0.5');
-
-    // Past the band it is finished, not overshooting: the transform it drives
-    // is a fixed distance, not a rate.
-    scrollTo(panel, BAND * 3);
-    expect(row.style.getPropertyValue('--row-fold')).toBe('1');
   });
 });

@@ -38,15 +38,11 @@
   border-radius: var(--radius-lg);
   // The same step the sections below keep between each other.
   margin-bottom: var(--stack-gap);
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: var(--space-6);
-  align-items: start;
   position: relative;
 
   h2 {
     font-size: var(--text-h4);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-2);
     color: var(--text-primary);
     letter-spacing: -0.01em;
   }
@@ -62,36 +58,35 @@
     text-transform: lowercase;
   }
 
-  .contact-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
-  }
-
-  .contact-item {
+  // The contact details: one line of them, wrapping where it must, in the
+  // meta voice a card closes with (see CVPageBody.tsx for why it is a line
+  // and not a column).
+  .contact-list {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-small);
+    line-height: var(--leading-chrome);
 
-    .contact-label {
-      font-size: var(--text-small);
-      color: var(--text-muted);
-      text-transform: lowercase;
-    }
-
-    .contact-value {
-      font-size: var(--text-body);
-      color: var(--text-primary);
-      text-decoration: none;
+    li {
+      margin: 0;
+      color: var(--text-secondary);
     }
 
     // The ones that are links say so under the pointer, the way every link
-    // does.
-    a.contact-value {
+    // on a card does: a set of addresses is not running text, and five
+    // underlines in a row would rule the line off.
+    a {
+      color: var(--text-primary);
+      text-decoration: none;
       transition: color var(--transition-fast);
 
       &:hover {
         color: var(--ink-primary);
+        text-decoration: none;
       }
     }
   }
@@ -107,7 +102,11 @@
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--stack-gap);
+  // A section's worth of air between one section and the next — more than
+  // the cards inside one keep between themselves, so the sections read as
+  // groups and their titles as what opens each.
+  gap: var(--space-5);
+  margin-top: var(--space-4);
 }
 
 // Anchor jumps land clear of the sticky control chips at every width.
@@ -237,20 +236,23 @@
     gap: var(--space-3);
   }
 
-  // The same caret the dropdown triggers carry, and nothing around it: the
-  // summary is the toggle, not the chevron.
+  // The same chevron the pickers carry, and nothing around it: the summary
+  // is the toggle, not the chevron.
   .cv-collapse-chevron {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 1rem;
-    color: var(--text-secondary);
-    font-size: var(--text-small);
-    line-height: 1;
+    color: var(--text-muted);
     transition:
       color var(--transition-fast),
       transform var(--transition-fast);
+
+    svg {
+      display: block;
+      width: 12px;
+      height: 12px;
+    }
   }
 }
 
@@ -267,18 +269,17 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 // row and above its meta band.
 .education-institution-collapsed {
   color: var(--text-secondary);
-  margin-top: var(--space-4);
+  margin-top: var(--space-2);
   margin-bottom: 0;
   font-size: var(--text-body);
 }
 
-// The entry's meta band — the cv's answer to the blog card's date row and the
-// project card's language line. It sits under the title with the same
-// hairline above it as they carry, at the same distances.
+// The entry's meta line — the cv's answer to a timeline card's date and a
+// project card's language line. Directly under the title, with no rule
+// between them: the card's own outline is the only line it needs, and a
+// second one inside it cut a two-line card into two boxes.
 .cv-summary-skills {
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--hairline-interior);
+  margin-top: var(--space-2);
   font-size: var(--text-small);
   color: var(--text-secondary);
   display: block;
@@ -300,8 +301,8 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
 // and below the rule as the summary keeps under its own last line. The body
 // closes the card too (see collapse.ts), so the pointer says so across it.
 .cv-collapse-details {
-  margin: 0 var(--space-6);
-  padding: var(--space-5) 0 var(--space-6);
+  margin: 0 var(--card-pad);
+  padding: var(--space-3) 0 var(--space-4);
   border-top: 1px solid var(--hairline-interior);
   cursor: pointer;
 }
@@ -397,8 +398,7 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-4);
     margin-top: auto;
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--hairline-interior);
+    padding-top: var(--space-2);
     font-size: var(--text-small);
     color: var(--text-secondary);
   }
@@ -443,101 +443,19 @@ details[open] .cv-collapse-summary .cv-collapse-chevron {
   cursor: default;
 }
 
-// The CV's one row of chrome: pick a length, take it away, and on a phone the
-// chip that unfolds the search. No bar groups them — they float as loose
-// controls, each carrying its own frosting, so they still read while content
-// scrolls underneath. Geometry and material are the shared ones; see
-// `sticky-control-row` in mixins.scss and .ui-dropdown in controls.scss.
+// The CV's one row of chrome: pick a length at the start, take the document
+// away at the far end. Geometry and material are the shared ones; see
+// `sticky-control-row` in mixins.scss and .ui-toolbar in controls.scss.
 .cv-control-bar {
   @include sticky-control-row;
 }
 
-// Only the results list is the CV's own — the panel and its field come from
-// .ui-search-panel in controls.scss. The CV is the one page whose search
-// returns a list rather than filtering what is already on screen.
-.cv-search-panel {
-  // In flow rather than floating — it pushes the page down instead of
-  // overlaying it — so it is an outline like everything else.
-  .search-results {
-    margin-top: var(--space-4);
-    background: transparent;
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-md);
-    max-height: 20rem;
-    overflow-y: auto;
-
-    .search-result-item {
-      padding: var(--space-4);
-      border-bottom: 1px solid var(--hairline-interior);
-      cursor: pointer;
-      @include control-transition(var(--transition-fast));
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      // A row under the pointer or under the keyboard: the wash, like a menu
-      // option.
-      &:hover,
-      &:focus-visible {
-        outline: none;
-        background-color: var(--wash-hover);
-      }
-
-      .result-type {
-        font-size: var(--text-xs);
-        color: var(--text-muted);
-        text-transform: lowercase;
-        margin-bottom: var(--space-1);
-      }
-
-      .result-title {
-        font-size: var(--text-body);
-        color: var(--text-primary);
-        margin-bottom: var(--space-1);
-      }
-
-      .result-company,
-      .result-institution {
-        font-size: var(--text-small);
-        color: var(--text-secondary);
-        margin-bottom: var(--space-1);
-      }
-
-      .result-description {
-        font-size: var(--text-small);
-        color: var(--text-muted);
-        line-height: var(--leading-chrome);
-      }
-    }
-
-    .no-results {
-      @include empty-state;
-      margin: 0;
-      padding: var(--space-4);
-    }
-  }
-}
-
 @media (max-width: 768px) {
-  .cv-overview-contact {
-    grid-template-columns: 1fr;
-    gap: var(--space-5);
-  }
-
-  .cv-collapse-details {
-    margin: 0 var(--card-pad);
-    padding: var(--space-4) 0 var(--space-5);
-  }
-
   .experience-header,
   .education-header {
     flex-direction: column;
     align-items: flex-start;
-
-    h3 {
-      margin-bottom: var(--space-2);
-    }
+    gap: var(--space-1);
   }
 
   .experience-duration,

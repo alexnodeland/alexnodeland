@@ -4,7 +4,6 @@ import { isTypingTarget } from '../lib/utils/keys';
 import { prefersReducedMotion } from '../lib/utils/motion';
 import '../styles/shortcuts.scss';
 import CloseIcon from './ui/CloseIcon';
-import { SearchHint } from './search/SearchPalette';
 
 /**
  * The site's keyboard shortcuts, in one place.
@@ -106,16 +105,14 @@ const Shortcuts: React.FC = () => {
   return (
     <>
       {/* Bottom-centre of the field, below the spectrogram's audio indicator
-          rather than beside it: the way to the search, then the way to this
-          list. One fixed box holds both, so they sit side by side on the
-          pills' line however wide either one's word unrolls. At rest each is
-          its key caps alone — the word is a caption for a glyph that already
-          says what it is — and it unrolls on hover or keyboard focus. The
-          name is carried by the label rather than by the text, so it reads
-          the same whether the word is out or not. Buttons, because they do
-          something. */}
+          rather than beside it: the way to this list, on the pills' line. At
+          rest it is its key cap alone — the word is a caption for a glyph
+          that already says what it is — and it unrolls on hover or keyboard
+          focus. The name is carried by the label rather than by the text, so
+          it reads the same whether the word is out or not. A button, because
+          it does something. A desktop's only: there is no keyboard on a phone
+          to list the shortcuts of (see .rail-hints in shortcuts.scss). */}
       <div className="rail-hints">
-        <SearchHint />
         <button
           type="button"
           className="rail-hint shortcuts-hint"

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronIcon } from '../ui/EntryIcons';
 import { EducationItem } from '../../types';
 import { closeFromBody } from './collapse';
 
@@ -25,8 +26,8 @@ const CVEducationSection: React.FC<CVEducationSectionProps> = ({
               </div>
               <div className="summary-right">
                 <span className="education-duration">{edu.duration}</span>
-                <span className="cv-collapse-chevron" aria-hidden>
-                  ▾
+                <span className="cv-collapse-chevron">
+                  <ChevronIcon />
                 </span>
               </div>
             </div>

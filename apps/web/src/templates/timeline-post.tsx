@@ -110,15 +110,17 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
             {/* Typeset by LaTeX at build time, like the CV's — see
                 scripts/build-post-pdfs.js. A plain anchor at a static file,
                 not a router link, wearing the site's one download mark. */}
-            <a
-              className="ui-chip-button ui-icon-chip post-download"
-              href={`/timeline/pdf/${post.fields.slug.replace(/\//g, '')}.pdf`}
-              download
-              aria-label="download this post as a pdf"
-              title="pdf"
-            >
-              <DownloadIcon />
-            </a>
+            <div className="ui-toolbar post-download">
+              <a
+                className="ui-toolbar-item is-icon"
+                href={`/timeline/pdf/${post.fields.slug.replace(/\//g, '')}.pdf`}
+                download
+                aria-label="download this post as a pdf"
+                title="pdf"
+              >
+                <DownloadIcon />
+              </a>
+            </div>
           </div>
         </article>
 

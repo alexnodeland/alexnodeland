@@ -121,15 +121,18 @@ const ChatModal: React.FC = () => {
           <ThinkingToggle key="thinking-toggle" />
           {/* A picker with one option is a control that does nothing. */}
           {availableModels.length > 1 && (
-            <Dropdown
-              ariaLabel="Select AI model"
-              triggerLabel={selectedModelLabel}
-              options={modelOptions}
-              value={selectedModel}
-              onSelect={setSelectedModel}
-              align="end"
-              className="model-selector"
-            />
+            // One segment in a housing of its own: the same toolbar a list
+            // page's pickers sit in (see .ui-toolbar in controls.scss).
+            <div className="ui-toolbar model-selector">
+              <Dropdown
+                ariaLabel="Select AI model"
+                triggerLabel={selectedModelLabel}
+                options={modelOptions}
+                value={selectedModel}
+                onSelect={setSelectedModel}
+                align="end"
+              />
+            </div>
           )}
           {messages.length > 0 && (
             <button

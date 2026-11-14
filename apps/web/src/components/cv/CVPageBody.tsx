@@ -1,11 +1,10 @@
 import { navigate } from 'gatsby';
-import React, { useState } from 'react';
+import React from 'react';
 import { CVData, CVVariant, CV_PAGES, isRoleVariant } from '../../config/cv';
 import { scrollBehavior } from '../../lib/utils/motion';
 import CVControlBar from './CVControlBar';
 import EducationSection from './CVEducationSection';
 import ExperienceSection from './CVExperienceSection';
-import CVSearch from './CVSearch';
 import SkillsSection from './CVSkillsSection';
 
 interface CVPageBodyProps {
@@ -51,9 +50,6 @@ const CVPageBody: React.FC<CVPageBodyProps> = ({
   variant,
   onViewChange,
 }) => {
-  // Phone only: whether the search panel is folded out. Desktop ignores it.
-  const [searchOpen, setSearchOpen] = useState(false);
-
   // One card open at a time. Opening a card closes whichever other card is
   // open, and — because a closing card above the new one pulls the page up —
   // the opened card is then scrolled back into position under the floating
@@ -84,11 +80,7 @@ const CVPageBody: React.FC<CVPageBodyProps> = ({
         resumeData={data}
         view={variant}
         onViewChange={onViewChange ?? goToDocument(variant)}
-        searchOpen={searchOpen}
-        onToggleSearch={() => setSearchOpen(open => !open)}
       />
-
-      <CVSearch resumeData={data} open={searchOpen} />
 
       <div className="cv-overview-contact">
         {/* Second-level headings, like "Experience" and the sections after
@@ -99,71 +91,65 @@ const CVPageBody: React.FC<CVPageBodyProps> = ({
           <h2>overview</h2>
           <p>{data.personal.summary}</p>
         </div>
+        {/* The contact details, as one line of them under the summary — a
+            resume's own header line. Each says what it is by its shape (an
+            address, a domain, a profile), so the labels are for a screen
+            reader only. They used to be a column of label-over-value pairs
+            beside the summary: ten lines on a phone for five facts. */}
         <div className="contact-section">
-          <h2>contact</h2>
-          <div className="contact-grid">
-            <div className="contact-item">
-              <span className="contact-label">location</span>
-              <span className="contact-value">{data.personal.location}</span>
-            </div>
-            <div className="contact-item">
-              <span className="contact-label">email</span>
-              <a
-                href={`mailto:${data.personal.email}`}
-                className="contact-value"
-              >
+          <h2 className="sr-only">contact</h2>
+          <ul className="contact-list">
+            <li>
+              <span className="sr-only">location: </span>
+              {data.personal.location}
+            </li>
+            <li>
+              <span className="sr-only">email: </span>
+              <a href={`mailto:${data.personal.email}`}>
                 {data.personal.email}
               </a>
-            </div>
-            <div className="contact-item">
-              <span className="contact-label">website</span>
+            </li>
+            <li>
+              <span className="sr-only">website: </span>
               <a
                 href={`https://${data.personal.website}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="contact-value"
               >
                 {data.personal.website}
               </a>
-            </div>
+            </li>
             {data.personal.linkedin && (
-              <div className="contact-item">
-                <span className="contact-label">linkedin</span>
+              <li>
+                <span className="sr-only">linkedin: </span>
                 <a
                   href={`https://${data.personal.linkedin}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="contact-value"
                 >
                   {data.personal.linkedin}
                 </a>
-              </div>
+              </li>
             )}
             {data.personal.github && (
-              <div className="contact-item">
-                <span className="contact-label">github</span>
+              <li>
+                <span className="sr-only">github: </span>
                 <a
                   href={`https://${data.personal.github}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="contact-value"
                 >
                   {data.personal.github}
                 </a>
-              </div>
+              </li>
             )}
             {data.personal.phone && (
-              <div className="contact-item">
-                <span className="contact-label">phone</span>
-                <a
-                  href={`tel:${data.personal.phone}`}
-                  className="contact-value"
-                >
-                  {data.personal.phone}
-                </a>
-              </div>
+              <li>
+                <span className="sr-only">phone: </span>
+                <a href={`tel:${data.personal.phone}`}>{data.personal.phone}</a>
+              </li>
             )}
-          </div>
+          </ul>
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { navigate } from 'gatsby';
 import React from 'react';
 import SearchPalette, {
-  SearchHint,
+  SearchButton,
   openSearch,
 } from '../../../components/search/SearchPalette';
 import { resetSearcherForTests } from '../../../lib/search';
@@ -118,16 +118,19 @@ describe('SearchPalette', () => {
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
-  it('opens from the hint, the way a phone gets to it', async () => {
+  it('opens from its button, the way a pointer or a thumb gets to it', async () => {
     render(
       <>
-        <SearchHint />
+        <SearchButton />
         <SearchPalette />
       </>
     );
-    await userEvent.click(
-      screen.getByRole('button', { name: /^search the site/ })
-    );
+    const button = screen.getByRole('button', { name: 'search the site' });
+    // The chord is not drawn on the button, but it is on it: as the tooltip,
+    // and for a screen reader.
+    expect(button).toHaveAttribute('aria-keyshortcuts', 'Control+K');
+    expect(button).toHaveAttribute('title', 'search (ctrl K)');
+    await userEvent.click(button);
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 

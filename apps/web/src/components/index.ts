@@ -7,7 +7,6 @@ export * from './animated-backgrounds';
 
 // CV components
 export { default as CVControlBar } from './cv/CVControlBar';
-export { default as CVSearch } from './cv/CVSearch';
 export { default as EducationSection } from './cv/CVEducationSection';
 export { default as ExperienceSection } from './cv/CVExperienceSection';
 export { default as SkillsSection } from './cv/CVSkillsSection';

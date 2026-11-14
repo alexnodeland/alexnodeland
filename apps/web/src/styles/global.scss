@@ -7,9 +7,9 @@
 @use 'animations';
 @use 'animated-backgrounds';
 @use 'chat';
-// Shared control chrome (the dropdown, the chips, the search panel), imported
-// once here so the CV row and the blog row cannot drift into two copies of the
-// same trigger.
+// Shared control chrome (the toolbar a control row is built from, and the menu
+// a picker opens), imported once here so the CV row and the timeline row cannot
+// drift into two copies of the same control.
 @use 'controls';
 
 * {
@@ -65,7 +65,7 @@ h3,
 h4,
 h5,
 h6 {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   line-height: var(--leading-tight);
   font-weight: 400;
   color: var(--text-primary);
@@ -77,17 +77,17 @@ h6 {
 
 h1 {
   font-size: var(--text-h1);
-  margin: 0 0 var(--space-6);
+  margin: 0 0 var(--space-5);
 }
 
 h2 {
   font-size: var(--text-h2);
-  margin: var(--space-8) 0 var(--space-5);
+  margin: var(--space-7) 0 var(--space-4);
 }
 
 h3 {
   font-size: var(--text-h3);
-  margin: var(--space-7) 0 var(--space-4);
+  margin: var(--space-6) 0 var(--space-3);
 }
 
 h4 {
@@ -108,18 +108,18 @@ b {
 }
 
 p {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   color: var(--text-secondary);
 }
 
 ul,
 ol {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   padding-left: var(--space-5);
 }
 
 li {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
   color: var(--text-secondary);
 }
 

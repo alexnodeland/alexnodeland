@@ -253,136 +253,107 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
   box-shadow: var(--shadow-panel);
 }
 
-// A sticky row of loose controls at the top of the window's own scroll. There
-// is no bar: the row itself is nothing but a flex container, and each chip in
-// it carries its own material (see `frosted-chip`). The gaps between the chips
-// are dead to the pointer, so scroll and clicks aimed at the document pass
-// straight through the row instead of being caught by an invisible strip.
+// A sticky row of controls at the top of the window's own scroll: the page's
+// toolbar at the start and a second one hung at the far end (see ControlRow
+// and .ui-toolbar in controls.scss).
 //
 // The row starts where it ends up. The window's column pads its content off
 // the frame (--main-pad-top on .main), and the row cancels that padding for
 // itself alone: at rest it sits on the frame's edge, which is exactly where
-// it sits once stuck, so the only gap between the chips and the edge is the
-// row's own padding in both states — the row never appears to jump inward
+// it sits once stuck, so the only gap between the housings and the edge is
+// the row's own padding in both states — the row never appears to jump inward
 // when it locks. Cancelling the padding also lines the two moves up: the row
 // reaches the top of the scroll in the same distance the hero takes to fold,
 // so the frame's edge arrives under it rather than after it. Everything
 // below scrolls as it did; only the room above the row is gone.
+//
+// It has two states. At rest it is part of the column and there is nothing
+// behind it: the two housings sit on the window's own surface, their ends
+// flush with the cards below. Afloat (ControlRow marks it), the list runs
+// underneath, and the row is a bar — the window's scrim again and the heavy
+// blur, edge to edge, closed by a hairline — so what passes under it is gone
+// at a clean line. It used to stay bar-less afloat, the controls floating
+// loose over the list, and the list showed through between them and around
+// them: a heading sliding past was half behind a control and half beside it.
 @mixin sticky-control-row {
   position: sticky;
   top: 0;
   z-index: 10;
   margin-top: calc(-1 * var(--main-pad-top, 0px));
-  // Nothing under the row but its own padding. The pages used to add a
-  // --space-6 margin here, which made the space below the chips several times
-  // the space above them; the row's band is symmetrical now, and what follows
-  // it keeps whatever spacing it carries itself.
+  // Nothing under the row but its own padding: its band is symmetrical, and
+  // what follows it keeps whatever spacing it carries itself.
   margin-bottom: 0;
   display: flex;
   align-items: center;
-  // One row, strictly — a control that cannot fit shrinks and ellipsizes
-  // (see .ui-dropdown in controls.scss) rather than ever dropping below the
-  // others.
+  // One row, strictly — a picker that cannot fit shrinks and ellipsizes
+  // (see .ui-toolbar in controls.scss) rather than ever dropping below.
   flex-wrap: nowrap;
-  // The air between one chip and the next. Named, because the row's two ends
-  // take the same measure the moment it goes afloat.
-  --control-gap: var(--space-2);
-  gap: var(--control-gap);
-  // The window's rhythm, above the chips and below them alike, so the row sits
-  // in a band of even air rather than riding high in it — and the same gap the
+  // The least air between the two housings.
+  gap: var(--space-2);
+  // The window's rhythm, above the row and below it alike, so it sits in a
+  // band of even air rather than riding high in it — and the same gap the
   // list underneath keeps between its cards (--stack-gap in variables.scss).
   //
-  // Nothing at the sides at rest: the row is the first thing in the page and
-  // there is nothing under it, so its ends want to be flush with the ends of
-  // the cards below — the column reading as one edge from the chips down.
+  // Nothing at the sides: the row's ends are flush with the ends of the cards
+  // below, at rest and afloat alike — the column reads as one edge from the
+  // row down.
   padding: var(--stack-gap) 0;
+  // The room between the two housings is dead to the pointer, so a scroll or
+  // a click aimed at the page passes straight through it.
   pointer-events: none;
-
-  // The draw-in. At rest the row is part of the column: its chips line up with
-  // the cards below because there is nothing below them yet, and the column
-  // reads as one edge from the chips down. By the time the row is pinned to
-  // the window's top edge there is — the list runs underneath it — and flush
-  // stopped reading: a chip's hairline landed exactly on the border of the
-  // card passing beneath, and the two made one thickened line. So the ends
-  // draw in by the gap the row already keeps between its own chips.
-  //
-  // It travels on the window's scroll, over exactly the band that carries the
-  // row from the column to the frame's edge — the same distance, the same
-  // timeline and the same two paths as the hero's fold above it (see
-  // .site-hero.is-collapsible in layout.scss). Transforms, not padding: the
-  // row is a flex container, and a scroll-linked inset would have laid it out
-  // once per frame. The left of the row moves right and the right of it moves
-  // left, each by the whole gap, so nothing between them changes its spacing.
-  --row-fold: 0;
 
   > * {
     pointer-events: auto;
-    min-width: 0;
-    transform: translateX(calc(var(--row-fold) * var(--control-gap)));
   }
 
-  // Everything from the first right-hung chip onwards. That is the way back to
-  // the top: it is rendered just inside whatever the page hung on the right,
-  // and it carries the `margin-left: auto` that splits the row (see
-  // .ui-scroll-top in controls.scss).
-  > .ui-scroll-top,
-  > .ui-scroll-top ~ * {
-    transform: translateX(calc(-1 * var(--row-fold) * var(--control-gap)));
+  // The bar. It reaches past the column's gutters to the window's own edges
+  // — further than any of them is wide; the window clips what is left over
+  // (see .layout) — so it reads as the window's header rather than as a
+  // panel laid on the column. Behind the housings, and not there at rest.
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0 -3rem;
+    // Two coats of the scrim, like any panel that hangs over the page (see
+    // `floating-panel`): one alone left the list legible through the bar.
+    background-color: var(--window-scrim);
+    background-image: linear-gradient(var(--window-scrim), var(--window-scrim));
+    backdrop-filter: blur(var(--blur-chip));
+    -webkit-backdrop-filter: blur(var(--blur-chip)); // Safari ≤17
+    border-bottom: 1px solid var(--hairline-interior);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
   }
 
-  // The compositor path: it reads the scroll itself and nothing runs on a
-  // scroll frame. Longhands only — the `animation` shorthand resets the
-  // timeline and the range, and the build's minifier sorts declarations.
-  @supports (animation-timeline: scroll()) and (timeline-scope: --window) {
-    > * {
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-timeline: --window;
-      // Never a zero-length range: an animation across no distance reports
-      // itself finished. Same floor the fold's own ranges carry.
-      animation-range: 0 max(1px, var(--fold-band));
-      animation-name: control-draw-in;
+  &.is-afloat::before {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      transition: none;
     }
-
-    > .ui-scroll-top,
-    > .ui-scroll-top ~ * {
-      animation-name: control-draw-out;
-    }
-  }
-
-  @media (max-width: 480px) {
-    --control-gap: var(--space-1);
   }
 }
 
-// A loose floating control on the window's own surface. It carries no scrim of
-// its own: the window underneath it has already laid the site's one scrim
+// The material of a control on the window's own surface. It carries no scrim
+// of its own: the window underneath it has already laid the site's one scrim
 // down, and a second coat made the control rows the one piece of chrome on the
-// site darker than everything around them. So the chip is the surface it sits
-// on plus a hairline, and the blur does alone what the second coat was there
-// for: it is well past the window's own, so a heading scrolling under a sticky
-// chip smears into a wash instead of reading through the label.
-@mixin frosted-chip {
+// site darker than everything around them. So the control is the surface it
+// sits on, and the blur does alone what the second coat was there for: it is
+// well past the window's own, so a heading scrolling under a sticky toolbar
+// smears into a wash instead of reading through the labels.
+@mixin frosted {
   background: transparent;
   backdrop-filter: blur(var(--blur-chip));
   -webkit-backdrop-filter: blur(var(--blur-chip)); // Safari ≤17
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  // The capsules' size, so the row of chips and the rail read as one kit.
-  font-size: var(--text-control);
-  line-height: 1.2;
-  text-transform: lowercase;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  cursor: pointer;
-  @include control-transition(var(--transition-fast));
 
-  // Without a backdrop filter there is nothing at all between the label and
+  // Without a backdrop filter there is nothing at all between a label and
   // whatever passes under it, so the scrim comes back on those engines alone —
-  // a chip a shade darker than its surroundings is worth more there than a
-  // chip you cannot read.
+  // a control a shade darker than its surroundings is worth more there than
+  // one you cannot read.
   @supports not (
     (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
   ) {
@@ -390,46 +361,8 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
   }
 }
 
-// Somewhere to type. A text field is the one control here that takes a wash
-// rather than a bare hairline: it has to look like something you can type
-// into, and a transparent box inside a transparent box reads as a nested panel
-// instead of a field. The box itself is the caller's — how much padding a
-// field is given depends on what it sits in — and everything that makes it a
-// field is here.
-@mixin text-field {
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-sm);
-  background: var(--wash-field);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  // The type stays at 1rem at every width on purpose: iOS zooms the page when
-  // a field smaller than 16px takes focus, and a field that rearranges the
-  // layout under the thumb is worse than a long placeholder. So the
-  // placeholder gives way instead — the CV's search names three sections and
-  // runs past a phone's field, and a clean elision reads as a sentence
-  // continuing rather than as a word cut in half.
-  font-size: 1rem;
-  text-overflow: ellipsis;
-  @include control-transition(var(--transition-fast));
-
-  // Focus is a state of a text field rather than a result, so it says so with
-  // a brighter hairline — matching the chips beside it rather than lighting a
-  // ring around a box the visitor is already typing in.
-  &:focus {
-    outline: none;
-    border-color: var(--hairline-lit);
-    background: var(--wash-hover);
-  }
-
-  // The placeholder takes the house case; what the visitor types does not.
-  &::placeholder {
-    color: var(--text-muted);
-    text-transform: lowercase;
-  }
-}
-
-// The panel a chip opens, and any panel that hangs over the page — a menu, the
-// shortcuts, a dialog. The chip is the window's own surface, but an overlay
+// The panel a picker opens, and any panel that hangs over the page — a menu,
+// the shortcuts, a dialog. A toolbar is the window's own surface, but an overlay
 // with a list of words in it hangs over whatever the page happens to be
 // showing, so this one doubles the scrim and the blur.
 @mixin floating-panel {

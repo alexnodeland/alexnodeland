@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronIcon } from '../ui/EntryIcons';
 import { ExperienceItem } from '../../types';
 import { closeFromBody } from './collapse';
 
@@ -30,8 +31,8 @@ const CVExperienceSection: React.FC<CVExperienceSectionProps> = ({
               </div>
               <div className="summary-right">
                 <span className="experience-duration">{exp.duration}</span>
-                <span className="cv-collapse-chevron" aria-hidden>
-                  ▾
+                <span className="cv-collapse-chevron">
+                  <ChevronIcon />
                 </span>
               </div>
             </div>

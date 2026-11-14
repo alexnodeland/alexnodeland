@@ -132,7 +132,7 @@
   // hero having to measure the capsule. Horizontal padding is --gutter, the
   // same token .main takes, so the title lines up with the cards below it.
   padding: calc(var(--rail-clearance) + var(--space-2)) var(--gutter)
-    var(--space-6);
+    var(--space-5);
 
   // The region is on every page, empty on the ones with no hero (blog posts,
   // 404) — it is the element whose height the navigation transition eases, so
@@ -284,7 +284,11 @@
   // under it from the fourth link on. So at these widths the surname goes the
   // way a crumb's tail goes, and the cover folds to "alex" — the same word,
   // on the same line, that every other page folds to.
-  @media (max-width: 480px) {
+  //
+  // 560px is where the two stop fitting: the folded name ends 150px in, the
+  // capsule is 340px wide with the phone's chrome, and between them and the
+  // window's own insets a row narrower than this has no gap left to show.
+  @media (max-width: 560px) {
     .hero-name-rest {
       opacity: calc(1 - var(--hero-collapse));
     }
@@ -351,7 +355,7 @@
       animation-name: hero-fold-fade;
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 560px) {
       .hero-name-rest {
         animation-name: hero-fold-fade;
       }
@@ -531,7 +535,11 @@
   min-height: 0; // Let the flex child actually shrink so `overflow` can work
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  // Down, and never sideways. Nothing in a page is wider than its column —
+  // what could be (a code listing, a table) scrolls inside its own box — and
+  // a sticky control row's bar deliberately overhangs the column to reach the
+  // frame (see `sticky-control-row`): clipped, that is all it does.
+  overflow: hidden auto;
   // The window's scroll ends at the window. Left to chain, a drag past either
   // end is handed to the document — which has nowhere to go, so a phone
   // answers with its own gesture instead: the page rubber-bands under the
@@ -666,7 +674,9 @@
 // would run under a matched footprint on a narrow desktop.
 .nav-menu {
   display: flex;
-  gap: 0.125rem;
+  // Named, because the search segment's hairline centres itself in it.
+  --nav-gap: 0.125rem;
+  gap: var(--nav-gap);
   align-items: center;
   justify-content: space-evenly;
   flex-wrap: nowrap;
@@ -713,6 +723,54 @@
   }
 }
 
+// The capsule's last segment: the way to the site's search. A mark where the
+// others are words, set off from them by a hairline — it is in the capsule
+// because that is where a site's search is looked for, and it is not a page.
+// The segment is a link's own height (the same line and the same padding), so
+// the capsule is not a pixel taller for having it.
+.nav-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  // The hairline sits in the middle of this room (and the capsule's own gap
+  // before it), clear of both washes.
+  --divider-room: calc(var(--space-2) + 1px);
+  margin: 0 0 0 var(--divider-room);
+  padding: var(--space-2) 0.7rem;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: var(--space-2);
+    bottom: var(--space-2);
+    left: calc((var(--divider-room) + var(--nav-gap)) / -2 - 0.5px);
+    border-left: 1px solid var(--hairline);
+  }
+
+  svg {
+    display: block;
+    width: 1.25rem;
+    height: 1.25rem;
+    // The glyph is drawn on a 24 grid and reads a size up from the 14px words
+    // beside it at the full 20; inset, it sits at their weight.
+    padding: 0.125rem;
+  }
+
+  &:hover {
+    color: var(--text-primary);
+    background-color: var(--wash-hover);
+  }
+}
+
 .main {
   flex: 1;
   max-width: var(--content-max-width);
@@ -727,7 +785,7 @@
   // resting gap can equal its stuck one is to start with no room above it at
   // all (see `sticky-control-row` in mixins.scss). Each breakpoint below
   // re-publishes it, and the two lines under it follow on their own.
-  --main-pad-top: var(--space-6);
+  --main-pad-top: var(--space-5);
   // The air under the last thing in the column, and the column's own inset is
   // what sets it: the content is let into the window by the same amount at
   // both ends.
@@ -844,26 +902,34 @@
   // 0.5625rem around a 1.25rem line, inside 0.25rem of housing and a hairline,
   // is 3rem — and it buys the links a thumb-sized row on the way. Only the
   // horizontal padding tightens as the screen narrows, below.
-  .nav-link {
+  .nav-link,
+  .nav-search {
     padding: 0.5625rem 0.7rem;
   }
 
   .site-hero {
     padding: calc(var(--rail-clearance) + var(--space-2)) var(--gutter)
-      var(--space-4);
+      var(--space-3);
   }
 
   .main {
-    --main-pad-top: var(--space-5);
+    --main-pad-top: var(--space-4);
   }
 }
 
 @media (max-width: 480px) {
   // The housing keeps --rail-housing-pad: shaving it here would pull the
   // capsule off the rail's height again. What gives is the room either side of
-  // a word, which is the only part a narrow screen is actually short of.
-  .nav-link {
-    padding-inline: 0.55rem;
+  // a word and the hair between one segment and the next, which is the only
+  // part a narrow screen is actually short of: the capsule is four words and
+  // the way to the search now, and the folded "alex" has to fit beside it.
+  .nav-menu {
+    --nav-gap: 0px;
+  }
+
+  .nav-link,
+  .nav-search {
+    padding-inline: 0.5rem;
   }
 
   .site-hero {
@@ -872,7 +938,7 @@
   }
 
   .main {
-    --main-pad-top: var(--space-4);
+    --main-pad-top: var(--space-3);
   }
 
   // The touch target shrinks, and --footer-lead is written in terms of it, so
@@ -882,22 +948,39 @@
   }
 }
 
-// Narrowest phones (iPhone SE and friends). The shave is on the pills, not on
+// Narrow phones (iPhone SE and friends). The shave is on the segments, not on
 // the nav's own gutter: the gutter is the site's one alignment line and cannot
-// move at a single breakpoint without the brand pill sliding out from under
-// the hero title. Four links at this padding leave the folded "alex" about
-// 50px of clear row on a 375px screen.
+// move at a single breakpoint without the brand sliding out from under the
+// hero title.
 @media (max-width: 380px) {
-  .nav-link {
-    padding-inline: 0.45rem;
+  .nav-link,
+  .nav-search {
+    padding-inline: 0.38rem;
   }
 }
 
-// The first-generation SE's 320px. With four links the capsule reached to
-// within 2px of the folded "alex" at the padding above, so the room either
-// side of each word gives again — the same trade the steps above make.
-@media (max-width: 340px) {
+// The narrowest: a 360px Android down to the first-generation SE's 320px. The
+// words give a size as well as their padding, and the hairline before the
+// search gives half its margin — the same trade the steps above make, taken
+// once more, and what keeps a clear word's width between the capsule and the
+// folded "alex" on a 320px screen.
+@media (max-width: 360px) {
   .nav-link {
+    font-size: var(--text-small);
+  }
+
+  .nav-link,
+  .nav-search {
     padding-inline: 0.28rem;
+  }
+
+  .nav-search {
+    --divider-room: calc(var(--space-1) + 1px);
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+      padding: 0;
+    }
   }
 }

@@ -37,13 +37,11 @@
   }
 }
 
-// The blog's row of chrome: filter on the left, sort beside it, the way to the
-// search box at the far end. No bar groups them — they float as loose chips,
-// each carrying its own frosting, so they still read while posts scroll
-// underneath. Geometry and material are the shared ones; see
-// `sticky-control-row` in mixins.scss and .ui-dropdown / .ui-search-panel in
-// controls.scss. The space under the row and under the search panel is the
-// shared default too, so the three list pages start at the same line.
+// The timeline's row of chrome: the tag and the order at the start, the feed
+// at the far end. Geometry and material are the shared ones; see
+// `sticky-control-row` in mixins.scss and .ui-toolbar in controls.scss. The
+// space under the row is the shared default too, so every list page starts at
+// the same line.
 .timeline-control-bar {
   @include sticky-control-row;
 
@@ -88,8 +86,11 @@
 .posts-list {
   // The rail's own distances are on .timeline-page, which the control row above
   // this reads them from too.
-  // Down to the middle of a card's title line, which is what a dot points at.
-  --dot-top: 1.75rem;
+  // A card's title line, which everything on its first row is set against:
+  // the dot on the rail, the date, the arrow.
+  --title-line: calc(var(--text-h4) * var(--leading-tight));
+  // Down to the middle of that line, which is what a dot points at.
+  --dot-top: calc(var(--card-pad) + var(--title-line) / 2 - 2.5px);
 
   position: relative;
   display: flex;
@@ -123,13 +124,35 @@
 // opens the post. The card itself stays an <article> with real links inside
 // — a card that is one big anchor cannot hold other links — and the pointer
 // says so from edge to edge.
+//
+// It is two rows where there is the width for it: the title, with the date
+// and the way in at the far end of its line, and under them what the post is.
+// A timeline is dates against things, and the date at the end of the title's
+// own line is where a timeline keeps it — it used to close the card, on a
+// row of its own under a paragraph. A phone has no room on the title's line
+// for it, and there it still does.
 .post-preview {
   @include outline-block;
   @include card-highlight;
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'title way'
+    'summary summary'
+    'date date';
+  gap: var(--space-2) var(--space-3);
+  align-items: start;
   padding: var(--card-pad);
   border-radius: var(--radius-lg);
   cursor: pointer;
+
+  @media (min-width: 640px) {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'title date way'
+      'summary summary summary';
+  }
 
   @include reading-emphasis {
     @include card-highlight-on;
@@ -174,36 +197,28 @@
   letter-spacing: 0.02em;
 }
 
-// The title row: the name, and the way in at the far end of the same line.
-// Scoped to the preview: an article's own title block is a `.post-header` too,
-// and it is a card rather than a row.
-//
-// The arrow used to sit in a ruled band at the foot of the card, a whole line
-// of its own for one glyph. On the title's line it is where the eye already is
-// — a card's name and the thing that opens it, together — and the card is two
-// rows shorter for it.
+// The title row is the card's own first row: the wrapper the markup puts
+// around the title and the arrow steps out of the way, and the two are placed
+// by the card's grid. Scoped to the preview: an article's own title block is
+// a `.post-header` too, and it is a card rather than a row.
 .post-preview .post-header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
+  display: contents;
 
-  // The row owns the space under the title here. And the title is not a
-  // positioned box, unlike every other heading: the stretched link's pseudo
-  // element (see .post-title below) has to reach the card's edges, and a
-  // positioned heading would be its containing block instead.
+  // The title is not a positioned box, unlike every other heading: the
+  // stretched link's pseudo element (see .post-title below) has to reach the
+  // card's edges, and a positioned heading would be its containing block
+  // instead.
   .post-title {
-    flex: 1 1 auto;
+    grid-area: title;
     margin: 0;
     min-width: 0;
     position: static;
   }
 }
 
-// Date and tag above an article's own title; on a preview, the date and the
-// way in, as a band at the foot of the card, which is where the projects and
-// cv cards keep theirs. Lowercase like everything else — the date formatter
-// already writes it that way; this is the belt to its braces.
+// Date and tag above an article's own title. Lowercase like everything else
+// — the date formatter already writes it that way; this is the belt to its
+// braces.
 .post-meta {
   display: flex;
   align-items: center;
@@ -215,13 +230,20 @@
   text-transform: lowercase;
 }
 
-// The date closing a card, with nothing beside it and no rule above it: the
-// card's own outline is already the line that says where it ends, and a second
-// one a few pixels inside it was drawing the same boundary twice.
+// A card's date. Set on the title's line box wherever it sits, so on a wide
+// card it stands level with the title beside it and on a phone it closes the
+// card as a line of the same height. No rule above it and nothing beside it:
+// the card's own outline is already the line that says where it ends.
 .post-preview .post-meta {
+  grid-area: date;
   flex-wrap: nowrap;
-  margin-top: var(--space-4);
-  margin-bottom: 0;
+  margin: 0;
+  min-height: var(--title-line);
+  white-space: nowrap;
+
+  @media (max-width: 639.98px) {
+    min-height: 0;
+  }
 }
 
 // The tag on an article's own header: quiet text at the far end of the date
@@ -274,6 +296,13 @@
   font-size: var(--text-body);
   margin-bottom: var(--space-4);
   line-height: var(--leading-prose);
+
+  // On a card it is a row of the card's grid, which keeps the rows apart.
+  .post-preview & {
+    grid-area: summary;
+    margin: 0;
+  }
+
   // The frontmatter descriptions are written in sentence case — they are
   // also the meta descriptions, where that reads better — but on the page
   // they take the house case the way the headings do.
@@ -287,9 +316,11 @@
 // stretched over the whole card, the arrow included, so a tap on it is a tap
 // on the card.
 .read-more {
+  grid-area: way;
   display: inline-flex;
   align-items: center;
-  flex-shrink: 0;
+  // The title's line box, so the arrow sits on the title's own middle.
+  height: var(--title-line);
   color: var(--ink-primary);
 
   svg {
@@ -306,7 +337,9 @@
 }
 
 .post-page .post-header {
-  margin-bottom: var(--space-6);
+  // The list's own gap: the title card and the article are two cards in a
+  // column, like any two on the timeline.
+  margin-bottom: var(--stack-gap);
   padding: var(--card-pad);
   @include outline-block;
   border-radius: var(--radius-lg);
@@ -559,23 +592,12 @@
   margin-top: var(--card-pad);
 }
 
-// Typeset by LaTeX at build time and served as a file, so it is a chip that is
-// a link rather than a control — the same clothing the feed link wears on the
-// list. Parked at the far end, away from the marks that pass it on.
+// Typeset by LaTeX at build time and served as a file, so it is a toolbar
+// segment that is a link rather than a control — the same clothing the feed
+// link wears on the list. Parked at the far end, away from the mark that
+// passes the post on: the two ends of a control row, at the foot of a post.
 .post-download {
   margin-left: auto;
-  color: var(--text-secondary);
-  text-decoration: none;
-
-  svg {
-    width: 15px;
-    height: 15px;
-  }
-
-  &:hover {
-    color: var(--ink-primary);
-    text-decoration: none;
-  }
 }
 
 // `pass-along`, not `share`: Fanboy's Social Blocking List carries the generic
@@ -588,20 +610,6 @@
   flex-wrap: wrap;
   gap: var(--space-2);
   min-width: 0;
-}
-
-.pass-along-chip {
-  color: var(--text-secondary);
-
-  svg {
-    width: 15px;
-    height: 15px;
-  }
-
-  &:hover {
-    color: var(--ink-primary);
-    text-decoration: none;
-  }
 }
 
 // What the chip says to the readers it cannot hand a sheet to. Empty for

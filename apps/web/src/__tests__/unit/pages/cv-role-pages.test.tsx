@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { navigate } from 'gatsby';
 import React from 'react';
 import CVControlBar from '../../../components/cv/CVControlBar';
-import { searchCV } from '../../../components/cv/CVSearch';
 import { heroKeyFor, resolveHero } from '../../../components/heroes';
 import {
   buildVariant,
@@ -46,7 +45,6 @@ const renderRolePage = (variant: RoleVariant) =>
 const structureOf = (container: HTMLElement) => ({
   overviewCard: !!container.querySelector('.cv-overview-contact'),
   controlRow: !!container.querySelector('.cv-control-bar'),
-  search: !!container.querySelector('#cv-search'),
   sections: Array.from(
     container.querySelectorAll('#resume-content > section[id]')
   ).map(section => section.id),
@@ -68,7 +66,6 @@ describe('the generated role-variant pages', () => {
 
       expect(role.overviewCard).toBe(cv.overviewCard);
       expect(role.controlRow).toBe(cv.controlRow);
-      expect(role.search).toBe(cv.search);
       // Same sections, same order; certifications are full-CV only.
       const expected = cv.sections.filter(id => id !== 'cv-certifications');
       expect(role.sections).toEqual(expected);
@@ -180,15 +177,5 @@ describe('CVControlBar without a view to switch', () => {
     expect(
       screen.getByRole('button', { name: /download the cv/i })
     ).toBeInTheDocument();
-  });
-});
-
-describe('searchCV', () => {
-  it('does not offer projects, which the page no longer shows', () => {
-    const fde = buildVariant('fde');
-    expect(searchCV(fde, 'reflex')).toEqual([]);
-    expect(
-      searchCV(fde, 'probabilistic programming').map(result => result.title)
-    ).not.toContain('fugue');
   });
 });

@@ -142,15 +142,26 @@ describe('Layout Component', () => {
     expect(nav.querySelector('.nav-menu')).not.toBeNull();
   });
 
-  it('should render the nav with no theme toggle', () => {
+  it('should render the nav as the page links and the way to the search, and nothing else', () => {
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     const navMenu = document.querySelector('.nav-menu') as HTMLElement;
     expect(navMenu).not.toBeNull();
-    // The nav holds the navigation links and nothing else — the theme toggle
-    // was removed with light mode.
-    expect(navMenu.querySelectorAll('button')).toHaveLength(0);
     expect(navMenu.querySelectorAll('a.nav-link')).toHaveLength(4);
+    // One button: the site's search, as the capsule's last segment — where a
+    // site's search is looked for, on every page and at every width. (The
+    // theme toggle that once sat here went with light mode.)
+    const buttons = navMenu.querySelectorAll('button');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]).toHaveAccessibleName('search the site');
+    expect(navMenu.lastElementChild).toBe(buttons[0]);
+  });
+
+  it('names the navigation', () => {
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
+    expect(screen.getByRole('navigation', { name: 'site' })).toContainElement(
+      document.querySelector('.nav-menu') as HTMLElement
+    );
   });
 
   it('should not set a theme attribute on the document', () => {
