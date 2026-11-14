@@ -103,14 +103,16 @@ describe('CVControlBar', () => {
     renderBar();
 
     expect(
-      screen.getByRole('button', { name: 'Choose CV length' })
+      screen.getByRole('button', { name: /^Choose CV length: / })
     ).toHaveTextContent('full cv');
     // The download menu's trigger is the mark rather than the word, so what
     // names it is its aria-label — which is how it is found here.
     const download = screen.getByRole('button', { name: 'Download the CV' });
     expect(download.querySelector('svg')).not.toBeNull();
     expect(download).not.toHaveTextContent('download');
-    // The row is chrome; the search field lives in its own panel below it.
+    // The row is chrome, and there is nowhere in it to type: the site's one
+    // search is in the capsule of page links. (The way back to the top is in
+    // the row too, and hidden until the row is afloat.)
     expect(screen.getAllByRole('button')).toHaveLength(2);
     expect(document.querySelector('input')).toBeNull();
   });
@@ -119,7 +121,7 @@ describe('CVControlBar', () => {
     renderBar({ view: 'resume' });
 
     expect(
-      screen.getByRole('button', { name: 'Choose CV length' })
+      screen.getByRole('button', { name: /^Choose CV length: / })
     ).toHaveTextContent('one page');
     // The old two-button toggle is gone.
     expect(screen.queryByText('full cv')).not.toBeInTheDocument();
@@ -131,7 +133,7 @@ describe('CVControlBar', () => {
       const { onViewChange } = renderBar();
 
       await user.click(
-        screen.getByRole('button', { name: 'Choose CV length' })
+        screen.getByRole('button', { name: /^Choose CV length: / })
       );
 
       const options = screen.getAllByRole('option');

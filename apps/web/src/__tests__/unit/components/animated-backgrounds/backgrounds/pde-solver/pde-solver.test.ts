@@ -3,6 +3,7 @@
  */
 
 import {
+  advancePDESolver,
   createInitialState,
   stepPDESolver,
   generateInitialCondition,
@@ -12,7 +13,11 @@ import {
   solveWaveEquation,
 } from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/pde-solver';
 import { pdeSolverConfig } from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/config';
-import { PDESolverConfig } from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/types';
+import {
+  BoundaryCondition,
+  EquationType,
+  PDESolverConfig,
+} from '../../../../../../components/animated-backgrounds/backgrounds/pde-solver/types';
 
 describe('PDE Solver', () => {
   describe('Helper Functions', () => {
@@ -429,6 +434,96 @@ describe('PDE Solver', () => {
       expect(result.state.step).toBe(1);
       expect(result.maxValue).toBeDefined();
       expect(result.energy).toBeDefined();
+    });
+  });
+
+  // A step writes into the field an earlier step retired rather than
+  // allocating one. That is only sound if nothing of what the field held
+  // survives the step, on any boundary: the interior is written in full, and
+  // every edge cell — the corners too — is set from the interior.
+  describe('a step that reuses its fields', () => {
+    const boundaries: BoundaryCondition[] = [
+      { type: 'dirichlet', value: 0 },
+      { type: 'neumann', derivative: 0.5 },
+      { type: 'periodic' },
+    ];
+    const equations: EquationType[] = ['heat', 'wave'];
+    const configFor = (boundary: BoundaryCondition): PDESolverConfig => ({
+      gridSizeX: 12,
+      gridSizeY: 10,
+      dx: 0.1,
+      dy: 0.1,
+      dt: 0.0005,
+      alpha: 0.1,
+      c: 1.0,
+      damping: 0.01,
+      boundaryX: boundary,
+      boundaryY: boundary,
+      initialCondition: {
+        type: 'gaussian',
+        amplitude: 1.0,
+        width: 0.1,
+        centerX: 0.4,
+        centerY: 0.6,
+      },
+    });
+
+    for (const equation of equations) {
+      for (const boundary of boundaries) {
+        test(`gets the answer a fresh field gets: ${equation}, ${boundary.type}`, () => {
+          const config = configFor(boundary);
+          const reusing = createInitialState(config, equation);
+          const fresh = createInitialState(config, equation);
+
+          for (let step = 0; step < 8; step++) {
+            // What the retired field holds is the worst it could: not a
+            // number anywhere.
+            reusing.spare?.fill(NaN);
+            fresh.spare = undefined;
+            advancePDESolver(reusing, config, equation);
+            advancePDESolver(fresh, config, equation);
+          }
+
+          expect(Array.from(reusing.u)).toEqual(Array.from(fresh.u));
+          expect(reusing.u.every(Number.isFinite)).toBe(true);
+        });
+      }
+
+      test(`settles on a fixed set of fields: ${equation}`, () => {
+        const config = configFor(boundaries[0]);
+        const state = createInitialState(config, equation);
+        const seen = new Set<Float32Array>();
+        for (let step = 0; step < 12; step++) {
+          advancePDESolver(state, config, equation);
+          seen.add(state.u);
+        }
+        // Two in rotation for the heat equation; the wave equation keeps the
+        // step before as well.
+        expect(seen.size).toBe(equation === 'heat' ? 2 : 3);
+      });
+    }
+
+    test('does not hand back a field of the wrong size', () => {
+      const config = configFor(boundaries[0]);
+      const state = createInitialState(config, 'heat');
+      state.spare = new Float32Array(4);
+      advancePDESolver(state, config, 'heat');
+      expect(state.u.length).toBe(config.gridSizeX * config.gridSizeY);
+    });
+
+    test('is the measured step without the measuring', () => {
+      const config = configFor(boundaries[0]);
+      for (const equation of equations) {
+        const measured = createInitialState(config, equation);
+        const advanced = createInitialState(config, equation);
+        for (let step = 0; step < 5; step++) {
+          stepPDESolver(measured, config, equation);
+          advancePDESolver(advanced, config, equation);
+        }
+        expect(Array.from(advanced.u)).toEqual(Array.from(measured.u));
+        expect(advanced.step).toBe(measured.step);
+        expect(advanced.time).toBe(measured.time);
+      }
     });
   });
 

@@ -1,0 +1,7 @@
+{
+  "name": "gatsby-remark-headerless-tables",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Renders a markdown table whose header row is blank as a table with no header row.",
+  "main": "index.js"
+}

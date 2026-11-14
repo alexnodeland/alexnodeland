@@ -43,6 +43,23 @@ describe('Index Page', () => {
     expect(screen.queryByText('book a call')).not.toBeInTheDocument();
   });
 
+  it('marks the expertise grid up as what it is: a list of titled items', () => {
+    render(<IndexPage />);
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(homepageConfig.expertise.items.length);
+    items.forEach((item, index) => {
+      const { title, description } = homepageConfig.expertise.items[index];
+      // A heading to move between, one level under the section's own, and
+      // the line about it as a paragraph.
+      expect(
+        item.querySelector('h3.expertise-title') as HTMLElement
+      ).toHaveTextContent(title);
+      expect(
+        item.querySelector('p.expertise-description') as HTMLElement
+      ).toHaveTextContent(description);
+    });
+  });
+
   it('draws one expertise icon per card, hidden from assistive tech', () => {
     const { container } = render(<IndexPage />);
 

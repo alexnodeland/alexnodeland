@@ -114,22 +114,30 @@ const ChatModal: React.FC = () => {
     .join(' ');
 
   return (
-    <div className={modalClasses}>
+    // A panel beside the page, not a dialog over it: the page stays live and
+    // in reach, so it is a landmark of its own — somewhere a screen reader
+    // can jump to and name — rather than a modal.
+    <aside className={modalClasses} aria-labelledby="chat-title">
       <div className="chat-header">
-        <h3 className="chat-title">chat</h3>
+        <h3 className="chat-title" id="chat-title">
+          chat
+        </h3>
         <div className="chat-header-controls">
           <ThinkingToggle key="thinking-toggle" />
           {/* A picker with one option is a control that does nothing. */}
           {availableModels.length > 1 && (
-            <Dropdown
-              ariaLabel="Select AI model"
-              triggerLabel={selectedModelLabel}
-              options={modelOptions}
-              value={selectedModel}
-              onSelect={setSelectedModel}
-              align="end"
-              className="model-selector"
-            />
+            // One segment in a housing of its own: the same toolbar a list
+            // page's pickers sit in (see .ui-toolbar in controls.scss).
+            <div className="ui-toolbar model-selector">
+              <Dropdown
+                ariaLabel="Select AI model"
+                triggerLabel={selectedModelLabel}
+                options={modelOptions}
+                value={selectedModel}
+                onSelect={setSelectedModel}
+                align="end"
+              />
+            </div>
           )}
           {messages.length > 0 && (
             <button
@@ -343,7 +351,7 @@ const ChatModal: React.FC = () => {
           }
         }}
       />
-    </div>
+    </aside>
   );
 };
 

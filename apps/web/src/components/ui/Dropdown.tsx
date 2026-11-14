@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { ChevronIcon } from './EntryIcons';
 
 export interface DropdownOption {
   value: string;
@@ -22,7 +23,12 @@ export interface DropdownProps {
    * only progress an icon trigger can report.
    */
   busy?: boolean;
-  /** What the control is, for screen readers; the trigger's visible text is only half the story. */
+  /**
+   * What the control is, for screen readers; the trigger's visible text is
+   * only half the story. The trigger is named with both — "what it is: what
+   * it says" — so someone speaking the word they can see on the chip ("click
+   * newest first") still reaches it.
+   */
   ariaLabel: string;
   options: DropdownOption[];
   /**
@@ -40,12 +46,12 @@ export interface DropdownProps {
 
 /**
  * The site's own dropdown, shared by every control row that needs one — the
- * CV's length and download pickers, the blog's tag and sort pickers. A native
- * <select> renders as the platform's widget, a grey slab with a system arrow,
- * which is the one thing on these pages that would not be ours; so the
- * trigger is a button in the frosted-chip chrome the rows use and the panel
- * is the window's material (scrim, blur, hairline), which the document
- * scrolling underneath does not read through.
+ * CV's length and download pickers, the timeline's tag and sort pickers. A
+ * native <select> renders as the platform's widget, a grey slab with a system
+ * arrow, which is the one thing on these pages that would not be ours; so the
+ * trigger is a segment of the row's toolbar (see ControlRow) and the panel is
+ * the window's material (scrim, blur, hairline), which the document scrolling
+ * underneath does not read through.
  *
  * ARIA: the listbox pattern everywhere, so there is one keyboard contract on
  * the site rather than one per page. Focus moves into the list and the active
@@ -196,13 +202,19 @@ const Dropdown: React.FC<DropdownProps> = ({
       <button
         ref={triggerRef}
         type="button"
-        className={`ui-dropdown-trigger ${isOpen ? 'is-open' : ''} ${
-          triggerIcon ? 'is-icon' : ''
-        } ${busy ? 'is-busy' : ''}`.trim()}
+        className={`ui-toolbar-item ui-dropdown-trigger ${
+          isOpen ? 'is-open' : ''
+        } ${triggerIcon ? 'is-icon' : ''} ${busy ? 'is-busy' : ''}`
+          .replace(/\s+/g, ' ')
+          .trim()}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? listId : undefined}
-        aria-label={ariaLabel}
+        aria-label={
+          triggerIcon || !triggerLabel
+            ? ariaLabel
+            : `${ariaLabel}: ${triggerLabel}`
+        }
         aria-busy={busy || undefined}
         onClick={() =>
           isOpen ? close(false) : open(selectedIndex >= 0 ? selectedIndex : 0)
@@ -212,8 +224,8 @@ const Dropdown: React.FC<DropdownProps> = ({
         {triggerIcon ?? (
           <span className="ui-dropdown-value">{triggerLabel}</span>
         )}
-        <span className="ui-dropdown-caret" aria-hidden="true">
-          ▾
+        <span className="ui-dropdown-caret">
+          <ChevronIcon />
         </span>
       </button>
 

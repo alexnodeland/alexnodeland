@@ -3,7 +3,7 @@ import React from 'react';
 import { getLanguageColor, postPath } from '../../config';
 import { slugify } from '../../config/linked-data';
 import type { GitHubProject } from '../../config';
-import { ArrowOutIcon, GitHubIcon, LinkIcon } from '../ui/EntryIcons';
+import { ArrowOutIcon, GitHubIcon, LinkIcon, StarIcon } from '../ui/EntryIcons';
 
 /**
  * The ways out of a project, at the far end of its meta band: the arrow into
@@ -71,7 +71,13 @@ const ProjectLanguage: React.FC<{ project: GitHubProject }> = ({ project }) => (
     />
     <span className="language-name">{project.language}</span>
     {typeof project.stars === 'number' && project.stars > 0 && (
-      <span className="project-stars">★ {project.stars}</span>
+      <span className="project-stars">
+        <StarIcon />
+        {project.stars}
+        <span className="sr-only">
+          {project.stars === 1 ? ' star' : ' stars'}
+        </span>
+      </span>
     )}
   </div>
 );

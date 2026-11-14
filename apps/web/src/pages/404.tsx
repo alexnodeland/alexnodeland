@@ -1,6 +1,7 @@
 import React from 'react';
 import SEO from '../components/seo';
-import { markNotFound } from '../lib/notFound';
+import { NOT_FOUND_ATTRIBUTE, markNotFound } from '../lib/notFound';
+import { FONT_WEIGHT_STRONG, whenFontReady } from '../lib/utils/fonts';
 import '../styles/404.scss';
 
 // A missing page has no path of its own to resolve a hero from — it is
@@ -12,43 +13,46 @@ import '../styles/404.scss';
 // `notFound` on AnimatedBackgroundProps) — and whichever one is on screen
 // plays it: the one the reader was looking at if they came from inside the
 // site, the one the visit drew if they landed here cold. Nothing is drawn
-// over the field; the field itself becomes the number. Meanwhile the window
-// drifts off it (404.scss, keyed off `data-not-found` on the root), leaving
-// the hero.
+// over the field; the field itself becomes the number.
 //
 // The page has no content. It had a line and the address that was asked for,
 // and both were the hero saying the same thing twice: the title already reads
 // "alex → 404" and the line under it already says the page came apart. The
-// address is in the address bar, where the visitor typed it. What is left is
-// the window itself, drifting off empty, which is the one part of it that was
-// never prose.
+// address is in the address bar, where the visitor typed it.
+//
+// So there is no window either. A frame is drawn around a page, and here it
+// was a box around nothing, laid over the one thing there is to look at. The
+// document is marked while the page is up and the chrome's stylesheet takes
+// the frame away (404.scss); the footer, which lives in the window on every
+// other page, is left standing on the field at its foot.
 //
 // There are no ways out drawn here either. The hero's crumb leads home and the
-// nav capsule lists the sections, so a second set of the same links inside the
-// window was the page saying everything twice as well.
+// nav capsule lists the sections, so a second set of the same links was the
+// page saying everything twice as well.
 const NotFoundPage: React.FC = () => {
+  // The flag waits for the cut of the typeface the number is drawn in. The
+  // field rasterises "404" onto a canvas the moment the flag goes up, and a
+  // canvas draws in whatever is loaded just then: without the wait the number
+  // was set in the visitor's fallback face on a cold load and in the site's
+  // own everywhere else. Already loaded — any visit after the first — this
+  // runs at once.
   React.useEffect(() => {
-    markNotFound(true);
-    return () => markNotFound(false);
+    const cancel = whenFontReady(FONT_WEIGHT_STRONG, '404', () =>
+      markNotFound(true)
+    );
+    return () => {
+      cancel();
+      markNotFound(false);
+    };
   }, []);
 
+  // The mark the chrome is restyled by. The 404's own document arrives
+  // carrying it; a reader who walked into a missing page from inside the site
+  // gets it here.
   React.useEffect(() => {
-    // How the chrome comes apart is drawn once per visit: which way the
-    // window slides, and how far.
     const root = document.documentElement;
-    const sign = Math.random() < 0.5 ? -1 : 1;
-    const drop = Math.round(window.innerHeight * (0.1 + Math.random() * 0.06));
-    root.dataset.notFound = '';
-    root.style.setProperty(
-      '--nf-dx',
-      `${sign * Math.round(16 + Math.random() * 28)}px`
-    );
-    root.style.setProperty('--nf-dy', `${drop}px`);
-    return () => {
-      delete root.dataset.notFound;
-      root.style.removeProperty('--nf-dx');
-      root.style.removeProperty('--nf-dy');
-    };
+    root.setAttribute(NOT_FOUND_ATTRIBUTE, '');
+    return () => root.removeAttribute(NOT_FOUND_ATTRIBUTE);
   }, []);
 
   return <SEO title="404" noindex />;

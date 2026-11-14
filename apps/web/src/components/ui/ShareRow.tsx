@@ -90,15 +90,17 @@ const ShareRow: React.FC<ShareRowProps> = ({ url, title, className = '' }) => {
 
   return (
     <div className={`pass-along ${className}`.trim()}>
-      <button
-        type="button"
-        className="ui-chip-button ui-icon-chip pass-along-chip"
-        onClick={passAlong}
-        aria-label={hasSheet ? 'share this post' : 'copy a link to this post'}
-        title="share"
-      >
-        <ShareIcon />
-      </button>
+      <div className="ui-toolbar">
+        <button
+          type="button"
+          className="ui-toolbar-item is-icon pass-along-chip"
+          onClick={passAlong}
+          aria-label={hasSheet ? 'share this post' : 'copy a link to this post'}
+          title="share"
+        >
+          <ShareIcon />
+        </button>
+      </div>
 
       {/* Always in the page, so that what it says is announced when it says
           it rather than arriving as a new region nobody is listening to. It

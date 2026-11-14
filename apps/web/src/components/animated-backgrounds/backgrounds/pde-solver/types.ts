@@ -11,12 +11,7 @@ export type BoundaryConditionType =
   | 'periodic'; // Periodic boundaries
 
 export type InitialConditionType =
-  | 'gaussian'
-  | 'sine'
-  | 'square'
-  | 'random'
-  | 'ring'
-  | 'interference';
+  'gaussian' | 'sine' | 'square' | 'random' | 'ring' | 'interference';
 
 /**
  * Boundary condition specification
@@ -78,6 +73,10 @@ export interface PDEState {
 
   // For wave equation (requires previous state)
   uPrev?: Float32Array; // Previous state (t - dt)
+
+  // A field the last step retired, for the next one to write into rather
+  // than allocate. Its contents mean nothing.
+  spare?: Float32Array;
 
   // Grid parameters
   gridSizeX: number;

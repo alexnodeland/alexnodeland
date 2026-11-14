@@ -245,10 +245,11 @@
     animation: panel-out-left var(--transition-slow) forwards;
   }
 
-  // The header: the same gutter, divider and title size as the chat's.
+  // The header: the same gutter and title size as the chat's, and like it no
+  // rule underneath. The panel's outline is the only line a panel draws; what
+  // is inside it is set apart by space.
   .sidebar-header {
-    padding: var(--space-4) var(--space-5);
-    border-bottom: 1px solid var(--hairline-interior);
+    padding: var(--space-4) var(--space-5) var(--space-3);
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -369,6 +370,9 @@
   .settings-content {
     flex: 1;
     overflow-y: auto;
+    // A list in a panel over the page ends where it ends: a drag past the
+    // last row is not a drag on whatever is behind the panel.
+    overscroll-behavior: contain;
     padding: 0;
   }
 
@@ -386,12 +390,6 @@
   }
 
   .settings-category {
-    border-bottom: 1px solid var(--hairline-interior);
-
-    &:last-child {
-      border-bottom: none;
-    }
-
     .category-header {
       width: 100%;
       padding: var(--space-3) var(--space-4);
@@ -430,26 +428,29 @@
         gap: var(--space-2);
       }
 
+      // The site's one chevron: pointing along the row while it is shut,
+      // and down into what it has opened.
       .category-toggle {
         width: 1rem;
         height: 1rem;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: var(--text-secondary);
+        color: var(--text-muted);
+        transform: rotate(-90deg);
         transition:
           transform var(--transition-fast),
           color var(--transition-fast);
 
-        &:before {
-          content: '▸';
-          font-size: var(--text-xs);
-          line-height: 1;
+        svg {
+          display: block;
+          width: 12px;
+          height: 12px;
         }
       }
 
       &.open .category-toggle {
-        transform: rotate(90deg);
+        transform: none;
         color: var(--text-primary);
       }
     }
@@ -572,6 +573,7 @@
         color: var(--text-primary);
         font-size: var(--text-xs);
         font-family: inherit;
+        @include touch-field;
 
         &:focus {
           outline: none;
@@ -651,11 +653,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  // A quiet group label, not a band: one hairline above, and the same space
-  // on both sides of the label.
-  padding: var(--space-4);
+  // A quiet group label, not a band: no rule, only a step of air above it.
+  padding: var(--space-3) var(--space-4) var(--space-2);
   border: none;
-  border-top: 1px solid var(--hairline-interior);
   background: transparent;
 }
 
@@ -692,8 +692,20 @@
   transition:
     background-color var(--transition-fast),
     color var(--transition-fast);
-  font-size: var(--text-xs);
-  line-height: 1;
+
+  // The same chevron its rows carry: along the row while everything under
+  // it is shut, down once anything is open.
+  svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+    transform: rotate(-90deg);
+    transition: transform var(--transition-fast);
+  }
+
+  &.is-open svg {
+    transform: none;
+  }
 
   &:hover,
   &:focus-visible {
@@ -707,7 +719,7 @@
 // these controls is watching the background react, so the sheet claims only
 // the lower half of the screen and stays see-through enough to read the
 // animation behind it.
-@media (max-width: 768px) {
+@include compact {
   .settings-sidebar {
     top: auto;
     left: 0;
@@ -730,7 +742,10 @@
     // whose `backwards` fill holds its filter-less first frame through the
     // delay.
     box-shadow: var(--shadow-sheet);
-    padding-bottom: env(safe-area-inset-bottom);
+    // The sheet runs to three edges of the display, so its content holds
+    // itself clear of what the display takes off them: the home indicator
+    // below, and the sensor housing at the side when the phone is turned.
+    padding: 0 var(--safe-side) env(safe-area-inset-bottom);
     z-index: var(--z-overlay);
     animation:
       sheet-in var(--transition-slow),
@@ -835,6 +850,7 @@
           min-width: 0;
           padding: var(--space-2);
           font-size: var(--text-small);
+          @include touch-field;
         }
 
         .color-input {
@@ -946,6 +962,7 @@
 
       &.active {
         @include control-active;
+        @include current-in-forced-colors;
       }
     }
   }

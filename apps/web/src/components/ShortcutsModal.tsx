@@ -3,8 +3,8 @@ import { DURATION_FAST_MS, EASE_OUT } from '../config/motion';
 import { isTypingTarget } from '../lib/utils/keys';
 import { prefersReducedMotion } from '../lib/utils/motion';
 import '../styles/shortcuts.scss';
+import { useModifierLabel } from './search/SearchPalette';
 import CloseIcon from './ui/CloseIcon';
-import { SearchHint } from './search/SearchPalette';
 
 /**
  * The site's keyboard shortcuts, in one place.
@@ -21,8 +21,11 @@ interface Shortcut {
   label: string;
 }
 
-const SHORTCUTS: Shortcut[] = [
-  { keys: ['⌘', 'K'], label: 'search the site' },
+// The search's chord is on ⌘ on a Mac and on ctrl everywhere else; the list
+// is built with whichever this keyboard has, so it never names a key the
+// reader does not own.
+const shortcutsFor = (modifier: string): Shortcut[] => [
+  { keys: [modifier, 'K'], label: 'search the site' },
   { keys: ['/'], label: 'search, too' },
   { keys: ['←', '→'], label: 'switch background' },
   { keys: ['S'], label: 'background settings' },
@@ -37,6 +40,7 @@ const OPEN_MS = DURATION_FAST_MS;
 
 const Shortcuts: React.FC = () => {
   const [open, setOpen] = React.useState(false);
+  const shortcuts = shortcutsFor(useModifierLabel());
   const panelRef = React.useRef<HTMLDivElement>(null);
   const closeButtonRef = React.useRef<HTMLButtonElement>(null);
   // Where focus was when the dialog took it, so it can be handed back.
@@ -106,23 +110,21 @@ const Shortcuts: React.FC = () => {
   return (
     <>
       {/* Bottom-centre of the field, below the spectrogram's audio indicator
-          rather than beside it: the way to the search, then the way to this
-          list. One fixed box holds both, so they sit side by side on the
-          pills' line however wide either one's word unrolls. At rest each is
-          its key caps alone — the word is a caption for a glyph that already
-          says what it is — and it unrolls on hover or keyboard focus. The
-          name is carried by the label rather than by the text, so it reads
-          the same whether the word is out or not. Buttons, because they do
-          something. */}
+          rather than beside it: the way to this list, on the pills' line. At
+          rest it is its key cap alone — the word is a caption for a glyph
+          that already says what it is — and it unrolls on hover or keyboard
+          focus. The name is carried by the label rather than by the text, so
+          it reads the same whether the word is out or not. A button, because
+          it does something. A desktop's only: there is no keyboard on a phone
+          to list the shortcuts of (see .rail-hints in shortcuts.scss). */}
       <div className="rail-hints">
-        <SearchHint />
         <button
           type="button"
           className="rail-hint shortcuts-hint"
           onClick={toggle}
           aria-haspopup="dialog"
           aria-expanded={open}
-          aria-label="keyboard shortcuts"
+          aria-label="keyboard shortcuts (?)"
         >
           <kbd>?</kbd>
           <span
@@ -162,7 +164,7 @@ const Shortcuts: React.FC = () => {
               </button>
             </div>
             <ul className="shortcuts-list">
-              {SHORTCUTS.map(shortcut => (
+              {shortcuts.map(shortcut => (
                 <li key={shortcut.label}>
                   <span className="shortcuts-keys">
                     {shortcut.keys.map(key => (

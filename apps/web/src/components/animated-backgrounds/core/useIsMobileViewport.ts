@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
 
-// Mirrors the $mobile-breakpoint used by the stylesheets. Anything that needs
-// to branch on it in JS should read from here so the two stay in step.
-export const MOBILE_BREAKPOINT_PX = 768;
+/**
+ * When the phone's chrome is worn: a narrow viewport, or a short one held in
+ * a hand — a phone on its side is 844 to 932 points wide, and it is still a
+ * phone. The stylesheets' twin is `$compact` in src/styles/mixins.scss, where
+ * the reasoning is written out; anything that branches on it in JS reads it
+ * from here so the two stay in step.
+ */
+export const COMPACT_QUERY =
+  '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 
-const QUERY = `(max-width: ${MOBILE_BREAKPOINT_PX}px)`;
+/** Whether the phone's chrome is worn right now. False where nobody can say. */
+export const isCompactViewport = (): boolean =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia(COMPACT_QUERY).matches;
 
 /**
  * True on viewports the mobile stylesheets target.
@@ -18,7 +28,7 @@ export const useIsMobileViewport = (): boolean => {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
 
-    const media = window.matchMedia(QUERY);
+    const media = window.matchMedia(COMPACT_QUERY);
     const update = () => setIsMobile(media.matches);
 
     update();

@@ -30,6 +30,10 @@ module.exports = {
   },
   transform: {
     '^.+\\.(js|jsx|mjs|ts|tsx)$': 'babel-jest',
+    // Webpack turns a font import into the file's public URL; here it becomes
+    // a URL built from the file's own name, so a test can still tell which
+    // cut was asked for.
+    '\\.woff2$': '<rootDir>/jest.file-transform.js',
   },
   // .mjs is how the retrieval and prompt modules are written so that the
   // browser worker, plain Node eval scripts, and these tests can all import

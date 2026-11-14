@@ -145,7 +145,7 @@ vim src/styles/mixins.scss
 # One file per page or feature
 vim src/styles/index.scss      # homepage
 vim src/styles/layout.scss     # the shell
-vim src/styles/controls.scss   # dropdowns, chips, search panels
+vim src/styles/controls.scss   # the toolbar every control row is built from, and its menus
 ```
 
 The site is dark only. The simulations composite onto one constant

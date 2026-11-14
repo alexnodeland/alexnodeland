@@ -142,15 +142,26 @@ describe('Layout Component', () => {
     expect(nav.querySelector('.nav-menu')).not.toBeNull();
   });
 
-  it('should render the nav with no theme toggle', () => {
+  it('should render the nav as the page links and the way to the search, and nothing else', () => {
     render(<TestWrapper>{mockChildren}</TestWrapper>);
 
     const navMenu = document.querySelector('.nav-menu') as HTMLElement;
     expect(navMenu).not.toBeNull();
-    // The nav holds the navigation links and nothing else — the theme toggle
-    // was removed with light mode.
-    expect(navMenu.querySelectorAll('button')).toHaveLength(0);
     expect(navMenu.querySelectorAll('a.nav-link')).toHaveLength(4);
+    // One button: the site's search, as the capsule's last segment — where a
+    // site's search is looked for, on every page and at every width. (The
+    // theme toggle that once sat here went with light mode.)
+    const buttons = navMenu.querySelectorAll('button');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]).toHaveAccessibleName('search the site');
+    expect(navMenu.lastElementChild).toBe(buttons[0]);
+  });
+
+  it('names the navigation', () => {
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
+    expect(screen.getByRole('navigation', { name: 'site' })).toContainElement(
+      document.querySelector('.nav-menu') as HTMLElement
+    );
   });
 
   it('should not set a theme attribute on the document', () => {
@@ -410,6 +421,34 @@ describe('Layout Component', () => {
     screen.queryAllByRole('banner').forEach(banner => {
       expect(region).toContainElement(banner);
     });
+  });
+
+  it('names the hero region, so the title and tagline are inside a landmark', () => {
+    // They sit on the field, outside <main>: unnamed, the region was no
+    // landmark at all and a reader moving by landmark never met the title.
+    render(<TestWrapper pathname="/timeline">{mockChildren}</TestWrapper>);
+    const region = screen.getByRole('region', { name: 'page header' });
+    expect(region).toHaveClass('site-hero');
+    expect(region).toContainElement(screen.getByRole('heading', { level: 1 }));
+  });
+
+  it('gives <main> the id the skip link points at, focusable but out of the tab order', () => {
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
+    const main = screen.getByRole('main');
+    expect(main).toHaveAttribute('id', 'main');
+    expect(main).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('sets the cover title as one heading in two pieces, so a phone can fold it to the given name', () => {
+    render(<TestWrapper pathname="/">{mockChildren}</TestWrapper>);
+    const title = screen.getByRole('heading', { level: 1 });
+    // One heading, read as one name.
+    expect(title).toHaveTextContent('alex nodeland');
+    // The surname is the piece that gives way in a phone's folded row (see
+    // .hero-name-rest in layout.scss); the given name is not wrapped at all.
+    const rest = title.querySelector('.hero-name-rest') as HTMLElement;
+    expect(rest).toHaveTextContent('nodeland');
+    expect(title.firstChild?.textContent).toBe('alex');
   });
 
   describe('navigation transition', () => {

@@ -1,4 +1,4 @@
-import { MOBILE_BREAKPOINT_PX } from './useIsMobileViewport';
+import { isCompactViewport } from './useIsMobileViewport';
 
 // One place for every background's answer to "how many device pixels is a
 // frame worth?". The simulations are soft fields, not text: nobody reads them
@@ -14,12 +14,9 @@ const MOBILE_MAX_PIXEL_RATIO = 1.5;
 export const getRenderPixelRatio = (): number => {
   if (typeof window === 'undefined') return 1;
   const dpr = window.devicePixelRatio || 1;
-  const mobile =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches;
   return Math.min(
     dpr,
-    mobile ? MOBILE_MAX_PIXEL_RATIO : DESKTOP_MAX_PIXEL_RATIO
+    isCompactViewport() ? MOBILE_MAX_PIXEL_RATIO : DESKTOP_MAX_PIXEL_RATIO
   );
 };
 

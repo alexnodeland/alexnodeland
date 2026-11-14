@@ -1,9 +1,9 @@
 /**
  * What the timeline was showing, for as long as the tab is open.
  *
- * The list is a page with state on it — a tag, an order, something typed into
- * the search, and a place a long way down a column — and every way back to it
- * used to hand the reader the top of an unfiltered list instead: the browser's
+ * The list is a page with state on it — a tag, an order, and a place a long
+ * way down a column — and every way back to it used to hand the reader the
+ * top of an unfiltered list instead: the browser's
  * own back button, the capsule in the corner, the link at the foot of a post,
  * all three. This is what they get back now, and it is the same thing whichever
  * of the three they take.
@@ -23,7 +23,6 @@ export interface TimelineView {
   /** The tag filter, or null for no filter. */
   tag: string | null;
   sort: 'desc' | 'asc';
-  search: string;
   /** Where the scroller was, as the fallback when the anchor below is gone. */
   scrollTop: number;
   /**
@@ -44,7 +43,6 @@ export interface TimelineView {
 const EMPTY: TimelineView = {
   tag: null,
   sort: 'desc',
-  search: '',
   scrollTop: 0,
   slug: null,
 };
@@ -72,7 +70,6 @@ export const readTimelineView = (): TimelineView | null => {
     return {
       tag: typeof saved.tag === 'string' ? saved.tag : null,
       sort: saved.sort === 'asc' ? 'asc' : 'desc',
-      search: typeof saved.search === 'string' ? saved.search : '',
       scrollTop: typeof saved.scrollTop === 'number' ? saved.scrollTop : 0,
       slug: typeof saved.slug === 'string' ? saved.slug : null,
     };

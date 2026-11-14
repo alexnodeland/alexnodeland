@@ -9,6 +9,7 @@ import { BackgroundManager } from './src/components/animated-backgrounds';
 // none of which the shell needs until the panel is actually opened.
 import { ChatProvider } from './src/components/chat/ChatContext';
 import Layout from './src/components/layout';
+import SkipLink from './src/components/ui/SkipLink';
 
 // The shell — nav capsule, hero region, window frame, chat — wraps the page
 // rather than the page rendering it, so it mounts once and survives every
@@ -24,6 +25,7 @@ export const wrapRootElement = ({ element }) => {
     <SettingsPanelProvider>
       <ChatProvider>
         <BackgroundProvider>
+          <SkipLink />
           <BackgroundManager />
           {element}
         </BackgroundProvider>

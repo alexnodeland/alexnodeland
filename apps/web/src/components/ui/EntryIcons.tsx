@@ -70,6 +70,54 @@ export const DownloadIcon: React.FC = () => (
   </svg>
 );
 
+/**
+ * A chevron: this opens. It follows the word on a picker and turns over when
+ * the menu is out. Drawn rather than typed — the ▾ it replaces is a glyph the
+ * typeface sets at whatever size and weight it likes, and at a chip's scale
+ * it came out as a speck beside the label.
+ */
+export const ChevronIcon: React.FC = () => (
+  <svg {...iconProps} strokeWidth={2}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+/** An arrow pointing up: back to the top of the list. */
+export const ArrowUpIcon: React.FC = () => (
+  <svg {...iconProps} strokeWidth={2}>
+    <path d="M12 19V6" />
+    <path d="m5 13 7-7 7 7" />
+  </svg>
+);
+
+/** A magnifier: the way to the site's search. */
+export const SearchIcon: React.FC = () => (
+  <svg {...iconProps}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="m20 20-4.2-4.2" />
+  </svg>
+);
+
+/** The feed mark: two arcs off a dot. */
+export const FeedIcon: React.FC = () => (
+  <svg {...iconProps} strokeWidth={2}>
+    <path d="M4 11a9 9 0 0 1 9 9" />
+    <path d="M4 4a16 16 0 0 1 16 16" />
+    <circle cx="5" cy="19" r="1" fill="currentColor" />
+  </svg>
+);
+
+/**
+ * A star, in outline: a repo's stars. Drawn, because the ★ it replaces is not
+ * in the site's typeface — each platform set it from whatever symbol font it
+ * had to hand, at whatever size and weight that was.
+ */
+export const StarIcon: React.FC = () => (
+  <svg {...iconProps}>
+    <path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z" />
+  </svg>
+);
+
 /** The octocat, in outline: the way out to a repo on github. */
 export const GitHubIcon: React.FC = () => (
   <svg {...iconProps}>

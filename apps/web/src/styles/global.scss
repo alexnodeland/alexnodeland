@@ -1,14 +1,15 @@
 // The site's one global stylesheet, loaded once from gatsby-browser.js. It is
-// the only place the tokens and the keyframes are emitted; the page and
-// component stylesheets `@use` the mixins alone.
+// the only place the typeface, the tokens and the keyframes are emitted; the
+// page and component stylesheets `@use` the mixins alone.
+@use 'fonts';
 @use 'variables';
 @use 'mixins' as *;
 @use 'animations';
 @use 'animated-backgrounds';
 @use 'chat';
-// Shared control chrome (the dropdown, the chips, the search panel), imported
-// once here so the CV row and the blog row cannot drift into two copies of the
-// same trigger.
+// Shared control chrome (the toolbar a control row is built from, and the menu
+// a picker opens), imported once here so the CV row and the timeline row cannot
+// drift into two copies of the same control.
 @use 'controls';
 
 * {
@@ -26,11 +27,21 @@ html {
   // in variables.scss in both orientations.
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  height: 100%;
 }
 
 // The page's own ground. Nothing decorates it: the animated stage covers it
 // edge to edge, and the grid texture and radial washes that used to be
 // painted here were never visible under it.
+//
+// The document does not scroll: everything on it is fixed, and the page
+// scrolls inside the window (see .layout). So the body is exactly the
+// viewport and no taller. It used to be `min-height: 100vh`, and on a phone
+// `100vh` is the screen with the browser's toolbar put away — a toolbar's
+// height more than what is showing. That made the empty document scrollable
+// by exactly that much, so a drag that ran off the end of the window carried
+// on into the page, the toolbar slid away, the viewport grew, and every fixed
+// layer — the simulation's canvas included — was laid out again mid-flick.
 body {
   margin: 0;
   padding: 0;
@@ -38,7 +49,8 @@ body {
   line-height: var(--leading-prose);
   color: var(--text-primary);
   background: var(--bg-primary);
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
 }
 
 a {
@@ -53,7 +65,7 @@ h3,
 h4,
 h5,
 h6 {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   line-height: var(--leading-tight);
   font-weight: 400;
   color: var(--text-primary);
@@ -65,17 +77,17 @@ h6 {
 
 h1 {
   font-size: var(--text-h1);
-  margin: 0 0 var(--space-6);
+  margin: 0 0 var(--space-5);
 }
 
 h2 {
   font-size: var(--text-h2);
-  margin: var(--space-8) 0 var(--space-5);
+  margin: var(--space-7) 0 var(--space-4);
 }
 
 h3 {
   font-size: var(--text-h3);
-  margin: var(--space-7) 0 var(--space-4);
+  margin: var(--space-6) 0 var(--space-3);
 }
 
 h4 {
@@ -96,18 +108,18 @@ b {
 }
 
 p {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   color: var(--text-secondary);
 }
 
 ul,
 ol {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   padding-left: var(--space-5);
 }
 
 li {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
   color: var(--text-secondary);
 }
 

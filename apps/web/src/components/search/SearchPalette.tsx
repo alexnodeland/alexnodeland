@@ -2,6 +2,7 @@ import { navigate } from 'gatsby';
 import React from 'react';
 import { DURATION_FAST_MS, EASE_OUT } from '../../config/motion';
 import { isTypingTarget } from '../../lib/utils/keys';
+import { SearchIcon } from '../ui/EntryIcons';
 import { prefersReducedMotion } from '../../lib/utils/motion';
 import { KIND_LABELS, loadSearcher } from '../../lib/search';
 import type { SearchDoc, Searcher } from '../../lib/search';
@@ -13,8 +14,9 @@ import '../../styles/search.scss';
  * One box over every page, post, project, app and CV role, in place of a
  * search on each list page — the lists are short enough to read, and the
  * question someone with a search box is asking is "where is the thing", not
- * "which of these twelve". It mounts once, in the shell, beside the shortcuts
- * list, and fetches its index the first time it opens (see src/lib/search.ts).
+ * "which of these twelve". It mounts once, in the shell, and fetches its
+ * index the first time it opens (see src/lib/search.ts). The way to it for a
+ * pointer or a thumb is the last segment of the capsule of page links.
  */
 
 /** What anything that wants the search open dispatches; the palette listens. */
@@ -26,7 +28,7 @@ export const openSearch = (): void => {
 };
 
 /** ⌘ on a Mac, ctrl everywhere else: the key the shortcut is actually on. */
-const useModifierLabel = (): string => {
+export const useModifierLabel = (): string => {
   // The server renders the Mac's, and the browser corrects it after mount, so
   // the first paint and the hydrated tree agree.
   const [label, setLabel] = React.useState('⌘');
@@ -42,41 +44,30 @@ const useModifierLabel = (): string => {
 };
 
 /**
- * The way to the search for someone without a keyboard to hand: the key caps
- * on a desktop (the word unrolls beside them, as the shortcuts hint's does),
- * a magnifier on a phone. It sits in the row at the foot of the field, beside
- * the shortcuts hint (see ShortcutsModal).
+ * The way to the search for a pointer or a thumb: the last segment of the
+ * capsule of page links (see the nav in layout.tsx), on every page and at
+ * every width. It used to be a pair of key caps at the foot of the field on a
+ * desktop and a button of its own between the two launchers on a phone — one
+ * control in two places, neither of them where anyone looks for a search. A
+ * site's search goes with its navigation, and that is where this is.
+ *
+ * The chord is not drawn on it: the capsule is a row of words and one mark,
+ * and the shortcut is in the list `?` opens. It is on the button all the
+ * same — as its tooltip, and as `aria-keyshortcuts` for a screen reader.
  */
-export const SearchHint: React.FC = () => {
+export const SearchButton: React.FC = () => {
   const modifier = useModifierLabel();
   return (
     <button
       type="button"
-      className="rail-hint search-hint"
+      className="nav-search"
       onClick={openSearch}
       aria-haspopup="dialog"
       aria-label="search the site"
+      aria-keyshortcuts={modifier === '⌘' ? 'Meta+K' : 'Control+K'}
+      title={`search (${modifier} K)`}
     >
-      <span className="search-hint-keys" aria-hidden="true">
-        <kbd>{modifier}</kbd>
-        <kbd>K</kbd>
-      </span>
-      <svg
-        className="search-hint-glyph"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <circle cx="11" cy="11" r="6.5" />
-        <path d="m20 20-4.2-4.2" />
-      </svg>
-      <span className="rail-hint-label" aria-hidden="true">
-        search
-      </span>
+      <SearchIcon />
     </button>
   );
 };

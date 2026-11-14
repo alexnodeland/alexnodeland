@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { FONT_FAMILY, FONT_WEIGHT_STRONG } from '../../../lib/utils/fonts';
 
 /**
  * The number, as a field.
@@ -44,9 +45,8 @@ export interface RasterizeOptions {
 
 export const GLYPH_TEXT = '404';
 
-// The site's own stack, for when there is no body to read it from.
-const FALLBACK_FAMILY =
-  "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace";
+// The site's own face, for when there is no body to read the stack from.
+const FALLBACK_FAMILY = `'${FONT_FAMILY}', monospace`;
 
 const pageFontFamily = (): string => {
   if (typeof document === 'undefined' || !document.body) return FALLBACK_FAMILY;
@@ -134,13 +134,23 @@ export const rasterizeGlyph = (
     const canvas = document.createElement('canvas');
     canvas.width = cols;
     canvas.height = rows;
-    const ctx = canvas.getContext('2d');
+    // Read back, not shown: the canvas exists to hand its pixels to
+    // getImageData below. Saying so keeps it in ordinary memory. Left to
+    // itself the browser backs a 2D canvas with the GPU, and reading that
+    // back stalls the main thread until the GPU has caught up — a quarter of
+    // a second in places, on every background's start and every time the
+    // cycle brought a new one in, for a number most visits never see.
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (ctx) {
+      // The heavier of the site's two weights, by number: `bold` asks for a
+      // 700 the face is not shipped in, and a canvas draws in whatever is
+      // loaded when it is asked (the 404 page waits for this cut before it
+      // raises its flag — see src/pages/404.tsx).
       let size = rows * maxHeight;
-      ctx.font = `bold ${size}px ${family}`;
+      ctx.font = `${FONT_WEIGHT_STRONG} ${size}px ${family}`;
       const measured = ctx.measureText(text).width || cols;
       if (measured > cols * maxWidth) size *= (cols * maxWidth) / measured;
-      ctx.font = `bold ${size}px ${family}`;
+      ctx.font = `${FONT_WEIGHT_STRONG} ${size}px ${family}`;
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';

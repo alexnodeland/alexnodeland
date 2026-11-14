@@ -29,13 +29,6 @@ jest.mock('../../../components/cv/CVControlBar', () => ({
   ),
 }));
 
-jest.mock('../../../components/cv/CVSearch', () => ({
-  __esModule: true,
-  default: ({ resumeData }: { resumeData: { personal: { name: string } } }) => (
-    <div data-testid="cv-search" data-name={resumeData.personal.name} />
-  ),
-}));
-
 jest.mock('../../../components/cv/CVExperienceSection', () => ({
   __esModule: true,
   default: () => <section id="cv-experience-body" />,
@@ -61,7 +54,7 @@ describe('CV Page', () => {
     // The "alex → cv" title and its tagline live in the hero registry the
     // shell reads, not here.
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
-    // The sections the search scrolls to are the ones the page puts ids on.
+    // The sections a link can land on are the ones the page puts ids on.
     expect(document.getElementById('cv-experience')).toBeInTheDocument();
     expect(document.getElementById('cv-education')).toBeInTheDocument();
     expect(document.getElementById('cv-skills')).toBeInTheDocument();
@@ -79,8 +72,8 @@ describe('CV Page', () => {
     );
     expect(document.querySelector('.cv-view-toggle')).toBeNull();
     expect(document.querySelector('.cv-export')).toBeNull();
-    // The search kept its own panel below the row.
-    expect(screen.getByTestId('cv-search')).toBeInTheDocument();
+    // And no search of its own: the site's one search finds a role.
+    expect(document.querySelector('input')).toBeNull();
 
     const fullSummary = screen.getByText(cvData.personal.summary);
     expect(fullSummary).toBeInTheDocument();
@@ -92,10 +85,5 @@ describe('CV Page', () => {
       'resume'
     );
     expect(screen.getByText(resumeData.personal.summary)).toBeInTheDocument();
-    // Both consumers are handed the length that is now on screen.
-    expect(screen.getByTestId('cv-search')).toHaveAttribute(
-      'data-name',
-      resumeData.personal.name
-    );
   });
 });

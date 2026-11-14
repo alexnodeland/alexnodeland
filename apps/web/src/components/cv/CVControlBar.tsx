@@ -3,7 +3,6 @@ import { CVData, CVVariant, CV_PAGES, isRoleVariant } from '../../config/cv';
 import ControlRow from '../ui/ControlRow';
 import Dropdown, { DropdownOption } from '../ui/Dropdown';
 import { DownloadIcon } from '../ui/EntryIcons';
-import SearchToggle from '../ui/SearchToggle';
 import useCVExport, { CVExportFormat } from './useCVExport';
 
 const VIEW_OPTIONS: DropdownOption[] = [
@@ -34,32 +33,23 @@ interface CVControlBarProps {
   /**
    * Called when a document is picked from the menu. On /cv/ it switches the
    * length in place; on a role page it navigates. Leave it out and the row
-   * draws no menu at all, only the download menu and the search chip.
+   * draws no menu at all, only the download menu.
    */
   onViewChange?: (view: CVVariant) => void;
-  /** Phone only: the search panel below is folded away behind a chip here. */
-  searchOpen?: boolean;
-  onToggleSearch?: () => void;
   className?: string;
 }
 
 /**
  * The CV's one row of chrome: pick a length, take the document away, and
- * nothing else — the search is a place to type rather than a control, and it
- * stays in its own panel below. The row is the one every list page carries:
- * two menus on the left and, on a phone, the chip that unfolds the search
- * panel at the far right. The row sticks to the
- * top of the window's own scroll, so — like the section nav that used to live
- * here — it cannot be a pure outline: the document runs underneath it, and it
- * takes the window's scrim, blur and hairline so headings do not read straight
- * through it.
+ * nothing else. It is the row every list page carries (see ControlRow): what
+ * is shown at the start, what can be taken away at the far end. It has no
+ * search of its own — the site's one search is in the capsule of page links,
+ * and it finds a role by what was done in it.
  */
 const CVControlBar: React.FC<CVControlBarProps> = ({
   resumeData,
   view,
   onViewChange,
-  searchOpen = false,
-  onToggleSearch,
   className = '',
 }) => {
   const { isExporting, exportAs } = useCVExport(resumeData, view);
@@ -70,7 +60,24 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
     viewOptions.find(option => option.value === view)?.label ?? 'full cv';
 
   return (
-    <ControlRow className={`cv-control-bar ${className}`.trim()}>
+    <ControlRow
+      className={`cv-control-bar ${className}`.trim()}
+      actions={
+        // The verb is the mark: one tray-and-arrow, the same one a post wears
+        // over its typeset copy. The menu underneath still names the three
+        // formats in words — the icon says "take it away", not which file.
+        <Dropdown
+          ariaLabel="Download the CV"
+          triggerIcon={<DownloadIcon />}
+          busy={isExporting}
+          options={DOWNLOAD_OPTIONS}
+          onSelect={value => exportAs(value as CVExportFormat)}
+          align="end"
+          tone="action"
+          className="cv-download-dropdown"
+        />
+      }
+    >
       {onViewChange && (
         <Dropdown
           ariaLabel="Choose CV length"
@@ -79,29 +86,6 @@ const CVControlBar: React.FC<CVControlBarProps> = ({
           value={view}
           onSelect={value => onViewChange(value as CVVariant)}
           className="cv-view-dropdown"
-        />
-      )}
-
-      {/* The verb is the mark: one tray-and-arrow, the same one a post wears
-          over its typeset copy. The menu underneath still names the three
-          formats in words — the icon says "take it away", not which file. */}
-      <Dropdown
-        ariaLabel="Download the CV"
-        triggerIcon={<DownloadIcon />}
-        busy={isExporting}
-        options={DOWNLOAD_OPTIONS}
-        onSelect={value => exportAs(value as CVExportFormat)}
-        tone="action"
-        className="cv-download-dropdown"
-      />
-
-      {/* At the far end, as on the blog and projects rows: the two menus sit
-          left and the way to the search box takes the right. */}
-      {onToggleSearch && (
-        <SearchToggle
-          open={searchOpen}
-          onToggle={onToggleSearch}
-          controls="cv-search"
         />
       )}
     </ControlRow>

@@ -11,6 +11,7 @@ import {
   SettingsSchema,
 } from '../../types/animated-backgrounds';
 import CloseIcon from '../ui/CloseIcon';
+import { ChevronIcon } from '../ui/EntryIcons';
 import { useIsMobileViewport } from './core/useIsMobileViewport';
 
 interface SettingsPanelProps {
@@ -123,7 +124,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   // all of them. It also could not be opened at all by touch, being shown on
   // hover. So it is one box, a sibling of the scroller rather than a descendant
   // of it, placed against the mark that asked for it.
-  const panelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const [help, setHelp] = useState<{
     key: string;
     text: string;
@@ -518,8 +519,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const description = currentBackgroundDescription?.toLowerCase?.() || '';
 
   return (
-    <div
+    // A landmark, like the chat panel across from it: a panel beside the
+    // page that a screen reader can find by name.
+    <aside
       ref={panelRef}
+      aria-label="background settings"
       className={[
         'settings-sidebar',
         isMobile && 'settings-sheet',
@@ -685,14 +689,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="section-header">
               <div className="section-left">
                 <button
-                  className="section-action"
+                  className={`section-action${customAnyOpen ? ' is-open' : ''}`}
                   onClick={toggleCustomSection}
                   aria-label={
                     customAnyOpen ? 'Collapse all custom' : 'Expand all custom'
                   }
                   title={customAnyOpen ? 'collapse all' : 'expand all'}
                 >
-                  {customAnyOpen ? '▾' : '▸'}
+                  <ChevronIcon />
                 </button>
                 <div className="section-title">custom settings</div>
               </div>
@@ -705,7 +709,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   aria-expanded={!!openCategories[category]}
                 >
                   <span className="category-left">
-                    <span className="category-toggle" aria-hidden="true" />
+                    <span className="category-toggle">
+                      <ChevronIcon />
+                    </span>
                     <span className="category-title">
                       {category?.toLowerCase?.() || ''}
                     </span>
@@ -725,7 +731,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="section-header">
               <div className="section-left">
                 <button
-                  className="section-action"
+                  className={`section-action${standardAnyOpen ? ' is-open' : ''}`}
                   onClick={toggleStandardSection}
                   aria-label={
                     standardAnyOpen
@@ -734,7 +740,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   }
                   title={standardAnyOpen ? 'collapse all' : 'expand all'}
                 >
-                  {standardAnyOpen ? '▾' : '▸'}
+                  <ChevronIcon />
                 </button>
                 <div className="section-title">standard settings</div>
               </div>
@@ -747,7 +753,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   aria-expanded={!!openCategories[category]}
                 >
                   <span className="category-left">
-                    <span className="category-toggle" aria-hidden="true" />
+                    <span className="category-toggle">
+                      <ChevronIcon />
+                    </span>
                     <span className="category-title">
                       {category?.toLowerCase?.() || ''}
                     </span>
@@ -795,7 +803,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {help.text}
         </div>
       )}
-    </div>
+    </aside>
   );
 };
 

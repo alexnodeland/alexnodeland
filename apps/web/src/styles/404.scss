@@ -1,31 +1,56 @@
 // The 404, which is all chrome: the page itself renders nothing (see
 // src/pages/404.tsx — the hero already says what there is to say, and the
 // field behind everything forms the number). What is here is the way the
-// chrome comes apart around that.
+// chrome stands around that.
+@use 'mixins' as *;
 
-// ── The chrome coming apart ──────────────────────────────────────────────────
-// Keyed off the root while the 404 is up (src/pages/404.tsx sets it, and the
-// two --nf-* distances that make each visit's slide its own). The window
-// sinks and thins out but stays clickable; the capsule of page links stays
-// where it is, since it is the way out, and only floats; the hero holds still
-// and, now and then, glitches.
+// ── No window ────────────────────────────────────────────────────────────────
+// Keyed off the root while the 404 is up (the page sets the mark as it
+// mounts, and the 404's own document is served already carrying it — see
+// isNotFoundPath in src/lib/notFound.ts).
 //
-// The rail at the foot of the field — the backgrounds launcher, the chat
-// pill, the shortcuts hint — is not touched. Those are the site's controls,
-// not the page's chrome; they sit where they always sit.
+// A window frames a page, and this one has none: the frame was a scrim, a
+// blur and a hairline around an empty box, drawn over the number the field
+// is busy forming. So the frame and its edge are not drawn at all. The
+// scroller inside them stays — it is what holds the footer at its foot — and
+// with nothing behind it the footer stands on the field the way the hero
+// does.
 //
-// Nothing here rotates. The window is a scrolling panel with a backdrop blur,
-// and a rotated one has to be resampled every frame of its own animation and
-// every frame of a scroll — which is the shimmer a phone showed when the page
-// was pulled down. A slide and a scale composite cleanly; the lean is left to
-// the capsule, which is small and does not scroll. The field behind, where
-// the number forms, is the background's own and is not touched from here.
+// Coming from a page inside the site the frame fades rather than cuts. The
+// transition is declared in this state and nowhere else: on every other page
+// the frame and its edge are moved by the scroll and by nothing in time (the
+// fold, see layout.scss), and a transition left standing on them is one more
+// thing for that to be measured against. So the way out of a 404 is a cut —
+// the frame arrives with the page it frames, which arrives at once too — and
+// a cold load, which starts in this state, runs nothing.
 html[data-not-found] {
-  .stage .window {
-    will-change: translate, scale, opacity;
-    animation: nf-window-adrift 12s var(--ease-out) 0.8s forwards;
+  .window-frame,
+  .window-edge {
+    opacity: 0;
+    // Gone, not merely clear: a blur that is still in the tree is still
+    // composited, however little of it shows.
+    visibility: hidden;
+    transition:
+      opacity var(--transition-slow),
+      visibility 0s linear var(--duration-slow);
   }
 
+  // The footer's marks are on the field now, with no scrim under them, so
+  // they take the shadow every other line set straight on the field takes
+  // (the copyright under them has it already).
+  .footer-link .icon {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+  }
+
+  // ── The chrome, not quite holding ──────────────────────────────────────────
+  // The capsule of page links stays where it is, since it is the way out, and
+  // only floats; the hero holds still and, now and then, glitches.
+  //
+  // The rail at the foot of the field — the backgrounds launcher, the chat
+  // pill, the shortcuts hint — is not touched. Those are the site's controls,
+  // not the page's chrome; they sit where they always sit. The field behind,
+  // where the number forms, is the background's own and is not touched from
+  // here.
   .nav {
     animation: nf-float 11s ease-in-out infinite alternate;
   }
@@ -37,14 +62,6 @@ html[data-not-found] {
 
   .site-hero p {
     animation: nf-breathe 5s ease-in-out 4s infinite alternate;
-  }
-}
-
-@keyframes nf-window-adrift {
-  to {
-    translate: var(--nf-dx, 0px) var(--nf-dy, 100px);
-    scale: 0.95;
-    opacity: 0.42;
   }
 }
 
@@ -100,31 +117,20 @@ html[data-not-found] {
   }
 }
 
-@media (max-width: 768px) {
-  // A phone has nowhere for the window to go; it thins out where it stands.
-  html[data-not-found] .stage .window {
-    animation-name: nf-window-thin;
-  }
-}
-
-@keyframes nf-window-thin {
-  to {
-    translate: 0 20px;
-    scale: 0.975;
-    opacity: 0.45;
-  }
-}
-
 // Less motion means the background's sequence drawn at its end state (the
-// backgrounds handle that) and the chrome staying exactly where it is.
+// backgrounds handle that), the chrome staying exactly where it is, and the
+// frame simply not being there rather than fading.
 @media (prefers-reduced-motion: reduce) {
   html[data-not-found] {
-    .stage .window,
+    .window-frame,
+    .window-edge {
+      transition: none;
+    }
+
     .nav,
     .site-hero .hero-crumb-rest,
     .site-hero p {
       animation: none;
-      will-change: auto;
     }
   }
 }

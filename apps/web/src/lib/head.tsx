@@ -1,6 +1,9 @@
 import React from 'react';
+import { resolveHero } from '../components/heroes';
 import { LD } from '../config/linked-data';
 import { siteConfig } from '../config/site';
+import latin from '../fonts/jetbrains-mono-latin-400.woff2';
+import latinItalic from '../fonts/jetbrains-mono-latin-400-italic.woff2';
 
 /**
  * What every page's head says about the site, before the page says anything
@@ -20,8 +23,32 @@ import { siteConfig } from '../config/site';
  * - The Atom and JSON Feed forms of the timeline (gatsby-node writes them at
  *   the end of the build). The RSS link is gatsby-plugin-feed's own, already
  *   in every head.
+ *
+ * - The cuts of the typeface the page opens with, preloaded: the regular
+ *   every page is set in and — where the hero has a tagline, which is set in
+ *   it — the italic. A font is otherwise not requested until the stylesheet
+ *   has been parsed and the text that needs it laid out, which leaves the
+ *   first screen in the fallback face for a beat on every cold load. The
+ *   italic is left off a page that opens without it (a post, the 404): a
+ *   preload nothing uses is a download in front of the ones that matter.
+ *   `crossOrigin` is not optional, same origin or not: fonts are fetched in
+ *   CORS mode, and a preload without it is fetched once for nothing and then
+ *   again for real. The other cuts (see src/styles/fonts.scss) are left to
+ *   load when a page sets something in them.
  */
-export const headComponents = (): React.ReactElement[] => [
+export const headComponents = (pathname = '/'): React.ReactElement[] => [
+  ...[latin, ...(resolveHero(pathname).pinned ? [] : [latinItalic])].map(
+    href => (
+      <link
+        key={`font:${href}`}
+        rel="preload"
+        as="font"
+        type="font/woff2"
+        href={href}
+        crossOrigin="anonymous"
+      />
+    )
+  ),
   <link
     key="atom"
     rel="alternate"

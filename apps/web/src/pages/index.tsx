@@ -58,23 +58,25 @@ const IndexPage: React.FC<{ location?: { pathname?: string } }> = ({
 
         <section className="expertise">
           <h2>{homepageConfig.expertise.title}</h2>
-          <div className="expertise-grid">
+          {/* A list of six things, each a title and a line about it — and
+              marked up as one, so it reads that way without the boxes: "list,
+              six items", a heading to move between, and the line under it. As
+              bare divs the six ran together into a single sentence. */}
+          <ul className="expertise-grid">
             {homepageConfig.expertise.items.map((item, index) => {
               // Drawn as a set, in config order. The icon is decorative — the
               // title sits directly beneath it and does the labelling — so the
               // svg is hidden from assistive tech rather than repeating it.
               const Icon = expertiseIcons[index];
               return (
-                <div key={index} className="expertise-item">
+                <li key={index} className="expertise-item">
                   <span className="expertise-icon">{Icon && <Icon />}</span>
-                  <div className="expertise-title">{item.title}</div>
-                  <div className="expertise-description">
-                    {item.description}
-                  </div>
-                </div>
+                  <h3 className="expertise-title">{item.title}</h3>
+                  <p className="expertise-description">{item.description}</p>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </section>
       </div>
     </>

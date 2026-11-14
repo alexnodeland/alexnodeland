@@ -77,7 +77,7 @@ describe('Projects Page', () => {
     // the shell reads; the page owns the control row and the catalogue.
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Filter projects by category' })
+      screen.getByRole('button', { name: /^Filter projects by category: / })
     ).toBeInTheDocument();
     expect(screen.getByTestId('activity-panel')).toBeInTheDocument();
   });
@@ -259,7 +259,7 @@ describe('Projects Page', () => {
 
   describe('control row', () => {
     const categoryTrigger = () =>
-      screen.getByRole('button', { name: 'Filter projects by category' });
+      screen.getByRole('button', { name: /^Filter projects by category: / });
 
     const pick = async (
       user: ReturnType<typeof userEvent.setup>,

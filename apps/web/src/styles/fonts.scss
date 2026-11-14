@@ -1,0 +1,106 @@
+// The typeface. JetBrains Mono is the site's one face, and it is shipped from
+// here rather than hoped for: named in a stack with no file behind it, it only
+// ever rendered for the visitors who happened to have it installed, and
+// everyone else got their platform's own monospace — Courier New on an iPhone,
+// Consolas on Windows, Droid Sans Mono on Android — five different sites under
+// one stylesheet, each with its own widths for every measure tuned here.
+//
+// The files in src/fonts are cut from the upstream release by
+// scripts/subset-fonts.sh (see that script for the ranges and the reasons),
+// and are licensed under the SIL Open Font License (src/fonts/OFL.txt).
+//
+// Two weights, because the system has two (see `strong` in global.scss), each
+// upright and italic, and each in two pieces split by `unicode-range` so a
+// page only fetches what it sets:
+//
+//   latin  everything the chrome and ordinary prose use — ASCII, Latin-1,
+//          dashes and quotes, the four arrows, ⌘, the disclosure triangles.
+//          ~15KB a style. The regular and the italic are preloaded from the
+//          document head (src/lib/head.tsx): both are in the first screen of
+//          every page, the italic as the hero's tagline.
+//   ext    the rest of what the face has that the writing reaches for —
+//          accented names, Greek, the mathematical operators, box drawing.
+//          Fetched only by a page that actually sets one of those.
+//
+// `swap`, so text is on screen in the fallback from the first frame and is
+// re-set in the real face when it lands. The fallbacks in --font-mono are
+// chosen to make that re-set invisible: see the stack in variables.scss.
+$faces: (
+  (400, normal, '400'),
+  (400, italic, '400-italic'),
+  (600, normal, '600'),
+  (600, italic, '600-italic')
+);
+
+// These are the ranges the files were cut to. Change them together with
+// scripts/subset-fonts.sh, or a character will be claimed by a file that does
+// not hold it and drawn as a box.
+$subsets: (
+  'latin': (
+    U+0020-007E,
+    U+00A0-00FF,
+    U+2010-2027,
+    U+2030-203A,
+    U+2190-2193,
+    U+2318,
+    U+25B8,
+    U+25BE,
+    U+FFFD,
+  ),
+  'ext': (
+    U+0100-024F,
+    U+0259,
+    U+02B0-02FF,
+    U+0300-036F,
+    U+0370-03FF,
+    U+1E00-1EFF,
+    U+2070-209F,
+    U+20A0-20CF,
+    U+2100-214F,
+    U+2150-218F,
+    U+2194-21FF,
+    U+2200-22FF,
+    U+2300-2317,
+    U+2319-23FF,
+    U+2400-243F,
+    U+2500-259F,
+    U+25A0-25B7,
+    U+25B9-25BD,
+    U+25BF-25FF,
+    U+2600-26FF,
+    U+2700-27BF,
+  ),
+);
+
+@each $weight, $style, $file in $faces {
+  @each $subset, $range in $subsets {
+    @font-face {
+      font-family: 'JetBrains Mono';
+      font-style: $style;
+      font-weight: $weight;
+      font-display: swap;
+      src: url('../fonts/jetbrains-mono-#{$subset}-#{$file}.woff2')
+        format('woff2');
+      unicode-range: $range;
+    }
+  }
+}
+
+// The one fallback that needs help. JetBrains Mono advances 0.6em a
+// character, and so does nearly every monospace a platform falls back to
+// (Menlo, Monaco, Courier New, Liberation Mono, Droid Sans Mono) — which is
+// what lets the swap happen without a single line re-wrapping. Consolas, the
+// monospace Windows reaches first, advances 0.55em: every line set in it is a
+// twelfth shorter, and the page re-wraps under the reader when the real face
+// arrives. So Consolas is scaled up to JetBrains Mono's advance (0.6 / 0.5498)
+// and given its vertical metrics (1020 / −300 on a 1000-unit em, divided back
+// by the scale), and offered under a name of its own. Anywhere Consolas is not
+// installed this face has no source and the stack simply moves on.
+@font-face {
+  font-family: 'JetBrains Mono Fallback';
+  src: local('Consolas');
+  size-adjust: 109.13%;
+  ascent-override: 93.47%;
+  descent-override: 27.49%;
+  line-gap-override: 0%;
+}

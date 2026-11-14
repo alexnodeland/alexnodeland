@@ -20,7 +20,14 @@ const config: import('gatsby').GatsbyConfig = {
     `gatsby-plugin-sharp`,
     `gatsby-transformer-sharp`,
     `gatsby-plugin-react-helmet`,
-    `gatsby-transformer-remark`,
+    {
+      resolve: `gatsby-transformer-remark`,
+      options: {
+        // A table written with a blank header row is rendered as a table
+        // with none (plugins/gatsby-remark-headerless-tables).
+        plugins: [`gatsby-remark-headerless-tables`],
+      },
+    },
     {
       resolve: `gatsby-plugin-sitemap`,
       options: {

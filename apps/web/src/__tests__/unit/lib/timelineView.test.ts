@@ -20,7 +20,7 @@ describe('timelineView', () => {
 
   it('merges a patch over what is already there', () => {
     getItem.mockReturnValue(
-      JSON.stringify({ tag: 'AI', sort: 'asc', search: '', scrollTop: 120 })
+      JSON.stringify({ tag: 'AI', sort: 'asc', scrollTop: 120 })
     );
 
     saveTimelineView({ scrollTop: 300 });

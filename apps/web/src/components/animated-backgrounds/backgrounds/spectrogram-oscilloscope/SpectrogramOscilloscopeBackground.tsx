@@ -32,8 +32,7 @@ const FADER_SECONDS = 1.5;
 // A signal time no phrase has reached: the voice is off.
 const VOICE_OFF = 1e30;
 
-interface SpectrogramOscilloscopeBackgroundProps
-  extends AnimatedBackgroundProps<SpectrogramOscilloscopeSettings> {
+interface SpectrogramOscilloscopeBackgroundProps extends AnimatedBackgroundProps<SpectrogramOscilloscopeSettings> {
   onAudioControlsReady?: (
     startAudio: () => void,
     stopAudio: () => void,
@@ -154,8 +153,9 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
     try {
       // Create audio context
-      audioContextRef.current = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
+      audioContextRef.current = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
 
       // Resume context if suspended (browser security)
       if (audioContextRef.current.state === 'suspended') {
@@ -1201,6 +1201,7 @@ const SpectrogramOscilloscopeBackground: React.FC<
     <>
       <div
         ref={containerRef}
+        aria-hidden="true"
         className={className}
         style={{
           position: 'fixed',

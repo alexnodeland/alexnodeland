@@ -13,7 +13,9 @@ describe('Shortcuts', () => {
   it('shows the hint and nothing else at rest', () => {
     render(<Shortcuts />);
 
-    const hint = screen.getByRole('button', { name: 'keyboard shortcuts' });
+    const hint = screen.getByRole('button', {
+      name: 'keyboard shortcuts (?)',
+    });
     expect(hint).toHaveClass('shortcuts-hint');
     expect(hint).toHaveAttribute('aria-expanded', 'false');
     // The word is decoration for a key cap that already says it; the name is
@@ -22,13 +24,17 @@ describe('Shortcuts', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('shares its row with the way to the search, which comes first', () => {
+  it('has the foot of the field to itself', () => {
+    // The way to the search used to sit beside it. That is in the capsule of
+    // page links now, where a site's search is looked for.
     const { container } = render(<Shortcuts />);
     const row = container.querySelector('.rail-hints') as HTMLElement;
     const hints = Array.from(row.querySelectorAll('button')).map(button =>
       button.getAttribute('aria-label')
     );
-    expect(hints).toEqual(['search the site', 'keyboard shortcuts']);
+    // Named with what is drawn on it: the cap is part of what the button is
+    // called, so someone who speaks what they see reaches it.
+    expect(hints).toEqual(['keyboard shortcuts (?)']);
   });
 
   it('opens on ? and closes on ? again', () => {

@@ -249,6 +249,24 @@ export function solveHeatEquation(
   state: PDEState,
   config: PDESolverConfig
 ): PDESolveResult {
+  advanceHeatEquation(state, config);
+  return computeMetrics(state);
+}
+
+/**
+ * A field to write the next step into. The one the last step retired, if it
+ * left one of the right size: a step used to allocate its result, which at
+ * the default grid and rate is 64 kB three hundred times a second, all of it
+ * garbage one step later. What is in the buffer does not matter — the interior
+ * is written in full, and every edge cell is then set from the interior by
+ * the boundary conditions.
+ */
+function nextField(state: PDEState, cells: number): Float32Array {
+  const { spare } = state;
+  return spare && spare.length === cells ? spare : new Float32Array(cells);
+}
+
+function advanceHeatEquation(state: PDEState, config: PDESolverConfig): void {
   const { gridSizeX, gridSizeY, dx, dy, damping = 0 } = config;
   const alpha = config.alpha ?? 0.1;
 
@@ -256,7 +274,7 @@ export function solveHeatEquation(
   const dt = Math.min(config.dt, maxStableDtHeat(alpha, dx, dy));
 
   const uOld = state.u;
-  const uNew = new Float32Array(gridSizeX * gridSizeY);
+  const uNew = nextField(state, gridSizeX * gridSizeY);
 
   // Apply finite difference scheme to interior points
   for (let j = 1; j < gridSizeY - 1; j++) {
@@ -288,13 +306,12 @@ export function solveHeatEquation(
 
   // Copy and apply boundary conditions
   state.u = uNew;
+  state.spare = uOld;
   applyBoundaryConditions(state.u, config);
 
   // Update time (use the clamped dt)
   state.time += dt;
   state.step += 1;
-
-  return computeMetrics(state);
 }
 
 /**
@@ -308,6 +325,11 @@ export function solveWaveEquation(
   state: PDEState,
   config: PDESolverConfig
 ): PDESolveResult {
+  advanceWaveEquation(state, config);
+  return computeMetrics(state);
+}
+
+function advanceWaveEquation(state: PDEState, config: PDESolverConfig): void {
   const { gridSizeX, gridSizeY, dx, dy, damping = 0 } = config;
   const c = config.c ?? 1.0;
 
@@ -316,7 +338,7 @@ export function solveWaveEquation(
 
   const uCurrent = state.u;
   const uPrev = state.uPrev!;
-  const uNext = new Float32Array(gridSizeX * gridSizeY);
+  const uNext = nextField(state, gridSizeX * gridSizeY);
 
   const rxSq = ((c * dt) / dx) ** 2;
   const rySq = ((c * dt) / dy) ** 2;
@@ -359,7 +381,9 @@ export function solveWaveEquation(
     }
   }
 
-  // Update state
+  // Update state: three fields in rotation. The one that was two steps back
+  // is the one the next step writes over.
+  state.spare = uPrev;
   state.uPrev = uCurrent;
   state.u = uNext;
   applyBoundaryConditions(state.u, config);
@@ -367,8 +391,6 @@ export function solveWaveEquation(
   // Update time
   state.time += dt;
   state.step += 1;
-
-  return computeMetrics(state);
 }
 
 /**
@@ -447,9 +469,23 @@ export function stepPDESolver(
   config: PDESolverConfig,
   equationType: EquationType
 ): PDESolveResult {
+  advancePDESolver(state, config, equationType);
+  return computeMetrics(state);
+}
+
+/**
+ * The same step, without the measurements. They are a pass over the whole
+ * field each, and the animation loop — which takes several steps a frame and
+ * reads none of them — was paying for every one.
+ */
+export function advancePDESolver(
+  state: PDEState,
+  config: PDESolverConfig,
+  equationType: EquationType
+): void {
   if (equationType === 'heat') {
-    return solveHeatEquation(state, config);
+    advanceHeatEquation(state, config);
   } else {
-    return solveWaveEquation(state, config);
+    advanceWaveEquation(state, config);
   }
 }

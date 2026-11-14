@@ -54,6 +54,7 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
     bg => bg.id === currentBackgroundId
   );
   const totalBackgrounds = backgroundRegistry.length;
+  const backgroundLabel = currentBackgroundName?.toLowerCase?.() || '';
 
   // Determine CSS classes for background controls based on panel states
   const backgroundControlsClasses = [
@@ -103,12 +104,13 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
         <div className={backgroundControlsClasses}>
           {/* The toolbar is one button — the whole pill — like the chat pill
               in the opposite corner: reachable from the keyboard, focusable,
-              and named. */}
+              and named. The name ends with the word on the pill, so the
+              background's name is still part of what the button is called. */}
           <button
             type="button"
             className="background-toolbar"
             onClick={onToggleSettings}
-            aria-label="Open the background settings"
+            aria-label={`Open the background settings: ${backgroundLabel}`}
             title="background settings (s)"
           >
             {/* Same grammar as the chat pill: a monoline glyph then the
@@ -130,9 +132,7 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
               <path d="M4 17V7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
               <path d="M4 14.5 8.5 10l3.5 3.5L15 11l5 4.5" />
             </svg>
-            <span className="background-name">
-              {currentBackgroundName?.toLowerCase?.() || ''}
-            </span>
+            <span className="background-name">{backgroundLabel}</span>
           </button>
         </div>
       )}
