@@ -103,12 +103,12 @@ describe('BlogPost Template', () => {
     );
   });
 
-  it('keeps the way back above the title card rather than inside it', () => {
+  it('keeps the way back above the title block rather than inside it', () => {
     const { container } = render(<BlogPost data={mockData as any} />);
     const back = container.querySelector('.post-return');
     const header = container.querySelector('.post-header');
     expect(header?.contains(back!)).toBe(false);
-    // Above it, and a sibling of it: the page's breadcrumb, not the card's.
+    // Above it, and a sibling of it: the page's breadcrumb, not the title's.
     expect(back?.parentElement).toBe(header?.parentElement);
     expect(back?.nextElementSibling).toBe(header);
   });

@@ -247,6 +247,17 @@ test.describe('navigation stability', () => {
         .getByRole('dialog', { name: 'search the site' })
         .getByRole('combobox')
     ).toBeFocused();
+    // The PageDown above may still be easing when the palette opens, so the
+    // window is parked once it has come to rest: two readings a beat apart
+    // that agree. Read any sooner and the tail of that scroll is taken for
+    // the arrow key's doing.
+    await expect
+      .poll(async () => {
+        const before = await scrollTop();
+        await page.waitForTimeout(150);
+        return (await scrollTop()) === before;
+      })
+      .toBe(true);
     const parked = await scrollTop();
     await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(200);

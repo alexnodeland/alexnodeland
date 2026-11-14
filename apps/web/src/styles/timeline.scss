@@ -342,17 +342,37 @@
   position: relative;
 }
 
+// The title block: the date and the tag, the title, and the line that says
+// what the piece is. Set straight in the window, with no outline of its own.
+// It used to be a card and the article under it another, and on a page that
+// holds one piece that was a box, and then a second box, inside the box the
+// window already is — two hairlines down each side of the screen, and on a
+// phone a gutter and a padding at each of them taken out of the reading
+// width. The window is the frame; what separates the title block from the
+// writing is the room under it and the title's own weight.
 .post-page .post-header {
-  // The list's own gap: the title card and the article are two cards in a
-  // column, like any two on the timeline.
-  margin-bottom: var(--stack-gap);
-  padding: var(--card-pad);
-  @include outline-block;
-  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
   position: relative;
+
+  // The piece's title, not a card's: the page's own heading inside the
+  // window, a step up from the cards' so it holds the block together now
+  // that nothing is drawn around it.
+  .post-title {
+    font-size: var(--text-h3);
+  }
+
+  // The line that says what the piece is, in the meta voice the date over
+  // the title is in: with nothing drawn between this block and the writing,
+  // a standfirst in the body's own size read as its first paragraph. It is
+  // the last line of the block, and the room under it is the block's own.
+  .post-description {
+    font-size: var(--text-small);
+    line-height: var(--leading-chrome);
+    margin-bottom: 0;
+  }
 }
 
-// The way back, above the title card rather than inside it: the page's own
+// The way back, above the title rather than part of it: the page's own
 // breadcrumb, sitting on the column's left edge in the air above the piece. In
 // the meta voice rather than the page's own green — the capsule in the corner
 // and the row at the foot are the two loud ways out of a post, and a third one
@@ -374,9 +394,9 @@
   }
 }
 
-// The article, as one card: the prose, and under it the band of things that
-// can be done with it. The outline and the padding belong to the card; the
-// prose inside it only sets its own text.
+// The article: the prose, and under it the band of things that can be done
+// with it. Like the title block it is set straight in the window — the
+// column's own gutter is its inset, and the window's hairline its edge.
 //
 // The space below is what centres the closing row under it: one trough's worth
 // of air above the row, and the column's own trough below it, so the row sits
@@ -385,17 +405,13 @@
 // window by the same amount at both ends, and the row's air is the page's air
 // rather than a measure of its own (see --main-foot in layout.scss).
 .post-article {
-  @include outline-block;
-  border-radius: var(--radius-lg);
-  padding: var(--card-pad);
   margin-bottom: var(--main-foot);
   position: relative;
 }
 
 .post-content {
-  // The column's own inset owns the bottom of it. Left to the last paragraph's
-  // margin, the band of chips under the article stood a step further from the
-  // prose than it did from the outline below it (see .post-actions).
+  // The band under the prose sets the room between them (see .post-actions);
+  // the last paragraph's own margin would be a second helping of it.
   > :last-child {
     margin-bottom: 0;
   }
@@ -602,18 +618,15 @@
   }
 }
 
-// The band at the foot of the article, inside its outline: what to do with the
-// piece now it has been read. No rule over it — the air is the separation, and
-// a hairline there was a second line drawn inside a box that already has one.
+// The band at the foot of the article: what to do with the piece now it has
+// been read. No rule over it — the air is the separation, a paragraph's worth
+// of it, so the band closes the prose the way one more line of it would.
 .post-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3);
-  // The card's own inset, so the row sits the same distance from the prose
-  // above it as it does from the outline below it and the band reads as one
-  // measure rather than two.
-  margin-top: var(--card-pad);
+  margin-top: var(--space-5);
 }
 
 // Typeset by LaTeX at build time and served as a file, so it is a toolbar
@@ -655,8 +668,8 @@
 // is a neighbour either side of it — at the ends of the run, the empty cell
 // holds the column open rather than letting the row re-centre itself.
 //
-// No rule above it. The article's outline has already closed the piece, and a
-// second line under a line is a divider between nothing and nothing.
+// No rule above it: the band of actions has already closed the piece, and
+// the air between the two rows is the divider.
 .post-nav {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -761,7 +774,7 @@
   }
 
   // An article's own title block was a full phone screen on its own — date,
-  // chip, title and standfirst each holding a desktop's worth of air, with the
+  // tag, title and standfirst each holding a desktop's worth of air, with the
   // first line of the piece somewhere below the fold. The same block, closer
   // set: the reader should reach the writing on the first screen.
   .post-page .post-header {
@@ -776,12 +789,6 @@
 
     .post-title {
       margin-bottom: var(--space-2);
-    }
-
-    .post-description {
-      font-size: var(--text-small);
-      line-height: var(--leading-chrome);
-      margin-bottom: 0;
     }
   }
 }

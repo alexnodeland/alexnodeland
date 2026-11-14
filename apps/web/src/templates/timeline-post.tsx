@@ -66,11 +66,11 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
           author is the site's representative h-card, reached through the
           rel="author" link in the head. */}
       <div className="post-page h-entry">
-        {/* The way back, above the title card rather than inside it. In the
+        {/* The way back, above the title block rather than inside it. In the
             meta voice rather than as a link in the page's own green: the
             capsule in the corner and the row at the foot are the two loud ways
             out, and a third one shouting over the title would be the loudest
-            thing on the page. Outside the card it reads as what it is — the
+            thing on the page. Outside the header it reads as what it is — the
             page's own breadcrumb, on the column's left edge, above the piece
             rather than part of it. */}
         <Link to="/timeline" className="post-return">
@@ -95,10 +95,10 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
           )}
         </header>
 
-        {/* The article is one card: the prose, and under it the band that says
-            what can be done with it — the same title-body-meta grammar every
-            card on the site is built to, so the piece ends inside its own
-            outline rather than trailing off into loose chrome. */}
+        {/* The article: the prose, and under it the band that says what can
+            be done with it. Neither it nor the title block above wears an
+            outline — on a page that holds one piece, the window is the frame
+            (see .post-page in timeline.scss). */}
         <article className="post-article">
           <div
             className="post-content e-content"
@@ -125,9 +125,9 @@ const BlogPost: React.FC<BlogPostProps> = ({ data, location }) => {
         </article>
 
         {/* The way on, and the way out, on one line: the post before this one
-            in time, the list, and the post after it. No rule above it — the
-            article's own outline has already closed — and the row sits on the
-            middle line between that outline and the footer's first mark. */}
+            in time, the list, and the post after it. No rule above it, and
+            the row sits on the middle line between the article's last row
+            and the footer's first mark. */}
         <nav className="post-nav" aria-label="more posts">
           {older ? (
             <Link
