@@ -18,8 +18,7 @@ import { PDESolverSettings } from './config';
 import {
   applyBoundaryConditions,
   createInitialState,
-  index,
-  stepPDESolver,
+  advancePDESolver,
 } from './pde-solver';
 import { PDEState, PDESolverConfig } from './types';
 
@@ -305,7 +304,11 @@ const PDESolverBackground: React.FC<
         timeAccumulatorRef.current -= steps;
 
         for (let i = 0; i < steps; i++) {
-          stepPDESolver(stateRef.current, configRef.current, live.equationType);
+          advancePDESolver(
+            stateRef.current,
+            configRef.current,
+            live.equationType
+          );
         }
 
         // Update mesh geometry
@@ -547,7 +550,18 @@ function updateMeshGeometry(
 }
 
 /**
- * Update geometry vertices and colors from PDE state
+ * Update geometry vertices and colors from PDE state.
+ *
+ * This runs on every frame, over every vertex of the plate (16,384 of them at
+ * the default grid), so it is written to do nothing but arithmetic on the
+ * attributes' own arrays. It used to build a `THREE.Color` per vertex per
+ * frame — a million short-lived objects a second for the collector to chase —
+ * work the colour scale out afresh for each, write each height and colour
+ * through an accessor call, and then hand the whole mesh to
+ * `computeVertexNormals`, which walks it a `Vector3` at a time. Between them
+ * they were most of a frame on a desktop and two or three frames on a phone,
+ * on the main thread, under whatever the reader was trying to scroll. What
+ * it draws is the same.
  */
 function updateGeometryFromState(
   geometry: THREE.PlaneGeometry,
@@ -555,78 +569,246 @@ function updateGeometryFromState(
   settings: PDESolverSettings
 ): void {
   const { u, gridSizeX, gridSizeY } = state;
-  const positions = geometry.attributes.position;
-  const colors =
-    geometry.attributes.color ||
-    new THREE.BufferAttribute(new Float32Array(positions.count * 3), 3);
-
-  if (!geometry.attributes.color) {
+  const positions = geometry.attributes.position as THREE.BufferAttribute;
+  let colors = geometry.attributes.color as THREE.BufferAttribute | undefined;
+  if (!colors) {
+    colors = new THREE.BufferAttribute(
+      new Float32Array(positions.count * 3),
+      3
+    );
     geometry.setAttribute('color', colors);
   }
 
-  // Find min/max for normalization
+  // Find the range for normalization
   let minValue = Infinity;
   let maxValue = -Infinity;
   for (let i = 0; i < u.length; i++) {
-    minValue = Math.min(minValue, u[i]);
-    maxValue = Math.max(maxValue, u[i]);
+    const value = u[i];
+    if (value < minValue) minValue = value;
+    if (value > maxValue) maxValue = value;
   }
-
   const range = Math.max(Math.abs(minValue), Math.abs(maxValue), 0.001);
 
-  // Update vertices and colors
-  for (let j = 0; j < gridSizeY; j++) {
-    for (let i = 0; i < gridSizeX; i++) {
-      const idx = index(i, j, gridSizeX);
-      const value = u[idx];
-
-      // Update vertex height
-      const vertexIndex = idx;
-      if (vertexIndex < positions.count) {
-        const z = value * settings.heightScale;
-        positions.setZ(vertexIndex, z);
-
-        // Update vertex color
-        const color = getColorForValue(value, range, settings);
-        colors.setXYZ(vertexIndex, color.r, color.g, color.b);
-      }
-    }
+  // Heights and colours, written straight into the attributes' arrays. The
+  // grid's cells and the plane's vertices are in the same order (rows of
+  // gridSizeX), so the cell's index is the vertex's. A value is somewhere in
+  // −range → range, which is the scale's whole run, so its colour is the
+  // table's nearest entry.
+  const position = positions.array as Float32Array;
+  const color = colors.array as Float32Array;
+  const table = colorTableFor(geometry, settings);
+  const toEntry = (COLOR_STEPS - 1) / (2 * range);
+  const count = Math.min(gridSizeX * gridSizeY, positions.count);
+  const { heightScale } = settings;
+  for (let idx = 0; idx < count; idx++) {
+    const value = u[idx];
+    const at = idx * 3;
+    position[at + 2] = value * heightScale;
+    // `| 0` rather than Math.round: a field that has blown up to NaN then
+    // lands on an entry instead of off the end of the table.
+    const from = (((value + range) * toEntry + 0.5) | 0) * 3;
+    color[at] = table[from];
+    color[at + 1] = table[from + 1];
+    color[at + 2] = table[from + 2];
   }
 
   positions.needsUpdate = true;
   colors.needsUpdate = true;
-  geometry.computeVertexNormals();
+  writeVertexNormals(geometry);
 }
 
 /**
- * Get color for a given value based on color scale
+ * The plate's vertex normals: for each vertex, the area-weighted mean of the
+ * normals of the faces around it — what `computeVertexNormals` works out,
+ * here in one pass with nothing to accumulate.
+ *
+ * The plate is a height field over a regular grid, so every face covers the
+ * same half-cell of ground and its normal is (−∂z/∂x, −∂z/∂y, 1) to scale,
+ * the two slopes read off its two axis-aligned edges. Summing those over the
+ * faces that meet at a vertex is then a matter of adding height differences:
+ * no cross products, and no second walk to normalise what a first one
+ * gathered. `PlaneGeometry` cuts each cell along the diagonal from its
+ * bottom-left corner to its top-right, which is where the lopsided counts
+ * come from — a vertex is a corner of one face in the cells to its
+ * south-east and north-west, and of two in the cells to its north-east and
+ * south-west. At an edge of the plate the cells that are not there simply
+ * do not add in.
  */
-function getColorForValue(
+export function writeVertexNormals(geometry: THREE.PlaneGeometry): void {
+  const positions = geometry.attributes.position as THREE.BufferAttribute;
+  const normals = geometry.attributes.normal as
+    THREE.BufferAttribute | undefined;
+  const { width, height, widthSegments, heightSegments } =
+    geometry.parameters ?? {};
+  const cols = widthSegments + 1;
+  const rows = heightSegments + 1;
+  if (
+    !geometry.index ||
+    !normals ||
+    normals.count !== positions.count ||
+    positions.count !== cols * rows
+  ) {
+    // Not the plane this was written for: let three do it its way.
+    geometry.computeVertexNormals();
+    return;
+  }
+
+  const position = positions.array as Float32Array;
+  const normal = normals.array as Float32Array;
+  const cellX = width / widthSegments;
+  const cellY = height / heightSegments;
+  // A row of the grid, as a distance through the position array; and from a
+  // vertex's x to its height.
+  const rowStride = cols * 3;
+  const Z = 2;
+
+  for (let row = 0; row < rows; row++) {
+    // Rows run from the top of the plate down, so north is the row before.
+    const north = row > 0;
+    const south = row < rows - 1;
+    for (let col = 0; col < cols; col++) {
+      const west = col > 0;
+      const east = col < cols - 1;
+      const at = (row * cols + col) * 3;
+      const z = position[at + Z];
+
+      // Rise to the east and to the north, summed over the faces here, and
+      // how many faces that was.
+      let slopeX = 0;
+      let slopeY = 0;
+      let faces = 0;
+      if (south && east) {
+        slopeX += position[at + 3 + Z] - z;
+        slopeY += z - position[at + rowStride + Z];
+        faces += 1;
+      }
+      if (north && east) {
+        const zN = position[at - rowStride + Z];
+        const zE = position[at + 3 + Z];
+        const zNE = position[at - rowStride + 3 + Z];
+        slopeX += zNE - zN + (zE - z);
+        slopeY += zN - z + (zNE - zE);
+        faces += 2;
+      }
+      if (north && west) {
+        slopeX += z - position[at - 3 + Z];
+        slopeY += position[at - rowStride + Z] - z;
+        faces += 1;
+      }
+      if (south && west) {
+        const zS = position[at + rowStride + Z];
+        const zW = position[at - 3 + Z];
+        const zSW = position[at + rowStride - 3 + Z];
+        slopeX += z - zW + (zS - zSW);
+        slopeY += zW - zSW + (z - zS);
+        faces += 2;
+      }
+
+      const x = -slopeX * cellY;
+      const y = -slopeY * cellX;
+      const up = faces * cellX * cellY;
+      const length = Math.sqrt(x * x + y * y + up * up) || 1;
+      normal[at] = x / length;
+      normal[at + 1] = y / length;
+      normal[at + 2] = up / length;
+    }
+  }
+
+  normals.needsUpdate = true;
+}
+
+// How finely a colour scale is tabulated. The steepest of the scales climbs
+// a channel about twice over the run, so at this many entries the nearest one
+// is within a quarter of the smallest step a screen can show: the table is
+// the scale, as far as a display is concerned.
+export const COLOR_STEPS = 2048;
+
+/** A colour scale laid out as COLOR_STEPS colours, −1 at one end → 1 at the other. */
+interface ColorTable {
+  scale: PDESolverSettings['colorScale'];
+  stops: number[];
+  rgb: Float32Array;
+}
+
+// One table a plate, kept beside it rather than on it, and built again only
+// when the scale or the colours it runs between change.
+const colorTables = new WeakMap<THREE.BufferGeometry, ColorTable>();
+
+/** The nine numbers a scale runs between, one at a time: no array a frame. */
+const stopAt = (colors: PDESolverSettings['colors'], i: number): number =>
+  (i < 3 ? colors.negative : i < 6 ? colors.zero : colors.positive)[i % 3];
+
+const isTableFor = (table: ColorTable, settings: PDESolverSettings) => {
+  if (table.scale !== settings.colorScale) return false;
+  for (let i = 0; i < table.stops.length; i++) {
+    if (table.stops[i] !== stopAt(settings.colors, i)) return false;
+  }
+  return true;
+};
+
+/**
+ * The colour scale as a table: the per-vertex loop's whole cost for a colour
+ * is then three reads. Working a colour out is a branch on the scale, a few
+ * multiplies and a call into three for each of sixteen thousand vertices,
+ * every frame, to get a function of one number that does not change from one
+ * frame to the next.
+ */
+export function colorTableFor(
+  geometry: THREE.BufferGeometry,
+  settings: PDESolverSettings
+): Float32Array {
+  const known = colorTables.get(geometry);
+  if (known && isTableFor(known, settings)) return known.rgb;
+
+  const rgb = new Float32Array(COLOR_STEPS * 3);
+  const color = new THREE.Color();
+  for (let step = 0; step < COLOR_STEPS; step++) {
+    writeColorForValue((step / (COLOR_STEPS - 1)) * 2 - 1, 1, settings, color);
+    rgb[step * 3] = color.r;
+    rgb[step * 3 + 1] = color.g;
+    rgb[step * 3 + 2] = color.b;
+  }
+  colorTables.set(geometry, {
+    scale: settings.colorScale,
+    stops: Array.from({ length: 9 }, (_, i) => stopAt(settings.colors, i)),
+    rgb,
+  });
+  return rgb;
+}
+
+/**
+ * Write the color for a given value, on the configured color scale, into
+ * `out`.
+ */
+function writeColorForValue(
   value: number,
   range: number,
-  settings: PDESolverSettings
-): THREE.Color {
+  settings: PDESolverSettings,
+  out: THREE.Color
+): void {
   const normalized = value / range; // -1 to 1
 
   switch (settings.colorScale) {
     case 'rainbow': {
       // Rainbow: blue -> cyan -> green -> yellow -> red
       const hue = (1 - (normalized + 1) / 2) * 0.7; // 0.7 to 0 (blue to red)
-      return new THREE.Color().setHSL(hue, 0.8, 0.5);
+      out.setHSL(hue, 0.8, 0.5);
+      return;
     }
 
     case 'thermal': {
       // Thermal: black -> red -> yellow -> white
       const t = (normalized + 1) / 2; // 0 to 1
       if (t < 0.25) {
-        return new THREE.Color(t * 4, 0, 0);
+        out.setRGB(t * 4, 0, 0);
       } else if (t < 0.5) {
-        return new THREE.Color(1, (t - 0.25) * 4, 0);
+        out.setRGB(1, (t - 0.25) * 4, 0);
       } else if (t < 0.75) {
-        return new THREE.Color(1, 1, (t - 0.5) * 4);
+        out.setRGB(1, 1, (t - 0.5) * 4);
       } else {
-        return new THREE.Color(1, 1, 1);
+        out.setRGB(1, 1, 1);
       }
+      return;
     }
 
     case 'wave': {
@@ -638,7 +820,7 @@ function getColorForValue(
       if (normalized > 0) {
         // Interpolate from zero to positive
         const t = normalized;
-        return new THREE.Color(
+        out.setRGB(
           zeroR + (posR - zeroR) * t,
           zeroG + (posG - zeroG) * t,
           zeroB + (posB - zeroB) * t
@@ -646,22 +828,24 @@ function getColorForValue(
       } else {
         // Interpolate from negative to zero
         const t = 1 + normalized; // 0 to 1
-        return new THREE.Color(
+        out.setRGB(
           negR + (zeroR - negR) * t,
           negG + (zeroG - negG) * t,
           negB + (zeroB - negB) * t
         );
       }
+      return;
     }
 
     case 'monochrome': {
       // Grayscale
       const intensity = (normalized + 1) / 2;
-      return new THREE.Color(intensity, intensity, intensity);
+      out.setRGB(intensity, intensity, intensity);
+      return;
     }
 
     default:
-      return new THREE.Color(0.5, 0.5, 0.5);
+      out.setRGB(0.5, 0.5, 0.5);
   }
 }
 

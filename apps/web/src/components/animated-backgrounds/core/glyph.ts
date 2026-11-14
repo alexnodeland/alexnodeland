@@ -134,7 +134,13 @@ export const rasterizeGlyph = (
     const canvas = document.createElement('canvas');
     canvas.width = cols;
     canvas.height = rows;
-    const ctx = canvas.getContext('2d');
+    // Read back, not shown: the canvas exists to hand its pixels to
+    // getImageData below. Saying so keeps it in ordinary memory. Left to
+    // itself the browser backs a 2D canvas with the GPU, and reading that
+    // back stalls the main thread until the GPU has caught up — a quarter of
+    // a second in places, on every background's start and every time the
+    // cycle brought a new one in, for a number most visits never see.
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (ctx) {
       // The heavier of the site's two weights, by number: `bold` asks for a
       // 700 the face is not shipped in, and a canvas draws in whatever is
