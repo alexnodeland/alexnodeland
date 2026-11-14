@@ -2,6 +2,8 @@
 // global.scss alone: the other stylesheets read these through `var()` and
 // never load this file, so the block reaches the bundle once rather than once
 // per stylesheet.
+@use 'mixins' as *;
+
 :root {
   // --- Colour ---------------------------------------------------------------
   // Colour only where it carries meaning (see docs/design/01-decisions.md).
@@ -62,11 +64,22 @@
   // them and the field claims the rest of a wide display. The side inset below
   // is the floor once the viewport shrinks to meet it.
   --window-max-width: 1140px;
+  // What the display itself takes off the sides: a phone held sideways has a
+  // sensor housing along one short edge and the corners' rounding along both.
+  // The system reports the two as a pair, so the larger stands for both and
+  // the window stays centred. Zero on anything without a cut-out.
+  --safe-side: max(
+    env(safe-area-inset-left, 0px),
+    env(safe-area-inset-right, 0px)
+  );
   // The resolved side offset — every rule that positions the window's left or
   // right edge (including panel open/close transition states) must use this,
-  // or the frame animates out to the raw inset and snaps back.
+  // or the frame animates out to the raw inset and snaps back. The display's
+  // own margin is inside it, so everything that hangs off the window's edge —
+  // the phone's launchers, the capsule — clears a cut-out without knowing
+  // there is one.
   --window-side: max(
-    var(--window-inset),
+    calc(var(--window-inset) + var(--safe-side)),
     calc((100vw - var(--window-max-width)) / 2)
   );
   // The bottom inset is deeper than the sides: the floating pills (background
@@ -215,15 +228,29 @@
   --card-pad: var(--space-4);
 
   // --- Type -----------------------------------------------------------------
+  // JetBrains Mono, shipped from fonts.scss. What follows it is what a reader
+  // sees for the moment before it lands, so every name here is a face that
+  // advances the same 0.6em a character: the text is re-set in the real face
+  // without a line re-wrapping. That is the whole criterion — it is why the
+  // scaled Consolas (see fonts.scss) is offered before the raw one, and why
+  // `ui-monospace` is not here: on Apple's platforms it is SF Mono, which
+  // runs 3% wide.
   --font-mono:
-    'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'Courier New',
-    monospace;
+    'JetBrains Mono', 'JetBrains Mono Fallback', 'Menlo', 'Monaco',
+    'Liberation Mono', 'Consolas', 'Courier New', monospace;
   // Fluid rather than stepped: each heading interpolates with the viewport, so
   // the hierarchy holds at every width instead of snapping at a single 768px
   // breakpoint. The clamp floors are the old mobile sizes and the ceilings sit
   // slightly above the old desktop ones — headings earn their prominence from
   // size and space, since they no longer get it from weight or a rule.
-  --text-h1: clamp(1.9rem, 1.4rem + 1.7vw, 2.75rem);
+  //
+  // The title has a second ceiling, in viewport units, that only binds below
+  // about 360px: the longest title on the site ("alex → consulting", 17
+  // characters) is wider than a 320px screen's column at the 1.9rem floor,
+  // and broke after "alex" with the arrow left hanging at the start of a line
+  // of its own. 8.4vw is the size at which those 17 characters still fit the
+  // column, at every width down to a 280px folding phone's cover.
+  --text-h1: min(clamp(1.9rem, 1.4rem + 1.7vw, 2.75rem), 8.4vw);
   --text-h2: clamp(1.4rem, 1.15rem + 1vw, 1.9rem);
   --text-h3: clamp(1.2rem, 1.05rem + 0.5vw, 1.45rem);
   --text-h4: clamp(1.05rem, 1rem + 0.25vw, 1.2rem);
@@ -260,7 +287,7 @@
   --transition-normal: var(--duration-normal) var(--ease-out);
   --transition-slow: var(--duration-slow) var(--ease-out);
 
-  @media (max-width: 768px) {
+  @include compact {
     --window-inset: 0.75rem;
     // Pills move to 1rem and the chat icon shrinks to a 3rem disc. The bottom
     // inset is unchanged: the hint rows were already hidden at this width, so

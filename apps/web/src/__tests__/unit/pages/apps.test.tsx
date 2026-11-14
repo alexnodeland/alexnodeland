@@ -32,7 +32,7 @@ describe('Apps Page', () => {
     expect(screen.getByTestId('seo')).toHaveAttribute('data-title', 'apps');
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Filter apps by platform' })
+      screen.getByRole('button', { name: /^Filter apps by platform: / })
     ).toBeInTheDocument();
   });
 
@@ -99,7 +99,7 @@ describe('Apps Page', () => {
     const user = userEvent.setup();
     const { container } = render(<AppsPage />);
     const trigger = screen.getByRole('button', {
-      name: 'Filter apps by platform',
+      name: /^Filter apps by platform: /,
     });
     const target = PLATFORMS[1];
 

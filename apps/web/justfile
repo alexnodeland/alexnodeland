@@ -81,6 +81,10 @@ quality-fix:
 archive-press:
     ./scripts/archive-press.sh
 
+# Re-cut the typeface in src/fonts from the upstream release (needs uv)
+fonts:
+    ./scripts/subset-fonts.sh
+
 # Typeset the downloadable CV PDFs from src/config/cv.ts (needs pdflatex)
 cv:
     npm run build:cv

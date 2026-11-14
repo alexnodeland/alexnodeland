@@ -1,6 +1,7 @@
 // The site's one global stylesheet, loaded once from gatsby-browser.js. It is
-// the only place the tokens and the keyframes are emitted; the page and
-// component stylesheets `@use` the mixins alone.
+// the only place the typeface, the tokens and the keyframes are emitted; the
+// page and component stylesheets `@use` the mixins alone.
+@use 'fonts';
 @use 'variables';
 @use 'mixins' as *;
 @use 'animations';
@@ -26,11 +27,21 @@ html {
   // in variables.scss in both orientations.
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  height: 100%;
 }
 
 // The page's own ground. Nothing decorates it: the animated stage covers it
 // edge to edge, and the grid texture and radial washes that used to be
 // painted here were never visible under it.
+//
+// The document does not scroll: everything on it is fixed, and the page
+// scrolls inside the window (see .layout). So the body is exactly the
+// viewport and no taller. It used to be `min-height: 100vh`, and on a phone
+// `100vh` is the screen with the browser's toolbar put away — a toolbar's
+// height more than what is showing. That made the empty document scrollable
+// by exactly that much, so a drag that ran off the end of the window carried
+// on into the page, the toolbar slid away, the viewport grew, and every fixed
+// layer — the simulation's canvas included — was laid out again mid-flick.
 body {
   margin: 0;
   padding: 0;
@@ -38,7 +49,8 @@ body {
   line-height: var(--leading-prose);
   color: var(--text-primary);
   background: var(--bg-primary);
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
 }
 
 a {

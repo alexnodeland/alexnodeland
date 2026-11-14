@@ -4,6 +4,7 @@ import { SettingsPanelProvider } from './src/components/SettingsPanelContext';
 import { BackgroundManager } from './src/components/animated-backgrounds';
 import { ChatProvider } from './src/components/chat/ChatContext';
 import Layout from './src/components/layout';
+import SkipLink from './src/components/ui/SkipLink';
 import { headComponents } from './src/lib/head';
 
 // Mirrors gatsby-browser: the shell wraps the page instead of the page
@@ -23,6 +24,8 @@ export const wrapRootElement = ({ element }: { element: React.ReactNode }) => {
     <SettingsPanelProvider>
       <ChatProvider>
         <BackgroundProvider>
+          {/* First in the document, so it is the first thing Tab reaches. */}
+          <SkipLink />
           <BackgroundManager />
           {element}
         </BackgroundProvider>
@@ -35,12 +38,14 @@ export const wrapRootElement = ({ element }: { element: React.ReactNode }) => {
 // Gatsby's own SSR APIs may be exported from this file, which is why the
 // components themselves live elsewhere.
 export const onRenderBody = ({
+  pathname,
   setHtmlAttributes,
   setHeadComponents,
 }: {
+  pathname?: string;
   setHtmlAttributes: (attributes: Record<string, string>) => void;
   setHeadComponents: (components: React.ReactElement[]) => void;
 }) => {
   setHtmlAttributes({ lang: 'en' });
-  setHeadComponents(headComponents());
+  setHeadComponents(headComponents(pathname));
 };

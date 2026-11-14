@@ -7,8 +7,6 @@
 // mixins.
 @use 'mixins' as *;
 
-$mobile-breakpoint: 768px;
-
 // ---------------------------------------------------------------------------
 // Launcher pill (browsing state)
 // ---------------------------------------------------------------------------
@@ -21,7 +19,7 @@ $mobile-breakpoint: 768px;
   // which is why the offsets are the rail's tokens rather than a matching pair
   // of hand-set values. They carry the display's safe area with them, so a
   // phone with a home indicator lifts both pills by the same amount.
-  @media (max-width: $mobile-breakpoint) {
+  @include compact {
     display: block;
     position: fixed;
     bottom: var(--rail-inset-bottom);
@@ -75,7 +73,7 @@ $mobile-breakpoint: 768px;
 .mobile-explore {
   display: none;
 
-  @media (max-width: $mobile-breakpoint) {
+  @include compact {
     display: block;
   }
 }
@@ -140,7 +138,7 @@ $mobile-breakpoint: 768px;
   border-radius: var(--radius-md);
   position: absolute;
   top: max(var(--space-5), env(safe-area-inset-top));
-  right: var(--space-5);
+  right: calc(var(--space-5) + var(--safe-side));
   -webkit-tap-highlight-color: transparent;
 
   &:active {
@@ -154,8 +152,8 @@ $mobile-breakpoint: 768px;
   // equations", so the bar is a fixed full-width rail rather than a pill that
   // resizes under you every time the background changes.
   position: absolute;
-  left: var(--space-4);
-  right: var(--space-4);
+  left: calc(var(--space-4) + var(--safe-side));
+  right: calc(var(--space-4) + var(--safe-side));
   bottom: max(
     var(--space-5),
     calc(env(safe-area-inset-bottom) + var(--space-3))
@@ -255,7 +253,7 @@ $mobile-breakpoint: 768px;
 // Mobile chrome trimming
 // ---------------------------------------------------------------------------
 
-@media (max-width: $mobile-breakpoint) {
+@include compact {
   // The desktop control cluster is replaced by the explore bar above. This
   // stylesheet is its own compilation unit and may land before the one that
   // draws the cluster, so the override has to win on weight rather than order.

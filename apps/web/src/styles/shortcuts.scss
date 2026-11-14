@@ -179,7 +179,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@include compact {
   // The rail's controls are tap targets at this width and there is no
   // keyboard to shortcut with.
   .shortcuts-hint {

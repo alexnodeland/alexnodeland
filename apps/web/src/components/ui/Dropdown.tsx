@@ -22,7 +22,12 @@ export interface DropdownProps {
    * only progress an icon trigger can report.
    */
   busy?: boolean;
-  /** What the control is, for screen readers; the trigger's visible text is only half the story. */
+  /**
+   * What the control is, for screen readers; the trigger's visible text is
+   * only half the story. The trigger is named with both — "what it is: what
+   * it says" — so someone speaking the word they can see on the chip ("click
+   * newest first") still reaches it.
+   */
   ariaLabel: string;
   options: DropdownOption[];
   /**
@@ -202,7 +207,11 @@ const Dropdown: React.FC<DropdownProps> = ({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? listId : undefined}
-        aria-label={ariaLabel}
+        aria-label={
+          triggerIcon || !triggerLabel
+            ? ariaLabel
+            : `${ariaLabel}: ${triggerLabel}`
+        }
         aria-busy={busy || undefined}
         onClick={() =>
           isOpen ? close(false) : open(selectedIndex >= 0 ? selectedIndex : 0)

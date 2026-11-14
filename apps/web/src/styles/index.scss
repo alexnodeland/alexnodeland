@@ -139,16 +139,22 @@
   }
 }
 
+// A list (see index.tsx), laid out as a grid: the list's own indent and
+// markers come off, and the grid's gap is the only space between the items.
 .expertise-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 // A static schematic panel — no hover, no reading emphasis, no wipe: the cards
 // state what the work is, and the icons carry the only motion.
 .expertise-item {
   @include outline-block;
+  margin: 0;
   padding: var(--space-6) var(--space-5);
   border-radius: var(--radius-lg);
   text-align: center;
@@ -170,15 +176,18 @@
     }
   }
 
+  // A third-level heading and a paragraph, at the card's own sizes rather
+  // than the page scale's: both take the global margins off.
   .expertise-title {
     font-size: var(--text-h4);
-    margin-bottom: var(--space-2);
+    margin: 0 0 var(--space-2);
+    line-height: var(--leading-prose);
     color: var(--text-primary);
-    text-transform: lowercase;
     letter-spacing: -0.01em;
   }
 
   .expertise-description {
+    margin: 0;
     font-size: var(--text-small);
     color: var(--text-secondary);
     line-height: var(--leading-chrome);

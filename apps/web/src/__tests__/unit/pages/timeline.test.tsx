@@ -73,10 +73,24 @@ describe('Timeline Page', () => {
     expect(screen.getByText('Alpha Post')).toBeInTheDocument();
   });
 
+  it('gives each card one link, stretched over it, and an arrow that is only a mark', () => {
+    render(<TimelinePage data={mockData as any} />);
+    for (const article of screen.getAllByRole('article')) {
+      // The same address twice per card was two stops for the keyboard and
+      // two announcements for a screen reader, for one destination.
+      const links = article.querySelectorAll('a');
+      expect(links).toHaveLength(1);
+      expect(links[0].closest('h2')).not.toBeNull();
+      const arrow = article.querySelector('.read-more') as HTMLElement;
+      expect(arrow.tagName).toBe('SPAN');
+      expect(arrow).toHaveAttribute('aria-hidden', 'true');
+    }
+  });
+
   const tagTrigger = () =>
-    screen.getByRole('button', { name: 'Filter posts by tag' });
+    screen.getByRole('button', { name: /^Filter posts by tag: / });
   const sortTrigger = () =>
-    screen.getByRole('button', { name: 'Sort posts by date' });
+    screen.getByRole('button', { name: /^Sort posts by date: / });
 
   const pick = async (
     user: ReturnType<typeof userEvent.setup>,

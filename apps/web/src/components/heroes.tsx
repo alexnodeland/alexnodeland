@@ -93,10 +93,22 @@ function roleVariantHeroes(): Record<string, () => React.ReactNode> {
 // Each entry is built on demand rather than held as a module constant: the
 // elements are cheap, and a fresh tree per resolution keeps the outgoing and
 // incoming heroes from ever sharing a node during a swap.
+// The cover's title is the whole name, in two pieces: the given name, which
+// is the word every other page's crumb carries, and the rest. They are one
+// heading and read as one; the split is there so a phone's folded row, which
+// has room for a word and not for a name, can let the surname go the way a
+// crumb's tail goes (see .hero-name-rest in layout.scss).
+const [givenName, ...restOfName] = homepageConfig.hero.title.split(' ');
+
 const HEROES: Record<string, () => React.ReactNode> = {
   '/': () => (
     <section className="hero">
-      <h1 data-brand-anchor>{homepageConfig.hero.title}</h1>
+      <h1 data-brand-anchor>
+        {givenName}
+        {restOfName.length > 0 && (
+          <span className="hero-name-rest"> {restOfName.join(' ')}</span>
+        )}
+      </h1>
       {/* The subtitle is also the map of the projects page: each segment
           links to its section anchor there. */}
       <p className="hero-subtitle">

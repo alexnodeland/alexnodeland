@@ -91,12 +91,16 @@ const CVPageBody: React.FC<CVPageBodyProps> = ({
       <CVSearch resumeData={data} open={searchOpen} />
 
       <div className="cv-overview-contact">
+        {/* Second-level headings, like "Experience" and the sections after
+            it: these two are sections of the page, not of anything above
+            them, and an h3 here put a third level directly under the page's
+            title. Their size is the card's own (see .cv-overview-contact). */}
         <div className="overview-section">
-          <h3>overview</h3>
+          <h2>overview</h2>
           <p>{data.personal.summary}</p>
         </div>
         <div className="contact-section">
-          <h3>contact</h3>
+          <h2>contact</h2>
           <div className="contact-grid">
             <div className="contact-item">
               <span className="contact-label">location</span>

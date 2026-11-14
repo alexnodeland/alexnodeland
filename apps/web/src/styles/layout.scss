@@ -1,5 +1,31 @@
 @use 'mixins' as *;
 
+// The way past the chrome for a keyboard (see ui/SkipLink.tsx). Off the screen
+// until it has focus, then a chip in the corner the eye starts in — the
+// floating-panel material, since it lands on the bare field, over a ground of
+// its own so it reads on any of the simulations. Above everything: it is the
+// first stop on the page whatever else is open.
+.skip-link {
+  position: fixed;
+  top: var(--rail-inset-top);
+  left: var(--rail-inset-left);
+  z-index: calc(var(--z-dialog) + 1);
+  padding: var(--space-3) var(--space-4);
+  @include floating-panel;
+  background-color: var(--bg-floating);
+  color: var(--text-primary);
+  font-size: var(--text-control);
+  line-height: 1.25rem;
+  text-decoration: none;
+  // Lifted clear of the screen rather than hidden: `display` or `visibility`
+  // would take it out of the tab order, which is the one place it has to be.
+  transform: translateY(calc(-100% - var(--rail-inset-top) - var(--space-2)));
+
+  &:focus-visible {
+    transform: none;
+  }
+}
+
 // The stage — one fixed column holding the two things that make up a page: the
 // page hero and the content window. It carries the window's horizontal
 // geometry for both, so a sidebar opening moves the block as a unit rather
@@ -126,6 +152,10 @@
 .hero-crumb {
   @include quiet-link;
   display: inline-block; // Transformable: the brand FLIP animates this box
+  // Folded, the crumb is the way home at the rail's type size — a word 20px
+  // tall in the corner of a phone. In ems, so the room around it is scaled by
+  // the fold along with the word: about a thumb's worth once folded.
+  @include hit-area(0.6em, 0.4em);
 }
 
 // Everything after the crumb, as one box. On a navigation this is what fades
@@ -248,6 +278,18 @@
     opacity: calc(1 - var(--hero-collapse));
   }
 
+  // The cover's title is the whole name, and on a desktop the whole name
+  // folds into the row. A phone's row has no room for it: the capsule of page
+  // links takes all but a word's width, and the folded "alex nodeland" ran
+  // under it from the fourth link on. So at these widths the surname goes the
+  // way a crumb's tail goes, and the cover folds to "alex" — the same word,
+  // on the same line, that every other page folds to.
+  @media (max-width: 480px) {
+    .hero-name-rest {
+      opacity: calc(1 - var(--hero-collapse));
+    }
+  }
+
   // The tagline is the last thing in the hero; the room under it is the
   // hero's own padding, not a paragraph margin. It fades and drifts up as the
   // scroll moves — and is gone by a fifth of the way (see hero-tagline-fade):
@@ -284,7 +326,8 @@
   @supports (animation-timeline: scroll()) and (timeline-scope: --window) {
     h1,
     p,
-    .hero-crumb-rest {
+    .hero-crumb-rest,
+    .hero-name-rest {
       animation-timing-function: linear;
       animation-fill-mode: both;
       animation-timeline: --window;
@@ -306,6 +349,12 @@
 
     .hero-crumb-rest {
       animation-name: hero-fold-fade;
+    }
+
+    @media (max-width: 480px) {
+      .hero-name-rest {
+        animation-name: hero-fold-fade;
+      }
     }
   }
 }
@@ -355,7 +404,8 @@
   // goes back to the top.
   h1,
   p,
-  .hero-crumb-rest {
+  .hero-crumb-rest,
+  .hero-name-rest {
     animation-name: none;
   }
 }
@@ -482,6 +532,11 @@
   display: flex;
   flex-direction: column;
   overflow: auto;
+  // The window's scroll ends at the window. Left to chain, a drag past either
+  // end is handed to the document — which has nowhere to go, so a phone
+  // answers with its own gesture instead: the page rubber-bands under the
+  // fixed chrome, or pulls down into a reload.
+  overscroll-behavior: contain;
   // The footer's mark: the touch target, and the glyph drawn inside it.
   --footer-mark: 2.75rem;
   --footer-mark-ink: 1.25rem;
@@ -510,6 +565,13 @@
   &:focus {
     outline: none;
   }
+}
+
+// Focusable for the skip link alone, and for the same reason ringless: the
+// link says where focus has gone, and a ring around the whole column of the
+// page says nothing more.
+.main:focus {
+  outline: none;
 }
 
 // The band at the top of the scroll: the room the hero occupies at rest. The
@@ -550,7 +612,7 @@
 // moving over. It keeps the window's own side offset here rather than
 // snapping to the viewport edge: --window-side floors to the inset at these
 // widths, so this is where it already sits, and the dim is the only change.
-@media (max-width: 768px) {
+@include compact {
   .stage.settings-panel-open,
   .stage.settings-panel-closing,
   .stage.chat-panel-open,
@@ -759,7 +821,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
+@include compact {
   // The rail's vertical offsets narrow in the token layer; everything that
   // clears it follows from --rail-clearance, so there is nothing to restate.
   //

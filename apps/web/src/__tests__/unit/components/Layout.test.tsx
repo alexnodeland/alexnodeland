@@ -412,6 +412,34 @@ describe('Layout Component', () => {
     });
   });
 
+  it('names the hero region, so the title and tagline are inside a landmark', () => {
+    // They sit on the field, outside <main>: unnamed, the region was no
+    // landmark at all and a reader moving by landmark never met the title.
+    render(<TestWrapper pathname="/timeline">{mockChildren}</TestWrapper>);
+    const region = screen.getByRole('region', { name: 'page header' });
+    expect(region).toHaveClass('site-hero');
+    expect(region).toContainElement(screen.getByRole('heading', { level: 1 }));
+  });
+
+  it('gives <main> the id the skip link points at, focusable but out of the tab order', () => {
+    render(<TestWrapper>{mockChildren}</TestWrapper>);
+    const main = screen.getByRole('main');
+    expect(main).toHaveAttribute('id', 'main');
+    expect(main).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('sets the cover title as one heading in two pieces, so a phone can fold it to the given name', () => {
+    render(<TestWrapper pathname="/">{mockChildren}</TestWrapper>);
+    const title = screen.getByRole('heading', { level: 1 });
+    // One heading, read as one name.
+    expect(title).toHaveTextContent('alex nodeland');
+    // The surname is the piece that gives way in a phone's folded row (see
+    // .hero-name-rest in layout.scss); the given name is not wrapped at all.
+    const rest = title.querySelector('.hero-name-rest') as HTMLElement;
+    expect(rest).toHaveTextContent('nodeland');
+    expect(title.firstChild?.textContent).toBe('alex');
+  });
+
   describe('navigation transition', () => {
     // jsdom implements neither Element.animate nor layout, so what is under
     // test here is the bookkeeping: the hero swaps for the new path, the

@@ -2,13 +2,13 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import SettingsPanel from '../../../../components/animated-backgrounds/SettingsPanel';
 
-// The panel branches on viewport width; the shared setup stubs matchMedia to
-// always miss, so opt this file in to the mobile side.
+// The panel branches on the phone's chrome being worn; the shared setup stubs
+// matchMedia to always miss, so opt this file in to the mobile side.
 jest.mock(
   '../../../../components/animated-backgrounds/core/useIsMobileViewport',
   () => ({
     useIsMobileViewport: () => true,
-    MOBILE_BREAKPOINT_PX: 768,
+    isCompactViewport: () => true,
   })
 );
 

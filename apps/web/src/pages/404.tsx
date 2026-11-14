@@ -1,6 +1,7 @@
 import React from 'react';
 import SEO from '../components/seo';
 import { markNotFound } from '../lib/notFound';
+import { FONT_WEIGHT_STRONG, whenFontReady } from '../lib/utils/fonts';
 import '../styles/404.scss';
 
 // A missing page has no path of its own to resolve a hero from — it is
@@ -27,9 +28,20 @@ import '../styles/404.scss';
 // nav capsule lists the sections, so a second set of the same links inside the
 // window was the page saying everything twice as well.
 const NotFoundPage: React.FC = () => {
+  // The flag waits for the cut of the typeface the number is drawn in. The
+  // field rasterises "404" onto a canvas the moment the flag goes up, and a
+  // canvas draws in whatever is loaded just then: without the wait the number
+  // was set in the visitor's fallback face on a cold load and in the site's
+  // own everywhere else. Already loaded — any visit after the first — this
+  // runs at once.
   React.useEffect(() => {
-    markNotFound(true);
-    return () => markNotFound(false);
+    const cancel = whenFontReady(FONT_WEIGHT_STRONG, '404', () =>
+      markNotFound(true)
+    );
+    return () => {
+      cancel();
+      markNotFound(false);
+    };
   }, []);
 
   React.useEffect(() => {

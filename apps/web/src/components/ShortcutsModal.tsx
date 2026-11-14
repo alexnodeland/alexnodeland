@@ -122,7 +122,7 @@ const Shortcuts: React.FC = () => {
           onClick={toggle}
           aria-haspopup="dialog"
           aria-expanded={open}
-          aria-label="keyboard shortcuts"
+          aria-label="keyboard shortcuts (?)"
         >
           <kbd>?</kbd>
           <span

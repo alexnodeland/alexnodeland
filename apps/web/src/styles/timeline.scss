@@ -283,21 +283,14 @@
 // The way in, parked at the far end of the title's own row. An arrow pointing
 // up and out, in the link colour: the card is a link, and this is the one
 // thing on it that says so. It holds still under the pointer; the card's
-// hairline is the answer. It sits above the stretched title link, so it stays
-// a target of its own.
+// hairline is the answer. It is a mark and not a target: the title's link is
+// stretched over the whole card, the arrow included, so a tap on it is a tap
+// on the card.
 .read-more {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-  // A larger box than the glyph, so there is something to tap.
-  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1))
-    calc(-1 * var(--space-1)) 0;
-  padding: var(--space-1);
   color: var(--ink-primary);
-  text-decoration: none;
-  border-radius: var(--radius-sm);
 
   svg {
     width: 18px;
@@ -334,6 +327,7 @@
   text-decoration: none;
   text-transform: lowercase;
   transition: color var(--transition-fast);
+  @include hit-area;
 
   &:hover {
     color: var(--ink-primary);
@@ -648,6 +642,7 @@
   text-decoration: none;
   text-transform: lowercase;
   transition: color var(--transition-fast);
+  @include hit-area(var(--space-2), 0px);
 
   &:hover {
     color: var(--ink-primary);
@@ -680,6 +675,7 @@
   font-size: var(--text-small);
   text-align: center;
   white-space: nowrap;
+  @include hit-area;
 }
 
 @media (max-width: 768px) {

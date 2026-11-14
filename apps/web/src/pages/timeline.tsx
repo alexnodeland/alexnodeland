@@ -393,13 +393,15 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ data, location }) => {
                           {post.frontmatter.title}
                         </Link>
                       </h2>
-                      <Link
-                        to={`/timeline${post.fields.slug}`}
-                        className="read-more"
-                        aria-label={`read ${post.frontmatter.title}`}
-                      >
+                      {/* A mark, not a second link. The title's link is
+                          stretched over the whole card (see .post-title in
+                          timeline.scss), so the arrow is already inside it;
+                          as a link of its own it was the same address twice
+                          per card — two stops for the keyboard, and the list
+                          read out as fifty-eight links to twenty-nine posts. */}
+                      <span className="read-more" aria-hidden="true">
                         <ArrowOutIcon />
-                      </Link>
+                      </span>
                     </div>
                     {/* The description alone says what the post is. The
                       excerpt used to follow it, and since every post opens

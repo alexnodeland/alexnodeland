@@ -200,13 +200,14 @@
   }
 }
 
-// A hero line that fades as the hero folds — the crumb's tail.
-// Hidden at the very end, so a faded-out line stops taking the taps meant for
-// whatever has scrolled up under it.
+// A part of the title that fades as the hero folds — the crumb's tail, and on
+// a phone the cover's surname. Faded, not hidden: it is still the page's
+// title, and `visibility` would take it out of the heading a screen reader
+// announces the moment the reader scrolled, leaving every page titled "alex".
+// It holds nothing that can take focus, so being invisible is all it needs.
 @keyframes hero-fold-fade {
   to {
     opacity: 0;
-    visibility: hidden;
   }
 }
 

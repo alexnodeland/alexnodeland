@@ -2,6 +2,7 @@
 // src/pages/404.tsx — the hero already says what there is to say, and the
 // field behind everything forms the number). What is here is the way the
 // chrome comes apart around that.
+@use 'mixins' as *;
 
 // ── The chrome coming apart ──────────────────────────────────────────────────
 // Keyed off the root while the 404 is up (src/pages/404.tsx sets it, and the
@@ -100,7 +101,7 @@ html[data-not-found] {
   }
 }
 
-@media (max-width: 768px) {
+@include compact {
   // A phone has nowhere for the window to go; it thins out where it stands.
   html[data-not-found] .stage .window {
     animation-name: nf-window-thin;

@@ -18,6 +18,7 @@ import { heroKeyFor, NOT_FOUND_KEY, resolveHero } from './heroes';
 import Shortcuts from './ShortcutsModal';
 import SearchPalette from './search/SearchPalette';
 import { GitHubIcon } from './ui/EntryIcons';
+import { MAIN_ID } from './ui/SkipLink';
 
 // The modal carries the markdown renderer and the syntax highlighter, and
 // neither is wanted until someone opens the panel — so the whole thing is
@@ -803,7 +804,17 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
+    // The typeface arrives after the first paint on a cold load, and re-sets
+    // the title without resizing the region the observer watches — the hero
+    // is as wide as its column whatever is in it. The fallbacks advance the
+    // way the real face does (see --font-mono), so the distances barely move;
+    // "barely" is still a title parked a pixel off its line.
+    let live = true;
+    document.fonts?.ready.then(() => {
+      if (live) measure();
+    });
     return () => {
+      live = false;
       observer.disconnect();
       bandRef.current = 0;
     };
@@ -856,13 +867,17 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
           <div className={stageClasses} ref={stageRef}>
             {/* A <section> rather than a <div>: the heroes are still <header>
                 elements, and a <header> outside a sectioning element would
-                claim a `banner` landmark for what is only a page title. It is
-                rendered on every page, empty on the ones with no hero, because
-                it is the element whose height the navigation transition eases
-                — and, empty, it is what holds the window clear of the rail. */}
+                claim a `banner` landmark for what is only a page title. Named,
+                which makes it a landmark of its own: the title and the tagline
+                sit on the field, outside <main>, and a reader moving by
+                landmark would otherwise step from the page links straight
+                into the window and never meet either — the tagline's links on
+                the cover included. It is rendered on every page, because it is
+                the element whose height the navigation transition eases. */}
             <section
               className={`site-hero${shouldCollapse ? ' is-collapsible' : ''}`}
               ref={heroRef}
+              aria-label="page header"
             >
               {hero}
             </section>
@@ -920,7 +935,10 @@ const LayoutInner: React.FC<LayoutProps> = ({ children, location }) => {
                     under it, and the first band's worth of scroll carries it
                     up to the frame's finished edge. */}
                 <div className="window-band" aria-hidden="true" />
-                <main className="main" ref={mainRef}>
+                {/* Named and focusable for the skip link (ui/SkipLink.tsx),
+                    which hands it the keyboard; like the window itself it
+                    is never in the tab order. */}
+                <main className="main" id={MAIN_ID} ref={mainRef} tabIndex={-1}>
                   {children}
                 </main>
                 {/* The footer is also the site's representative h-card

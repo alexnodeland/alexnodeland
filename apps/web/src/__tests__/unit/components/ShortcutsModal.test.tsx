@@ -13,7 +13,9 @@ describe('Shortcuts', () => {
   it('shows the hint and nothing else at rest', () => {
     render(<Shortcuts />);
 
-    const hint = screen.getByRole('button', { name: 'keyboard shortcuts' });
+    const hint = screen.getByRole('button', {
+      name: 'keyboard shortcuts (?)',
+    });
     expect(hint).toHaveClass('shortcuts-hint');
     expect(hint).toHaveAttribute('aria-expanded', 'false');
     // The word is decoration for a key cap that already says it; the name is
@@ -28,7 +30,12 @@ describe('Shortcuts', () => {
     const hints = Array.from(row.querySelectorAll('button')).map(button =>
       button.getAttribute('aria-label')
     );
-    expect(hints).toEqual(['search the site', 'keyboard shortcuts']);
+    // Each is named with what is drawn on it: the caps are part of what the
+    // button is called, so someone who speaks what they see reaches it.
+    expect(hints).toEqual([
+      'search the site (ctrl K)',
+      'keyboard shortcuts (?)',
+    ]);
   });
 
   it('opens on ? and closes on ? again', () => {

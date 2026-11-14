@@ -126,7 +126,7 @@ describe('SearchPalette', () => {
       </>
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'search the site' })
+      screen.getByRole('button', { name: /^search the site/ })
     );
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });

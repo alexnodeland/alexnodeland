@@ -2,6 +2,7 @@ import { navigate } from 'gatsby';
 import React from 'react';
 import { DURATION_FAST_MS, EASE_OUT } from '../../config/motion';
 import { isTypingTarget } from '../../lib/utils/keys';
+import { useIsMobileViewport } from '../animated-backgrounds/core/useIsMobileViewport';
 import { prefersReducedMotion } from '../../lib/utils/motion';
 import { KIND_LABELS, loadSearcher } from '../../lib/search';
 import type { SearchDoc, Searcher } from '../../lib/search';
@@ -49,16 +50,26 @@ const useModifierLabel = (): string => {
  */
 export const SearchHint: React.FC = () => {
   const modifier = useModifierLabel();
+  // On a phone the caps are not drawn (see search.scss), so they are not
+  // named either.
+  const compact = useIsMobileViewport();
   return (
     <button
       type="button"
       className="rail-hint search-hint"
       onClick={openSearch}
       aria-haspopup="dialog"
-      aria-label="search the site"
+      // The name ends with the caps, as they are drawn: what is on the button
+      // is part of what the button is called, so someone who speaks what
+      // they can see reaches it — and a screen reader is told the shortcut.
+      aria-label={
+        compact ? 'search the site' : `search the site (${modifier} K)`
+      }
     >
       <span className="search-hint-keys" aria-hidden="true">
         <kbd>{modifier}</kbd>
+        {/* A real space between the caps. The row's gap is what separates
+            them on screen; this is what separates them as text. */}{' '}
         <kbd>K</kbd>
       </span>
       <svg

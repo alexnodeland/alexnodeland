@@ -441,6 +441,7 @@ const PDESolverBackground: React.FC<
   return (
     <div
       ref={containerRef}
+      aria-hidden="true"
       className={className}
       style={{
         position: 'fixed',

@@ -2,6 +2,32 @@
 // every stylesheet can `@use` it freely; the tokens it reaches for are the
 // custom properties global.scss emits once from variables.scss.
 
+// The phone's chrome, and when it is worn: the tighter insets, the icon
+// launchers along the bottom, the panels as sheets rather than sidebars.
+//
+// It was a width, 768px, and a phone is only narrow one way up. Turned on its
+// side a current one is 844 to 932 points wide, so it crossed the line and was
+// handed the desktop's chrome — key-cap hints for a keyboard it does not have,
+// a sidebar wider than half its screen, and the desktop's deep insets around a
+// window left with seventy points of height to read in. So the phone's chrome
+// answers to either dimension: a narrow viewport, or a short one held in a
+// hand. The pointer is part of the second test because a short viewport with
+// a mouse is a desktop window somebody has resized, and that is still a
+// desktop.
+//
+// This is the chrome's breakpoint only. How many columns a page's content
+// runs to stays a question of width, and those rules keep their own queries.
+//
+// The JS twin is COMPACT_QUERY in
+// src/components/animated-backgrounds/core/useIsMobileViewport.ts.
+$compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
+
+@mixin compact {
+  @media #{$compact} {
+    @content;
+  }
+}
+
 // The properties a control is allowed to ease, spelled out. `transition: all`
 // used to be the house habit, and it quietly promised to animate anything that
 // ever changed — including layout properties like width and padding, which
@@ -441,6 +467,25 @@
   text-align: left;
 }
 
+// A target larger than its ink. A word set at the meta size is seventeen
+// pixels tall and a mark is eighteen across: fine to read, mean to hit with a
+// thumb, and under the 24px a pointer target is owed. The pseudo-element
+// widens what takes the tap without widening the box — nothing around the
+// link moves, and nothing that measures it (the brand's travel between
+// heroes, the fold) reads a different number.
+//
+// The element has to be free to be `position: relative`, and its `::after`
+// free to be this.
+@mixin hit-area($block: var(--space-2), $inline: $block) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: calc(-1 * #{$block}) calc(-1 * #{$inline});
+  }
+}
+
 // A link that is part of the chrome rather than of a sentence — the brand in
 // a hero title, the words in a hero tagline. It keeps the link green, so it
 // still reads as the way somewhere, but it never underlines: an underline
@@ -456,16 +501,29 @@
   }
 }
 
-// A link in running text: green, and underlined under the pointer at one
-// offset everywhere.
+// A link in running text: green, and underlined at one offset everywhere.
+//
+// Underlined at rest, not only under the pointer. The green is the link
+// colour, but against the grey of the prose around it the two differ by hue
+// and hardly at all by lightness (1.6:1, where telling them apart without
+// colour takes 3:1) — to anyone who does not see the green, a link in a
+// sentence was simply more sentence. The line is what says "link" to
+// everybody. It rests quiet, at under half the ink, and comes up to full
+// under the pointer, so the hover still answers.
 @mixin text-link {
   color: var(--ink-primary);
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
-  transition: color var(--transition-fast);
+  // Where `color-mix` is not understood this line is dropped and the
+  // underline is simply the ink's own colour, which is the right fallback.
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  transition:
+    color var(--transition-fast),
+    text-decoration-color var(--transition-fast);
 
   &:hover {
-    text-decoration: underline;
+    text-decoration-color: currentColor;
   }
 }
 
@@ -532,9 +590,11 @@
 
   // The other mark, lifted above that overlay so it is hit directly rather than
   // buried under the card's click target. Everything else on the card stays
-  // under it, which is what makes the rest of the card one target.
+  // under it, which is what makes the rest of the card one target. It takes a
+  // thumb-sized box around its 18px of ink: a miss here is not a miss, it is
+  // a tap on the card's own link, which goes somewhere else.
   .project-out.is-raised {
-    position: relative;
     z-index: 1;
+    @include hit-area;
   }
 }

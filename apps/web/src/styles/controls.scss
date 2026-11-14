@@ -96,6 +96,9 @@
   // A long list scrolls inside the panel rather than running off the window.
   max-height: min(60vh, 20rem);
   overflow-y: auto;
+  // The end of the list is the end of the scroll: it does not carry on into
+  // the window the menu hangs over.
+  overscroll-behavior: contain;
   margin: 0;
   padding: var(--space-1);
   list-style: none;
@@ -323,7 +326,7 @@
 // up until the box clears 40px — the number the rail's own controls are built
 // to (see --rail-height) — without changing the type or the frosting, so the
 // row reads exactly the same and is simply easier to hit.
-@media (max-width: 768px) {
+@include compact {
   .ui-dropdown-trigger,
   .ui-chip-button {
     padding-block: var(--space-3);

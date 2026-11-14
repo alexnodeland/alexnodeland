@@ -19,6 +19,56 @@ describe('the site-wide head', () => {
     expect(setHeadComponents).toHaveBeenCalledWith(headComponents());
   });
 
+  it('hands the page being rendered to the head, which is what decides its preloads', () => {
+    const setHtmlAttributes = jest.fn();
+    const setHeadComponents = jest.fn();
+    onRenderBody({
+      pathname: '/timeline/some-post/',
+      setHtmlAttributes,
+      setHeadComponents,
+    });
+    expect(setHeadComponents).toHaveBeenCalledWith(
+      headComponents('/timeline/some-post/')
+    );
+  });
+
+  describe('the typeface', () => {
+    const preloads = (pathname?: string) =>
+      headComponents(pathname).filter(el => props(el).rel === 'preload');
+
+    it('preloads the regular and the italic on a page whose hero has a tagline', () => {
+      for (const pathname of ['/', '/timeline/', '/projects', '/cv/']) {
+        expect(preloads(pathname).map(el => props(el).href)).toEqual([
+          '/static/jetbrains-mono-latin-400.woff2',
+          '/static/jetbrains-mono-latin-400-italic.woff2',
+        ]);
+      }
+    });
+
+    it('leaves the italic off a page that opens without it', () => {
+      // A post and the 404 wear the brand alone, with no tagline: a preload
+      // nothing on the first screen uses is a download in front of the ones
+      // that matter.
+      for (const pathname of ['/timeline/some-post/', '/404.html', '/404/']) {
+        expect(preloads(pathname).map(el => props(el).href)).toEqual([
+          '/static/jetbrains-mono-latin-400.woff2',
+        ]);
+      }
+    });
+
+    it('asks for each as a font, in CORS mode', () => {
+      // Fonts are fetched anonymously even from the same origin; a preload
+      // that does not say so is fetched once for nothing and then again.
+      for (const el of preloads('/')) {
+        expect(props(el)).toMatchObject({
+          as: 'font',
+          type: 'font/woff2',
+          crossOrigin: 'anonymous',
+        });
+      }
+    });
+  });
+
   it('links the Atom and JSON Feed forms of the timeline, and leaves RSS to the plugin', () => {
     const feeds = headComponents()
       .filter(el => props(el).rel === 'alternate')

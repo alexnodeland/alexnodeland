@@ -369,6 +369,9 @@
   .settings-content {
     flex: 1;
     overflow-y: auto;
+    // A list in a panel over the page ends where it ends: a drag past the
+    // last row is not a drag on whatever is behind the panel.
+    overscroll-behavior: contain;
     padding: 0;
   }
 
@@ -707,7 +710,7 @@
 // these controls is watching the background react, so the sheet claims only
 // the lower half of the screen and stays see-through enough to read the
 // animation behind it.
-@media (max-width: 768px) {
+@include compact {
   .settings-sidebar {
     top: auto;
     left: 0;
@@ -730,7 +733,10 @@
     // whose `backwards` fill holds its filter-less first frame through the
     // delay.
     box-shadow: var(--shadow-sheet);
-    padding-bottom: env(safe-area-inset-bottom);
+    // The sheet runs to three edges of the display, so its content holds
+    // itself clear of what the display takes off them: the home indicator
+    // below, and the sensor housing at the side when the phone is turned.
+    padding: 0 var(--safe-side) env(safe-area-inset-bottom);
     z-index: var(--z-overlay);
     animation:
       sheet-in var(--transition-slow),

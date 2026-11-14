@@ -29,7 +29,8 @@ const renderDropdown = (
   return { ...utils, onSelect };
 };
 
-const trigger = () => screen.getByRole('button', { name: 'Choose CV length' });
+const trigger = () =>
+  screen.getByRole('button', { name: /^Choose CV length: / });
 
 describe('Dropdown', () => {
   it('is a button rather than a native select, and says what it opens', () => {
@@ -39,6 +40,32 @@ describe('Dropdown', () => {
     expect(trigger()).toHaveAttribute('aria-expanded', 'false');
     expect(document.querySelector('select')).toBeNull();
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('is named with what it is and what it says', () => {
+    // The word on the chip is part of the button's name, so someone who
+    // speaks what they can see ("click full cv") still reaches it.
+    renderDropdown();
+    const name = trigger().getAttribute('aria-label') as string;
+    expect(name.startsWith('Choose CV length: ')).toBe(true);
+    expect(name).toContain(
+      (trigger().querySelector('.ui-dropdown-value') as HTMLElement)
+        .textContent as string
+    );
+  });
+
+  it('keeps the plain name when the trigger is a mark rather than a word', () => {
+    render(
+      <Dropdown
+        ariaLabel="Download the CV"
+        triggerIcon={<svg data-testid="mark" />}
+        options={[{ value: 'pdf', label: 'pdf' }]}
+        onSelect={jest.fn()}
+      />
+    );
+    expect(
+      screen.getByRole('button', { name: 'Download the CV' })
+    ).toContainElement(screen.getByTestId('mark'));
   });
 
   it('opens on click and closes on a second click', async () => {

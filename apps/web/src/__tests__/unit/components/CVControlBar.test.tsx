@@ -103,7 +103,7 @@ describe('CVControlBar', () => {
     renderBar();
 
     expect(
-      screen.getByRole('button', { name: 'Choose CV length' })
+      screen.getByRole('button', { name: /^Choose CV length: / })
     ).toHaveTextContent('full cv');
     // The download menu's trigger is the mark rather than the word, so what
     // names it is its aria-label — which is how it is found here.
@@ -119,7 +119,7 @@ describe('CVControlBar', () => {
     renderBar({ view: 'resume' });
 
     expect(
-      screen.getByRole('button', { name: 'Choose CV length' })
+      screen.getByRole('button', { name: /^Choose CV length: / })
     ).toHaveTextContent('one page');
     // The old two-button toggle is gone.
     expect(screen.queryByText('full cv')).not.toBeInTheDocument();
@@ -131,7 +131,7 @@ describe('CVControlBar', () => {
       const { onViewChange } = renderBar();
 
       await user.click(
-        screen.getByRole('button', { name: 'Choose CV length' })
+        screen.getByRole('button', { name: /^Choose CV length: / })
       );
 
       const options = screen.getAllByRole('option');
