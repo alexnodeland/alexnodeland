@@ -146,7 +146,10 @@ export const surveyFront = (intro: number, outro: number): number => {
   // that sprinted and then crawled would be an explosion, not a survey.
   const x = clamp01((intro - 0.03) / 0.87);
   const out = x * (1.4 - 0.4 * x);
-  const back = smooth((outro - ROLL_FROM) / (0.97 - ROLL_FROM));
+  // Going home it gathers pace, and the start — the last thing it reaches —
+  // is still there with a tenth of the leaving to go.
+  const y = clamp01((outro - ROLL_FROM) / (0.97 - ROLL_FROM));
+  const back = y * (0.7 + 0.3 * y);
   const reach = Math.min(out, 1 - back);
   return -SURVEY_WIDTH + reach * (1 + 2 * SURVEY_WIDTH + SURVEY_MARGIN);
 };
@@ -519,10 +522,12 @@ const buildScene = ({
     edges = built.edges;
     startNode = Math.min(count - 1, Math.max(0, start));
     goalNode = Math.min(count - 1, Math.max(0, goal));
+    // Before the morph, which sets the nodes back to where the old graph's
+    // were: the survey is of the map as it will be laid out.
+    orderNodes();
     morph = beginMorph(previous, nodes, now, morphMs);
     hovered = -1;
     resetSearch();
-    orderNodes();
   };
 
   /**
