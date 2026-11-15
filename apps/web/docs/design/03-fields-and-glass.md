@@ -365,8 +365,9 @@ leaving that skips ahead, not one cut off before its end.
 **The neighbours are fetched ahead.** The scenes are lazy chunks; the two
 either side of the one on the field are requested once it has settled, so the
 first step in either direction has no request between the leaving and the
-arrival. What remains between them is the time the new scene takes to build
-and compile, on bare ground — about a third of a second here.
+arrival. What remains between them is a beat of bare ground: about a third
+of a second in the films, plus however long a real device takes to build the
+new scene and compile its shaders, which the films' clock does not count.
 
 Considered and not done: building the next scene during the leaving, so that
 it is ready the moment the old one is gone. It would close that pause, at the
