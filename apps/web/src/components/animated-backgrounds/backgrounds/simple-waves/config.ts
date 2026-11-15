@@ -30,20 +30,22 @@ const defaultCustomSettings: SimpleWaveCustomSettings = {
   waveFrequency: 6.0,
   waveAmplitude: 0.8,
 
-  // Colorful wave palette
+  // Read as display colours — the swatches in the panel are what is drawn.
+  // Indigo water, rose in the troughs and amber on the crests, over a
+  // ground that is nearly the stage's own.
   colors: {
-    primary: [0.2, 0.1, 0.8], // Deep blue
-    secondary: [0.8, 0.2, 0.8], // Magenta
-    accent: [1.0, 0.6, 0.1], // Orange
-    background: [0.15, 0.15, 0.2],
+    primary: [0.38, 0.34, 1.0], // Indigo: the body of the swell
+    secondary: [0.98, 0.32, 0.72], // Rose: the troughs
+    accent: [1.0, 0.7, 0.3], // Amber: the crests
+    background: [0.03, 0.035, 0.075],
     grid: [0.3, 0.3, 0.3],
   },
 };
 
 // Standard settings overrides for simple waves
 const standardOverrides: Partial<StandardSettings> = {
-  opacity: 0.6,
-  globalTimeMultiplier: 2.0,
+  opacity: 0.9,
+  globalTimeMultiplier: 1.4,
 };
 
 // Settings schema for custom simple wave settings

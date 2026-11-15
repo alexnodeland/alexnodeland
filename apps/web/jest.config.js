@@ -3,6 +3,12 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // three is published as an ES module; its CommonJS entry is a shim that
+    // `require`s the module build, which Jest's own loader cannot do. Pointed
+    // at the module build directly (and let through the transform below), the
+    // real library runs in tests — its maths, its geometries, its materials —
+    // and only the renderer, which needs a GPU, is stood in for (setupTests).
+    '^three$': '<rootDir>/node_modules/three/build/three.module.js',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   testMatch: [
@@ -45,7 +51,7 @@ module.exports = {
     '<rootDir>/e2e/',
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!(gatsby|gatsby-script|gatsby-link|react-markdown|remark.*|rehype.*|unified|bail|is-plain-obj|trough|vfile.*|unist.*|property-information|hast.*|html-void-elements|comma-separated-tokens|space-separated-tokens|micromark.*|decode-named-character-reference|character-entities|mdast.*|parse-entities|character-reference-invalid|is-decimal|is-hexadecimal|is-alphanumerical|is-alphabetical)/)',
+    'node_modules/(?!(three|gatsby|gatsby-script|gatsby-link|react-markdown|remark.*|rehype.*|unified|bail|is-plain-obj|trough|vfile.*|unist.*|property-information|hast.*|html-void-elements|comma-separated-tokens|space-separated-tokens|micromark.*|decode-named-character-reference|character-entities|mdast.*|parse-entities|character-reference-invalid|is-decimal|is-hexadecimal|is-alphanumerical|is-alphabetical)/)',
   ],
   testTimeout: 10000,
   clearMocks: true,
