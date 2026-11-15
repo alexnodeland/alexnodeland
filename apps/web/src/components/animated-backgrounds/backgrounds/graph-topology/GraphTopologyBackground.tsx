@@ -8,6 +8,14 @@ import {
   viewportReshaped,
 } from '../../core/notFoundSequence';
 import { createFloor } from '../../core/stage/floor';
+import {
+  clamp01,
+  easeIn,
+  easeOut,
+  easeOutBack,
+  smooth,
+  staggered,
+} from '../../core/stage/passage';
 import { createRibbons } from '../../core/stage/ribbons';
 import { Pose } from '../../core/stage/rig';
 import { createSprites } from '../../core/stage/sprites';
@@ -73,6 +81,103 @@ const SPIN_PER_SECOND = 0.026;
 const SPIN_START = Math.PI / 6;
 // How far the layout's plane is spread across the bench, front to back.
 const SPREAD_DEPTH = 1.2;
+
+// ── Coming on and going off ────────────────────────────────────────────────
+// The network is wired up, and later unplugged (see core/stage/passage.ts).
+//
+// Arriving, the machines are set down on the bench one after another, in the
+// order they are numbered — which is datacenter by datacenter — each dropping
+// onto its place with a little weight; a link is then run from whichever of
+// its two machines was down first to the other, once that one has landed.
+// Leaving, the links are pulled back the way they were run, last first, and
+// the machines are let go: they rise off the bench and thin to nothing, the
+// last one down the first away. The bench is there before the first machine
+// and after the last.
+//
+// All of it is arithmetic on the two numbers the stage hands over and a
+// machine's place in the queue, so a leaving taken back simply runs the
+// other way.
+
+// How much of the arrival the machines take to come down, and how much of
+// that each one's own fall is.
+const LAND_BY = 0.7;
+const LAND_SPAN = 0.3;
+// A link is started when the later of its machines is this far down, and
+// takes this much of the arrival to run.
+const LINK_AT = 0.8;
+const LINK_RUN = 0.24;
+// Leaving: the links are back by this much of it, and the machines start
+// going at this much.
+const UNLINK_BY = 0.6;
+const RELEASE_FROM = 0.22;
+// How far above its place a machine comes in from, and how far above it it
+// has risen by the time it is gone, in the bench's units.
+const DROP_FROM = 0.5;
+const RISE_TO = 0.62;
+const INTRO_SECONDS = 2.2;
+
+/** A machine on its way on or off: where, how large, how bright. */
+export interface NodePassage {
+  /** Added to its height off the bench. */
+  height: number;
+  /** Multiplies its radius. */
+  size: number;
+  /** 0 → 1 → 0 as it touches down: a ring and a flare. */
+  glint: number;
+}
+
+/**
+ * Where a machine is in its coming or going. `order` is its place in the
+ * queue, 0 → 1. At `intro` 1 and `outro` 0 it is exactly where the layout
+ * has it: height 0, size 1, no glint.
+ */
+export const nodePassage = (
+  intro: number,
+  outro: number,
+  order: number,
+  out: NodePassage
+): NodePassage => {
+  const landed = staggered(intro / LAND_BY, order, LAND_SPAN);
+  const released = staggered(
+    (outro - RELEASE_FROM) / (1 - RELEASE_FROM),
+    1 - order,
+    0.5
+  );
+  const touch = clamp01((landed - 0.62) / 0.38);
+  out.height =
+    (1 - easeOutBack(landed, 1.15)) * DROP_FROM + easeIn(released) * RISE_TO;
+  out.size = smooth(landed / 0.55) * (1 - smooth(released));
+  out.glint =
+    landed < 1 && released === 0 ? Math.sin(touch * Math.PI) * touch : 0;
+  return out;
+};
+
+/**
+ * How much of a link is run, 0 → 1, from the first of its machines to be
+ * set down toward the other. `order` is the later machine's place in the
+ * queue: there is nothing to run a link to until it has landed.
+ */
+export const linkRun = (intro: number, outro: number, order: number) => {
+  const start = LAND_BY * (order * (1 - LAND_SPAN) + LAND_SPAN * LINK_AT);
+  const run = easeOut((intro - start) / LINK_RUN);
+  const back = staggered(outro / UNLINK_BY, 1 - order, 0.45);
+  return run * (1 - smooth(back));
+};
+
+/** The bench under it all: there first, and gone last. */
+export const benchShown = (intro: number, outro: number) =>
+  smooth(intro / 0.35) * (1 - smooth((outro - 0.6) / 0.4));
+
+/** The lines from the lifted machines down to the bench: on last, off first. */
+export const dropLinesShown = (intro: number, outro: number) =>
+  smooth((intro - 0.86) / 0.14) * (1 - smooth(outro / 0.2));
+
+/**
+ * What every material's light is multiplied by. The coming and going is the
+ * movement's to show, so this is 1 throughout — except across the very end
+ * of a leaving, where it makes certain that nothing is left lit.
+ */
+export const lightShown = (outro: number) => 1 - smooth((outro - 0.84) / 0.16);
 
 type Vector2 = { x: number; y: number };
 
@@ -340,6 +445,7 @@ const stageOptions = (): StageOptions => ({
   },
   bloom: { strength: 0.52, threshold: 0.66, knee: 0.6, radius: 0.72 },
   grade: { vignette: 0.38 },
+  introSeconds: INTRO_SECONDS,
 });
 
 const buildScene = ({
@@ -921,6 +1027,7 @@ const buildScene = ({
   // ── The frame ────────────────────────────────────────────────────────────
   const readout = createReadout();
   const color = new THREE.Color();
+  const passing: NodePassage = { height: 0, size: 1, glint: 0 };
   let reshapeTimer = 0;
   let stillSettled = false;
 
@@ -1018,6 +1125,12 @@ const buildScene = ({
     spreadX = Math.min(aspect, 1.45) * 0.9 * lifting + aspect * reading;
     spreadZ = SPREAD_DEPTH * lifting + reading;
 
+    // Whether the scene is on its way on or off. When it is neither, which
+    // is nearly always, none of the arithmetic of it is done.
+    const { intro, outro } = frame;
+    const passingNow = intro < 1 || outro > 0;
+    const perNode = nodes.length > 1 ? 1 / (nodes.length - 1) : 0;
+
     // Nodes: where each stands, and how it is drawn.
     const baseSize = live.elementSize * (isNumber ? 0.5 : 0.68);
     const crowd = Math.min(1, Math.max(0.55, stage.width / 1100));
@@ -1033,9 +1146,11 @@ const buildScene = ({
         ((inCurrent ? LIFT_CURRENT : 0) + (inBest ? LIFT_BEST : 0)) * lifting;
       lift[i] += (wantLift - lift[i]) * ease;
 
+      if (passingNow) nodePassage(intro, outro, i * perNode, passing);
+
       const at = i * 3;
       world[at] = n.position.x * spreadX;
-      world[at + 1] = lift[i];
+      world[at + 1] = passingNow ? lift[i] + passing.height : lift[i];
       world[at + 2] = -n.position.y * spreadZ;
       sprites.positions[at] = world[at];
       sprites.positions[at + 1] = world[at + 1];
@@ -1083,6 +1198,16 @@ const buildScene = ({
       sprites.params[p + 1] = 1;
       sprites.params[p + 2] = inCurrent || inBest ? 0.6 : 0.14;
       sprites.params[p + 3] = is ? 1 : 0;
+      if (passingNow) {
+        // Touching down, a machine flares and wears the ring for a moment.
+        sprites.params[p] *= passing.size;
+        sprites.params[p + 1] += passing.glint * 0.8;
+        sprites.params[p + 2] += passing.glint * 0.9;
+        sprites.params[p + 3] = Math.max(
+          sprites.params[p + 3],
+          passing.glint * 0.85
+        );
+      }
     }
     sprites.setCount(nodes.length);
     sprites.commit();
@@ -1166,6 +1291,26 @@ const buildScene = ({
       ribbons.ends[at] = world[b];
       ribbons.ends[at + 1] = world[b + 1];
       ribbons.ends[at + 2] = world[b + 2];
+      if (passingNow) {
+        // A link being run, or pulled back: it reaches only part of the way
+        // from whichever of its machines was set down first.
+        const run = linkRun(
+          intro,
+          outro,
+          Math.max(e.source, e.target) * perNode
+        );
+        if (run <= 0) continue;
+        if (run < 1) {
+          const moved = e.source < e.target ? ribbons.ends : ribbons.starts;
+          const from = e.source < e.target ? a : b;
+          const to = e.source < e.target ? b : a;
+          moved[at] = world[from] + (world[to] - world[from]) * run;
+          moved[at + 1] =
+            world[from + 1] + (world[to + 1] - world[from + 1]) * run;
+          moved[at + 2] =
+            world[from + 2] + (world[to + 2] - world[from + 2]) * run;
+        }
+      }
       writeColor(ribbons.colors, at, rgb, 1);
       const p = count * 4;
       ribbons.params[p] = linewidth * edgeThickness;
@@ -1174,9 +1319,10 @@ const buildScene = ({
       ribbons.params[p + 3] = 0;
       count += 1;
     }
+    const dropLines = passingNow ? dropLinesShown(intro, outro) : 1;
     for (let i = 0; i < nodes.length && count < EDGE_CAPACITY; i++) {
       // Only what stands clear of the bench has a height worth marking.
-      if (lift[i] < LIFT_REST + 0.06) continue;
+      if (lift[i] < LIFT_REST + 0.06 || dropLines <= 0) continue;
       const a = i * 3;
       const at = count * 3;
       ribbons.starts[at] = world[a];
@@ -1190,7 +1336,7 @@ const buildScene = ({
       ribbons.colors[at + 2] = sprites.colors[a + 2] * 0.5;
       const p = count * 4;
       ribbons.params[p] = 1;
-      ribbons.params[p + 1] = 0.5 * lifting;
+      ribbons.params[p + 1] = 0.5 * lifting * dropLines;
       ribbons.params[p + 2] = 0;
       ribbons.params[p + 3] = 1;
       count += 1;
@@ -1198,7 +1344,7 @@ const buildScene = ({
     ribbons.setCount(count);
     ribbons.commit();
 
-    const arrive = frame.intro * frame.intro * (3 - 2 * frame.intro);
+    const light = lightShown(outro);
     const pose = stage.rig.pose;
     const u = ribbons.material.uniforms;
     u.uResolution.value.set(
@@ -1207,15 +1353,15 @@ const buildScene = ({
     );
     u.uPixelRatio.value = stage.pixelRatio;
     u.uTime.value = frame.time * liveSpeedScale();
-    u.uStrength.value = arrive;
+    u.uStrength.value = light;
     u.uFog.value.set(pose.distance + 0.4, pose.distance + 3.2);
-    sprites.material.uniforms.uStrength.value = arrive;
+    sprites.material.uniforms.uStrength.value = light;
     sprites.material.uniforms.uFog.value.set(
       pose.distance + 0.4,
       pose.distance + 3.2
     );
     floor.material.uniforms.uOpacity.value =
-      FLOOR_OPACITY * arrive * (1 - reading);
+      FLOOR_OPACITY * benchShown(intro, outro) * (1 - reading);
 
     readout.write(now, () => {
       const score = Number.isFinite(bestScore) ? bestScore.toFixed(1) : '—';

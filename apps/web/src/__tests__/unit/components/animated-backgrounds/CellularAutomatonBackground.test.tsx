@@ -1,5 +1,8 @@
 import { act, render } from '@testing-library/react';
-import CellularAutomatonBackground from '../../../../components/animated-backgrounds/backgrounds/cellular-automaton/CellularAutomatonBackground';
+import * as THREE from 'three';
+import CellularAutomatonBackground, {
+  passageOf,
+} from '../../../../components/animated-backgrounds/backgrounds/cellular-automaton/CellularAutomatonBackground';
 import { LIFE_RULES } from '../../../../components/animated-backgrounds/backgrounds/cellular-automaton/config';
 
 const baseSettings: any = {
@@ -112,6 +115,123 @@ describe('CellularAutomatonBackground', () => {
       expect(random).not.toHaveBeenCalled();
 
       random.mockRestore();
+      unmount();
+    });
+  });
+
+  // Coming on and going off: the board is sown from the middle outward and
+  // cleared by a line across it, both in the shaders, from three numbers.
+  describe('arriving and leaving', () => {
+    interface StubRenderer {
+      render: jest.Mock;
+    }
+    const renderers = (): StubRenderer[] =>
+      (THREE.WebGLRenderer as unknown as { instances: StubRenderer[] })
+        .instances;
+
+    const frames = async (ms = 120) => {
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, ms));
+      });
+    };
+
+    /** The uniforms the board and its blocks were last drawn with. */
+    const drawnWith = () => {
+      const [renderer] = renderers();
+      const call = renderer.render.mock.calls.find(
+        ([scene]) => (scene as THREE.Scene).children.length >= 2
+      );
+      const scene = call?.[0] as THREE.Scene;
+      const materials = scene.children
+        .map(child => (child as THREE.Mesh).material as THREE.ShaderMaterial)
+        .filter(material => material?.uniforms?.uPassage);
+      return materials.map(material => ({
+        passage: material.uniforms.uPassage.value as THREE.Vector3,
+        strength: material.uniforms.uStrength.value as number,
+        heights: material.uniforms.uHeights?.value as THREE.Vector2 | undefined,
+      }));
+    };
+
+    beforeEach(() => {
+      renderers().length = 0;
+    });
+
+    it('is the whole board, at full light, once it has arrived', () => {
+      expect(passageOf({ intro: 1, outro: 0 })).toEqual({
+        sown: 1,
+        cleared: 0,
+        light: 1,
+      });
+    });
+
+    it('starts from nothing and ends at nothing', () => {
+      expect(passageOf({ intro: 0, outro: 0 }).light).toBe(0);
+      expect(passageOf({ intro: 1, outro: 1 }).light).toBe(0);
+      expect(passageOf({ intro: 1, outro: 1 }).cleared).toBe(1);
+    });
+
+    it('keeps its light while the line crosses, and loses it only at the end', () => {
+      // The clearing is the line's to show: the common light must not fade
+      // the board out from under it.
+      expect(passageOf({ intro: 1, outro: 0.5 }).light).toBe(1);
+      expect(passageOf({ intro: 1, outro: 0.8 }).light).toBe(1);
+      const late = passageOf({ intro: 1, outro: 0.95 }).light;
+      expect(late).toBeGreaterThan(0);
+      expect(late).toBeLessThan(0.5);
+    });
+
+    it('holds a still as the settled board: sown, uncleared, lit', async () => {
+      const { unmount } = render(
+        <CellularAutomatonBackground
+          className="bg"
+          settings={baseSettings}
+          frozen
+        />
+      );
+      await frames();
+      const drawn = drawnWith();
+      // The board and the blocks, told the same thing.
+      expect(drawn).toHaveLength(2);
+      for (const { passage, strength } of drawn) {
+        expect(passage.x).toBe(1);
+        expect(passage.y).toBe(0);
+        expect(strength).toBe(1);
+      }
+      // The blocks stand at their own heights: the rise is the shader's now,
+      // and what it is handed is never scaled.
+      const heights = drawn.find(entry => entry.heights)?.heights;
+      expect(heights?.x).toBeCloseTo(0.34);
+      expect(heights?.y).toBeCloseTo(2.3);
+      unmount();
+    });
+
+    it('is cleared, and dark, by the time it has been given to leave', async () => {
+      const { rerender, unmount } = render(
+        <CellularAutomatonBackground className="bg" settings={baseSettings} />
+      );
+      await frames();
+      expect(drawnWith()[0].passage.y).toBe(0);
+
+      rerender(
+        <CellularAutomatonBackground
+          className="bg"
+          settings={baseSettings}
+          leaving
+          leaveMs={100}
+        />
+      );
+      await frames(400);
+      for (const { passage, strength } of drawnWith()) {
+        expect(passage.y).toBe(1);
+        expect(strength).toBe(0);
+      }
+
+      // Told it can stay after all, it comes back.
+      rerender(
+        <CellularAutomatonBackground className="bg" settings={baseSettings} />
+      );
+      await frames(400);
+      for (const { passage } of drawnWith()) expect(passage.y).toBe(0);
       unmount();
     });
   });

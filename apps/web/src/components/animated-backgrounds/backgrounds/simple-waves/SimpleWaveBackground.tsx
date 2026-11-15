@@ -10,6 +10,7 @@ import {
   RESHAPE_SETTLE_MS,
   viewportReshaped,
 } from '../../core/notFoundSequence';
+import { clamp01, smooth } from '../../core/stage/passage';
 import { Pose } from '../../core/stage/rig';
 import { STAGE_GROUND, StageOptions } from '../../core/stage/stage';
 import { createReadout } from '../../core/stage/telemetry';
@@ -81,6 +82,103 @@ const RIPPLE_LIFE = 3.2;
 // A moving pointer leaves one this often, in world units of travel.
 const RIPPLE_EVERY = 0.42;
 
+// ── Coming on and going off ────────────────────────────────────────────────
+// The water is there before the waves are, and after them. The swell comes
+// on as a front spreading over still water from a point out in front of the
+// viewer, with a crest riding its leading edge the way the first wave of a
+// set does; it goes off the same way round — the sources fall silent, and
+// the calm spreads out from the same point behind one last trough. Then the
+// water's own light goes.
+//
+// The point both fronts spread from, on the ground plane (x, z): where the
+// camera is looking, a little beyond it.
+const FRONT_CENTRE: [number, number] = [0, -2.2];
+// How far a front has to travel before everything the fog lets through is
+// behind it. Past this the sheet is the horizon's own colour.
+const FRONT_REACH = 19;
+// How much water the swell takes to rise behind its front, and to settle
+// behind the calm, in world units.
+const SWELL_RISE = 2.6;
+const CALM_FALL = 1.8;
+// The radius that says "everywhere": a front that has long since passed.
+const EVERYWHERE = 1e3;
+// How high the wave on a front stands, as a fraction of the full sum.
+const CREST = 0.8;
+const TROUGH = 0.8;
+// The fraction of a leaving the calm takes to reach the horizon, and the
+// fraction after which the water's own light starts to go: by then the calm
+// is past everything near enough to be seen moving.
+const CALM_BY = 0.86;
+const DARK_FROM = 0.58;
+// The fraction of an arrival in which the still water comes up out of the
+// dark, ahead of the swell.
+const WATER_BY = 0.24;
+// How a front's radius grows with its share of the time: slow off the mark
+// and quick to the horizon. Most of the picture is the water nearest the
+// viewer, and a front that crossed it at its average speed would be gone in
+// a few frames.
+const FRONT_PACE = 2.1;
+
+export const INTRO_SECONDS = 2.2;
+
+/**
+ * What an arrival and a leaving ask of the sheet, as the numbers its shader
+ * takes: how far the swell has spread, how far the calm has, the wave riding
+ * whichever front is moving (signed, as a fraction of the full sum, with the
+ * radius it is at), and how much of the water's light is up.
+ *
+ * Arrived and not leaving, these are "everywhere", "nowhere", no wave and
+ * all of it — at which the shader's sum is the three sines and nothing else.
+ */
+export interface WavePassage {
+  swell: number;
+  calm: number;
+  wave: number;
+  waveAt: number;
+  light: number;
+}
+
+export const passageOf = (intro: number, outro: number): WavePassage => {
+  const coming = clamp01(intro);
+  const going = clamp01(outro);
+
+  // Arrived, the swell is everywhere.
+  const swell =
+    coming >= 1
+      ? EVERYWHERE
+      : (FRONT_REACH + SWELL_RISE) * Math.pow(coming, FRONT_PACE);
+
+  // The calm crosses in the first part of a leaving, however long the
+  // leaving is, and holds the water flat for the rest.
+  const crossing = clamp01(going / CALM_BY);
+  const calm =
+    going <= 0
+      ? -EVERYWHERE
+      : (FRONT_REACH + CALM_FALL) * Math.pow(crossing, FRONT_PACE);
+
+  // One wave, on whichever front is moving. It gathers as the front sets
+  // out and is spent before the front has finished, so that neither end of
+  // either movement has a wave standing in it.
+  let wave = 0;
+  let waveAt = 0;
+  if (going > 0) {
+    wave =
+      -TROUGH * smooth(crossing / 0.2) * (1 - smooth((crossing - 0.7) / 0.3));
+    // Behind the calm's own edge, on water that is already flat: a ring
+    // following the swell out, not a hole dug in it.
+    waveAt = calm - CALM_FALL;
+  } else if (coming < 1) {
+    wave = CREST * smooth(coming / 0.2) * (1 - smooth((coming - 0.7) / 0.3));
+    waveAt = swell;
+  }
+
+  const light =
+    smooth(coming / WATER_BY) *
+    (1 - smooth((going - DARK_FROM) / (1 - DARK_FROM)));
+
+  return { swell, calm, wave, waveAt, light };
+};
+
 /**
  * Where the camera rests: low over the water, looking along it. Low enough
  * that the horizon is in the picture — the sheet takes the lower two thirds
@@ -130,6 +228,8 @@ const stageOptions = (): StageOptions => ({
     parallax: { azimuth: 0.06, elevation: 0.03, hiddenGain: 3.5 },
     scroll: { elevation: 0.05, distance: -0.04 },
   },
+  // Long enough for the front to be watched across the water.
+  introSeconds: INTRO_SECONDS,
   far: 80,
   bloom: { strength: 0.6, threshold: 0.7, knee: 0.6, radius: 0.75 },
   grade: { vignette: 0.34 },
@@ -153,6 +253,14 @@ const FIELD = /* glsl */ `
   uniform sampler2D uField;
   uniform float uNotFound;
   uniform float uAspect;
+  // Coming on and going off (see passageOf): how far the swell has spread
+  // from the centre and how far the calm has, and the wave riding the front
+  // that is moving — its height in the sum's own units, and where it is.
+  uniform vec2 uFronts;
+  uniform vec2 uFrontWave;
+  const vec2 FRONT_CENTRE = vec2(${FRONT_CENTRE[0].toFixed(2)}, ${FRONT_CENTRE[1].toFixed(2)});
+  const float SWELL_RISE = ${SWELL_RISE.toFixed(2)};
+  const float CALM_FALL = ${CALM_FALL.toFixed(2)};
 
   // The number's field at a point: the baked sines and cosines, turned
   // against each other by the clock. Zero outside the frame it was baked in.
@@ -205,6 +313,26 @@ const FIELD = /* glsl */ `
       sum += envelope * wave;
       float along = envelope * (RIPPLE_K * cos(RIPPLE_K * u) - 2.0 * u / (width * width) * wave);
       slope += away / d * along;
+    }
+
+    // The swell is where its front has been and the calm's has not. With
+    // both at rest this is one everywhere, and the sum is untouched.
+    vec2 out_ = p - FRONT_CENTRE;
+    float r = length(out_) + 1e-4;
+    float present =
+      (1.0 - smoothstep(uFronts.x - SWELL_RISE, uFronts.x, r)) *
+      smoothstep(uFronts.y - CALM_FALL, uFronts.y, r);
+    sum *= present;
+    slope *= present;
+
+    // And the wave on the front itself: a single ring, wider the further it
+    // has run.
+    if (uFrontWave.x != 0.0) {
+      float u = r - uFrontWave.y;
+      float width = 0.27 + 0.034 * uFrontWave.y;
+      float ring = uFrontWave.x * exp(-(u * u) / (width * width));
+      sum += ring;
+      slope += out_ / r * (-2.0 * u / (width * width) * ring);
     }
     return sum;
   }
@@ -296,7 +424,8 @@ const FRAGMENT = /* glsl */ `
     vec3 horizon = uGround + uPrimary * 0.05 * smoothstep(0.6, 1.0, haze);
     color = mix(color, horizon, haze);
 
-    gl_FragColor = vec4(color * uStrength, 1.0);
+    // Unlit, the sheet is the ground it lies on rather than a black one.
+    gl_FragColor = vec4(mix(uGround, color, uStrength), 1.0);
   }
 `;
 
@@ -459,6 +588,8 @@ const buildScene = ({
       uField: { value: baked.texture },
       uNotFound: { value: 0 },
       uAspect: { value: stage.aspect },
+      uFronts: { value: new THREE.Vector2(0, -EVERYWHERE) },
+      uFrontWave: { value: new THREE.Vector2(0, 0) },
       uHeight: { value: HEIGHT_SCALE },
       uFull: { value: 1 },
       uPrimary: { value: asColor(live0.colors.primary) },
@@ -595,23 +726,30 @@ const buildScene = ({
 
     if (!frame.frozen) applyPointer(progress);
 
-    const arrive = frame.intro * frame.intro * (3 - 2 * frame.intro);
+    const passage = passageOf(frame.intro, frame.outro);
     const u = material.uniforms;
     u.uPhase.value = phase;
     u.uClock.value = clock;
     u.uNotFound.value = progress;
     u.uFrequency.value = live.waveFrequency;
-    // The swell rises as the scene arrives: flat water first, then waves.
-    u.uAmplitude.value = live.waveAmplitude * (0.15 + 0.85 * arrive);
+    u.uAmplitude.value = live.waveAmplitude;
     // The three components reach 2.2 between them when they all agree; the
     // number's sources, normalised where they crowd, reach about 1.3.
-    u.uFull.value = Math.max(
+    const full = Math.max(
       0.05,
       live.waveAmplitude * (2.2 + (1.3 - 2.2) * progress)
     );
+    u.uFull.value = full;
     u.uAspect.value = glyphSize.width / glyphSize.height;
-    u.uStrength.value = arrive;
-    skyMaterial.uniforms.uStrength.value = arrive * (1 - progress);
+    // Flat water first, then the swell across it; and at the other end the
+    // calm across it, then the water's light.
+    (u.uFronts.value as THREE.Vector2).set(passage.swell, passage.calm);
+    (u.uFrontWave.value as THREE.Vector2).set(
+      passage.wave * full,
+      passage.waveAt
+    );
+    u.uStrength.value = passage.light;
+    skyMaterial.uniforms.uStrength.value = passage.light * (1 - progress);
     // The number is read from overhead, where there is no distance to haze.
     u.uFog.value = FOG * (1 - progress);
     (u.uPrimary.value as THREE.Color).setRGB(

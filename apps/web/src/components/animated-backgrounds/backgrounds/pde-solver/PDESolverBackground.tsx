@@ -17,6 +17,14 @@ import {
   viewportReshaped,
 } from '../../core/notFoundSequence';
 import { createFloor } from '../../core/stage/floor';
+import {
+  clamp01,
+  easeIn,
+  easeOut,
+  PASSAGE_GLSL,
+  presenceOf,
+  smooth,
+} from '../../core/stage/passage';
 import { Pose } from '../../core/stage/rig';
 import { STAGE_GROUND, StageOptions } from '../../core/stage/stage';
 import { createReadout } from '../../core/stage/telemetry';
@@ -171,6 +179,22 @@ export const readingPose = (aspect: number): Pose => ({
   fov: FOV_DEGREES,
 });
 
+// The passage's timetable, as fractions of the arrival and of the leaving.
+// Arriving (two seconds): the sheet is up and lit in the first half, the
+// relief starts through it a quarter of the way in, and the bench follows.
+const INTRO_SECONDS = 2;
+const RISE_FROM = -0.24;
+const RISE_UNTIL = 0.6;
+const LIT_UNTIL = 0.3;
+const SWELL_FROM = 0.22;
+const BENCH_FROM = 0.3;
+// Leaving (0.65 s asked for, 1.1 s on the cycle): slack by three fifths of
+// the way, sinking from a third, dark over the last quarter.
+const SLACK_UNTIL = 0.62;
+const SINK_FROM = 0.3;
+const DARK_FROM = 0.72;
+const BENCH_DARK_FROM = 0.78;
+
 const stageOptions = (): StageOptions => ({
   rig: {
     base: restPose,
@@ -180,21 +204,49 @@ const stageOptions = (): StageOptions => ({
   },
   bloom: { strength: 0.5, threshold: 0.8, knee: 0.55, radius: 0.7 },
   grade: { vignette: 0.36 },
+  introSeconds: INTRO_SECONDS,
 });
+
+// How the membrane comes on and goes off (core/stage/passage.ts), as far as
+// the plate itself goes. The field is the solver's and is never touched: what
+// changes is how much of it the sheet is showing. Arriving, the sheet is
+// flat and the relief swells up through it from the middle outward, a little
+// past its mark and back, like a skin drawn taut and then struck. Leaving, it
+// goes slack from the rim inward, and the last of the relief is the middle's.
+// Both are one number a vertex — its distance from the centre is its place
+// in the queue — so the whole of it is two uniforms.
+const SWELL_SPAN = 0.5;
+const SLACK_SPAN = 0.55;
 
 const VERTEX = /* glsl */ `
   attribute float aValue;
+  uniform float uSwell;
+  uniform float uSlack;
   varying vec3 vWorld;
   varying vec3 vNormal;
   varying vec2 vUv;
   varying float vValue;
+  varying float vRelief;
+  ${PASSAGE_GLSL}
 
   void main() {
     vUv = uv;
-    vValue = aValue;
-    vec4 world = modelMatrix * vec4(position, 1.0);
+
+    // 0 at the centre of the plate, 1 at its corners.
+    float away = length(uv - 0.5) * 1.41421356;
+    float up = passage(uSwell, away, ${SWELL_SPAN.toFixed(2)}) - 1.0;
+    float swell = 1.0 + 2.2 * up * up * up + 1.2 * up * up;
+    float down = passage(uSlack, 1.0 - away, ${SLACK_SPAN.toFixed(2)});
+    float slack = down * down * (3.0 - 2.0 * down);
+    float relief = swell * (1.0 - slack);
+    vRelief = relief;
+
+    vValue = aValue * relief;
+    // The height is the plane's own z, and a height field's normal leans by
+    // its slope — so less relief is the same normal, stood up by as much.
+    vec4 world = modelMatrix * vec4(position.xy, position.z * relief, 1.0);
     vWorld = world.xyz;
-    vNormal = normalize(mat3(modelMatrix) * normal);
+    vNormal = normalize(mat3(modelMatrix) * vec3(normal.xy * relief, normal.z));
     gl_Position = projectionMatrix * viewMatrix * world;
   }
 `;
@@ -221,6 +273,9 @@ const FRAGMENT = /* glsl */ `
   varying vec3 vNormal;
   varying vec2 vUv;
   varying float vValue;
+  varying float vRelief;
+  uniform float uSwell;
+  uniform float uSlack;
 
   float lineOn(float coord, float weight) {
     float rate = max(fwidth(coord), 1e-5);
@@ -239,7 +294,9 @@ const FRAGMENT = /* glsl */ `
     float highlight = pow(max(dot(n, normalize(uLight + v)), 0.0), 34.0);
     float rim = pow(1.0 - max(dot(n, v), 0.0), 4.0);
 
-    float contour = lineOn(s * uContours, 1.3);
+    // A sheet lying flat has no heights to draw lines of equal height
+    // between: they come up with the relief.
+    float contour = lineOn(s * uContours, 1.3) * min(vRelief, 1.0);
 
     vec2 cell = vUv * uCells / uGridEvery;
     vec2 cellRate = max(fwidth(cell), vec2(1e-5));
@@ -261,6 +318,17 @@ const FRAGMENT = /* glsl */ `
     color += mix(vec3(1.0), tint, 0.75) * highlight * (0.025 + 0.3 * magnitude);
     color += tint * rim * 0.4 * lift;
     color += vec3(0.72, 0.82, 1.0) * frame * 0.42;
+    // The line the change is passing through: a ring running out through
+    // the sheet with the relief half up behind it, and in from the rim with
+    // the relief half gone. Where each vertex is half way is a radius (see
+    // the vertex shader), and off the plate altogether once either is done.
+    float away = length(vUv - 0.5) * 1.41421356;
+    float swellAt = (uSwell - ${(SWELL_SPAN / 2).toFixed(3)}) / ${(1 - SWELL_SPAN).toFixed(3)};
+    float slackAt = 1.0 - (uSlack - ${(SLACK_SPAN / 2).toFixed(3)}) / ${(1 - SLACK_SPAN).toFixed(3)};
+    vec2 off = (vec2(away) - vec2(swellAt, slackAt)) / 0.028;
+    float tension = exp(-off.x * off.x) * step(uSwell, 0.999)
+      + exp(-off.y * off.y) * step(0.001, uSlack);
+    color += vec3(0.72, 0.82, 1.0) * tension * 0.2;
 
     // The pointer's mark on the plate: a ring where its ray lands.
     vec2 fromProbe = (vUv - uProbe.xy) * 2.0;
@@ -481,6 +549,10 @@ const buildScene = ({
       uLight: { value: new THREE.Vector3(-0.45, 0.72, 0.52).normalize() },
       uGround: { value: new THREE.Color(STAGE_GROUND) },
       uProbe: { value: new THREE.Vector4(0.5, 0.5, 0.06, 0) },
+      // How far the relief has swelled up through the sheet, and how far it
+      // has drained out of it again: see VERTEX.
+      uSwell: { value: 1 },
+      uSlack: { value: 0 },
       uStrength: { value: 1 },
       uFogFrom: { value: 2 },
       uFogTo: { value: 5 },
@@ -825,24 +897,46 @@ const buildScene = ({
       plate.rotation.y += (upright - plate.rotation.y) * righting;
     }
 
-    // The plate rises into place as it arrives, and the fog is set to where
-    // the camera actually is: near its near edge, gone a plate's width on.
-    const arrive = frame.intro * frame.intro * (3 - 2 * frame.intro);
-    plate.position.y = (1 - arrive) * -0.18;
+    // Coming on: a flat, unlit sheet rises into place, the relief swells up
+    // through it from the middle, and the bench it stands over — its grid,
+    // the reflection in it — arrives behind. Going off: the sheet goes slack
+    // from the rim inward, then sinks into its own reflection, which meets it
+    // at the bench, and the light goes out of both there. Every term is a
+    // function of where the passage has got to and nothing else, so a leave
+    // that is taken back plays the same film the other way.
+    const { leave } = presenceOf(frame);
+    const intro = frame.intro;
+    const sinking = easeIn((leave - SINK_FROM) / (1 - SINK_FROM));
+    const lit = 1 - smooth((leave - DARK_FROM) / (1 - DARK_FROM));
+    plate.position.y =
+      (1 - easeOut(intro / RISE_UNTIL)) * RISE_FROM + sinking * FLOOR_HEIGHT;
     reflection.position.y = 2 * FLOOR_HEIGHT - plate.position.y;
     reflection.rotation.y = plate.rotation.y;
-    material.uniforms.uStrength.value = arrive;
+    const swell = clamp01((intro - SWELL_FROM) / (1 - SWELL_FROM));
+    const slack = clamp01(leave / SLACK_UNTIL);
+    for (const each of [material, mirrorMaterial]) {
+      each.uniforms.uSwell.value = swell;
+      each.uniforms.uSlack.value = slack;
+    }
+    material.uniforms.uStrength.value = smooth(intro / LIT_UNTIL) * lit;
     // Nothing to reflect in from straight overhead, and the number is read
     // from there.
     mirrorMaterial.uniforms.uStrength.value =
-      MIRROR_STRENGTH * arrive * (1 - reading);
+      MIRROR_STRENGTH *
+      smooth((intro - BENCH_FROM) / (1 - BENCH_FROM)) *
+      lit *
+      (1 - reading);
     const distance = stage.rig.pose.distance;
     for (const each of [material, mirrorMaterial]) {
       each.uniforms.uFogFrom.value = distance - 0.2;
       each.uniforms.uFogTo.value = distance + PLANE_SIZE * 1.6;
     }
+    // The bench is the last thing left and the last to go.
     floor.material.uniforms.uOpacity.value =
-      FLOOR_OPACITY * arrive * (1 - reading);
+      FLOOR_OPACITY *
+      smooth((intro - BENCH_FROM) / (1 - BENCH_FROM)) *
+      (1 - smooth((leave - BENCH_DARK_FROM) / (1 - BENCH_DARK_FROM))) *
+      (1 - reading);
 
     readout.write(frame.now, () => {
       const kind = live.equationType === 'heat' ? 'heat' : 'wave';

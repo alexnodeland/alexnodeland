@@ -7,6 +7,7 @@ import {
   RESHAPE_SETTLE_MS,
   viewportReshaped,
 } from '../../core/notFoundSequence';
+import { clamp01, easeIn, easeOut, smooth } from '../../core/stage/passage';
 import { Pose } from '../../core/stage/rig';
 import { STAGE_GROUND, StageOptions } from '../../core/stage/stage';
 import { createReadout } from '../../core/stage/telemetry';
@@ -90,6 +91,35 @@ const FADER_SECONDS = 1.5;
 // of a clipped one.
 const SUNG_LEVEL = 0.2;
 
+// Coming on and going off (core/stage/passage.ts), as an instrument does.
+//
+// Switched on, the trace is drawn across the front from one end to the other
+// behind a bright head, and then the display is laid out behind it: a line
+// runs from the present back into the history, and what is behind the line
+// is the waterfall. Switched off, it is a cathode-ray tube: the history
+// folds down to the floor from the far end forward, the trace loses its
+// height and is a straight bright line, the line closes on its middle, and
+// the dot that is left goes out.
+//
+// The arrival is given this long, of which the trace takes the first part
+// and the laying-out the rest.
+const INTRO_SECONDS = 2;
+const TRACE_DRAWN = [0.08, 0.42] as const;
+const HISTORY_LAID = [0.3, 1] as const;
+// The leaving, in fractions of however long it is given. All of it is over
+// by four fifths: the stage takes the canvas down across the last fifth.
+const HISTORY_FOLDED = [0, 0.52] as const;
+const TRACE_FLAT = [0.2, 0.5] as const;
+const LINE_CLOSED = [0.46, 0.76] as const;
+const DOT_OUT = [0.74, 0.9] as const;
+// How much of the history's depth a row takes to stand up behind the line
+// that lays it, and how far the laid edge has to be carried past the far end
+// for the last row to have finished.
+const LAY_BAND = 0.12;
+
+const between = (t: number, [from, to]: readonly [number, number]): number =>
+  clamp01((t - from) / (to - from));
+
 export const FOV_DEGREES = 40;
 const TAN_HALF_FOV = Math.tan((FOV_DEGREES * Math.PI) / 360);
 
@@ -137,6 +167,7 @@ const stageOptions = (): StageOptions => ({
   },
   bloom: { strength: 0.66, threshold: 0.66, knee: 0.6, radius: 0.72 },
   grade: { vignette: 0.36 },
+  introSeconds: INTRO_SECONDS,
 });
 
 const TERRAIN_VERTEX = /* glsl */ `
@@ -146,6 +177,7 @@ const TERRAIN_VERTEX = /* glsl */ `
   uniform float uFrac;
   uniform float uFront;
   uniform vec3 uSize;
+  uniform vec2 uLaid;
   varying vec3 vWorld;
   varying float vLevel;
   varying float vRow;
@@ -159,7 +191,12 @@ const TERRAIN_VERTEX = /* glsl */ `
     float level = texture2D(uSpectrum, vec2(uv.x, (uHead - row + 0.5) / uRows)).r;
     float back = max(0.0, row - 1.0 + uFrac) * (uSize.z / (uRows - 1.0));
 
-    vec3 world = vec3((uv.x - 0.5) * uSize.x, level * uSize.y, uFront - back);
+    // A row stands up over a little depth behind the edge the display has
+    // been laid out to, and lies flat beyond it.
+    float laid = uLaid.x - row / (uRows - 1.0);
+    float stand = smoothstep(0.0, ${LAY_BAND.toFixed(3)}, laid);
+
+    vec3 world = vec3((uv.x - 0.5) * uSize.x, level * uSize.y * stand, uFront - back);
     vWorld = world;
     vLevel = level;
     vRow = row;
@@ -187,6 +224,7 @@ const TERRAIN_FRAGMENT = /* glsl */ `
   uniform float uReading;
   uniform vec4 uAxis;
   uniform vec3 uProbe;
+  uniform vec2 uLaid;
   varying vec3 vWorld;
   varying float vLevel;
   varying float vRow;
@@ -240,12 +278,23 @@ const TERRAIN_FRAGMENT = /* glsl */ `
 
     color *= uBrightness;
 
+    // The edge the display is laid out to, or folded back to: a bright line
+    // across the whole width with a little glow behind it, and nothing at
+    // all beyond. (uLaid.y is zero whenever the display is simply there.)
+    float laid = uLaid.x - vRow / (uRows - 1.0);
+    float edge = exp(-pow((laid - 0.012) / 0.007, 2.0)) * 1.8
+      + exp(-pow(max(laid, 0.0) / 0.07, 2.0)) * 0.5 * step(0.0, laid);
+    color += mix(uMid, vec3(1.0), 0.35) * edge * uLaid.y;
+
     // The sides and the far end fall away into the ground. Read from
     // overhead there is no far end: the whole history is the picture.
     float sides = smoothstep(0.5, 0.42, abs(vAcross - 0.5));
     float age = (uFront - vWorld.z) / uSize.z;
     float depth = mix(1.0 - smoothstep(0.35, 1.0, age), 1.0, uReading);
-    color = mix(uGround, color, sides * depth);
+    // The laying edge is seen further back than the history is: it is the
+    // one thing there, and it is what says how deep the display goes.
+    depth = mix(depth, 1.0, 0.45 * min(1.0, edge) * min(1.0, uLaid.y));
+    color = mix(uGround, color, sides * depth * smoothstep(0.0, 0.012, laid));
 
     gl_FragColor = vec4(mix(uGround, color, uStrength), 1.0);
   }
@@ -253,9 +302,12 @@ const TERRAIN_FRAGMENT = /* glsl */ `
 
 const TRACE_VERTEX = /* glsl */ `
   attribute float aSide;
+  attribute float aAlong;
   varying float vSide;
+  varying float vAlong;
   void main() {
     vSide = aSide;
+    vAlong = aAlong;
     gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
   }
 `;
@@ -263,13 +315,27 @@ const TRACE_VERTEX = /* glsl */ `
 const TRACE_FRAGMENT = /* glsl */ `
   uniform vec3 uColor;
   uniform float uBrightness;
+  uniform vec3 uDrawn;
   varying float vSide;
+  varying float vAlong;
   void main() {
     // A bright core in a soft line: the phosphor, and its glow.
     float across = abs(vSide);
     float core = 1.0 - smoothstep(0.0, 0.34, across);
     float glow = pow(1.0 - across, 2.0);
-    gl_FragColor = vec4(uColor * (core * 2.2 + glow * 0.55) * uBrightness, 1.0);
+
+    // As it is switched on the trace is drawn, from whichever end uDrawn.z
+    // says, as far as uDrawn.x — with the spot that draws it, uDrawn.y
+    // bright, at its head. Drawn, all three leave the line as it was.
+    float along = mix(vAlong, 1.0 - vAlong, uDrawn.z);
+    float behind = uDrawn.x - along;
+    float drawn = smoothstep(0.0, 0.008, behind);
+    float head = exp(-pow(behind / 0.035, 2.0)) * uDrawn.y;
+
+    gl_FragColor = vec4(
+      uColor * (core * 2.2 + glow * 0.55) * uBrightness * drawn * (1.0 + 4.0 * head),
+      1.0
+    );
   }
 `;
 
@@ -396,6 +462,10 @@ const buildScene = ({
       uBrightness: { value: 1 },
       uStrength: { value: 0 },
       uReading: { value: 0 },
+      // x: how far back the display is laid out, in depths of the history
+      // (past 1 + the band a row stands up over, all of it). y: how bright
+      // the edge it is laid out to is drawn.
+      uLaid: { value: new THREE.Vector2(0, 0) },
       // x: logarithmic or not. y, z: the logs of the axis's two ends.
       uAxis: { value: new THREE.Vector4(1, 0, 1, 0) },
       // x: where along the axis the probe is. y: how present it is.
@@ -413,10 +483,13 @@ const buildScene = ({
   const POINTS = dense ? 420 : 260;
   const tracePositions = new Float32Array(POINTS * 2 * 3);
   const traceSides = new Float32Array(POINTS * 2);
+  // How far along the trace each sample is: what it is drawn by, arriving.
+  const traceAlong = new Float32Array(POINTS * 2);
   const traceIndex: number[] = [];
   for (let i = 0; i < POINTS; i++) {
     traceSides[i * 2] = -1;
     traceSides[i * 2 + 1] = 1;
+    traceAlong[i * 2] = traceAlong[i * 2 + 1] = i / (POINTS - 1);
     if (i < POINTS - 1) {
       const a = i * 2;
       traceIndex.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
@@ -427,6 +500,10 @@ const buildScene = ({
   tracePositionAttribute.setUsage(THREE.DynamicDrawUsage);
   traceGeometry.setAttribute('position', tracePositionAttribute);
   traceGeometry.setAttribute('aSide', new THREE.BufferAttribute(traceSides, 1));
+  traceGeometry.setAttribute(
+    'aAlong',
+    new THREE.BufferAttribute(traceAlong, 1)
+  );
   traceGeometry.setIndex(traceIndex);
   const traceMaterial = new THREE.ShaderMaterial({
     vertexShader: TRACE_VERTEX,
@@ -434,6 +511,9 @@ const buildScene = ({
     uniforms: {
       uColor: { value: terrainMaterial.uniforms.uMid.value },
       uBrightness: { value: 1 },
+      // x: how far along it is drawn (past 1, all of it). y: how bright the
+      // spot drawing it is. z: 0 drawn from the left, 1 from the right.
+      uDrawn: { value: new THREE.Vector3(2, 0, 0) },
     },
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -445,26 +525,37 @@ const buildScene = ({
   stage.scene.add(trace);
   const traceY = new Float32Array(POINTS);
 
-  /** Lay the trace along the most recent samples. */
-  const writeTrace = (live: SpectrogramOscilloscopeSettings, width: number) => {
+  /**
+   * Lay the trace along the most recent samples. `swing` is how much of its
+   * height it has and `spread` how much of its width: both 1, except while
+   * the tube is being switched off, when the first goes and then the second.
+   */
+  const writeTrace = (
+    live: SpectrogramOscilloscopeSettings,
+    width: number,
+    swing = 1,
+    spread = 1
+  ) => {
     // A couple of periods of the first oscillator, ending on the start of
     // one of its cycles — a scope's trigger, which is what holds a waveform
     // still enough to be looked at.
     const period = SAMPLE_RATE / Math.max(20, live.vco1Frequency);
     const span = Math.max(160, Math.min(3000, period * 2.5));
     const sinceTrigger = (synth.carrierPhase % 1) * period;
-    const thickness = 0.011 * live.waveformThickness;
+    // The line fattens a little as it closes: what is left at the end is a
+    // spot, not a hair.
+    const thickness = 0.011 * live.waveformThickness * (1 + 1.5 * (1 - spread));
 
     for (let i = 0; i < POINTS; i++) {
       const back = sinceTrigger + (1 - i / (POINTS - 1)) * span;
       const whole = Math.floor(back);
       const t = back - whole;
       const sample = synth.at(whole) * (1 - t) + synth.at(whole + 1) * t;
-      traceY[i] = Math.max(-1.6, Math.min(1.6, sample)) * SCOPE_SWING;
+      traceY[i] = Math.max(-1.6, Math.min(1.6, sample)) * SCOPE_SWING * swing;
     }
-    const step = width / (POINTS - 1);
+    const step = (width * spread) / (POINTS - 1);
     for (let i = 0; i < POINTS; i++) {
-      const x = -width / 2 + i * step;
+      const x = (-width * spread) / 2 + i * step;
       const y = SCOPE_LEVEL + traceY[i];
       // Across the line: the direction to the next sample, turned a quarter.
       const before = traceY[Math.max(0, i - 1)];
@@ -667,15 +758,30 @@ const buildScene = ({
       }
     }
 
-    writeTrace(live, WIDTH);
+    // Coming on and going off: see the note by INTRO_SECONDS.
+    const { intro, outro } = frame;
+    const drawn = easeOut(between(intro, TRACE_DRAWN));
+    const laidOut = smooth(between(intro, HISTORY_LAID));
+    const folded = smooth(between(outro, HISTORY_FOLDED));
+    const flat = smooth(between(outro, TRACE_FLAT));
+    const closed = easeIn(between(outro, LINE_CLOSED));
+    const out = smooth(between(outro, DOT_OUT));
+    // How much of the history is standing, and whether its edge is moving:
+    // the edge is lit while it travels and not once it has arrived.
+    const laid = laidOut * (1 - folded);
+    const laying =
+      Math.sin(Math.PI * between(intro, HISTORY_LAID)) * (intro < 1 ? 1 : 0) +
+      Math.sin(Math.PI * Math.min(1, between(outro, HISTORY_FOLDED) * 1.15));
 
-    const arrive = frame.intro * frame.intro * (3 - 2 * frame.intro);
+    writeTrace(live, WIDTH, 1 - flat, Math.max(0.004, 1 - closed));
+
     const u = terrainMaterial.uniforms;
     u.uHead.value = head;
     u.uFrac.value = frac;
-    u.uSize.value.set(width, HEIGHT * (0.2 + 0.8 * arrive), DEPTH);
+    u.uSize.value.set(width, HEIGHT, DEPTH);
     u.uBrightness.value = live.spectrogramBrightness;
-    u.uStrength.value = arrive;
+    u.uStrength.value = smooth(intro * 4) * (1 - out);
+    u.uLaid.value.set(laid * (1 + LAY_BAND), Math.max(0, laying));
     u.uReading.value = voicing;
     const logarithmic = live.useLogScale > 0.5;
     u.uAxis.value.set(
@@ -706,8 +812,19 @@ const buildScene = ({
     );
     // The trace is the present, and from overhead the present is an edge:
     // it stands down while the number is read.
+    // Switched off, the same beam is spent on less and less line: brighter
+    // as it flattens, brighter again as it closes, and then gone.
     traceMaterial.uniforms.uBrightness.value =
-      live.waveformBrightness * arrive * (1 - voicing);
+      live.waveformBrightness *
+      (1 - voicing) *
+      (1 + 0.8 * flat + 2.2 * closed) *
+      (1 - out);
+    (traceMaterial.uniforms.uDrawn.value as THREE.Vector3).set(
+      // Carried past the far end, so the last of it is fully drawn.
+      drawn * 1.02,
+      Math.sin(Math.PI * between(intro, TRACE_DRAWN)) * (intro < 1 ? 1 : 0),
+      frame.heading < 0 ? 1 : 0
+    );
 
     readout.write(frame.now, () => {
       if (probeHertz > 0) {

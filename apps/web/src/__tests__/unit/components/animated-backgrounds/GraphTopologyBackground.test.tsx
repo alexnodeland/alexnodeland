@@ -1,11 +1,23 @@
-import {
+import { act, render } from '@testing-library/react';
+import React from 'react';
+import * as THREE from 'three';
+import { graphTopologyConfig } from '../../../../components/animated-backgrounds/backgrounds/graph-topology/config';
+import GraphTopologyBackground, {
+  benchShown,
   calculateSubgraphConductivity,
   createClusteredGraph,
+  dropLinesShown,
+  lightShown,
+  linkRun,
+  NodePassage,
+  nodePassage,
   readingPose,
   restPose,
   showPose,
 } from '../../../../components/animated-backgrounds/backgrounds/graph-topology/GraphTopologyBackground';
+import { getCompleteSettings } from '../../../../components/animated-backgrounds/core/baseConfig';
 import { distanceToFit } from '../../../../components/animated-backgrounds/core/stage/rig';
+import { setReadout } from '../../../../components/animated-backgrounds/core/stage/telemetry';
 
 // A generator a test can replay: the layout and the search are both seeded.
 const seeded = (seed: number) => () => {
@@ -116,5 +128,179 @@ describe('where the scheduler’s camera stands', () => {
     expect(pose.target).toEqual([0, 0, 0]);
     // One unit of the layout either side of the centre fills the height.
     expect(pose.distance).toBeCloseTo(distanceToFit(1, pose.fov));
+  });
+});
+
+describe('the network being wired up, and unplugged', () => {
+  const at = (intro: number, outro: number, order: number): NodePassage =>
+    nodePassage(intro, outro, order, { height: 0, size: 1, glint: 0 });
+
+  it('is exactly the network once it has arrived and until it is asked to go', () => {
+    for (const order of [0, 0.37, 1]) {
+      expect(at(1, 0, order)).toEqual({ height: 0, size: 1, glint: 0 });
+      expect(linkRun(1, 0, order)).toBe(1);
+    }
+    expect(benchShown(1, 0)).toBe(1);
+    expect(dropLinesShown(1, 0)).toBe(1);
+    expect(lightShown(0)).toBe(1);
+  });
+
+  it('starts from a bare bench: no machine has a size and no link any length', () => {
+    for (const order of [0, 0.5, 1]) {
+      expect(at(0, 0, order).size).toBe(0);
+      expect(at(0, 0, order).height).toBeGreaterThan(0.3);
+      expect(linkRun(0, 0, order)).toBe(0);
+    }
+    expect(benchShown(0, 0)).toBe(0);
+  });
+
+  it('sets the machines down in the order they are numbered', () => {
+    // A third of the way in the first is on the bench, one from the middle
+    // of the queue is on its way down, and the last has not appeared.
+    expect(at(0.34, 0, 0)).toMatchObject({ height: 0, size: 1 });
+    const falling = at(0.34, 0, 0.5);
+    expect(falling.size).toBeGreaterThan(0);
+    expect(falling.height).toBeGreaterThan(0);
+    expect(at(0.34, 0, 1).size).toBe(0);
+  });
+
+  it('lands a machine with a little weight: past its place, and back to it', () => {
+    const heights = Array.from(
+      { length: 60 },
+      (_, i) => at((i / 59) * 0.25, 0, 0).height
+    );
+    expect(Math.min(...heights)).toBeLessThan(0);
+    expect(Math.min(...heights)).toBeGreaterThan(-0.05);
+    expect(heights[heights.length - 1]).toBeCloseTo(0, 5);
+  });
+
+  it('runs no link to a machine that has not landed yet', () => {
+    for (const order of [0, 0.25, 0.5, 0.75, 1]) {
+      for (let intro = 0; intro <= 1; intro += 0.01) {
+        if (linkRun(intro, 0, order) > 0) {
+          // The later of its two machines is all but down by then.
+          expect(at(intro, 0, order).height).toBeLessThan(0.05);
+          expect(at(intro, 0, order).size).toBe(1);
+          break;
+        }
+      }
+      // …and every link is run by the time the arrival is over.
+      expect(linkRun(0.95, 0, order)).toBe(1);
+    }
+  });
+
+  it('only ever runs a link further as the scene arrives', () => {
+    let previous = 0;
+    for (let intro = 0; intro <= 1.0001; intro += 0.02) {
+      const run = linkRun(intro, 0, 0.6);
+      expect(run).toBeGreaterThanOrEqual(previous);
+      previous = run;
+    }
+  });
+
+  it('pulls the links back before it lets the machines go, last down first away', () => {
+    // A little way into the leaving the last link to be run is on its way
+    // back while the first is still whole, and no machine has moved.
+    expect(linkRun(1, 0.2, 1)).toBeLessThan(1);
+    expect(linkRun(1, 0.2, 0)).toBe(1);
+    expect(at(1, 0.2, 1)).toEqual({ height: 0, size: 1, glint: 0 });
+
+    // Further in, the last machine down is rising while the first sits.
+    expect(at(1, 0.5, 1).height).toBeGreaterThan(0);
+    expect(at(1, 0.5, 1).size).toBeLessThan(1);
+    expect(at(1, 0.5, 0)).toEqual({ height: 0, size: 1, glint: 0 });
+    // By which point there is hardly a link left to hold any of them.
+    expect(linkRun(1, 0.62, 0)).toBe(0);
+  });
+
+  it('has gone entirely by the end of the leaving', () => {
+    for (const order of [0, 0.5, 1]) {
+      expect(at(1, 1, order).size).toBe(0);
+      expect(linkRun(1, 1, order)).toBe(0);
+    }
+    expect(benchShown(1, 1)).toBe(0);
+    expect(dropLinesShown(1, 1)).toBe(0);
+    expect(lightShown(1)).toBe(0);
+  });
+
+  it('comes back the way it went if the leaving is taken back', () => {
+    // Nothing is remembered: where a machine is depends only on how far
+    // gone the scene is, so the same number gives the same place.
+    const going = at(1, 0.7, 0.4);
+    at(1, 1, 0.4);
+    expect(at(1, 0.7, 0.4)).toEqual(going);
+    expect(at(1, 0.3, 0.4).size).toBeGreaterThan(going.size);
+  });
+});
+
+describe('the scheduler, asked to leave', () => {
+  interface StubRenderer {
+    render: jest.Mock;
+  }
+  const renderers = (): StubRenderer[] =>
+    (THREE.WebGLRenderer as unknown as { instances: StubRenderer[] }).instances;
+  const settings = getCompleteSettings(graphTopologyConfig as never) as never;
+  const frames = async (ms: number) => {
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, ms));
+    });
+  };
+
+  /** What the scene last drew: its own meshes, by what their materials take. */
+  const drawn = () => {
+    const calls = renderers()[0].render.mock.calls;
+    let scene: THREE.Scene | null = null;
+    for (const [candidate] of calls) {
+      if ((candidate as THREE.Scene).children.length > 1) {
+        scene = candidate as THREE.Scene;
+      }
+    }
+    const uniforms: Array<Record<string, { value: unknown }>> = [];
+    const counts: number[] = [];
+    scene?.traverse(object => {
+      const mesh = object as THREE.Mesh;
+      const material = mesh.material as THREE.ShaderMaterial | undefined;
+      if (!material?.uniforms) return;
+      uniforms.push(material.uniforms);
+      const geometry = mesh.geometry as THREE.InstancedBufferGeometry;
+      if (geometry.isInstancedBufferGeometry) {
+        counts.push(geometry.instanceCount);
+      }
+    });
+    return { uniforms, counts };
+  };
+
+  beforeEach(() => {
+    renderers().length = 0;
+  });
+
+  afterEach(() => {
+    act(() => setReadout(''));
+  });
+
+  it('leaves nothing lit behind it, and no link drawn', async () => {
+    const { rerender, unmount } = render(
+      <GraphTopologyBackground settings={settings} />
+    );
+    await frames(120);
+    const before = drawn();
+    expect(before.uniforms.length).toBeGreaterThanOrEqual(3);
+
+    rerender(
+      <GraphTopologyBackground settings={settings} leaving leaveMs={80} />
+    );
+    await frames(400);
+
+    const after = drawn();
+    const strengths = after.uniforms
+      .filter(u => 'uStrength' in u)
+      .map(u => u.uStrength.value);
+    expect(strengths.length).toBeGreaterThanOrEqual(2);
+    expect(strengths.every(value => value === 0)).toBe(true);
+    const floors = after.uniforms.filter(u => 'uOpacity' in u);
+    expect(floors.map(u => u.uOpacity.value)).toEqual([0]);
+    // The ribbons: every link is back, and no drop line is standing.
+    expect(Math.min(...after.counts)).toBe(0);
+    unmount();
   });
 });

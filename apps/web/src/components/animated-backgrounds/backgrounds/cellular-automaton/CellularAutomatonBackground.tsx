@@ -2,6 +2,7 @@ import React from 'react';
 import * as THREE from 'three';
 import { rasterizeGlyph } from '../../core/glyph';
 import { NotFoundSequence } from '../../core/notFoundSequence';
+import { PASSAGE_GLSL, smooth } from '../../core/stage/passage';
 import { Pose } from '../../core/stage/rig';
 import { STAGE_GROUND, StageOptions } from '../../core/stage/stage';
 import { createReadout, formatCount } from '../../core/stage/telemetry';
@@ -107,7 +108,81 @@ const stageOptions = (): StageOptions => ({
   far: 2000,
   bloom: { strength: 0.62, threshold: 0.74, knee: 0.55, radius: 0.7 },
   grade: { vignette: 0.4 },
+  introSeconds: INTRO_SECONDS,
 });
+
+// ── Coming on and going off ─────────────────────────────────────────────────
+// The board is sown and it is cleared, and both are fronts that cross it.
+//
+// Sown from the middle of the light outward: the lattice comes up a little
+// ahead, and the blocks rise behind it and land with some weight. Cleared by
+// a line drawn across the board the way the set is being walked: the blocks
+// drop back into the floor as it reaches them, and the floor goes dark behind
+// it. Both are asked of a place on the board — where it stands in the queue —
+// so the floor and the blocks standing on it can never disagree, and nothing
+// is worked out per cell on the processor: three numbers a frame.
+//
+// The arrival takes a little longer than the stage's usual, because it is a
+// front that has to be seen to travel.
+const INTRO_SECONDS = 2.1;
+// How far ahead of the blocks the lattice runs, as a share of the arrival.
+const SOW_LEAD = 0.16;
+// The share of the arrival one block's rise takes, and of the leaving one
+// block's fall.
+const SOW_SPAN = 0.34;
+const CLEAR_SPAN = 0.36;
+// The line has crossed the board by this much of the leaving. What is left
+// is the floor behind it going out.
+const CLEAR_BY = 0.8;
+
+/**
+ * What the shaders are told of the scene's coming and going: how far the
+ * sowing has got, how far the clearing has, and the light common to
+ * everything — up at once on arrival, since the front is what does the
+ * revealing, and down only at the very end of a leaving, as a guarantee that
+ * nothing is left lit when the scene is taken away.
+ */
+export const passageOf = (frame: { intro: number; outro: number }) => {
+  const leave = Math.min(1, Math.max(0, frame.outro));
+  return {
+    sown: Math.min(1, Math.max(0, frame.intro)),
+    cleared: leave,
+    light: smooth(frame.intro / 0.2) * (1 - smooth((leave - 0.82) / 0.18)),
+  };
+};
+
+const PASSAGE_CHUNK = /* glsl */ `
+  // x: how far the sowing has got. y: how far the clearing has. z: which way
+  // the set is being walked, 1 or -1.
+  uniform vec3 uPassage;
+  ${PASSAGE_GLSL}
+
+  // Where a place on the board stands in the sowing: by how far it is from
+  // the middle of the light, in the light's own radii.
+  float sowOrder(vec2 xz, vec4 fade) {
+    return length((xz - fade.xy) / fade.zw);
+  }
+
+  // And in the clearing: across the board, against the way the camera is
+  // swinging, and leaning so that the line is not square to the screen.
+  float clearOrder(vec2 xz, vec4 fade) {
+    vec2 rel = (xz - fade.xy) / fade.zw;
+    return 0.5 - 0.5 * (uPassage.z * rel.x * 0.92 - rel.y * 0.3);
+  }
+
+  // 0 → 1 as the lattice arrives at a place, and as the blocks do.
+  float latticeSown(vec2 xz, vec4 fade) {
+    return passage(uPassage.x * ${(1 + SOW_LEAD).toFixed(2)}, sowOrder(xz, fade), ${SOW_SPAN.toFixed(2)});
+  }
+  float blockSown(vec2 xz, vec4 fade) {
+    return passage(uPassage.x * ${(1 + SOW_LEAD).toFixed(2)} - ${SOW_LEAD.toFixed(2)}, sowOrder(xz, fade), ${SOW_SPAN.toFixed(2)});
+  }
+
+  // 0 → 1 as the line reaches a place and passes it.
+  float blockCleared(vec2 xz, vec4 fade) {
+    return passage(uPassage.y / ${CLEAR_BY.toFixed(2)}, clearOrder(xz, fade), ${CLEAR_SPAN.toFixed(2)});
+  }
+`;
 
 const FLOOR_VERTEX = /* glsl */ `
   varying vec3 vWorld;
@@ -139,6 +214,7 @@ const FLOOR_FRAGMENT = /* glsl */ `
   uniform vec4 uProbe;
   uniform float uStrength;
   varying vec3 vWorld;
+  ${PASSAGE_CHUNK}
 
   vec4 stateAt(vec2 cell) {
     return texture2D(uState, (cell + 0.5) / uGrid);
@@ -219,11 +295,24 @@ const FLOOR_FRAGMENT = /* glsl */ `
     float pooled = exp(-d * d / (uProbe.z * uProbe.z * 1.6));
     color += vec3(0.85, 0.95, 0.9) * (ring * 0.6 + pooled * 0.09) * uProbe.w;
 
+    // The fronts. The lattice comes up as the sowing reaches it, with a
+    // bright rim where it is arriving; the clearing is a line of light, and
+    // the floor goes out behind it. Rim and line are both zero once their
+    // front has passed, so a settled board is exactly the board.
+    float sown = latticeSown(vWorld.xz, uFade);
+    float cleared = blockCleared(vWorld.xz, uFade);
+    float rim = smoothstep(0.0, 0.08, sown) * (1.0 - smoothstep(0.08, 0.4, sown));
+    // A line, not a band: bright just where the clearing arrives, and gone
+    // well before the blocks behind it have finished falling.
+    float line = smoothstep(0.0, 0.03, cleared) * (1.0 - smoothstep(0.03, 0.12, cleared));
+    color += uLink * (rim * 0.34 + line * 0.55) * uIntensity;
+    float standing = smoothstep(0.0, 0.6, sown) * (1.0 - smoothstep(0.3, 1.0, cleared));
+
     // The board runs out into the dark rather than to an edge.
     float away = length((vWorld.xz - uFade.xy) / uFade.zw);
     color = mix(color, uGround, smoothstep(0.55, 1.0, away));
 
-    gl_FragColor = vec4(mix(uGround, color, uStrength), 1.0);
+    gl_FragColor = vec4(mix(uGround, color, uStrength * standing), 1.0);
   }
 `;
 
@@ -237,11 +326,14 @@ const CELL_VERTEX = /* glsl */ `
   uniform float uStep;
   uniform float uCellScale;
   uniform vec2 uHeights;
+  uniform vec4 uFade;
   varying vec3 vLocal;
   varying vec3 vNormal;
   varying vec3 vWorld;
   varying float vAge;
   varying float vAlive;
+  varying vec2 vPresent;
+  ${PASSAGE_CHUNK}
 
   void main() {
     // Eased between the last generation and this one: births rise, deaths
@@ -252,10 +344,29 @@ const CELL_VERTEX = /* glsl */ `
     float width = uCellScale * (0.55 + 0.45 * alive);
 
     vec2 p = mod(aCell.xy + 0.5 + uGlide, uGrid);
+    vec2 foot = vec2(p.x - uGrid.x * 0.5, uGrid.y * 0.5 - p.y);
+
+    // Sown, the block rises past its height and comes back to it; cleared,
+    // it is let go and drops. A block with no height has no width either, so
+    // what has not arrived or has gone is not a tile lying on the floor.
+    float sown = blockSown(foot, uFade);
+    float cleared = blockCleared(foot, uFade);
+    float back = sown - 1.0;
+    float risen = 1.0 + 2.5 * back * back * back + 1.5 * back * back;
+    float standing = risen * (1.0 - cleared * cleared);
+    height *= standing;
+    width *= smoothstep(0.0, 0.1, standing);
+    // Its light: up as it rises, with a flare as it lands, and gone a little
+    // before it has finished falling.
+    vPresent = vec2(
+      smoothstep(0.0, 0.45, sown) * (1.0 - smoothstep(0.0, 0.85, cleared)),
+      sown * (1.0 - sown) * 4.0
+    );
+
     vec3 world = vec3(
-      p.x - uGrid.x * 0.5 + position.x * width,
+      foot.x + position.x * width,
       position.y * height,
-      uGrid.y * 0.5 - p.y + position.z * width
+      foot.y + position.z * width
     );
 
     vLocal = position;
@@ -281,6 +392,7 @@ const CELL_FRAGMENT = /* glsl */ `
   varying vec3 vWorld;
   varying float vAge;
   varying float vAlive;
+  varying vec2 vPresent;
 
   void main() {
     // The newborn colour is for the newborn: a cell that has lasted a few
@@ -306,12 +418,12 @@ const CELL_FRAGMENT = /* glsl */ `
       float facing = 0.5 + 0.5 * max(dot(vNormal, uLight), 0.0);
       color = base * (0.05 + 0.42 * rise * rise + 0.75 * smoothstep(0.9, 1.0, rise)) * facing;
     }
-    color *= uIntensity * (0.25 + 0.75 * alive);
+    color *= uIntensity * (0.25 + 0.75 * alive) * (1.0 + 0.9 * vPresent.y);
 
     float away = length((vWorld.xz - uFade.xy) / uFade.zw);
     color = mix(color, uGround, smoothstep(0.55, 1.0, away));
 
-    gl_FragColor = vec4(color * uStrength, 1.0);
+    gl_FragColor = vec4(color * uStrength * vPresent.x, 1.0);
   }
 `;
 
@@ -578,6 +690,8 @@ const buildScene = ({
     // Where the board fades from, and over what radii: x, z, rx, rz.
     uFade: { value: new THREE.Vector4(0, 0, 1, 1) },
     uStrength: { value: 0 },
+    // Sown, cleared, heading: see PASSAGE_CHUNK.
+    uPassage: { value: new THREE.Vector3(0, 0, 1) },
   };
 
   const stateTexture = buildGrid();
@@ -914,10 +1028,11 @@ const buildScene = ({
 
     if (dirty) publish();
 
-    const arrive = frame.intro * frame.intro * (3 - 2 * frame.intro);
+    const passage = passageOf(frame);
+    shared.uPassage.value.set(passage.sown, passage.cleared, frame.heading);
     shared.uStep.value = frame.frozen ? 1 : Math.min(1, sinceStep / interval);
     shared.uIntensity.value = now.activityIntensity;
-    shared.uStrength.value = arrive;
+    shared.uStrength.value = passage.light;
     // The light falls off around where the camera is looking; from overhead
     // it covers the whole of what is seen.
     const pose = stage.rig.pose;
@@ -933,11 +1048,6 @@ const buildScene = ({
     );
     floorMaterial.uniforms.uLinkWidth.value = now.connectionLineWidth;
     cellMaterial.uniforms.uCellScale.value = now.cellScale;
-    // The blocks rise out of the board as the scene arrives.
-    cellMaterial.uniforms.uHeights.value.set(
-      HEIGHT_YOUNG * arrive,
-      HEIGHT_OLD * arrive
-    );
     colorUniforms.uPrimary.value.setRGB(
       ...now.colors.primary,
       THREE.SRGBColorSpace

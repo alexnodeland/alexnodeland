@@ -8,6 +8,7 @@ import {
   viewportReshaped,
 } from '../../core/notFoundSequence';
 import { createFloor } from '../../core/stage/floor';
+import { clamp01, easeOutBack, smooth } from '../../core/stage/passage';
 import { createRibbons } from '../../core/stage/ribbons';
 import { Pose } from '../../core/stage/rig';
 import { createSprites } from '../../core/stage/sprites';
@@ -71,6 +72,98 @@ const REACH = 0.14;
 const FLOOR_OPACITY = 0.13;
 // How far the layout's plane is spread across the bench, front to back.
 const SPREAD_DEPTH = 2.1;
+
+// How far the floor's grid reaches once the scene is all there.
+const FLOOR_REACH = 2.1;
+
+// ── Coming on and going off ────────────────────────────────────────────────
+// The map is surveyed before it is searched. A front spreads from the start
+// node across the bench: a node is found when the front reaches it and
+// swells up out of nothing, an edge is drawn from its nearer end as the
+// front runs along it, and the ruled floor spreads out underneath from the
+// same place. It is the search's own shape — everything in order of its
+// distance from the start — at a speed a search is never run at.
+//
+// Leaving is the same front going home. First the landscape is let down:
+// every node that had risen to its cost sinks back to the bench. Then the
+// map is rolled up from its far side, edges drawn back in, nodes going out,
+// until the start is the last thing there and then it is not.
+//
+// One number does both: where the front is, in the same units as a node's
+// place in the survey (0 at the start, 1 at the farthest node).
+
+/** How much of the survey a node takes to swell up once the front has it. */
+export const SURVEY_WIDTH = 0.2;
+// The least of the survey an edge takes to be drawn, however short it is.
+const EDGE_MIN_SPAN = 0.06;
+// The arrival this scene asks the stage for, and how much of it has passed
+// before the search is let go: the map is surveyed first.
+const INTRO_SECONDS = 2.2;
+const SEARCH_FROM = 0.55;
+// The share of a leaving the landscape takes to come down, and the point
+// in it at which the rolling-up starts.
+const LET_DOWN = 0.45;
+const ROLL_FROM = 0.14;
+
+/**
+ * Each node's place in the survey into `out`: its distance from the start
+ * across the bench, as a share of the farthest node's.
+ */
+export const surveyOrder = (
+  nodes: ReadonlyArray<{ position: { x: number; y: number } }>,
+  start: number,
+  spreadX: number,
+  spreadZ: number,
+  out: Float32Array
+): Float32Array => {
+  const origin = nodes[start]?.position ?? { x: 0, y: 0 };
+  let farthest = 0;
+  const count = Math.min(nodes.length, out.length);
+  for (let i = 0; i < count; i++) {
+    const d = Math.hypot(
+      (nodes[i].position.x - origin.x) * spreadX,
+      (nodes[i].position.y - origin.y) * spreadZ
+    );
+    out[i] = d;
+    if (d > farthest) farthest = d;
+  }
+  if (farthest > 0) for (let i = 0; i < count; i++) out[i] /= farthest;
+  return out;
+};
+
+// How far past the last node the front ends up: clear of it, so that
+// "everything is there" is exact rather than a rounding away from it.
+const SURVEY_MARGIN = 0.05;
+
+/**
+ * Where the front is: −SURVEY_WIDTH with nothing found, a little past
+ * 1 + SURVEY_WIDTH with everything there. It runs out as the scene arrives
+ * and back as it leaves, and whichever has it further in wins — so a leaving
+ * taken back runs out again from where it had got to.
+ */
+export const surveyFront = (intro: number, outro: number): number => {
+  // Nearly a steady walk, easing only as it reaches the far side: a front
+  // that sprinted and then crawled would be an explosion, not a survey.
+  const x = clamp01((intro - 0.03) / 0.87);
+  const out = x * (1.4 - 0.4 * x);
+  const back = smooth((outro - ROLL_FROM) / (0.97 - ROLL_FROM));
+  const reach = Math.min(out, 1 - back);
+  return -SURVEY_WIDTH + reach * (1 + 2 * SURVEY_WIDTH + SURVEY_MARGIN);
+};
+
+/** How far a node at `order` has swelled, 0 → 1, with the front at `front`. */
+export const surveyed = (front: number, order: number): number =>
+  clamp01((front - order) / SURVEY_WIDTH);
+
+/**
+ * How much of an edge is drawn, from its nearer end: none until the front
+ * reaches that end, all of it as the front reaches the farther one.
+ */
+export const drawnShare = (front: number, near: number, far: number): number =>
+  clamp01((front - near) / Math.max(far - near, EDGE_MIN_SPAN));
+
+/** How much of its height the landscape still has, `outro` into leaving. */
+export const standing = (outro: number): number => 1 - smooth(outro / LET_DOWN);
 
 type Vector2 = { x: number; y: number };
 
@@ -256,6 +349,7 @@ const stageOptions = (settings: ShortestPathLabSettings): StageOptions => ({
       ? { strength: 0.6, threshold: 0.64, knee: 0.6, radius: 0.72 }
       : { strength: 0 },
   grade: { vignette: 0.38 },
+  introSeconds: INTRO_SECONDS,
 });
 
 const buildScene = ({
@@ -428,6 +522,7 @@ const buildScene = ({
     morph = beginMorph(previous, nodes, now, morphMs);
     hovered = -1;
     resetSearch();
+    orderNodes();
   };
 
   /**
@@ -483,10 +578,24 @@ const buildScene = ({
     height: 0,
     cell: 0.2,
     major: 5,
-    reach: 2.1,
+    reach: FLOOR_REACH,
     opacity: FLOOR_OPACITY,
   });
   stage.scene.add(floor.mesh);
+
+  // Each node's place in the survey (see surveyOrder), worked out when a
+  // graph is put down rather than every frame.
+  const order = new Float32Array(NODE_CAPACITY);
+  function orderNodes() {
+    surveyOrder(
+      nodes,
+      startNode,
+      Math.min(stage.aspect, 1.5) * 0.95,
+      SPREAD_DEPTH,
+      order
+    );
+  }
+  orderNodes();
 
   // How high each node stands right now, eased toward its cost, and each
   // node's place in the world from the frame it was last drawn in.
@@ -522,9 +631,10 @@ const buildScene = ({
     return best;
   };
 
-  const applyPointer = (aspect: number) => {
+  const applyPointer = (aspect: number, leaving: boolean) => {
     const pointer = stage.pointer.state;
-    const quiet = progress > 0.5 || morph !== null;
+    // A scene on its way out is not taking requests.
+    const quiet = progress > 0.5 || morph !== null || leaving;
 
     // A tap names a goal: the search starts over on the graph as it stands,
     // for the node nearest where the tap landed.
@@ -590,11 +700,11 @@ const buildScene = ({
       }
     } else {
       stillDrawn = false;
-      applyPointer(aspect);
+      applyPointer(aspect, frame.outro > 0);
 
       // The search, in whole steps at its own rate. Nodes in flight are not
-      // a graph to search yet.
-      if (!morph) {
+      // a graph to search yet, and nor is a map still being surveyed.
+      if (!morph && frame.intro >= SEARCH_FROM) {
         const rate = glyphMode
           ? Math.max(liveStepsPerSecond(), GLYPH_MIN_STEPS_PER_SECOND)
           : liveStepsPerSecond();
@@ -652,6 +762,11 @@ const buildScene = ({
     const crowd = Math.min(1, Math.max(0.5, stage.width / 1100));
     const baseSize = live.elementSize * (glyphMode ? 0.5 * crowd : 0.62);
 
+    // Where the survey's front is, and how much of its height the landscape
+    // has: both exactly "all of it" once arrived and until asked to go.
+    const front = surveyFront(frame.intro, frame.outro);
+    const stand = standing(frame.outro);
+
     const onPath = new Set(foundPath);
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i];
@@ -661,7 +776,7 @@ const buildScene = ({
 
       const at = i * 3;
       world[at] = n.position.x * spreadX;
-      world[at + 1] = 0.04 + rise[i];
+      world[at + 1] = 0.04 + rise[i] * stand;
       world[at + 2] = -n.position.y * spreadZ;
       sprites.positions[at] = world[at];
       sprites.positions[at + 1] = world[at + 1];
@@ -708,11 +823,17 @@ const buildScene = ({
         bright = 0.8 + 0.3 * progress;
         halo = 0.22;
       }
-      writeColor(sprites.colors, at, rgb, bright);
+      // Found by the front: it comes up hot and a little too large, and
+      // settles. Going, it does the same backwards.
+      const found = surveyed(front, order[i]);
+      writeColor(sprites.colors, at, rgb, bright * (1 + 0.9 * (1 - found)));
 
       const marked = i === hovered || isStart || isGoal;
       const p = i * 4;
-      sprites.params[p] = size * (i === hovered ? 1.2 : 1);
+      sprites.params[p] =
+        size *
+        (i === hovered ? 1.2 : 1) *
+        (found >= 1 ? 1 : Math.max(0, easeOutBack(found, 1.7)));
       sprites.params[p + 1] = 1;
       sprites.params[p + 2] = halo;
       sprites.params[p + 3] = marked ? 1 : 0;
@@ -740,7 +861,14 @@ const buildScene = ({
     sprites.positions[marble * 3 + 2] = mz;
     const glow = 1.5 + live.spDotGlow * Math.sin(timeMs * 0.01);
     writeColor(sprites.colors, marble * 3, live.colors.accent, glow);
-    sprites.params[marble * 4] = (live.spDotSize / 14) * baseSize * 1.25;
+    // The marble is the search's, so it comes with the node the search
+    // starts at and is the first thing put away.
+    sprites.params[marble * 4] =
+      (live.spDotSize / 14) *
+      baseSize *
+      1.25 *
+      smooth(surveyed(front, 0)) *
+      (1 - smooth(frame.outro * 4));
     sprites.params[marble * 4 + 1] = 1.4;
     sprites.params[marble * 4 + 2] = 1.2;
     sprites.params[marble * 4 + 3] = 0;
@@ -779,6 +907,30 @@ const buildScene = ({
       ribbons.ends[at + 1] = world[b + 1];
       ribbons.ends[at + 2] = world[b + 2];
 
+      // Drawn from the end the front reached first, as far as the front has
+      // run along it.
+      const orderA = order[a / 3];
+      const orderB = order[b / 3];
+      const share =
+        orderA <= orderB
+          ? drawnShare(front, orderA, orderB)
+          : drawnShare(front, orderB, orderA);
+      if (share < 1) {
+        if (orderA <= orderB) {
+          ribbons.ends[at] = world[a] + (world[b] - world[a]) * share;
+          ribbons.ends[at + 1] =
+            world[a + 1] + (world[b + 1] - world[a + 1]) * share;
+          ribbons.ends[at + 2] =
+            world[a + 2] + (world[b + 2] - world[a + 2]) * share;
+        } else {
+          ribbons.starts[at] = world[b] + (world[a] - world[b]) * share;
+          ribbons.starts[at + 1] =
+            world[b + 1] + (world[a + 1] - world[b + 1]) * share;
+          ribbons.starts[at + 2] =
+            world[b + 2] + (world[a + 2] - world[b + 2]) * share;
+        }
+      }
+
       const p = count * 4;
       const lit = e.source === hovered || e.target === hovered ? 0.3 : 0;
       if (inPath) {
@@ -807,7 +959,7 @@ const buildScene = ({
     }
     // A drop line under every node that has risen: its cost, as a length.
     for (let i = 0; i < nodes.length && count < EDGE_CAPACITY; i++) {
-      if (rise[i] < 0.04) continue;
+      if (rise[i] * stand < 0.04 || order[i] > front) continue;
       const a = i * 3;
       const at = count * 3;
       ribbons.starts[at] = world[a];
@@ -829,7 +981,21 @@ const buildScene = ({
     ribbons.setCount(count);
     ribbons.commit();
 
-    const arrive = frame.intro * frame.intro * (3 - 2 * frame.intro);
+    // The floor spreads from under the start node as the survey does, and
+    // drains back to it; once the front has covered the map it is the
+    // whole bench, centred where it always was.
+    const covered = smooth(front);
+    const startAt = Math.min(nodes.length - 1, startNode) * 3;
+    floor.setCentre(
+      world[startAt] * (1 - covered),
+      world[startAt + 2] * (1 - covered)
+    );
+    floor.material.uniforms.uReach.value = FLOOR_REACH * (0.1 + 0.9 * covered);
+    // What is left to the strength is only the guarantee that the last of
+    // the light has gone when the scene has: the coming and going are the
+    // front's.
+    const light =
+      frame.outro >= 1 ? 0 : 1 - smooth((frame.outro - 0.88) / 0.12);
     const pose = stage.rig.pose;
     const u = ribbons.material.uniforms;
     u.uResolution.value.set(
@@ -838,15 +1004,18 @@ const buildScene = ({
     );
     u.uPixelRatio.value = stage.pixelRatio;
     u.uTime.value = frame.time * live.globalTimeMultiplier;
-    u.uStrength.value = arrive;
+    u.uStrength.value = light;
     u.uFog.value.set(pose.distance + 0.6, pose.distance + 3.4);
-    sprites.material.uniforms.uStrength.value = arrive;
+    sprites.material.uniforms.uStrength.value = light;
     sprites.material.uniforms.uFog.value.set(
       pose.distance + 0.6,
       pose.distance + 3.4
     );
     floor.material.uniforms.uOpacity.value =
-      FLOOR_OPACITY * arrive * (1 - reading);
+      FLOOR_OPACITY *
+      smooth((front + SURVEY_WIDTH) / 0.6) *
+      light *
+      (1 - reading);
 
     // The bloom's three controls are the stage's own bloom, live.
     if (live.spGlowBloom > 0.5) {
