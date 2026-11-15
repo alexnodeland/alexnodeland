@@ -43,6 +43,9 @@ export function useStageScene<TSettings extends StandardSettings>(
   notFoundRef.current = Boolean(props.notFound);
   const frozenRef = useRef(Boolean(props.frozen));
   frozenRef.current = Boolean(props.frozen);
+  // How long the scene has been given to go, in ms; 0 while it is staying.
+  const leaveRef = useRef(0);
+  leaveRef.current = props.leaving ? Math.max(1, props.leaveMs ?? 1000) : 0;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -60,6 +63,7 @@ export function useStageScene<TSettings extends StandardSettings>(
       });
       const scene = handle;
       stage.setFrozen(frozenRef.current);
+      if (leaveRef.current > 0) stage.leave(leaveRef.current / 1000);
       stage.start(
         frame => scene.update(frame),
         () => scene.resize?.()
@@ -90,6 +94,15 @@ export function useStageScene<TSettings extends StandardSettings>(
   useEffect(() => {
     stageRef.current?.setFrozen(Boolean(props.frozen));
   }, [props.frozen]);
+
+  // Asked to go, or told it can stay after all. The stage runs the movement;
+  // BackgroundManager takes the scene away when it is over.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    if (props.leaving) stage.leave(leaveRef.current / 1000);
+    else stage.stay();
+  }, [props.leaving]);
 
   // A still has no next frame to pick a change up in, so anything that
   // changes what it shows asks for one: the 404 coming or going, a setting

@@ -6,9 +6,8 @@ import { lazy } from 'react';
 // the simulation — and three.js with it — into the critical bundle of
 // every page. The chunk loads when the background first renders,
 // behind the Suspense in BackgroundManager.
-const CellularAutomatonBackground = lazy(
-  () => import('./CellularAutomatonBackground')
-);
+const load = () => import('./CellularAutomatonBackground');
+const CellularAutomatonBackground = lazy(load);
 
 /**
  * Life-like rules in B/S notation: a dead cell is born when its live neighbor
@@ -260,6 +259,7 @@ export const cellularAutomatonConfig = createBackgroundConfig({
     'hundred generations, so Perturbation Rate flips a few cells each step — set it to zero ' +
     'to watch it stall.',
   component: CellularAutomatonBackground,
+  preload: load,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,

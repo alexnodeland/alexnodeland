@@ -14,6 +14,7 @@ import {
   resolveQuality,
   SOFTWARE_FLOOR,
 } from './quality';
+import { heading, Heading, smooth } from './passage';
 import { CameraRig, RigConfig } from './rig';
 
 /**
@@ -50,6 +51,14 @@ const TALL_ASPECT = 0.8;
 const TALL_CANOPY = 1.5;
 const CANOPY_LIMIT = 0.85;
 
+// The canvas comes up over this long once it has a frame to show, and goes
+// down across the last fifth of a leaving. Neither is the transition — the
+// scene's own coming and going is — but an empty scene through the grade is
+// not quite the flat ground the page keeps under it (a vignette, a canopy,
+// grain), and this is what makes the last step between the two invisible.
+const VEIL_IN_SECONDS = 0.35;
+const VEIL_OUT_FROM = 0.8;
+
 export interface StageOptions {
   rig: RigConfig;
   near?: number;
@@ -69,6 +78,10 @@ export interface Frame {
   now: number;
   /** 0 → 1, linear, as the scene arrives. 1 from the start on a still. */
   intro: number;
+  /** 0 → 1, linear, as the scene leaves; 0 until it is asked to. */
+  outro: number;
+  /** Which way the set is being walked through: 1 forward, −1 back. */
+  heading: Heading;
   /** One frame, drawn settled, and then nothing: reduced motion. */
   frozen: boolean;
   /** Whether the page content is hidden, leaving the field bare. */
@@ -100,6 +113,14 @@ export interface Stage {
    */
   start(update: (frame: Frame) => void, resize?: () => void): void;
   setFrozen(frozen: boolean): void;
+  /**
+   * Ask the scene to go, over this many seconds: `frame.outro` runs 0 → 1
+   * and the camera swings away the way the set is being walked. The stage
+   * does not remove itself at the end — whoever asked does that.
+   */
+  leave(seconds: number): void;
+  /** Take a leave back: the scene returns from wherever it had got to. */
+  stay(): void;
   /** Draw one more frame — for a still whose inputs have changed. */
   requestFrame(): void;
   /**
@@ -209,12 +230,34 @@ export const createStage = (
   let lost = false;
   let ready = false;
   let scrollTop = 0;
+  // Leaving: where `outro` is headed, and how long the whole way takes.
+  let leaving = false;
+  let leaveSeconds = 1;
+  // The direction this scene arrived in, and the one it leaves in. The same
+  // unless the reader turns round while it is up.
+  const arrivedHeading = heading();
+  let seenFor = -1;
+  let veil = -1;
+
+  // Nothing to show until there is a frame: an undrawn canvas is opaque black,
+  // which is not the ground.
+  canvas.style.opacity = '0';
+  const setVeil = (next: number) => {
+    const value = Math.round(Math.min(1, Math.max(0, next)) * 1000) / 1000;
+    if (value === veil) return;
+    veil = value;
+    // At full strength the property is cleared rather than set to 1, so the
+    // canvas is not kept on a layer of its own for nothing.
+    canvas.style.opacity = value >= 1 ? '' : String(value);
+  };
 
   const frame: Frame = {
     dt: 0,
     time: 0,
     now: 0,
     intro: 0,
+    outro: 0,
+    heading: arrivedHeading,
     frozen: false,
     hidden: false,
     width,
@@ -274,6 +317,17 @@ export const createStage = (
       last = 0;
       stage.requestFrame();
     },
+    leave(seconds) {
+      leaving = true;
+      leaveSeconds = Math.max(0.05, seconds);
+      frame.heading = heading();
+      stage.requestFrame();
+    },
+    stay() {
+      if (!leaving) return;
+      leaving = false;
+      stage.requestFrame();
+    },
     requestFrame() {
       if (!ready || disposed || lost || raf) return;
       raf = requestAnimationFrame(tick);
@@ -328,6 +382,13 @@ export const createStage = (
     frame.now = now;
     frame.time += dt;
     frame.intro = frozen ? 1 : Math.min(1, frame.intro + dt / introSeconds);
+    // A still has no movement to leave by. It stays whole until whoever
+    // asked it to go takes it away.
+    const step = dt / leaveSeconds;
+    frame.outro = frozen
+      ? 0
+      : Math.min(1, Math.max(0, frame.outro + (leaving ? step : -step)));
+    if (!leaving && frame.outro === 0) frame.heading = arrivedHeading;
     frame.frozen = frozen;
     frame.hidden = document.body.classList.contains(HIDDEN_CLASS);
     frame.width = width;
@@ -346,6 +407,9 @@ export const createStage = (
       reading: stage.reading,
       scroll: Math.min(1, Math.max(0, scrollTop / SCROLL_REACH_PX)),
       intro: frame.intro,
+      outro: frame.outro,
+      arrivedHeading,
+      heading: frame.heading,
       pathname: window.location.pathname,
     });
     rig.apply(camera, frame.aspect);
@@ -368,6 +432,14 @@ export const createStage = (
       update = null;
       return;
     }
+
+    seenFor = seenFor < 0 ? 0 : seenFor + dt;
+    setVeil(
+      frozen
+        ? 1
+        : smooth(seenFor / VEIL_IN_SECONDS) *
+            (1 - smooth((frame.outro - VEIL_OUT_FROM) / (1 - VEIL_OUT_FROM)))
+    );
 
     if (frozen) return;
 

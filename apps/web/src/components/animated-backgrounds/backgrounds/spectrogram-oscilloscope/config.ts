@@ -6,9 +6,8 @@ import { lazy } from 'react';
 // the simulation — and three.js with it — into the critical bundle of
 // every page. The chunk loads when the background first renders,
 // behind the Suspense in BackgroundManager.
-const SpectrogramOscilloscopeBackground = lazy(
-  () => import('./SpectrogramOscilloscopeBackground')
-);
+const load = () => import('./SpectrogramOscilloscopeBackground');
+const SpectrogramOscilloscopeBackground = lazy(load);
 
 // Custom settings specific to spectrogram oscilloscope
 export interface SpectrogramOscilloscopeCustomSettings {
@@ -691,6 +690,7 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
     'filter, delay, distortion and reverb. Front, an oscilloscope; back, a spectrogram of ' +
     'the same samples. Hold the speaker button to hear it.',
   component: SpectrogramOscilloscopeBackground,
+  preload: load,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,

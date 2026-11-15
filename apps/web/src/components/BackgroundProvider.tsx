@@ -19,6 +19,7 @@ import {
   toSaved,
   withOverrides,
 } from './animated-backgrounds/core/persistence';
+import { setHeading } from './animated-backgrounds/core/stage/passage';
 import { useSettingsPanel } from './SettingsPanelContext';
 import { PANEL_TRANSITION_MS } from '../config/motion';
 
@@ -50,8 +51,6 @@ interface BackgroundContextType {
   }) => void;
 
   // Cycling state for smooth transitions
-  overlayOpacity: number;
-  setOverlayOpacity: (opacity: number) => void;
 
   // Computed values
   currentBackground: ReturnType<typeof getBackgroundById>;
@@ -175,10 +174,6 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
     isPlaying: boolean;
   }>({ startAudio: null, stopAudio: null, isPlaying: false });
 
-  // Cycling overlay state for smooth transitions
-  // Start with overlay transparent (0) so background is immediately visible
-  const [overlayOpacity, setOverlayOpacity] = useState<number>(0);
-
   // Access global settings panel state after state initialization
   const {
     isSettingsPanelOpen,
@@ -264,7 +259,10 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
   }, [state.settings, state.currentBackgroundId]);
 
   // Background switching functions
+  // Each says which way the set is being walked as well as where to: the
+  // scene that leaves and the one that arrives both move by it.
   const switchToNextBackground = useCallback(() => {
+    setHeading(1);
     setState(prev => {
       const currentIndex = backgroundRegistry.findIndex(
         bg => bg.id === prev.currentBackgroundId
@@ -279,6 +277,7 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
   }, []);
 
   const switchToPreviousBackground = useCallback(() => {
+    setHeading(-1);
     setState(prev => {
       const currentIndex = backgroundRegistry.findIndex(
         bg => bg.id === prev.currentBackgroundId
@@ -390,8 +389,6 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
       closeSettingsPanel,
       audioControls,
       setAudioControls,
-      overlayOpacity,
-      setOverlayOpacity,
       currentBackground,
       currentSettings,
       mounted,
@@ -406,7 +403,6 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
       toggleSettingsPanel,
       closeSettingsPanel,
       audioControls,
-      overlayOpacity,
       currentBackground,
       currentSettings,
       mounted,

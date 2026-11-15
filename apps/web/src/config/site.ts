@@ -44,10 +44,12 @@ export interface SiteConfig {
 
   // Animated background behavior
   animatedBackgrounds?: {
-    // Total visible play time per background in ms (excludes fades)
+    // Time each background has the field to itself, in ms: not counting its
+    // arrival being asked for or its leaving
     playDurationMs: number;
-    // Fade duration in ms for both in and out
-    fadeDurationMs: number;
+    // How long a background takes to leave when the cycle moves on, in ms.
+    // (One the reader asks for by hand is quicker: see BackgroundManager.)
+    leaveDurationMs: number;
     // Whether cycling is enabled
     cycleEnabled: boolean;
   };
@@ -101,7 +103,7 @@ export const siteConfig: SiteConfig = {
   // Animated background defaults
   animatedBackgrounds: {
     playDurationMs: 12000,
-    fadeDurationMs: 1200,
+    leaveDurationMs: 1100,
     cycleEnabled: true,
   },
 };

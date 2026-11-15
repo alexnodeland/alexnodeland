@@ -6,9 +6,8 @@ import { lazy } from 'react';
 // the simulation — and three.js with it — into the critical bundle of
 // every page. The chunk loads when the background first renders,
 // behind the Suspense in BackgroundManager.
-const ShortestPathLabBackground = lazy(
-  () => import('./ShortestPathLabBackground')
-);
+const load = () => import('./ShortestPathLabBackground');
+const ShortestPathLabBackground = lazy(load);
 
 // Custom settings specific to shortest path lab
 export interface ShortestPathLabCustomSettings {
@@ -327,6 +326,7 @@ export const shortestPathLabConfig = createBackgroundConfig({
     'Weight scales w in f = g + w*h: 0 is Dijkstra, 1 is A*, above 1 trades the optimality ' +
     'guarantee for speed. Height is cost: watch the bowl go round, stretched, then a trough.',
   component: ShortestPathLabBackground,
+  preload: load,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,

@@ -14,7 +14,6 @@ jest.mock(
 );
 
 const mockNext = jest.fn();
-const mockSetOverlay = jest.fn();
 
 jest.mock('../../../../components/animated-backgrounds/index', () => ({
   backgroundRegistry: [],
@@ -57,8 +56,6 @@ jest.mock('../../../../components/BackgroundProvider', () => {
       closeSettingsPanel: noop,
       audioControls,
       setAudioControls: noop,
-      overlayOpacity: 0,
-      setOverlayOpacity: mockSetOverlay,
       currentBackground,
       currentSettings: state.settings.one,
       mounted: true,
@@ -66,9 +63,10 @@ jest.mock('../../../../components/BackgroundProvider', () => {
   };
 });
 
-// The site's own timings (config: twelve seconds of play, 1.2 of fade).
+// The site's own timings (config: twelve seconds of play, and 1.1 for the
+// one before to leave in, which every turn after the first also waits out).
 const PLAY_MS = 12_000;
-const FADE_MS = 1_200;
+const LEAVE_MS = 1_100;
 
 describe('how long the cycle waits for a hand on the field', () => {
   it('does not wait for a field nobody has touched', () => {
@@ -90,31 +88,45 @@ describe('the cycle, and a hand on the field', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     mockTouchedAt = 0;
+    mockNext.mockClear();
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  const fadedOut = () =>
-    mockSetOverlay.mock.calls.some(([opacity]) => opacity === 1);
+  const movedOn = () => mockNext.mock.calls.length > 0;
 
   it('moves on after a background’s turn when the field is left alone', () => {
     const { unmount } = render(<BackgroundManager />);
     act(() => {
       jest.advanceTimersByTime(PLAY_MS - 100);
     });
-    expect(fadedOut()).toBe(false);
+    expect(movedOn()).toBe(false);
 
     act(() => {
       jest.advanceTimersByTime(200);
     });
-    expect(fadedOut()).toBe(true);
+    expect(mockNext).toHaveBeenCalledTimes(1);
+    unmount();
+  });
 
+  it('gives each later turn the time the one before spent leaving', () => {
+    const { unmount } = render(<BackgroundManager />);
     act(() => {
-      jest.advanceTimersByTime(FADE_MS);
+      jest.advanceTimersByTime(PLAY_MS);
     });
     expect(mockNext).toHaveBeenCalledTimes(1);
+
+    // Twelve seconds on, the second is still a second short of its turn.
+    act(() => {
+      jest.advanceTimersByTime(PLAY_MS + LEAVE_MS - 100);
+    });
+    expect(mockNext).toHaveBeenCalledTimes(1);
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
+    expect(mockNext).toHaveBeenCalledTimes(2);
     unmount();
   });
 
@@ -128,16 +140,11 @@ describe('the cycle, and a hand on the field', () => {
     act(() => {
       jest.advanceTimersByTime(2_000);
     });
-    expect(fadedOut()).toBe(false);
     expect(mockNext).not.toHaveBeenCalled();
 
     // Left alone for the length of the hold, it moves on.
     act(() => {
       jest.advanceTimersByTime(TOUCH_HOLD_MS);
-    });
-    expect(fadedOut()).toBe(true);
-    act(() => {
-      jest.advanceTimersByTime(FADE_MS);
     });
     expect(mockNext).toHaveBeenCalledTimes(1);
     unmount();
@@ -154,12 +161,12 @@ describe('the cycle, and a hand on the field', () => {
       act(() => {
         jest.advanceTimersByTime(TOUCH_HOLD_MS - 1_000);
       });
-      expect(fadedOut()).toBe(false);
+      expect(movedOn()).toBe(false);
     }
     act(() => {
       jest.advanceTimersByTime(1_500);
     });
-    expect(fadedOut()).toBe(true);
+    expect(movedOn()).toBe(true);
     unmount();
   });
 

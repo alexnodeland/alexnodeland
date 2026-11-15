@@ -24,7 +24,7 @@ const base: Pose = {
 // the one thing a test is asking about.
 const still: Partial<RigConfig> = {
   drift: { azimuth: 0, elevation: 0, period: 1 },
-  intro: { distance: 0, elevation: 0 },
+  intro: { distance: 0, elevation: 0, azimuth: 0 },
   page: false,
 };
 
@@ -257,6 +257,90 @@ describe('the camera rig', () => {
       // A navigation is a move through the scene, not a cut.
       expect(turning.azimuth).toBeGreaterThan(home.azimuth);
       expect(turning.azimuth).toBeLessThan(turned.azimuth);
+    });
+  });
+  describe('coming on and going off', () => {
+    const config: RigConfig = {
+      base: () => base,
+      drift: { azimuth: 0, elevation: 0, period: 1 },
+      page: false,
+    };
+
+    it('arrives from the side, further out and higher, and settles at rest', () => {
+      const rig = new CameraRig(config);
+      const start = rig.update(inputs({ intro: 0, arrivedHeading: 1 }));
+      expect(start.azimuth).toBeLessThan(base.azimuth - 0.2);
+      expect(start.distance).toBeGreaterThan(base.distance);
+      expect(start.elevation).toBeGreaterThan(base.elevation);
+
+      const rest = rig.update(inputs({ intro: 1, arrivedHeading: 1 }));
+      expect(rest.azimuth).toBeCloseTo(base.azimuth);
+      expect(rest.distance).toBeCloseTo(base.distance);
+      expect(rest.elevation).toBeCloseTo(base.elevation);
+    });
+
+    it('arrives from the other side when the set is being walked backwards', () => {
+      const rig = new CameraRig(config);
+      const start = rig.update(inputs({ intro: 0, arrivedHeading: -1 }));
+      expect(start.azimuth).toBeGreaterThan(base.azimuth + 0.2);
+    });
+
+    it('swings on the way it was going as the scene leaves', () => {
+      const rig = new CameraRig(config);
+      const azimuths = [0, 0.25, 0.5, 0.75, 1].map(
+        outro => rig.update(inputs({ outro, heading: 1 })).azimuth
+      );
+      for (let i = 1; i < azimuths.length; i++) {
+        expect(azimuths[i]).toBeGreaterThan(azimuths[i - 1]);
+      }
+      // Forward, the arrival turned the same way to get to rest.
+      const arriving = new CameraRig(config);
+      const from = arriving.update(inputs({ intro: 0, arrivedHeading: 1 }));
+      expect(Math.sign(azimuths[4] - base.azimuth)).toBe(
+        Math.sign(base.azimuth - from.azimuth)
+      );
+    });
+
+    it('lets go slowly: most of the swing is in the second half', () => {
+      const rig = new CameraRig(config);
+      const half = rig.update(inputs({ outro: 0.5, heading: 1 })).azimuth;
+      const whole = rig.update(inputs({ outro: 1, heading: 1 })).azimuth;
+      expect(half - base.azimuth).toBeLessThan((whole - base.azimuth) * 0.3);
+    });
+
+    it('pulls back and up on the way out', () => {
+      const rig = new CameraRig(config);
+      const gone = rig.update(inputs({ outro: 1, heading: -1 }));
+      expect(gone.azimuth).toBeLessThan(base.azimuth - 0.2);
+      expect(gone.distance).toBeGreaterThan(base.distance);
+      expect(gone.elevation).toBeGreaterThan(base.elevation);
+    });
+
+    it('goes by the scene’s own measure when it gives one', () => {
+      const rig = new CameraRig({
+        ...config,
+        outro: { distance: 0.5, elevation: 0, azimuth: 0 },
+      });
+      const gone = rig.update(inputs({ outro: 1, heading: 1 }));
+      expect(gone.azimuth).toBeCloseTo(base.azimuth);
+      expect(gone.elevation).toBeCloseTo(base.elevation);
+      expect(gone.distance).toBeCloseTo(base.distance * 1.5);
+    });
+
+    it('does not move at all for a scene that is not leaving', () => {
+      const rig = new CameraRig(config);
+      const pose = rig.update(inputs({ heading: -1 }));
+      expect(pose.azimuth).toBeCloseTo(base.azimuth);
+      expect(pose.distance).toBeCloseTo(base.distance);
+    });
+
+    it('holds still for the 404’s number whichever it is doing', () => {
+      const reading: Pose = { ...base, azimuth: 0, elevation: 1.2 };
+      const rig = new CameraRig({ ...config, reading: () => reading });
+      const pose = settle(rig, { reading: 1, intro: 0, outro: 1 });
+      expect(pose.azimuth).toBeCloseTo(reading.azimuth);
+      expect(pose.elevation).toBeCloseTo(reading.elevation);
+      expect(pose.distance).toBeCloseTo(reading.distance);
     });
   });
 });

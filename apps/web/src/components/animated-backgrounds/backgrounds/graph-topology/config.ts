@@ -6,7 +6,8 @@ import { lazy } from 'react';
 // the simulation — and three.js with it — into the critical bundle of
 // every page. The chunk loads when the background first renders,
 // behind the Suspense in BackgroundManager.
-const GraphTopologyBackground = lazy(() => import('./GraphTopologyBackground'));
+const load = () => import('./GraphTopologyBackground');
+const GraphTopologyBackground = lazy(load);
 
 // Custom settings specific to graph topology
 export interface GraphTopologyCustomSettings {
@@ -189,6 +190,7 @@ export const graphTopologyConfig = createBackgroundConfig({
     'for, taking worse swaps less often as the temperature drops. Gold is the current ' +
     'candidate, cyan the best so far.',
   component: GraphTopologyBackground,
+  preload: load,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,

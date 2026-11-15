@@ -6,7 +6,8 @@ import { lazy } from 'react';
 // the simulation — and three.js with it — into the critical bundle of
 // every page. The chunk loads when the background first renders,
 // behind the Suspense in BackgroundManager.
-const PDESolverBackground = lazy(() => import('./PDESolverBackground'));
+const load = () => import('./PDESolverBackground');
+const PDESolverBackground = lazy(load);
 import {
   EquationType,
   BoundaryConditionType,
@@ -349,6 +350,7 @@ export const pdeSolverConfig = createBackgroundConfig({
     'than the look — Dirichlet reflects inverted, Neumann upright, Periodic wraps. It cannot ' +
     'diverge; the timestep is clamped to the CFL limit.',
   component: PDESolverBackground,
+  preload: load,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,

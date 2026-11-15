@@ -55,8 +55,12 @@ export interface RigConfig {
   /** What a full band of window scroll adds: radians of elevation, and a
    * fraction of the distance (negative moves in). */
   scroll?: { elevation: number; distance: number };
-  /** What the arrival starts from: a fraction further out, radians higher. */
-  intro?: { distance: number; elevation: number };
+  /** What the arrival starts from: a fraction further out, radians higher,
+   * and radians round to the side it is coming from. */
+  intro?: { distance: number; elevation: number; azimuth?: number };
+  /** What a leaving ends at, in the same terms: the camera swings on round
+   * the way it came in, so two scenes share one movement across the change. */
+  outro?: { distance: number; elevation: number; azimuth: number };
   /** Whether each page of the site stands the camera a little further round. */
   page?: boolean;
   minElevation?: number;
@@ -80,6 +84,12 @@ export interface RigInputs {
   scroll: number;
   /** 0 → 1 as the scene arrives. */
   intro: number;
+  /** 0 → 1 as the scene leaves. Absent, it is not leaving. */
+  outro?: number;
+  /** Which way the set was being walked when this scene came on, and which
+   * way it is being walked now it is going: 1 forward, −1 back. */
+  arrivedHeading?: number;
+  heading?: number;
   pathname: string;
 }
 
@@ -87,7 +97,8 @@ const DEFAULTS = {
   parallax: { azimuth: 0.07, elevation: 0.045, hiddenGain: 4 },
   drift: { azimuth: 0.035, elevation: 0.012, period: 46 },
   scroll: { elevation: 0.07, distance: -0.05 },
-  intro: { distance: 0.22, elevation: 0.1 },
+  intro: { distance: 0.22, elevation: 0.1, azimuth: 0.34 },
+  outro: { distance: 0.12, elevation: 0.07, azimuth: 0.3 },
   minElevation: 0.04,
   maxElevation: Math.PI / 2,
 };
@@ -194,6 +205,7 @@ export class CameraRig {
     const drift = config.drift ?? DEFAULTS.drift;
     const scroll = config.scroll ?? DEFAULTS.scroll;
     const intro = config.intro ?? DEFAULTS.intro;
+    const outro = config.outro ?? DEFAULTS.outro;
 
     // The first frame lands where it should rather than easing in from zero:
     // an arrival is the intro's to choreograph, not the smoothing's.
@@ -232,7 +244,7 @@ export class CameraRig {
     // scroll and no page being read.
     const paged = 1 - hiddenMix;
 
-    const azimuth =
+    let azimuth =
       pose.azimuth +
       free *
         (this.pointerX * parallax.azimuth * gain +
@@ -247,9 +259,27 @@ export class CameraRig {
 
     const arriving = 1 - smootherstep(Math.min(1, Math.max(0, inputs.intro)));
     elevation += arriving * intro.elevation * free;
+    // It comes in from the side the last one went out of: walking forward
+    // through the set the camera keeps turning one way, the old scene swung
+    // out ahead of it and the new one swung in behind.
+    azimuth -=
+      (inputs.arrivedHeading ?? 1) *
+      arriving *
+      (intro.azimuth ?? DEFAULTS.intro.azimuth) *
+      free;
+
+    // Leaving is let go of rather than settled into: slow to start, and
+    // still moving at the end, where the arrival of the next one takes the
+    // movement up.
+    const gone = Math.min(1, Math.max(0, inputs.outro ?? 0));
+    const leaving = gone * gone * gone * (3 - 2 * gone);
+    elevation += leaving * outro.elevation * free;
+    azimuth += (inputs.heading ?? 1) * leaving * outro.azimuth * free;
+
     const distance =
       pose.distance *
       (1 + arriving * intro.distance) *
+      (1 + leaving * outro.distance * free) *
       (1 + this.scroll * scroll.distance * paged * free);
 
     pose = { ...pose, azimuth, elevation, distance };

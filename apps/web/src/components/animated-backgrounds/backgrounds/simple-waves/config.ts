@@ -6,7 +6,8 @@ import { lazy } from 'react';
 // the simulation — and three.js with it — into the critical bundle of
 // every page. The chunk loads when the background first renders,
 // behind the Suspense in BackgroundManager.
-const SimpleWaveBackground = lazy(() => import('./SimpleWaveBackground'));
+const load = () => import('./SimpleWaveBackground');
+const SimpleWaveBackground = lazy(load);
 
 // Custom settings specific to simple waves
 export interface SimpleWaveCustomSettings {
@@ -115,6 +116,7 @@ export const simpleWaveConfig = createBackgroundConfig({
     '0.6x, each drifting at its own rate. Height maps the amplitude — crests where they ' +
     'reinforce, flat where they cancel. Nothing but superposition.',
   component: SimpleWaveBackground,
+  preload: load,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,

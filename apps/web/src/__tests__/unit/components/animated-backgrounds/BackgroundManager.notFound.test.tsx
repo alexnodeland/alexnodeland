@@ -15,7 +15,6 @@ jest.mock('../../../../components/SettingsPanelContext', () => ({
 }));
 
 const mockSwitchToNextBackground = jest.fn();
-const mockSetOverlayOpacity = jest.fn();
 
 jest.mock('../../../../components/BackgroundProvider', () => {
   const React = require('react');
@@ -57,8 +56,6 @@ jest.mock('../../../../components/BackgroundProvider', () => {
       toggleSettingsPanel: jest.fn(),
       closeSettingsPanel: jest.fn(),
       audioControls: { startAudio: null, stopAudio: null, isPlaying: false },
-      overlayOpacity: 0,
-      setOverlayOpacity: mockSetOverlayOpacity,
       setAudioControls: jest.fn(),
       currentBackground: background,
       currentSettings: settings,
@@ -95,6 +92,5 @@ describe('BackgroundManager and the 404', () => {
     expect(mockSwitchToNextBackground).toHaveBeenCalled();
     // Each background that comes up is handed the flag.
     expect(screen.getByTestId('bg')).toHaveAttribute('data-not-found', 'yes');
-    expect(mockSetOverlayOpacity).toHaveBeenCalled();
   });
 });

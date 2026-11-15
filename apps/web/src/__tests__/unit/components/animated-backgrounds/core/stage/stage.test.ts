@@ -5,6 +5,7 @@ import {
   Stage,
   STAGE_GROUND,
 } from '../../../../../../components/animated-backgrounds/core/stage/stage';
+import { setHeading } from '../../../../../../components/animated-backgrounds/core/stage/passage';
 import { Pose } from '../../../../../../components/animated-backgrounds/core/stage/rig';
 
 interface StubRenderer {
@@ -448,6 +449,140 @@ describe('the stage', () => {
     expect(frames[0].pointer.x).toBeCloseTo(1);
     expect(frames[0].pointer.y).toBeCloseTo(1);
     expect(frames[0].pointer.overField).toBe(true);
+  });
+
+  describe('a scene that is asked to go', () => {
+    afterEach(() => setHeading(1));
+
+    it('is not leaving until it is asked', async () => {
+      await begin();
+      step();
+      step();
+      expect(frames.every(frame => frame.outro === 0)).toBe(true);
+    });
+
+    it('is told how far gone it is, over the time it was given', async () => {
+      await begin();
+      step();
+      stage?.leave(0.5);
+      step(100);
+      expect(frames[frames.length - 1].outro).toBeCloseTo(0.2);
+      step(100);
+      step(100);
+      expect(frames[frames.length - 1].outro).toBeCloseTo(0.6);
+      step(100);
+      step(100);
+      step(100);
+      expect(frames[frames.length - 1].outro).toBe(1);
+    });
+
+    it('comes back from where it had got to when told it can stay', async () => {
+      await begin();
+      step();
+      stage?.leave(1);
+      for (let i = 0; i < 5; i++) step(100);
+      expect(frames[frames.length - 1].outro).toBeCloseTo(0.5);
+
+      stage?.stay();
+      step(100);
+      expect(frames[frames.length - 1].outro).toBeCloseTo(0.4);
+      for (let i = 0; i < 6; i++) step(100);
+      expect(frames[frames.length - 1].outro).toBe(0);
+    });
+
+    it('swings the camera away, and further the further gone it is', async () => {
+      await begin();
+      for (let i = 0; i < 40; i++) step(100);
+      const rest = stage?.rig.pose.azimuth ?? 0;
+      stage?.leave(1);
+      for (let i = 0; i < 5; i++) step(100);
+      const half = stage?.rig.pose.azimuth ?? 0;
+      for (let i = 0; i < 5; i++) step(100);
+      const gone = stage?.rig.pose.azimuth ?? 0;
+      expect(half).toBeGreaterThan(rest);
+      expect(gone).toBeGreaterThan(half + 0.1);
+    });
+
+    it('leaves the way the set is being walked, and says so', async () => {
+      await begin();
+      step();
+      expect(frames[frames.length - 1].heading).toBe(1);
+      for (let i = 0; i < 40; i++) step(100);
+      const rest = stage?.rig.pose.azimuth ?? 0;
+
+      setHeading(-1);
+      stage?.leave(0.5);
+      for (let i = 0; i < 6; i++) step(100);
+      expect(frames[frames.length - 1].heading).toBe(-1);
+      expect(stage?.rig.pose.azimuth).toBeLessThan(rest - 0.1);
+    });
+
+    it('arrives in the direction the set was being walked when it was built', async () => {
+      setHeading(-1);
+      await begin();
+      step();
+      expect(frames[0].heading).toBe(-1);
+      // From the far side: round to the right of where it will rest.
+      const first = stage?.rig.pose.azimuth ?? 0;
+      for (let i = 0; i < 40; i++) step(100);
+      expect(first).toBeGreaterThan((stage?.rig.pose.azimuth ?? 0) + 0.1);
+    });
+
+    it('does not take a still apart: it stays whole until it is taken away', async () => {
+      await begin();
+      stage?.setFrozen(true);
+      step();
+      stage?.leave(1);
+      step();
+      expect(frames[frames.length - 1].outro).toBe(0);
+      expect(frames[frames.length - 1].dt).toBe(0);
+    });
+  });
+
+  describe('the canvas itself', () => {
+    const canvas = () => container.querySelector('canvas') as HTMLCanvasElement;
+
+    it('is not shown before it has a frame', async () => {
+      await begin();
+      expect(canvas().style.opacity).toBe('0');
+    });
+
+    it('comes up over its first moments and then wears no opacity at all', async () => {
+      await begin();
+      step();
+      expect(canvas().style.opacity).toBe('0');
+      step(100);
+      const partway = Number(canvas().style.opacity);
+      expect(partway).toBeGreaterThan(0);
+      expect(partway).toBeLessThan(1);
+      for (let i = 0; i < 5; i++) step(100);
+      expect(canvas().style.opacity).toBe('');
+    });
+
+    it('holds through a leaving and goes down with the last of it', async () => {
+      await begin();
+      for (let i = 0; i < 10; i++) step(100);
+      stage?.leave(1);
+      for (let i = 0; i < 7; i++) step(100);
+      // Seven tenths gone: the leaving is still the scene's to show.
+      expect(canvas().style.opacity).toBe('');
+      for (let i = 0; i < 2; i++) step(100);
+      const late = Number(canvas().style.opacity);
+      expect(late).toBeGreaterThan(0);
+      expect(late).toBeLessThan(1);
+      step(100);
+      step(100);
+      expect(canvas().style.opacity).toBe('0');
+    });
+
+    it('is simply shown, for a still', async () => {
+      stage = createStage(container, { rig: { base: () => base } });
+      stage.setFrozen(true);
+      stage.start(frame => frames.push({ ...frame }));
+      await flush();
+      step();
+      expect(canvas().style.opacity).toBe('');
+    });
   });
 
   it('leaves nothing behind', async () => {

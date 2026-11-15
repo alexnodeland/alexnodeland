@@ -15,6 +15,8 @@ export function createBackgroundConfig<
   shortName: string;
   description: string;
   component: React.ComponentType<any>;
+  // Fetches the component's chunk ahead of its turn: see BackgroundConfig.
+  preload?: () => Promise<unknown>;
   customSettings: TCustomSettings;
   customSettingsSchema: SettingsSchema[];
   standardOverrides?: Partial<StandardSettings>;
@@ -34,6 +36,7 @@ export function createBackgroundConfig<
     shortName: config.shortName,
     description: config.description,
     component: config.component,
+    preload: config.preload,
     standardSettings,
     customSettings: config.customSettings,
     customSettingsSchema: config.customSettingsSchema,
@@ -72,6 +75,7 @@ export function toLegacyConfig(config: BackgroundConfig<any>) {
     shortName: config.shortName,
     description: config.description,
     component: config.component,
+    preload: config.preload,
     defaultSettings: getCompleteSettings(config),
     settingsSchema: getCompleteSettingsSchema(config),
     blogPostSection: config.blogPostSection,
