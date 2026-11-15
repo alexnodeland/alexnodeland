@@ -80,8 +80,6 @@ jest.mock('../../../../components/BackgroundProvider', () => ({
       stopAudio: null,
       isPlaying: false,
     },
-    overlayOpacity: 0,
-    setOverlayOpacity: jest.fn(),
     setAudioControls: jest.fn(),
     currentBackground: {
       id: 'one',
@@ -114,10 +112,9 @@ describe('BackgroundManager', () => {
     jest.useRealTimers();
   });
 
-  it('renders current background and overlay', () => {
+  it('renders the current background', () => {
     render(<BackgroundManager />);
     expect(screen.getByTestId('bg')).toBeInTheDocument();
-    // overlay div exists (cannot easily select inline style-only, but render succeeded)
   });
 
   it('handles keyboard navigation', () => {

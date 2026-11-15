@@ -167,14 +167,19 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 // Text that sits directly on the animated background rather than on a page
 // surface — the nav, the footer, page titles above the window.
 //
-// The backgrounds run from a near-black graph to a saturated yellow PDE field,
-// so this cannot be solved with a colour, and the text carries its own halo
+// The backgrounds run from a near-black graph to a field of lit blocks, so
+// this cannot be solved with a colour, and the text carries its own halo
 // instead — a tight, nearly opaque layer that holds an edge against a bright
-// cell, plus a wider soft one that fills the gaps between cells.
+// cell, a wider soft one that fills the gaps between cells, and a third,
+// wider and fainter again, that takes the shine off whatever is passing
+// behind the whole word. The scenes do their half as well: they dim towards
+// the top of the screen, where the titles are (the canopy, in
+// core/stage/post.ts).
 @mixin over-background {
   text-shadow:
     0 1px 2px rgba(0, 0, 0, 0.9),
-    0 0 12px rgba(0, 0, 0, 0.6);
+    0 0 12px rgba(0, 0, 0, 0.65),
+    0 0 32px rgba(0, 0, 0, 0.5);
 }
 
 // The current item, where the reader's own colours have taken over. Forced
@@ -203,15 +208,35 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
   }
 }
 
-// Every content block inside the window — card, panel, chip, control — is an
-// outline rather than a fill. The window is a translucent scrim with a
-// simulation running through it, and a solid panel laid over that reads as a
-// lid on the animation: the page stops being a window and becomes a stack of
-// dark slabs. The hairline is white-alpha, never near-black, which disappears
-// entirely against the scrim.
-@mixin outline-block {
-  background: transparent;
+// The edge of a surface on the field, lit from above: brightest along the
+// top, the plain hairline down the sides, and less along the foot. Three
+// border colours and nothing cleverer — no gradient border, no mask — so it
+// is drawn the same by every engine, and the corners blend on their own
+// diagonal the way a chamfer catches light.
+@mixin lit-edge {
   border: 1px solid var(--hairline);
+  border-top-color: var(--hairline-top);
+  border-bottom-color: var(--hairline-foot);
+}
+
+// The glass every floating surface is made of: behind the scrim, the field
+// blurred and its colour put back (see --glass-window and its two siblings
+// in variables.scss — the argument is one of those three).
+@mixin glass($filter: var(--glass-window)) {
+  backdrop-filter: $filter;
+  -webkit-backdrop-filter: $filter; // Safari 17 and earlier
+}
+
+// Every content block inside the window — card, panel, chip — is a surface
+// with an edge: a wash faint enough that the field's light still comes
+// through it, and a hairline lit from above (see --card-fill in
+// variables.scss for why it stopped being a bare outline). The hairline is
+// white-alpha, never near-black, which disappears entirely against the
+// scrim. The name is the one it has always had: it is used by every page.
+@mixin outline-block {
+  background: var(--card-fill);
+  @include lit-edge;
+  box-shadow: var(--edge-light);
 }
 
 // The emphasis a card takes on when it is the one being read. Pointer only,
@@ -236,7 +261,8 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 @mixin card-highlight {
   transition:
     border-color var(--transition-normal),
-    background-color var(--transition-normal);
+    background-color var(--transition-normal),
+    box-shadow var(--transition-normal);
 }
 
 // The lit end of that transition, applied under whatever means "this one" —
@@ -245,7 +271,12 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 // and the surface behind it is a live simulation, not a slab.
 @mixin card-highlight-on {
   border-color: var(--hairline-lit);
-  background-color: rgba(255, 255, 255, 0.03);
+  // A wash over the card's own, not in place of it: a gradient cannot be
+  // eased, and a colour laid over one can.
+  background-color: rgba(255, 255, 255, 0.035);
+  box-shadow:
+    var(--edge-light),
+    0 12px 32px -18px rgba(0, 0, 0, 0.7);
 }
 
 // A machined housing: the window's material (scrim, blur, hairline) with a 1px
@@ -259,24 +290,23 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 // device as the window they sit beside. One radius across everything.
 @mixin capsule-housing {
   background: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-  border: 1px solid var(--window-border);
+  @include glass;
+  @include lit-edge;
   border-radius: var(--radius-lg);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 8px 24px rgba(0, 0, 0, 0.3);
+    var(--edge-light),
+    0 10px 30px -8px rgba(0, 0, 0, 0.5);
 }
 
 // The material of the window and its two floating peers: scrim, blur,
 // hairline, the panel shadow.
 @mixin window-material {
-  background: var(--window-scrim);
-  backdrop-filter: blur(var(--window-blur));
-  -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
-  border: 1px solid var(--window-border);
+  background-color: var(--window-scrim);
+  background-image: var(--window-sheen);
+  @include glass;
+  @include lit-edge;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-panel);
+  box-shadow: var(--edge-light), var(--shadow-panel);
 }
 
 // A sticky row of controls at the top of the window's own scroll: the page's
@@ -394,8 +424,7 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
     // for part of the backdrop and smears it away.
     inset: 0;
     border-radius: inherit;
-    backdrop-filter: blur(var(--blur-chip));
-    -webkit-backdrop-filter: blur(var(--blur-chip)); // Safari ≤17
+    @include glass(var(--glass-chip));
     pointer-events: none;
   }
 
@@ -429,11 +458,10 @@ $compact: '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 @mixin floating-panel {
   background-color: var(--window-scrim);
   background-image: linear-gradient(var(--window-scrim), var(--window-scrim));
-  backdrop-filter: blur(var(--blur-panel));
-  -webkit-backdrop-filter: blur(var(--blur-panel)); // Safari ≤17
-  border: 1px solid var(--hairline);
+  @include glass(var(--glass-panel));
+  @include lit-edge;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--edge-light), var(--shadow-panel);
 }
 
 // A key cap. No surface under it on the field, so it carries its own.

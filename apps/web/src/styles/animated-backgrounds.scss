@@ -128,6 +128,116 @@
   }
 }
 
+// The readout: what the simulation is doing, in a line, to the right of the
+// pill that names it (see FieldReadout.tsx). A caption, not a control, but it
+// sits on a field that can be anything — a row of lit blocks passes behind it
+// as readily as black — so it wears the kit's glass like the pills do, a size
+// down: a chip on the pill's centre line. Quiet ink, and tabular numbers so a
+// count that climbs does not shuffle the characters after it. Out of the
+// flow: the pill's box is the rail's and must not grow for it.
+.field-readout {
+  --readout-height: 1.75rem;
+  position: absolute;
+  left: calc(100% + var(--space-3));
+  bottom: calc((var(--rail-height) - var(--readout-height)) / 2);
+  box-sizing: border-box;
+  height: var(--readout-height);
+  padding: 0 var(--space-3);
+  // Never as far as the hint in the middle of the same line.
+  max-width: calc(50vw - var(--rail-width) - var(--rail-inset-left) - 4rem);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  @include capsule-housing;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  // The line box is the chip's own height less its hairlines, which centres
+  // the text without making the chip a flex container — one of those cannot
+  // put an ellipsis on its own text.
+  line-height: calc(var(--readout-height) - 2px);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  pointer-events: none;
+  user-select: none;
+  animation: pill-in var(--transition-slow) forwards;
+
+  // Below this the line would run into the middle of the row, and on a phone
+  // the corner belongs to the launcher.
+  @media (max-width: 1100px) {
+    display: none;
+  }
+}
+
+// The field under a pointer. The stage marks the root while the pointer is
+// over bare field (see core/stage/pointer.ts), and what is under it there
+// can be pushed, painted and probed: the cursor says so — an instrument's
+// crosshair, where the page's own is an arrow. Inherited, so it reaches the
+// band at the top of the window's scroll, which is field too.
+html.over-field,
+html.field-pressing {
+  cursor: crosshair;
+}
+
+// A press that began on the field and is dragged across the page is still
+// the field's. Without this the drag selects every paragraph it crosses.
+html.field-pressing {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+// The light the pointer carries (see ui/PointerLight.tsx). A disc centred on
+// the pointer and blended as an overlay: what is dark under it stays dark,
+// what is lit comes up — so on the glass it finds the hairlines, the field's
+// glow under the scrim and the ink, and on a black ground it finds nothing.
+// Two falloffs in one gradient: a core that is the light itself, and a skirt
+// wide enough that nothing has an edge.
+.pointer-light {
+  --pointer-light-size: 46rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: calc(var(--z-dialog) + 2);
+  width: var(--pointer-light-size);
+  height: var(--pointer-light-size);
+  // Centred on the point the transform puts it at.
+  margin: calc(var(--pointer-light-size) / -2) 0 0
+    calc(var(--pointer-light-size) / -2);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.5) 0,
+    rgba(255, 255, 255, 0.24) 22%,
+    rgba(255, 255, 255, 0.08) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+  will-change: transform;
+
+  &.is-lit {
+    opacity: 1;
+  }
+
+  // Nothing hovers on a touch screen, and a reader's own colours are not
+  // ours to tint.
+  @media (hover: none), (forced-colors: active) {
+    display: none;
+  }
+}
+
+// On the bare field the simulation answers the pointer itself — a probe, a
+// ripple, a node picked up — and a second light on top of that one is one
+// too many.
+html.over-field .pointer-light,
+html.field-pressing .pointer-light {
+  opacity: 0;
+}
+
 // The note a `?` opens: one box for the whole panel, laid over it rather than
 // inside the list, because the list scrolls and clipped every tooltip that used
 // to live in a row. It is placed by the panel (see openHelp in
@@ -156,8 +266,7 @@
     linear-gradient(var(--window-scrim), var(--window-scrim)),
     linear-gradient(var(--window-scrim), var(--window-scrim)),
     linear-gradient(var(--wash-active), var(--wash-active));
-  backdrop-filter: blur(var(--blur-chip));
-  -webkit-backdrop-filter: blur(var(--blur-chip));
+  @include glass(var(--glass-chip));
   border-color: var(--hairline-lit);
   box-shadow: var(--shadow-panel);
   border-radius: var(--radius-sm);

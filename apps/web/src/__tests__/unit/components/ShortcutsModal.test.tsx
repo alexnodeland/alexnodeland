@@ -53,6 +53,25 @@ describe('Shortcuts', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('says what a pointer does on the field, under what the keys do', () => {
+    render(<Shortcuts />);
+    press('?');
+
+    const dialog = screen.getByRole('dialog', { name: 'keyboard shortcuts' });
+    const lists = dialog.querySelectorAll('.shortcuts-list');
+    // The keys, and then the field's two gestures as a list of their own.
+    expect(lists).toHaveLength(2);
+    expect(screen.getByText('on the field')).toBeInTheDocument();
+    const gestures = Array.from(lists[1].querySelectorAll('li')).map(item => [
+      item.querySelector('kbd')?.textContent,
+      item.querySelector('.shortcuts-label')?.textContent,
+    ]);
+    expect(gestures).toEqual([
+      ['click', 'poke the simulation'],
+      ['drag', 'push it around'],
+    ]);
+  });
+
   it('opens from the hint and closes on escape', async () => {
     const user = userEvent.setup();
     render(<Shortcuts />);

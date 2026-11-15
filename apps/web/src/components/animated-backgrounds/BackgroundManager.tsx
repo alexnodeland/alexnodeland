@@ -1,13 +1,44 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { siteConfig } from '../../config';
 import { useNotFound } from '../../lib/notFound';
 import { isShortcutKey } from '../../lib/utils/keys';
 import { useBackground } from '../BackgroundProvider';
 import { useSettingsPanel } from '../SettingsPanelContext';
+import PointerLight from '../ui/PointerLight';
+import { backgroundRegistry, getBackgroundById } from './index';
 import BackgroundControls from './BackgroundControls';
 import MobileInteractivity from './MobileInteractivity';
+import { fieldTouchedAt } from './core/stage/pointer';
 import { useIsMobileViewport } from './core/useIsMobileViewport';
 import { usePrefersReducedMotion } from './core/usePrefersReducedMotion';
+
+// How long the cycle waits after the field was last pressed, dragged across
+// or tapped before it will move on. A simulation somebody is in the middle of
+// pushing around is not taken out from under their hand: the twelve seconds
+// are for watching, and this is for playing.
+export const TOUCH_HOLD_MS = 9000;
+
+// How long a background is given to leave when the reader asked for the next
+// one by hand. Shorter than the cycle's: an arrow key is waiting on it.
+export const ASKED_LEAVE_MS = 650;
+
+// How long a background has had the field before the ones either side of it
+// are fetched, so the first step in either direction has nothing to wait on.
+const PRELOAD_AFTER_MS = 2500;
+
+/**
+ * How much longer the cycle has to wait for a hand on the field, in
+ * milliseconds: zero when the field has not been touched, or was last touched
+ * longer ago than the hold.
+ */
+export const touchHoldRemaining = (
+  now: number,
+  touchedAt: number,
+  holdMs: number = TOUCH_HOLD_MS
+): number => {
+  if (!(touchedAt > 0)) return 0;
+  return Math.max(0, holdMs - (now - touchedAt));
+};
 
 interface BackgroundManagerProps {
   className?: string;
@@ -40,8 +71,6 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     closeSettingsPanel,
     audioControls,
     setAudioControls,
-    overlayOpacity,
-    setOverlayOpacity,
     currentBackground,
     currentSettings,
     mounted,
@@ -105,55 +134,88 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
     };
   }, [handleKeyDown]);
 
-  // Safety mechanism: ensure the background is visible on mount. Reads the
-  // overlay through a ref because an empty dep array otherwise pins the check
-  // to the mount-time value, which is always 0 — the guard could never fire.
-  const overlayOpacityRef = useRef(overlayOpacity);
-  overlayOpacityRef.current = overlayOpacity;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (overlayOpacityRef.current === 1) {
-        // If overlay is still black after 500ms, make background visible
-        setOverlayOpacity(0);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
-
-  // ===== Background cycling with fade to black overlay =====
+  // ===== The cycle, and the hand-over between two backgrounds =====
   const playDurationMs =
     siteConfig.animatedBackgrounds?.playDurationMs ?? 12000;
-  const fadeDurationMs = siteConfig.animatedBackgrounds?.fadeDurationMs ?? 1200;
+  const leaveDurationMs =
+    siteConfig.animatedBackgrounds?.leaveDurationMs ?? 1100;
   const cycleEnabled = siteConfig.animatedBackgrounds?.cycleEnabled ?? true;
 
   // Someone who asked the OS for less motion gets a still: the cycle stops
-  // (no fullscreen fade-to-black and fresh WebGL scene every twelve seconds)
+  // (no scene taking itself apart and another assembling every twelve seconds)
   // and the current background draws one frame and holds it — `frozen` below.
   // Read through the hook rather than sampled inside the cycling effect, so
   // that toggling the preference mid-session takes effect instead of waiting
   // for some unrelated dependency to change.
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  const fadeInTimeoutRef = useRef<number | null>(null);
+  // Which background is on the field, as against which one is current.
+  //
+  // They differ for as long as a leaving takes. Changing background changes
+  // the provider's state at once — the pill says the new name, the panel
+  // holds the new settings — but the scene that was up is not cut: it is told
+  // it is leaving, given its time to go in its own way (core/stage/passage.ts),
+  // and only then replaced. Asked for twice in that time, the field goes
+  // straight to the latest; asked to go back to the one still leaving, it is
+  // told to stay and returns from wherever it had got to.
+  const currentId = state.currentBackgroundId;
+  const [shownId, setShownId] = useState<string | null>(null);
+  const displayId = mounted ? (shownId ?? currentId) : null;
+  const leaving = displayId !== null && displayId !== currentId;
+
+  const currentIdRef = useRef(currentId);
+  currentIdRef.current = currentId;
+  // Whether the step being taken is the cycle's own, which is unhurried, or
+  // the reader's. Settled once, in the render the leaving begins in, because
+  // that is the render the scene is told in.
+  const cycleStepRef = useRef(false);
+  const leaveMsRef = useRef(ASKED_LEAVE_MS);
+  const wasLeavingRef = useRef(false);
+  if (leaving && !wasLeavingRef.current) {
+    leaveMsRef.current = cycleStepRef.current
+      ? leaveDurationMs
+      : ASKED_LEAVE_MS;
+  }
+  if (leaving !== wasLeavingRef.current) cycleStepRef.current = false;
+  wasLeavingRef.current = leaving;
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (!leaving || prefersReducedMotion) {
+      // Nothing up yet, nothing to leave, or a still — which has no movement
+      // to leave by, and is simply replaced.
+      setShownId(currentIdRef.current);
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setShownId(currentIdRef.current),
+      leaveMsRef.current
+    );
+    return () => window.clearTimeout(timer);
+  }, [mounted, leaving, prefersReducedMotion]);
+
+  // The neighbours' code, fetched once the one on the field has settled in.
+  useEffect(() => {
+    if (!displayId || leaving) return;
+    const timer = window.setTimeout(() => {
+      const index = backgroundRegistry.findIndex(bg => bg.id === displayId);
+      if (index < 0) return;
+      const count = backgroundRegistry.length;
+      for (const step of [1, count - 1]) {
+        backgroundRegistry[(index + step) % count].preload?.().catch(() => {
+          // Not there to be had: it will be asked for again when it is due.
+        });
+      }
+    }, PRELOAD_AFTER_MS);
+    return () => window.clearTimeout(timer);
+  }, [displayId, leaving]);
+
   const playTimeoutRef = useRef<number | null>(null);
-  const fadeOutTimeoutRef = useRef<number | null>(null);
-  const resumeFromVisibleRef = useRef<boolean>(false);
 
   const clearTimers = useCallback(() => {
-    if (fadeInTimeoutRef.current) {
-      clearTimeout(fadeInTimeoutRef.current);
-      fadeInTimeoutRef.current = null;
-    }
     if (playTimeoutRef.current) {
       clearTimeout(playTimeoutRef.current);
       playTimeoutRef.current = null;
-    }
-    if (fadeOutTimeoutRef.current) {
-      clearTimeout(fadeOutTimeoutRef.current);
-      fadeOutTimeoutRef.current = null;
     }
   }, []);
 
@@ -168,46 +230,42 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
       !cycleEnabled
     ) {
       clearTimers();
-      setOverlayOpacity(0); // Never strand the user on the fade-to-black frame
       return;
     }
 
     let cancelled = false;
 
-    const startCycle = () => {
+    // The end of a background's turn — unless a hand is on the field, or was
+    // a moment ago, in which case the turn is extended until it has been off
+    // it for the hold. Asked again each time the extension runs out, since
+    // the hand may not have left.
+    const whenFieldIsFree = (proceed: () => void) => {
       if (cancelled) return;
-
-      if (resumeFromVisibleRef.current) {
-        // Panel just closed: keep visible, wait the play duration, then fade out to next
-        resumeFromVisibleRef.current = false;
-        setOverlayOpacity(0);
-        playTimeoutRef.current = window.setTimeout(() => {
-          if (cancelled) return;
-          setOverlayOpacity(1);
-          fadeOutTimeoutRef.current = window.setTimeout(() => {
-            if (cancelled) return;
-            switchToNextBackground();
-            startCycle();
-          }, fadeDurationMs);
-        }, playDurationMs);
+      const wait = touchHoldRemaining(performance.now(), fieldTouchedAt());
+      if (wait <= 0) {
+        proceed();
         return;
       }
-
-      // Normal cycle: show background immediately, then after play duration fade to black and switch
-      setOverlayOpacity(0); // Ensure background is visible
-      playTimeoutRef.current = window.setTimeout(() => {
-        if (cancelled) return;
-        setOverlayOpacity(1); // Fade to black
-        fadeOutTimeoutRef.current = window.setTimeout(() => {
-          if (cancelled) return;
-          switchToNextBackground();
-          setOverlayOpacity(0); // Show new background immediately
-          startCycle(); // Continue cycle
-        }, fadeDurationMs);
-      }, playDurationMs);
+      playTimeoutRef.current = window.setTimeout(
+        () => whenFieldIsFree(proceed),
+        wait
+      );
     };
 
-    startCycle();
+    // A turn is the play time, and for every turn but the first the time the
+    // one before spent leaving, which the new one does not get to be seen in.
+    const takeTurn = (handOverMs: number) => {
+      if (cancelled) return;
+      playTimeoutRef.current = window.setTimeout(() => {
+        whenFieldIsFree(() => {
+          cycleStepRef.current = true;
+          switchToNextBackground();
+          takeTurn(leaveDurationMs);
+        });
+      }, playDurationMs + handOverMs);
+    };
+
+    takeTurn(0);
 
     return () => {
       cancelled = true;
@@ -216,23 +274,14 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
   }, [
     cycleEnabled,
     playDurationMs,
-    fadeDurationMs,
+    leaveDurationMs,
     clearTimers,
     switchToNextBackground,
-    setOverlayOpacity,
     state.showSettingsPanel,
     state.closingSettingsPanel,
     cyclePaused,
     prefersReducedMotion,
   ]);
-
-  // When the settings panel fully closes, resume cycle from visible phase
-  useEffect(() => {
-    if (!state.showSettingsPanel && !state.closingSettingsPanel) {
-      // Mark to resume from visible on next cycle effect run
-      resumeFromVisibleRef.current = true;
-    }
-  }, [state.showSettingsPanel, state.closingSettingsPanel]);
 
   // Backgrounds that make sound hand their transport up through this; the
   // settings panel's play button is the only way to reach it without a
@@ -254,12 +303,21 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
 
   // Render current background. The components are React.lazy (see each
   // background's config.ts) so the simulations — and three.js — stay out of
-  // the page bundles; the null fallback is invisible because a background
-  // fades in from the black overlay anyway.
-  const renderCurrentBackground = () => {
-    if (!currentBackground) return null;
+  // the page bundles; the null fallback is invisible because what a scene
+  // arrives onto is the same flat ground.
+  const shownBackground =
+    displayId === null || displayId === currentId
+      ? currentBackground
+      : getBackgroundById(displayId);
+  const shownSettings =
+    displayId === null || displayId === currentId
+      ? currentSettings
+      : state.settings[displayId];
 
-    const BackgroundComponent = currentBackground.component;
+  const renderCurrentBackground = () => {
+    if (!shownBackground) return null;
+
+    const BackgroundComponent = shownBackground.component;
     return (
       <React.Suspense fallback={null}>
         {/* The layer the simulation arrives on, and the reason it is a layer
@@ -267,25 +325,24 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
 
             A background is lazy twice over — a chunk to fetch, then three.js,
             then a first frame to compute — so on a phone it lands a couple of
-            seconds after the page, and it used to cut straight in at full
-            strength: a flat field, and then suddenly a picture. It comes up
-            instead, over the same beat a cycle step takes.
+            seconds after the page. How it then comes on is the scene's own
+            business (it assembles: see core/stage/passage.ts); this is only
+            the short lift that covers a canvas appearing at all.
 
             Inside the Suspense boundary on purpose: React commits this and the
-            simulation in the same pass, so the fade starts when the picture
-            does rather than during the wait for it. Fixed, on the stage's own
-            depth and a stacking context of its own (see .background-arrival),
-            so the canvas's negative z-index resolves in here rather than at
-            the root. */}
-        <div
-          className="background-arrival"
-          style={{ animationDuration: `${fadeDurationMs}ms` }}
-        >
+            simulation in the same pass. Fixed, on the stage's own depth and a
+            stacking context of its own (see .background-arrival), so the
+            canvas's negative z-index resolves in here rather than at the
+            root. Keyed, so that one background following another is a new
+            scene rather than the old one handed new settings. */}
+        <div className="background-arrival" key={shownBackground.id}>
           <BackgroundComponent
             className={className}
-            settings={currentSettings}
+            settings={shownSettings}
             frozen={prefersReducedMotion}
             notFound={notFound}
+            leaving={leaving}
+            leaveMs={leaveMsRef.current}
             onAudioControlsReady={publishAudioControls}
           />
         </div>
@@ -315,27 +372,6 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
           same in both themes rather than picking up the page colour. */}
       <div className="background-stage" aria-hidden="true" />
       {mounted && renderCurrentBackground()}
-      {/* The fade between two backgrounds. It follows the arrival layer in
-          the document at the same depth, so it covers the simulation and
-          nothing else — the page's chrome is fixed above --z-stage. Not a
-          negative z-index: see .background-stage for the engine that paints
-          the page's ground over those. */}
-      {mounted && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: 'none',
-            backgroundColor: '#000',
-            opacity: overlayOpacity,
-            transition: cycleEnabled
-              ? `opacity ${fadeDurationMs}ms ease-in-out`
-              : 'none',
-          }}
-        />
-      )}
-
       {/* Background Controls */}
       <BackgroundControls
         currentBackgroundId={state.currentBackgroundId}
@@ -361,6 +397,12 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
 
       {/* Touch equivalent of the keyboard controls; mobile-only via CSS */}
       <MobileInteractivity />
+
+      {/* The light the pointer carries across the glass (ui/PointerLight):
+          the page's answer to the pointer, where the field's own is the
+          simulation's. Here because this is where the field's chrome is
+          mounted, once, for the whole site. */}
+      <PointerLight />
     </>
   );
 };

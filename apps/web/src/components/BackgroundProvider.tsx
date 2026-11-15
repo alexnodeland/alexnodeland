@@ -13,6 +13,13 @@ import {
   BackgroundSettings,
 } from '../types/animated-backgrounds';
 import { backgroundRegistry, getBackgroundById } from './animated-backgrounds';
+import {
+  parseSaved,
+  STORAGE_KEY,
+  toSaved,
+  withOverrides,
+} from './animated-backgrounds/core/persistence';
+import { setHeading } from './animated-backgrounds/core/stage/passage';
 import { useSettingsPanel } from './SettingsPanelContext';
 import { PANEL_TRANSITION_MS } from '../config/motion';
 
@@ -44,8 +51,6 @@ interface BackgroundContextType {
   }) => void;
 
   // Cycling state for smooth transitions
-  overlayOpacity: number;
-  setOverlayOpacity: (opacity: number) => void;
 
   // Computed values
   currentBackground: ReturnType<typeof getBackgroundById>;
@@ -65,6 +70,16 @@ interface BackgroundProviderProps {
   children: ReactNode;
   initialBackgroundId?: string;
 }
+
+// What each background starts from: the other half of what is saved, which
+// is only ever the difference from these (see core/persistence.ts).
+const defaultsById = (): Record<string, BackgroundSettings> => {
+  const defaults: Record<string, BackgroundSettings> = {};
+  backgroundRegistry.forEach(bg => {
+    defaults[bg.id] = bg.defaultSettings;
+  });
+  return defaults;
+};
 
 const getRandomBackgroundId = (): string => {
   const backgroundIds = backgroundRegistry.map(bg => bg.id);
@@ -110,31 +125,29 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
     if (!initialBackgroundId) {
       let restored = false;
       try {
-        const saved = localStorage.getItem('animatedBackgroundSettings');
-        if (saved) {
-          const parsedState = JSON.parse(saved);
-          // Validate that the saved background still exists
-          if (getBackgroundById(parsedState.currentBackgroundId)) {
-            setState(prev => ({
-              ...prev,
-              ...parsedState,
-              // Merge per background rather than swapping each background's
-              // settings object wholesale. A blob saved before a setting
-              // existed has no key for it, and taking the blob whole would
-              // hand the background `undefined` where it expects a number —
-              // which reaches three.js as NaN and makes things silently
-              // vanish. Defaults underneath, saved values on top.
-              settings: Object.fromEntries(
-                Object.entries(prev.settings).map(([id, defaults]) => [
-                  id,
-                  { ...defaults, ...(parsedState.settings?.[id] ?? {}) },
-                ])
-              ),
-              showSettingsPanel: false, // Never restore panel open state
-              closingSettingsPanel: false,
-            }));
-            restored = true;
-          }
+        // Whatever its age: a blob from before the backgrounds were rebuilt
+        // comes back as the background that was up and the colours somebody
+        // chose, and nothing else (see core/persistence.ts).
+        const saved = parseSaved(localStorage.getItem(STORAGE_KEY));
+        // Validate that the saved background still exists
+        if (saved && getBackgroundById(saved.currentBackgroundId)) {
+          setState(prev => ({
+            ...prev,
+            currentBackgroundId: saved.currentBackgroundId,
+            // Defaults underneath, saved values on top, per background and
+            // per setting. What is saved is only what was changed, so a
+            // setting that did not exist when it was saved — or one whose
+            // default has moved since — simply takes today's default.
+            settings: Object.fromEntries(
+              Object.entries(prev.settings).map(([id, defaults]) => [
+                id,
+                withOverrides(defaults, saved.settings[id]),
+              ])
+            ),
+            showSettingsPanel: false, // Never restore panel open state
+            closingSettingsPanel: false,
+          }));
+          restored = true;
         }
       } catch (error) {
         console.warn(
@@ -161,10 +174,6 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
     isPlaying: boolean;
   }>({ startAudio: null, stopAudio: null, isPlaying: false });
 
-  // Cycling overlay state for smooth transitions
-  // Start with overlay transparent (0) so background is immediately visible
-  const [overlayOpacity, setOverlayOpacity] = useState<number>(0);
-
   // Access global settings panel state after state initialization
   const {
     isSettingsPanelOpen,
@@ -181,10 +190,16 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
   // every state change, which meant once per input event while a slider was
   // being dragged — main-thread work billed to the exact frames the user was
   // watching the background respond in. The write only has to happen once the
-  // dust settles.
+  // dust settles. And what is written is the difference from the defaults,
+  // not the state: which background is up, and what somebody changed.
   const persistSettings = useCallback((value: BackgroundManagerState) => {
     try {
-      localStorage.setItem('animatedBackgroundSettings', JSON.stringify(value));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(
+          toSaved(value.currentBackgroundId, value.settings, defaultsById())
+        )
+      );
     } catch (error) {
       console.warn(
         'Failed to save background settings to localStorage:',
@@ -244,7 +259,10 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
   }, [state.settings, state.currentBackgroundId]);
 
   // Background switching functions
+  // Each says which way the set is being walked as well as where to: the
+  // scene that leaves and the one that arrives both move by it.
   const switchToNextBackground = useCallback(() => {
+    setHeading(1);
     setState(prev => {
       const currentIndex = backgroundRegistry.findIndex(
         bg => bg.id === prev.currentBackgroundId
@@ -259,6 +277,7 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
   }, []);
 
   const switchToPreviousBackground = useCallback(() => {
+    setHeading(-1);
     setState(prev => {
       const currentIndex = backgroundRegistry.findIndex(
         bg => bg.id === prev.currentBackgroundId
@@ -370,8 +389,6 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
       closeSettingsPanel,
       audioControls,
       setAudioControls,
-      overlayOpacity,
-      setOverlayOpacity,
       currentBackground,
       currentSettings,
       mounted,
@@ -386,7 +403,6 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({
       toggleSettingsPanel,
       closeSettingsPanel,
       audioControls,
-      overlayOpacity,
       currentBackground,
       currentSettings,
       mounted,

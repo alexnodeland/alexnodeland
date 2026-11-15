@@ -6,7 +6,8 @@ import { lazy } from 'react';
 // the simulation — and three.js with it — into the critical bundle of
 // every page. The chunk loads when the background first renders,
 // behind the Suspense in BackgroundManager.
-const SimpleWaveBackground = lazy(() => import('./SimpleWaveBackground'));
+const load = () => import('./SimpleWaveBackground');
+const SimpleWaveBackground = lazy(load);
 
 // Custom settings specific to simple waves
 export interface SimpleWaveCustomSettings {
@@ -30,20 +31,22 @@ const defaultCustomSettings: SimpleWaveCustomSettings = {
   waveFrequency: 6.0,
   waveAmplitude: 0.8,
 
-  // Colorful wave palette
+  // Read as display colours — the swatches in the panel are what is drawn.
+  // Indigo water, rose in the troughs and amber on the crests, over a
+  // ground that is nearly the stage's own.
   colors: {
-    primary: [0.2, 0.1, 0.8], // Deep blue
-    secondary: [0.8, 0.2, 0.8], // Magenta
-    accent: [1.0, 0.6, 0.1], // Orange
-    background: [0.15, 0.15, 0.2],
+    primary: [0.38, 0.34, 1.0], // Indigo: the body of the swell
+    secondary: [0.98, 0.32, 0.72], // Rose: the troughs
+    accent: [1.0, 0.7, 0.3], // Amber: the crests
+    background: [0.03, 0.035, 0.075],
     grid: [0.3, 0.3, 0.3],
   },
 };
 
 // Standard settings overrides for simple waves
 const standardOverrides: Partial<StandardSettings> = {
-  opacity: 0.6,
-  globalTimeMultiplier: 2.0,
+  opacity: 0.9,
+  globalTimeMultiplier: 1.4,
 };
 
 // Settings schema for custom simple wave settings
@@ -110,9 +113,10 @@ export const simpleWaveConfig = createBackgroundConfig({
   shortName: 'waves',
   description:
     'Three sine waves summed: one along x, one along y at 0.8x the frequency, one diagonal at ' +
-    '0.6x, each drifting at its own rate. Colour maps the amplitude — bright where they ' +
-    'reinforce, dark where they cancel. Nothing but superposition.',
+    '0.6x, each drifting at its own rate. Height maps the amplitude — crests where they ' +
+    'reinforce, flat where they cancel. Nothing but superposition.',
   component: SimpleWaveBackground,
+  preload: load,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,

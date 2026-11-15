@@ -93,6 +93,14 @@
   background: transparent;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  // The surface is the field (it is marked as one), and a finger dragged
+  // across the field pushes the simulation around. Left to the browser, that
+  // drag is a scroll or a pull-to-refresh that has nowhere to go, and the
+  // pointer is cancelled a few pixels in. Two fingers are still the
+  // browser's: a reader who zooms the page to see it has to be able to here.
+  touch-action: pinch-zoom;
+  user-select: none;
+  -webkit-user-select: none;
 
   &:focus {
     outline: none;

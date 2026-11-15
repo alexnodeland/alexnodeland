@@ -200,9 +200,22 @@
   // largest, and the narrowest phones take it furthest so the homepage's full
   // name still clears the capsule with real air. Layout reads this too, so it
   // lives here and nowhere else.
-  --collapsed-title-scale: 0.35;
+  //
+  // The steps above a tablet are cut for the title's 3.5rem ceiling (see
+  // --text-h1): each holds the folded title between 14 and 17 pixels across
+  // the widths it covers, which is where it was when the title stopped at
+  // 2.75rem and two steps were enough.
+  --collapsed-title-scale: 0.28;
+
+  @media (max-width: 1365px) {
+    --collapsed-title-scale: 0.3;
+  }
 
   @media (max-width: 1100px) {
+    --collapsed-title-scale: 0.35;
+  }
+
+  @media (max-width: 960px) {
     --collapsed-title-scale: 0.4;
   }
 
@@ -482,8 +495,14 @@
   inset: 0;
   pointer-events: none;
   // The material's border stays for its geometry and loses its colour: the
-  // hairline is the edge's, so nothing here has to survive the clip.
+  // hairline is the edge's, so nothing here has to survive the clip. The same
+  // goes for everything else the material hangs on its box rather than paints
+  // inside it. The sheen starts at the top of the box and the frame's top is
+  // under the clip for the whole of the fold; the shadows fall outside the
+  // box, which is exactly what a clip removes. Both are the edge's too.
   border-color: transparent;
+  background-image: none;
+  box-shadow: none;
   // Never quite whole: the top hairline is the edge's, so the frame's own
   // top is always under the clip.
   clip-path: inset(
@@ -499,8 +518,15 @@
   position: absolute;
   inset: 0;
   top: calc(var(--fold-band) * (1 - var(--hero-collapse, 0)));
-  border: 1px solid var(--window-border);
+  // The hairline, lit from above like every surface on the field; the sheen
+  // the glass catches under it; and the shadow the window casts on the field.
+  // All three are here rather than on the frame because this is the layer
+  // whose box is the window as it is seen at every point of the fold: the
+  // frame's top is under its clip.
+  @include lit-edge;
   border-radius: var(--radius-lg);
+  background-image: var(--window-sheen);
+  box-shadow: var(--edge-light), var(--shadow-panel);
   pointer-events: none;
 }
 
@@ -913,6 +939,14 @@
   .site-hero {
     padding: calc(var(--rail-clearance) + var(--space-2)) var(--gutter)
       var(--space-3);
+  }
+
+  // The window's shadow is a desktop's. Here the window is nearly the whole
+  // screen: there are a few pixels of field around it for a shadow to fall
+  // on, and the edge that carries it is repainted on every frame of the
+  // fold. The line of light inside the top edge stays.
+  .window-edge {
+    box-shadow: var(--edge-light);
   }
 
   .main {

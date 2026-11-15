@@ -42,6 +42,11 @@ export interface AnimatedBackgroundProps<TSettings = StandardSettings> {
   // whichever was on screen when the reader hit the missing page is the one
   // that plays. See core/notFoundSequence.ts and core/glyph.ts.
   notFound?: boolean;
+  // Go: the scene has `leaveMs` to take itself off the field in its own way,
+  // after which BackgroundManager unmounts it. Cleared again if the reader
+  // turns back before it has gone, and the scene returns from where it was.
+  leaving?: boolean;
+  leaveMs?: number;
   // Backgrounds that make sound publish their transport here so the settings
   // panel can offer a button for it. Without this the controls are reachable
   // only by keyboard, which on a touch device means not at all.
@@ -62,6 +67,14 @@ export interface BackgroundConfig<TCustomSettings = {}> {
   component: React.ComponentType<
     AnimatedBackgroundProps<StandardSettings & TCustomSettings>
   >;
+  /**
+   * Fetch the component's chunk without rendering it. The components are
+   * lazy, so the first time a background comes up there is a request between
+   * the old scene leaving and the new one arriving; asked for while the old
+   * one still has the field, that gap is only as long as the new scene takes
+   * to build.
+   */
+  preload?: () => Promise<unknown>;
   standardSettings: StandardSettings;
   customSettings: TCustomSettings;
   customSettingsSchema: SettingsSchema[];
@@ -88,6 +101,7 @@ export interface AnimatedBackgroundConfig {
   shortName: string;
   description: string;
   component: React.ComponentType<any>;
+  preload?: () => Promise<unknown>;
   defaultSettings: any;
   settingsSchema: SettingsSchema[];
   blogPostSection?: string;

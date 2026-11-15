@@ -6,9 +6,8 @@ import { lazy } from 'react';
 // the simulation — and three.js with it — into the critical bundle of
 // every page. The chunk loads when the background first renders,
 // behind the Suspense in BackgroundManager.
-const CellularAutomatonBackground = lazy(
-  () => import('./CellularAutomatonBackground')
-);
+const load = () => import('./CellularAutomatonBackground');
+const CellularAutomatonBackground = lazy(load);
 
 /**
  * Life-like rules in B/S notation: a dead cell is born when its live neighbor
@@ -53,6 +52,7 @@ export interface CellularAutomatonCustomSettings {
   cellScale: number; // Cell fill size as a fraction of its grid square
   connectionLineWidth: number; // 0 disables neighbor links
   activityIntensity: number;
+  glideSpeed: number; // Cells per second the camera travels over the board
 
   // Colors specific to cellular automaton
   colors: {
@@ -77,23 +77,27 @@ const defaultCustomSettings: CellularAutomatonCustomSettings = {
   perturbationRate: 0.0006,
 
   // Rendering
-  cellScale: 0.55,
+  cellScale: 0.62,
   connectionLineWidth: 0.06,
-  activityIntensity: 1.2,
+  activityIntensity: 1.0,
+  glideSpeed: 0.35,
 
-  // Organic color scheme for cellular automaton
+  // Read as display colours — the swatches in the panel are what is drawn.
+  // Phosphor green for what has settled, amber for what was just born, and a
+  // pale gold the longest-lived drift toward, on a board that is nearly the
+  // stage's own ground.
   colors: {
-    primary: [0.1, 0.8, 0.3], // Established cells
-    secondary: [0.9, 0.4, 0.1], // Newly born cells
-    accent: [1.0, 0.7, 0.2], // Long-lived cells
-    background: [0.15, 0.15, 0.2], // Empty space
-    grid: [0.25, 0.3, 0.35], // Neighbor links
+    primary: [0.16, 0.92, 0.5], // Established cells
+    secondary: [1.0, 0.56, 0.18], // Newly born cells
+    accent: [1.0, 0.86, 0.5], // Long-lived cells
+    background: [0.03, 0.04, 0.05], // Empty space
+    grid: [0.22, 0.4, 0.34], // Neighbor links
   },
 };
 
 // Standard settings overrides for cellular automaton
 const standardOverrides: Partial<StandardSettings> = {
-  opacity: 0.75, // Less overpowering
+  opacity: 0.9,
   elementSize: 0.03,
   globalTimeMultiplier: 0.4,
 };
@@ -167,7 +171,7 @@ const customSettingsSchema: SettingsSchema[] = [
     max: 1.0,
     step: 0.05,
     description:
-      'How much of its grid square a live cell fills. Low values read as separated dots; near 1.0 neighbouring cells merge into solid regions.',
+      "How much of its grid square a live cell's block fills. Low values read as separate posts; near 1.0 neighbouring blocks merge into walls.",
     category: 'Visual Effects',
   },
   {
@@ -178,7 +182,7 @@ const customSettingsSchema: SettingsSchema[] = [
     max: 0.2,
     step: 0.01,
     description:
-      'Thickness of the links drawn between live neighbours. They trace the same eight-cell neighbourhood the rule is evaluated over. Zero hides them entirely.',
+      'Thickness of the links drawn on the board between live neighbours. They trace the same eight-cell neighbourhood the rule is evaluated over. Zero hides them entirely.',
     category: 'Visual Effects',
   },
   {
@@ -189,6 +193,17 @@ const customSettingsSchema: SettingsSchema[] = [
     max: 3.0,
     step: 0.1,
     description: 'Overall brightness multiplier for the grid.',
+    category: 'Visual Effects',
+  },
+  {
+    key: 'glideSpeed',
+    label: 'Glide (cells/sec)',
+    type: 'slider',
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description:
+      'How fast the camera travels over the board. The grid is a torus, so there is no edge to reach: the cells wrap, out in the dark. Zero holds the board still.',
     category: 'Visual Effects',
   },
 
@@ -244,6 +259,7 @@ export const cellularAutomatonConfig = createBackgroundConfig({
     'hundred generations, so Perturbation Rate flips a few cells each step — set it to zero ' +
     'to watch it stall.',
   component: CellularAutomatonBackground,
+  preload: load,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,

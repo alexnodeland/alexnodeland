@@ -4,6 +4,7 @@ import {
   SettingsSchema,
 } from '../../types/animated-backgrounds';
 import { useSettingsPanel } from '../SettingsPanelContext';
+import FieldReadout from './FieldReadout';
 import { backgroundRegistry } from './index';
 import SettingsPanel from './SettingsPanel';
 
@@ -134,6 +135,8 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({
             </svg>
             <span className="background-name">{backgroundLabel}</span>
           </button>
+          {/* What the simulation is doing, in a line, beside its name. */}
+          <FieldReadout />
         </div>
       )}
     </>

@@ -54,6 +54,7 @@ src/
 │   ├── heroes.tsx            # One hero per path; the shell resolves its own
 │   ├── seo.tsx               # <head> tags, canonical URL, JSON-LD
 │   ├── animated-backgrounds/ # The six simulations, their configs, the settings panel
+│   │   ├── core/stage/       # What they share: renderer, camera, pointer, post chain
 │   │   └── core/glyph.ts     # The "404" as a field; every simulation's 404 sequence reads it
 │   ├── chat/                 # In-browser chat: worker, context, modal, welcome screen
 │   ├── cv/                   # CV sections, control bar, search, exports
@@ -166,6 +167,48 @@ interference pattern of sources for the waves, fixed cells for the automaton,
 an additive voice for the synth. They share the glyph field and the
 graph-from-glyph construction in `core/glyph.ts`. The cycle runs on the 404
 as on every other page, so each background that comes up plays its own.
+
+All six draw through one stage (`core/stage/`), and a background's component
+is short: `useStageScene(props, options, build, deps)` stands a stage up in
+the surface it returns a ref for, and `build` returns `{ update, resize,
+dispose }`. The stage owns everything around the simulation:
+
+- **the renderer and the frame loop** (`stage.ts`) — stills, a lost context,
+  and a scene that throws (it stops with a console note; the page is
+  untouched);
+- **the camera** (`rig.ts`) — a scene gives three poses: at rest, with the
+  page hidden, and squared up to read the 404. The lean toward the pointer,
+  the drift, the scroll and the per-page turn are the rig's;
+- **coming on and going off** (`passage.ts`) — `frame.intro` runs 0 → 1 as a
+  scene arrives and `frame.outro` 0 → 1 once it is asked to leave (the
+  `leaving` prop; `BackgroundManager` unmounts it afterwards). A scene must
+  be exactly its settled self at `intro = 1, outro = 0`, dark by `outro = 1`,
+  and reversible in between. `presenceOf`, `staggered` and the eases are
+  there to build it from;
+- **the pointer** (`pointer.ts`) — where it is, whether it is over bare field,
+  and the presses and taps made there. The canvas takes no events;
+- **the post chain** (`post.ts`) — bloom, an exposure shoulder, vignette,
+  grain, and the canopy that dims the picture under the page's title;
+- **quality** (`quality.ts`) — a tier per device and a governor that trades
+  resolution for frame time. A software rasteriser (a machine with no
+  graphics hardware — and the end-to-end suite, in CI) is recognised by name
+  and given the least picture there is: the low tier, no bloom, an eighth of
+  the pixels. `window.__fieldQuality` overrides all of it for a test or a
+  screenshot: `{ governor: false }` pins the resolution, `pixelRatio` sets
+  it, and `tier: 'high'` asks for the whole picture whatever is drawing it;
+- **the readout** (`telemetry.ts`) — the one line beside the backgrounds' pill.
+
+`deps` are a scene's _structural_ settings only — the ones that change what is
+built. Everything else is read each frame from `settings()`, so dragging a
+slider never restarts a simulation. Colours in settings are display colours
+(the swatch is what is drawn) and are converted to linear light on the way in.
+
+What a visitor has changed is saved as a versioned difference from the
+defaults (`core/persistence.ts`), so a default can be re-cut and reach
+everyone who never touched that control.
+
+The decisions behind the scenes and the glass over them are in
+[`docs/design/03-fields-and-glass.md`](design/03-fields-and-glass.md).
 
 ### 4. Running it
 

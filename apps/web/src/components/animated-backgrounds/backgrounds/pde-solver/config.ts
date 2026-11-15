@@ -6,7 +6,8 @@ import { lazy } from 'react';
 // the simulation — and three.js with it — into the critical bundle of
 // every page. The chunk loads when the background first renders,
 // behind the Suspense in BackgroundManager.
-const PDESolverBackground = lazy(() => import('./PDESolverBackground'));
+const load = () => import('./PDESolverBackground');
+const PDESolverBackground = lazy(load);
 import {
   EquationType,
   BoundaryConditionType,
@@ -78,14 +79,17 @@ const defaultCustomSettings: PDESolverCustomSettings = {
   boundaryConditionX: 'dirichlet',
   boundaryConditionY: 'dirichlet',
   colorScale: 'wave',
-  heightScale: 0.15,
+  heightScale: 0.2,
   showWireframe: false,
   autoRotate: true,
   rotationSpeed: 0.3,
+  // Read as display colours — the swatches in the panel are what is drawn.
+  // Rest is nearly the stage's own ground, so a calm plate is a dark one and
+  // the picture is carried by where the field is not at rest.
   colors: {
-    positive: [0.1, 0.6, 1.0], // Cyan-blue
-    negative: [1.0, 0.3, 0.4], // Red-pink
-    zero: [0.1, 0.1, 0.15], // Dark blue-gray
+    positive: [0.22, 0.72, 1.0], // Azure: the field above rest
+    negative: [1.0, 0.44, 0.36], // Coral: the field below it
+    zero: [0.035, 0.045, 0.075], // Slate: the field at rest
   },
 };
 
@@ -346,6 +350,7 @@ export const pdeSolverConfig = createBackgroundConfig({
     'than the look — Dirichlet reflects inverted, Neumann upright, Periodic wraps. It cannot ' +
     'diverge; the timestep is clamped to the CFL limit.',
   component: PDESolverBackground,
+  preload: load,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
   standardOverrides,

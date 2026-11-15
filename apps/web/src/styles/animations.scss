@@ -140,8 +140,8 @@
     -webkit-backdrop-filter: none;
   }
   to {
-    backdrop-filter: blur(var(--window-blur));
-    -webkit-backdrop-filter: blur(var(--window-blur));
+    backdrop-filter: var(--glass-window);
+    -webkit-backdrop-filter: var(--glass-window);
   }
 }
 

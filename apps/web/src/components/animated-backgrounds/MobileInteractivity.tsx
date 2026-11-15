@@ -155,10 +155,13 @@ const MobileInteractivity: React.FC = () => {
     >
       {/* The exposed background doubles as the sheet's backdrop: tapping it
           dismisses the settings sheet if one is up, and otherwise toggles the
-          control bar. */}
+          control bar. It is also the field itself, for a finger: marked as
+          one, so a press here reaches the simulation (see isFieldTarget) —
+          a drag pushes it around, and a tap does both things a tap does. */}
       <button
         type="button"
         className="mobile-explore-surface"
+        data-field-surface=""
         onClick={
           settingsOpen
             ? closeSettingsPanel

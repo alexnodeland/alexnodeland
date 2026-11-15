@@ -40,10 +40,18 @@
   --bg-floating: #0e1014;
 
   // --- Hairlines and washes -------------------------------------------------
-  // Every block inside the window is an outline, not a fill, and every line
-  // is white-alpha: a near-black rule disappears against the scrim. Three
-  // lines and three washes are the whole vocabulary.
+  // Every block inside the window is an edge around a wash you can barely
+  // see, never a slab, and every line is white-alpha: a near-black rule
+  // disappears against the scrim. A handful of lines and three washes are the
+  // whole vocabulary.
   --hairline: rgba(255, 255, 255, 0.16); // the edge of a card, chip or panel
+  // The same edge where it faces the light, and where it faces away. Every
+  // surface on the field is lit from above: its top edge catches more than
+  // its sides and its foot less, which is the whole of what makes a flat
+  // rectangle read as a sheet of something with a thickness (see `lit-edge`
+  // in mixins.scss).
+  --hairline-top: rgba(255, 255, 255, 0.32);
+  --hairline-foot: rgba(255, 255, 255, 0.09);
   --hairline-interior: rgba(255, 255, 255, 0.08); // a divider inside one
   --hairline-lit: rgba(255, 255, 255, 0.45); // under the pointer, open, current
   --wash-field: rgba(255, 255, 255, 0.04); // a text field, a code listing
@@ -90,21 +98,48 @@
   // is added on top because the pills are pushed up by exactly that much (see
   // --rail-inset-*).
   --window-inset-bottom: calc(5.125rem + env(safe-area-inset-bottom, 0px));
-  --window-scrim: rgba(7, 8, 10, 0.38);
+  // Heavier than it was (0.38 over a 5px blur), on purpose and after the
+  // fields changed under it. The old scrim was cut to let a flat, even
+  // picture read through the page; the fields are scenes now, with light
+  // sources in them, and what the window wants from one is its light and not
+  // its lines. So the glass is properly frosted: the scene under it is colour
+  // and movement, the scene beside it is sharp, and the difference between
+  // the two is what says the window is in front.
+  --window-scrim: rgba(9, 11, 15, 0.56);
+  // What the glass does to the light coming through it besides blurring it.
+  // A frosted pane mutes what is behind it; a little saturation put back is
+  // what keeps a glow under the window the colour it is beside it. A number
+  // rather than a percentage so it reads back from a computed style the way
+  // it is written.
+  --glass-saturation: 1.5;
+  // The light the glass itself catches: a wash down from its top edge,
+  // gone a third of the way down.
+  --window-sheen: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0,
+    rgba(255, 255, 255, 0.014) 7rem,
+    rgba(255, 255, 255, 0) 16rem
+  );
   --window-border: var(--hairline);
   // The two sidebars — the settings panel on the left, the chat on the right —
   // are floating peers of the window at this width, and the stage moves over
   // by the same number when one opens.
   --panel-width: 28rem;
 
-  // --- Blur -----------------------------------------------------------------
-  // The window and its peer panels wear the light blur; a panel that opens
-  // over the window (a menu, the shortcuts) doubles it; a loose chip on the
-  // window's own surface, with content scrolling under it, needs the heavy
-  // one to turn a heading into a wash.
-  --window-blur: 5px;
-  --blur-panel: 10px;
-  --blur-chip: 20px;
+  // --- Glass ----------------------------------------------------------------
+  // The window and its peer panels wear the first blur; a panel that opens
+  // over the window (a menu, the shortcuts) and a loose chip on the window's
+  // own surface, with content scrolling under it, wear the heavier one — what
+  // is under those is text, and it has to become a wash rather than a ghost
+  // of a sentence.
+  --window-blur: 20px;
+  --blur-panel: 28px;
+  --blur-chip: 28px;
+  // The three filters, whole. Everything that sets a backdrop filter takes
+  // one of these, so the glass is cut in one place.
+  --glass-window: blur(var(--window-blur)) saturate(var(--glass-saturation));
+  --glass-panel: blur(var(--blur-panel)) saturate(var(--glass-saturation));
+  --glass-chip: blur(var(--blur-chip)) saturate(var(--glass-saturation));
 
   // --- The rail -------------------------------------------------------------
   // The right-hand rail: the nav capsule at the top of the screen and the chat
@@ -191,9 +226,25 @@
   // The window, the sidebars and the shortcuts panel: grounds a panel on the
   // field, where the field is animated and often bright, so it reads as depth
   // rather than as a visible shadow shape.
-  --shadow-panel: 0 24px 64px rgba(0, 0, 0, 0.4);
+  --shadow-panel:
+    0 32px 80px -16px rgba(0, 0, 0, 0.62), 0 2px 10px rgba(0, 0, 0, 0.32);
   // The phone's bottom sheet: the same grounding, cast upward.
   --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.45);
+  // The line of light along the inside of a surface's top edge.
+  --edge-light: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  // --- Cards ----------------------------------------------------------------
+  // A card inside the window is a surface now, not only an outline: a wash so
+  // faint it is mostly its own top edge, lit from above like everything else.
+  // It was an outline on principle — a fill inside glass read as a lid on the
+  // field — and at these alphas it still is not a lid: the field's light
+  // comes through it as it comes through the window. What the wash buys is
+  // that a card is a thing and the gap between two cards is not.
+  --card-fill: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.018)
+  );
 
   // --- Shape ----------------------------------------------------------------
   // One chamfer, three sizes. No pills: a round control beside a chamfered
@@ -221,9 +272,9 @@
   // and the air below it, and it is the gap between the stacked items of every
   // list page — so a page reads as an even column rather than as bands of
   // different depths. One value at every width on purpose: a rhythm that
-  // changes at a breakpoint is not a rhythm. Tight: the cards are outlines,
-  // and an outline needs far less air around it than a filled slab does to
-  // read as its own object.
+  // changes at a breakpoint is not a rhythm. Tight: a card is an edge around
+  // the faintest of washes, and that needs far less air around it than a
+  // filled slab does to read as its own object.
   --stack-gap: var(--space-2);
 
   // The coat of air inside a card — a timeline entry, a project, a cv entry,
@@ -256,7 +307,16 @@
   // and broke after "alex" with the arrow left hanging at the start of a line
   // of its own. 8.4vw is the size at which those 17 characters still fit the
   // column, at every width down to a 280px folding phone's cover.
-  --text-h1: min(clamp(1.9rem, 1.4rem + 1.7vw, 2.75rem), 8.4vw);
+  //
+  // The ceiling is 3.5rem. It was 2.75, set when the title sat over fields
+  // that were bright edge to edge and had to be kept small to stay out of
+  // their way; it sits in the dark over a scene now, and can be the size of
+  // the thing it is — the name on the cover. The slope is cut so that a
+  // phone's title is the size it was (the two curves cross at 768px) and the
+  // growth is all in the room a wider screen has to give: nothing below a
+  // tablet moves, and the fold's measures there (--collapsed-title-scale in
+  // layout.scss) stand as they were.
+  --text-h1: min(clamp(1.9rem, 0.6rem + 3.4vw, 3.5rem), 8.4vw);
   --text-h2: clamp(1.4rem, 1.15rem + 1vw, 1.9rem);
   --text-h3: clamp(1.2rem, 1.05rem + 0.5vw, 1.45rem);
   --text-h4: clamp(1.05rem, 1rem + 0.25vw, 1.2rem);
@@ -307,8 +367,12 @@
     // has to re-resolve every frame — and share those frames with the
     // window's own blur. Half the radius still turns a heading under
     // a chip into a wash; what it stops doing is asking a phone GPU for the
-    // desktop's on every scroll frame.
-    --blur-chip: 10px;
+    // desktop's on every scroll frame. The window's own blur comes down for
+    // the same reason: on a phone the window is nearly the whole screen, over
+    // a canvas that repaints every frame.
+    --window-blur: 12px;
+    --blur-panel: 16px;
+    --blur-chip: 12px;
   }
 
   @media (max-width: 480px) {

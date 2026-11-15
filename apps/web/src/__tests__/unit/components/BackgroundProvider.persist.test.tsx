@@ -17,6 +17,23 @@ jest.mock('../../../components/animated-backgrounds/index', () => {
       defaultSettings: { opacity: 0.8 },
       settingsSchema: [],
     },
+    // A background that existed before the rebuild, under its real id: the
+    // one-time read of an old blob knows what colours it used to ship with.
+    {
+      id: 'simple-waves',
+      name: 'Waves',
+      description: 'Second',
+      component: Dummy,
+      defaultSettings: {
+        opacity: 0.9,
+        waveFrequency: 6,
+        colors: {
+          primary: [0.38, 0.34, 1.0],
+          secondary: [0.98, 0.32, 0.72],
+        },
+      },
+      settingsSchema: [],
+    },
   ];
   return {
     backgroundRegistry: registry,
@@ -27,13 +44,22 @@ jest.mock('../../../components/animated-backgrounds/index', () => {
 const STORAGE_KEY = 'animatedBackgroundSettings';
 
 const Probe: React.FC = () => {
-  const { updateCurrentSettings } = useBackground();
+  const { updateCurrentSettings, currentSettings, state } = useBackground();
   return (
-    <button onClick={() => updateCurrentSettings({ opacity: 0.1 } as never)}>
-      edit
-    </button>
+    <>
+      <button onClick={() => updateCurrentSettings({ opacity: 0.1 } as never)}>
+        edit
+      </button>
+      <output data-testid="current">
+        {JSON.stringify({ id: state.currentBackgroundId, ...currentSettings })}
+      </output>
+    </>
   );
 };
+
+const current = () =>
+  JSON.parse(screen.getByTestId('current').textContent ?? '{}');
+const saved = () => JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
 
 const renderProbe = () =>
   render(
@@ -140,6 +166,7 @@ describe('settings persistence', () => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
+        version: 2,
         currentBackgroundId: 'one',
         settings: { one: { opacity: 0.42 } },
       })
@@ -167,5 +194,139 @@ describe('settings persistence', () => {
       unmount();
     });
     expect(savedOpacity()).toBe(0.42);
+  });
+});
+
+// What is written is the difference from the defaults, not the state: a
+// default that moves later has to reach everyone who never touched it.
+describe('what is saved', () => {
+  const renderRestoring = () =>
+    render(
+      <SettingsPanelProvider>
+        <BackgroundProvider>
+          <Probe />
+        </BackgroundProvider>
+      </SettingsPanelProvider>
+    );
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    installStore();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('is the background that is up and nothing else, until something is changed', () => {
+    renderProbe();
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+    expect(saved()).toEqual({
+      version: 2,
+      currentBackgroundId: 'one',
+      settings: {},
+    });
+  });
+
+  it('is only the setting that was changed', () => {
+    renderProbe();
+    act(() => {
+      screen.getByText('edit').click();
+    });
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+    expect(saved()).toEqual({
+      version: 2,
+      currentBackgroundId: 'one',
+      settings: { one: { opacity: 0.1 } },
+    });
+  });
+
+  it('lets a default that has moved since reach a visitor who never changed it', () => {
+    // Saved when the waves' frequency default was something else: nothing
+    // about it is in the blob, so today's default is what they get.
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: 2,
+        currentBackgroundId: 'simple-waves',
+        settings: { 'simple-waves': { opacity: 0.5 } },
+      })
+    );
+    renderRestoring();
+    expect(current()).toMatchObject({
+      id: 'simple-waves',
+      opacity: 0.5,
+      waveFrequency: 6,
+    });
+  });
+
+  describe('from a visit before the backgrounds were rebuilt', () => {
+    // The whole state, as it used to be written.
+    const visitedBefore = (colors: Record<string, number[]>) =>
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          currentBackgroundId: 'simple-waves',
+          showSettingsPanel: true,
+          closingSettingsPanel: false,
+          settings: {
+            one: { opacity: 0.3 },
+            'simple-waves': { opacity: 0.6, waveFrequency: 11, colors },
+          },
+        })
+      );
+
+    it('comes back to the same background with the new numbers', () => {
+      visitedBefore({
+        primary: [0.2, 0.1, 0.8],
+        secondary: [0.8, 0.2, 0.8],
+      });
+      renderRestoring();
+      // Its numbers were tuned against a picture that no longer exists, and
+      // its colours were the ones it shipped with: all of it is today's.
+      expect(current()).toEqual({
+        id: 'simple-waves',
+        opacity: 0.9,
+        waveFrequency: 6,
+        colors: {
+          primary: [0.38, 0.34, 1.0],
+          secondary: [0.98, 0.32, 0.72],
+        },
+      });
+    });
+
+    it('keeps a colour somebody chose', () => {
+      visitedBefore({
+        primary: [0.2, 0.1, 0.8],
+        secondary: [0.1, 0.9, 0.3],
+      });
+      renderRestoring();
+      expect(current().colors).toEqual({
+        primary: [0.38, 0.34, 1.0],
+        secondary: [0.1, 0.9, 0.3],
+      });
+    });
+
+    it('is written back in the new shape, once', () => {
+      visitedBefore({
+        primary: [0.2, 0.1, 0.8],
+        secondary: [0.1, 0.9, 0.3],
+      });
+      renderRestoring();
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(saved()).toEqual({
+        version: 2,
+        currentBackgroundId: 'simple-waves',
+        settings: {
+          'simple-waves': { colors: { secondary: [0.1, 0.9, 0.3] } },
+        },
+      });
+    });
   });
 });
