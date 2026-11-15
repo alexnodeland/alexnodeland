@@ -23,10 +23,31 @@ const subscribe = (listener: () => void) => {
 const read = () => line;
 const readOnServer = () => '';
 
-export const setReadout = (next: string): void => {
+// A scene on its way off the field has stopped speaking for it: the pill
+// beside the line already carries the next one's name, and a count for the
+// old simulation under the new name would be a caption on the wrong picture.
+let hushed = false;
+
+const publish = (next: string): void => {
   if (next === line) return;
   line = next;
   listeners.forEach(listener => listener());
+};
+
+export const setReadout = (next: string): void => {
+  if (hushed && next !== '') return;
+  publish(next);
+};
+
+/**
+ * Silence the line, or let it speak again. Hushed, the line is cleared and
+ * whatever a scene writes is dropped; the stage does this for a scene that
+ * has been asked to leave, and undoes it if the scene is told it can stay
+ * or when the next one is built.
+ */
+export const hushReadout = (hush: boolean): void => {
+  hushed = hush;
+  if (hush) publish('');
 };
 
 export const useReadout = (): string =>

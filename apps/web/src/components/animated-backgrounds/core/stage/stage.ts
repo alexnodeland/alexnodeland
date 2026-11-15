@@ -16,6 +16,7 @@ import {
 } from './quality';
 import { heading, Heading, smooth } from './passage';
 import { CameraRig, RigConfig } from './rig';
+import { hushReadout } from './telemetry';
 
 /**
  * The stage: the one way a background gets a picture onto the field.
@@ -236,6 +237,8 @@ export const createStage = (
   // The direction this scene arrived in, and the one it leaves in. The same
   // unless the reader turns round while it is up.
   const arrivedHeading = heading();
+  // Whatever the last scene was told on its way out, this one may speak.
+  hushReadout(false);
   let seenFor = -1;
   let veil = -1;
 
@@ -318,6 +321,7 @@ export const createStage = (
       stage.requestFrame();
     },
     leave(seconds) {
+      hushReadout(true);
       leaving = true;
       leaveSeconds = Math.max(0.05, seconds);
       frame.heading = heading();
@@ -325,6 +329,7 @@ export const createStage = (
     },
     stay() {
       if (!leaving) return;
+      hushReadout(false);
       leaving = false;
       stage.requestFrame();
     },
@@ -383,8 +388,11 @@ export const createStage = (
     frame.time += dt;
     frame.intro = frozen ? 1 : Math.min(1, frame.intro + dt / introSeconds);
     // A still has no movement to leave by. It stays whole until whoever
-    // asked it to go takes it away.
-    const step = dt / leaveSeconds;
+    // asked it to go takes it away. Otherwise the leaving runs on the wall's
+    // clock, not the scene's clamped one: whoever takes the scene away is
+    // counting real milliseconds, and a device drawing slowly should see a
+    // leaving that skips ahead rather than one cut off before its end.
+    const step = Math.min(elapsed / 1000, 1) / leaveSeconds;
     frame.outro = frozen
       ? 0
       : Math.min(1, Math.max(0, frame.outro + (leaving ? step : -step)));

@@ -1,3 +1,4 @@
+import { renderHook } from '@testing-library/react';
 import * as THREE from 'three';
 import {
   createStage,
@@ -7,6 +8,10 @@ import {
 } from '../../../../../../components/animated-backgrounds/core/stage/stage';
 import { setHeading } from '../../../../../../components/animated-backgrounds/core/stage/passage';
 import { Pose } from '../../../../../../components/animated-backgrounds/core/stage/rig';
+import {
+  setReadout,
+  useReadout,
+} from '../../../../../../components/animated-backgrounds/core/stage/telemetry';
 
 interface StubRenderer {
   domElement: HTMLCanvasElement;
@@ -47,6 +52,9 @@ const step = (ms = 16) => {
 };
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+
+// The line the chrome beside the pill would be showing.
+const readoutLine = () => renderHook(() => useReadout()).result.current;
 
 describe('the stage', () => {
   let container: HTMLDivElement;
@@ -474,6 +482,49 @@ describe('the stage', () => {
       step(100);
       step(100);
       expect(frames[frames.length - 1].outro).toBe(1);
+    });
+
+    it('keeps the wall’s time, so a device drawing slowly is not cut off short', async () => {
+      await begin();
+      step();
+      stage?.leave(1);
+      // Three frames a second: the scene's own clock is clamped to a tenth
+      // of a second a frame, and the leaving is not.
+      step(300);
+      expect(frames[frames.length - 1].dt).toBeCloseTo(0.1);
+      expect(frames[frames.length - 1].outro).toBeCloseTo(0.3);
+      step(300);
+      step(300);
+      step(300);
+      expect(frames[frames.length - 1].outro).toBe(1);
+    });
+
+    it('stops the scene speaking for the field while it goes, and lets it again if it stays', async () => {
+      await begin();
+      step();
+      setReadout('generation 12');
+      expect(readoutLine()).toBe('generation 12');
+
+      stage?.leave(1);
+      expect(readoutLine()).toBe('');
+      setReadout('generation 13');
+      expect(readoutLine()).toBe('');
+
+      stage?.stay();
+      setReadout('generation 14');
+      expect(readoutLine()).toBe('generation 14');
+      setReadout('');
+    });
+
+    it('lets the next scene speak whatever the last one was told', async () => {
+      await begin();
+      step();
+      stage?.leave(1);
+      stage?.dispose();
+      stage = createStage(container, { rig: { base: () => base } });
+      setReadout('residual 0.01');
+      expect(readoutLine()).toBe('residual 0.01');
+      setReadout('');
     });
 
     it('comes back from where it had got to when told it can stay', async () => {

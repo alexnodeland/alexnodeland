@@ -3,6 +3,7 @@ import React from 'react';
 import {
   createReadout,
   formatCount,
+  hushReadout,
   setReadout,
   useReadout,
 } from '../../../../../../components/animated-backgrounds/core/stage/telemetry';
@@ -19,6 +20,19 @@ describe('the readout', () => {
     expect(screen.getByTestId('line')).toHaveTextContent('');
     act(() => setReadout('gen 12 · pop 340'));
     expect(screen.getByTestId('line')).toHaveTextContent('gen 12 · pop 340');
+  });
+
+  it('says nothing while hushed, and drops what it is told', () => {
+    render(<Line />);
+    act(() => setReadout('gen 12'));
+    act(() => hushReadout(true));
+    expect(screen.getByTestId('line')).toHaveTextContent('');
+    act(() => setReadout('gen 13'));
+    expect(screen.getByTestId('line')).toHaveTextContent('');
+
+    act(() => hushReadout(false));
+    act(() => setReadout('gen 14'));
+    expect(screen.getByTestId('line')).toHaveTextContent('gen 14');
   });
 
   it('stops telling a reader who has gone', () => {
