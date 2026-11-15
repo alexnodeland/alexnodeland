@@ -42,6 +42,14 @@ const HIDDEN_CLASS = 'mobile-explore-active';
 // little past the band the hero folds across, at every width.
 const SCROLL_REACH_PX = 520;
 
+// On a screen taller than it is wide the window is nearly the whole screen,
+// so the band the title and its tagline sit in is most of what there is to
+// see of the field — and the tagline, wrapped onto two lines, is sitting in
+// the middle of it. There the canopy is drawn half as strong again.
+const TALL_ASPECT = 0.8;
+const TALL_CANOPY = 1.5;
+const CANOPY_LIMIT = 0.85;
+
 export interface StageOptions {
   rig: RigConfig;
   near?: number;
@@ -174,6 +182,8 @@ export const createStage = (
   let height = 1;
   let pixelRatio = quality.pixelRatio;
   const buffer = new THREE.Vector2();
+  // The canopy the scene asked for, before the screen's shape has its say.
+  const canopy = post.grade.canopy;
 
   const applySize = () => {
     width = Math.max(1, window.innerWidth);
@@ -183,6 +193,10 @@ export const createStage = (
     renderer.setSize(width, height);
     renderer.getDrawingBufferSize(buffer);
     post.setSize(buffer.x, buffer.y);
+    post.grade.canopy =
+      width / height < TALL_ASPECT
+        ? Math.min(CANOPY_LIMIT, canopy * TALL_CANOPY)
+        : canopy;
   };
   applySize();
 

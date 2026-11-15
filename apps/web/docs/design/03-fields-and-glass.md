@@ -191,8 +191,11 @@ The window covers the middle of every screen. Two things follow.
   brighter than white. So the picture gives way there: it dims toward the top,
   in light, before the shoulder — which reads as the scene receding rather
   than a band laid over it. It lifts when the page's content is hidden and
-  when the 404's number is forming. The halo itself gained a third, wider
-  layer.
+  when the 404's number is forming, and it is half as strong again on a
+  screen taller than it is wide: there the window is nearly the whole screen,
+  the band behind the title is most of what shows of the field, and the
+  tagline has wrapped onto two lines in the middle of it. The halo itself
+  gained a third, wider layer.
 - **Sparse scenes rest closer than the screen.** The two graphs were composed
   to fit the screen, which put them under the window: a few glows through the
   glass and an empty field around it. At rest they are now larger than the

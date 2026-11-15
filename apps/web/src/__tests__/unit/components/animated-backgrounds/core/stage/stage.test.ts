@@ -198,6 +198,46 @@ describe('the stage', () => {
     expect(stage?.post.canopyLift).toBeLessThan(0.01);
   });
 
+  it('holds more of the picture down on a tall screen, where the title has most of what shows', async () => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    await begin();
+    step();
+    const wide = stage?.post.grade.canopy ?? 0;
+    expect(wide).toBeGreaterThan(0);
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 844,
+    });
+    window.dispatchEvent(new Event('resize'));
+    step();
+    const tall = stage?.post.grade.canopy ?? 0;
+    expect(tall).toBeGreaterThan(wide);
+    expect(tall).toBeLessThanOrEqual(0.85);
+
+    // And gives it back when the screen is turned.
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: width,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: height,
+    });
+    window.dispatchEvent(new Event('resize'));
+    step();
+    expect(stage?.post.grade.canopy).toBe(wide);
+  });
+
   it('lifts the canopy for the 404’s number too', async () => {
     await begin();
     if (stage) stage.reading = 1;
