@@ -207,6 +207,29 @@ describe.each(scenes)('%s, as a background', (_name, Scene, settings) => {
     unmount();
   });
 
+  it('runs where there is no graphics hardware, on the least picture there is', async () => {
+    const stub = THREE.WebGLRenderer as unknown as {
+      rendererName: string | null;
+    };
+    stub.rendererName = 'ANGLE (Google, Vulkan (SwiftShader Device))';
+    try {
+      const { container, unmount } = render(
+        <Scene className="field" settings={settings as never} />
+      );
+      await frames();
+      const [renderer] = renderers();
+      expect(renderer.render).toHaveBeenCalled();
+      // An eighth of the pixels from the first frame, not after ten seconds
+      // of finding out.
+      const canvas = container.querySelector('canvas') as HTMLCanvasElement;
+      expect(canvas.width).toBeLessThan(window.innerWidth * 0.5);
+      expect(complaints()).toEqual([]);
+      unmount();
+    } finally {
+      stub.rendererName = null;
+    }
+  });
+
   it('follows the viewport', async () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
