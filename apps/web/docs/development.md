@@ -179,6 +179,12 @@ dispose }`. The stage owns everything around the simulation:
 - **the camera** (`rig.ts`) — a scene gives three poses: at rest, with the
   page hidden, and squared up to read the 404. The lean toward the pointer,
   the drift, the scroll and the per-page turn are the rig's;
+- **coming on and going off** (`passage.ts`) — `frame.intro` runs 0 → 1 as a
+  scene arrives and `frame.outro` 0 → 1 once it is asked to leave (the
+  `leaving` prop; `BackgroundManager` unmounts it afterwards). A scene must
+  be exactly its settled self at `intro = 1, outro = 0`, dark by `outro = 1`,
+  and reversible in between. `presenceOf`, `staggered` and the eases are
+  there to build it from;
 - **the pointer** (`pointer.ts`) — where it is, whether it is over bare field,
   and the presses and taps made there. The canvas takes no events;
 - **the post chain** (`post.ts`) — bloom, an exposure shoulder, vignette,

@@ -57,7 +57,7 @@ const CANOPY_LIMIT = 0.85;
 // scene's own coming and going is — but an empty scene through the grade is
 // not quite the flat ground the page keeps under it (a vignette, a canopy,
 // grain), and this is what makes the last step between the two invisible.
-const VEIL_IN_SECONDS = 0.35;
+const VEIL_IN_SECONDS = 0.2;
 const VEIL_OUT_FROM = 0.8;
 
 export interface StageOptions {

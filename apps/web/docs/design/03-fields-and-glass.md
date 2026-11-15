@@ -173,7 +173,7 @@ only, colour only where it means something, one chamfer, nothing lifts.
   position published on the root for every card to read — is the
   document-wide custom-property publisher `02` already paid to remove.
 - **The cycle waits for a hand.** A background's twelve seconds are for
-  watching; one that is being pushed around is not faded out from under the
+  watching; one that is being pushed around is not taken out from under the
   hand, and moves on nine seconds after the last touch.
 - **A readout chip beside the pill** says what the simulation is doing —
   a generation count, a temperature, a frontier — a few times a second. It is
@@ -237,6 +237,14 @@ nothing about it. The library is real in tests now (the module build, mapped in
 `window.__fieldQuality = { governor: false, pixelRatio: n }` pins the
 resolution for a test or a capture.
 
+For the hand-over (§10): `scenes.passage.test.tsx` asks all six to leave, to
+come back when told they can stay, to leave in the middle of the 404 and to
+be taken down mid-leaving; each scene's own test checks that it is dark by
+the end; the manager's tests cover which scene is on the field through a
+change; and `e2e/background-handover.spec.ts` checks, on a desktop and a
+phone, that the name answers the key at once, that there is never more than
+one scene, and that asking three times in a breath lands on the third.
+
 ## §9 — what was measured, and what was not
 
 **Measured: a machine with no graphics hardware.** The one renderer available
@@ -270,6 +278,14 @@ subset of the end-to-end suite takes no longer than it did (92s against 105s).
 `window.__fieldQuality = { tier: 'high' }` asks for the whole picture whatever
 is drawing it, which is how the screenshots were taken.
 
+**Measured, layout only: phone-sized screens.** Seven pages at six sizes
+(360×640 up to a 768×1024 tablet, and a phone on its side) were checked for
+sideways overflow, controls too small to tap and text too small to read. None
+overflowed; the icon links on the project cards measure 18px but carry a
+thumb-sized hit area (`hit-area`); the timeline's month labels are 9px on a
+phone held sideways, as they were. That says the pages fit. It says nothing
+about how fast a phone draws them.
+
 **Not measured:**
 
 - **Real graphics hardware, and real phones.** The tier, the governor and the
@@ -287,3 +303,77 @@ visualizations.md`) describes the flat pictures in places. Its prose was
 - **`prefers-color-scheme`.** `01` left a door open for a light treatment that
   adapts the simulations. The exposure and canopy in the grade pass are where
   that would now be done; nothing uses them for it yet.
+
+## §10 — coming on and going off
+
+Asked for after the rest: the change from one background to another was a
+black sheet faded over a cut, and everything else on the field had become
+something that moves.
+
+**The scene leaves; nothing covers it.** The stage tells a scene how far gone
+it is (`frame.outro`, beside `frame.intro`) and each one takes itself off the
+field in the way the thing it is would. What is left between two scenes is
+the ground they both stand on, which is why there is no sheet: `--bg-stage`
+is already what an empty scene looks like.
+
+| field       | comes on                                                                     | goes off                                                                          |
+| ----------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| waves       | still water, then a drop: a crest ring rolls out and the swell fills behind  | a calm front spreads from the same point; the flat water's light goes out last    |
+| automaton   | the board is sown from the middle outward, blocks landing past their height  | a line of light crosses the board and the blocks drop into the floor as it passes |
+| membrane    | a bare plate rises; a ring runs out from the centre with the relief behind   | a ring runs in from the rim, the relief drains to the centre, the plate sinks     |
+| scheduling  | machines drop onto the bench cluster by cluster; each link then runs across  | links pull back, last first; the machines rise and thin out; the bench last       |
+| oscillator  | switched on: the trace is drawn across, then the waterfall is laid behind it | switched off: the waterfall folds flat, the trace becomes a line, the line a dot  |
+| pathfinding | surveyed outward from the start node, edges drawing as the front passes      | the landscape sinks, the map rolls up from the far side; the start node last      |
+
+The rules they share (`core/stage/passage.ts`):
+
+- **Settled is untouched.** At `intro = 1, outro = 0` every factor is exactly
+  one, so the picture a visitor looks at for twelve seconds is the picture
+  that was reviewed. A still (reduced motion) never leaves at all: it is whole
+  until it is replaced.
+- **It is arithmetic on two numbers**, so it runs backwards. A reader who
+  turns back before a scene has gone gets it back from wherever it had got to.
+- **Nothing new per element per frame.** The automaton, membrane, waves and
+  oscillator do it in the shader from a handful of uniforms; the two graphs
+  stagger inside the loops that already write every node and edge.
+- **Dark by the end.** Every material's light is gone before `outro` reaches
+  one, floor included; the stage then takes the canvas itself down across the
+  last fifth, because an empty scene through the grade is not quite the flat
+  ground (a vignette, a canopy, grain).
+
+**The camera carries one movement across the change.** A leaving scene's
+camera swings on round, slow to start and still moving at the end; the
+arriving scene's comes in from the opposite side and settles. Walking forward
+through the set it keeps turning one way, and the other way walking back —
+the direction is the one thing that has to survive between two stages, so it
+is module state (`heading`).
+
+**The name does not wait for the picture.** Changing background changes the
+provider's state at once: the pill says the new name and the panel holds the
+new settings. `BackgroundManager` keeps the old scene on the field, leaving,
+and only then mounts the new one. Asked twice in one leaving it goes straight
+to the latest; there is never more than one scene, so never more than one
+WebGL context or one simulation running. The readout is hushed for the
+leaving scene — its count under the new name would be a caption on the wrong
+picture.
+
+**Two speeds.** The cycle's step takes 1.1s; one asked for by key or button
+takes 650ms, because somebody is waiting on it. A leaving runs on the wall's
+clock rather than the scene's clamped one, so a device drawing slowly sees a
+leaving that skips ahead, not one cut off before its end.
+
+**The neighbours are fetched ahead.** The scenes are lazy chunks; the two
+either side of the one on the field are requested once it has settled, so the
+first step in either direction has no request between the leaving and the
+arrival. What remains between them is the time the new scene takes to build
+and compile, on bare ground — about a third of a second here.
+
+Considered and not done: building the next scene during the leaving, so that
+it is ready the moment the old one is gone. It would close that pause, at the
+cost of two contexts alive at once and a scene being built on the main thread
+in the middle of the movement it is meant to follow — a hitch in the exit is
+worse than a beat of empty stage after it.
+
+Not measured, again: any of this on a real GPU or a real phone. The films
+were made on a clock the capture script owns, so they show the movement at
+the speed it is written to run at, not at the speed this machine drew it.
