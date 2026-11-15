@@ -4,10 +4,32 @@ import { useNotFound } from '../../lib/notFound';
 import { isShortcutKey } from '../../lib/utils/keys';
 import { useBackground } from '../BackgroundProvider';
 import { useSettingsPanel } from '../SettingsPanelContext';
+import PointerLight from '../ui/PointerLight';
 import BackgroundControls from './BackgroundControls';
 import MobileInteractivity from './MobileInteractivity';
+import { fieldTouchedAt } from './core/stage/pointer';
 import { useIsMobileViewport } from './core/useIsMobileViewport';
 import { usePrefersReducedMotion } from './core/usePrefersReducedMotion';
+
+// How long the cycle waits after the field was last pressed, dragged across
+// or tapped before it will move on. A simulation somebody is in the middle of
+// pushing around is not faded out from under their hand: the twelve seconds
+// are for watching, and this is for playing.
+export const TOUCH_HOLD_MS = 9000;
+
+/**
+ * How much longer the cycle has to wait for a hand on the field, in
+ * milliseconds: zero when the field has not been touched, or was last touched
+ * longer ago than the hold.
+ */
+export const touchHoldRemaining = (
+  now: number,
+  touchedAt: number,
+  holdMs: number = TOUCH_HOLD_MS
+): number => {
+  if (!(touchedAt > 0)) return 0;
+  return Math.max(0, holdMs - (now - touchedAt));
+};
 
 interface BackgroundManagerProps {
   className?: string;
@@ -174,6 +196,23 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
 
     let cancelled = false;
 
+    // The end of a background's turn — unless a hand is on the field, or was
+    // a moment ago, in which case the turn is extended until it has been off
+    // it for the hold. Asked again each time the extension runs out, since
+    // the hand may not have left.
+    const whenFieldIsFree = (proceed: () => void) => {
+      if (cancelled) return;
+      const wait = touchHoldRemaining(performance.now(), fieldTouchedAt());
+      if (wait <= 0) {
+        proceed();
+        return;
+      }
+      playTimeoutRef.current = window.setTimeout(
+        () => whenFieldIsFree(proceed),
+        wait
+      );
+    };
+
     const startCycle = () => {
       if (cancelled) return;
 
@@ -182,13 +221,14 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
         resumeFromVisibleRef.current = false;
         setOverlayOpacity(0);
         playTimeoutRef.current = window.setTimeout(() => {
-          if (cancelled) return;
-          setOverlayOpacity(1);
-          fadeOutTimeoutRef.current = window.setTimeout(() => {
-            if (cancelled) return;
-            switchToNextBackground();
-            startCycle();
-          }, fadeDurationMs);
+          whenFieldIsFree(() => {
+            setOverlayOpacity(1);
+            fadeOutTimeoutRef.current = window.setTimeout(() => {
+              if (cancelled) return;
+              switchToNextBackground();
+              startCycle();
+            }, fadeDurationMs);
+          });
         }, playDurationMs);
         return;
       }
@@ -196,14 +236,15 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
       // Normal cycle: show background immediately, then after play duration fade to black and switch
       setOverlayOpacity(0); // Ensure background is visible
       playTimeoutRef.current = window.setTimeout(() => {
-        if (cancelled) return;
-        setOverlayOpacity(1); // Fade to black
-        fadeOutTimeoutRef.current = window.setTimeout(() => {
-          if (cancelled) return;
-          switchToNextBackground();
-          setOverlayOpacity(0); // Show new background immediately
-          startCycle(); // Continue cycle
-        }, fadeDurationMs);
+        whenFieldIsFree(() => {
+          setOverlayOpacity(1); // Fade to black
+          fadeOutTimeoutRef.current = window.setTimeout(() => {
+            if (cancelled) return;
+            switchToNextBackground();
+            setOverlayOpacity(0); // Show new background immediately
+            startCycle(); // Continue cycle
+          }, fadeDurationMs);
+        });
       }, playDurationMs);
     };
 
@@ -361,6 +402,12 @@ const BackgroundManager: React.FC<BackgroundManagerProps> = ({ className }) => {
 
       {/* Touch equivalent of the keyboard controls; mobile-only via CSS */}
       <MobileInteractivity />
+
+      {/* The light the pointer carries across the glass (ui/PointerLight):
+          the page's answer to the pointer, where the field's own is the
+          simulation's. Here because this is where the field's chrome is
+          mounted, once, for the whole site. */}
+      <PointerLight />
     </>
   );
 };

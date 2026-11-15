@@ -34,6 +34,16 @@ const shortcutsFor = (modifier: string): Shortcut[] => [
   { keys: ['?'], label: 'this list' },
 ];
 
+// What a pointer does on the bare field — the margins beside the window, the
+// band the title sits in, the whole screen once the chrome is hidden. Not
+// keys, so they are their own short list under the keys: each simulation
+// answers in its own way (a membrane is pushed, a cell is painted, a search
+// is given a new goal), and these two lines are what all six have in common.
+const fieldGestures: Shortcut[] = [
+  { keys: ['click'], label: 'poke the simulation' },
+  { keys: ['drag'], label: 'push it around' },
+];
+
 // The panel's arrival: `--duration-fast`, small enough to read as the panel
 // appearing rather than as an animation.
 const OPEN_MS = DURATION_FAST_MS;
@@ -172,6 +182,19 @@ const Shortcuts: React.FC = () => {
                     ))}
                   </span>
                   <span className="shortcuts-label">{shortcut.label}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="shortcuts-subtitle">on the field</p>
+            <ul className="shortcuts-list">
+              {fieldGestures.map(gesture => (
+                <li key={gesture.label}>
+                  <span className="shortcuts-keys">
+                    {gesture.keys.map(key => (
+                      <kbd key={key}>{key}</kbd>
+                    ))}
+                  </span>
+                  <span className="shortcuts-label">{gesture.label}</span>
                 </li>
               ))}
             </ul>

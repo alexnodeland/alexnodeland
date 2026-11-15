@@ -53,10 +53,10 @@ export type ShortestPathLabSettings = StandardSettings &
 // Default custom settings for shortest path lab
 const defaultCustomSettings: ShortestPathLabCustomSettings = {
   // Graph properties
-  spTotalNodes: 28,
-  spEdgeDensity: 0.15,
+  spTotalNodes: 36,
+  spEdgeDensity: 0.12,
   spStartNode: 0,
-  spGoalNode: 27,
+  spGoalNode: 35,
 
   // Algorithm parameters
   spHeuristicWeight: 1.0, // Standard A*
@@ -65,7 +65,7 @@ const defaultCustomSettings: ShortestPathLabCustomSettings = {
 
   // Visual properties
   spRelief: 0.5,
-  spBaseEdgeAlpha: 0.18,
+  spBaseEdgeAlpha: 0.25,
   spBaseEdgeThickness: 0.8,
   spActionEdgeThickness: 1.6,
   spDotSize: 14,

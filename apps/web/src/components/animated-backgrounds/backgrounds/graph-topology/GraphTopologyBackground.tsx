@@ -65,6 +65,14 @@ const REACH = 0.07;
 const FLOOR_OPACITY = 0.13;
 // A full turn of the network takes about four minutes.
 const SPIN_PER_SECOND = 0.026;
+// Where the turn starts. The clusters are laid out a third of a turn apart
+// with the first due east; a twelfth of a turn on from there, two of them
+// stand at the far corners and the third in front — which leaves the top of
+// the screen, where a page's title is, between clusters rather than behind
+// one for the first stretch of every visit.
+const SPIN_START = Math.PI / 6;
+// How far the layout's plane is spread across the bench, front to back.
+const SPREAD_DEPTH = 1.2;
 
 type Vector2 = { x: number; y: number };
 
@@ -282,21 +290,29 @@ export function calculateSubgraphConductivity(
 }
 
 /**
- * Where the camera rests: above and in front of the bench, close enough that
- * the network fills the field and the lift of a chosen machine reads.
+ * Where the camera rests: above and in front of the bench, and close — the
+ * network is larger than the screen from here. That is the composition. The
+ * page's window covers the middle of every screen, and a network that fitted
+ * the screen was a network under the window: a few glows through the glass
+ * and an empty field around it. From this close its three clusters stand in
+ * the margins and the bands above and below, the links between them run
+ * under the glass, and as it turns each cluster comes round the frame.
  */
 export const restPose = (aspect: number): Pose => ({
-  target: [0, 0.08, 0.22],
-  distance: (aspect < 1 ? 1.12 : 0.88) / TAN_HALF_FOV,
+  target: [0, 0.06, 0.08],
+  distance: (aspect < 1 ? 0.86 : 0.6) / TAN_HALF_FOV,
   azimuth: 0,
-  elevation: 0.56,
+  elevation: 0.62,
   fov: FOV_DEGREES,
 });
 
-/** With the page out of the way: lower, so the lifted subgraph stands clear. */
+/**
+ * With the page out of the way: back far enough to take the whole network
+ * in, and lower, so the lifted subgraph stands clear.
+ */
 export const showPose = (aspect: number): Pose => ({
   target: [0, 0.12, 0.05],
-  distance: (aspect < 1 ? 1.2 : 0.96) / TAN_HALF_FOV,
+  distance: (aspect < 1 ? 1.36 : 1.06) / TAN_HALF_FOV,
   azimuth: 0,
   elevation: 0.44,
   fov: FOV_DEGREES,
@@ -445,6 +461,7 @@ const buildScene = ({
   const network = new THREE.Group();
   network.add(ribbons.mesh);
   network.add(sprites.mesh);
+  network.rotation.y = SPIN_START;
   stage.scene.add(network);
   const floor = createFloor({
     height: 0,
@@ -966,6 +983,8 @@ const buildScene = ({
           (square - network.rotation.y) * Math.min(1, dt * 2.2) * reading;
       }
     }
+    // A still of the number is square to the screen: it was laid out to be
+    // read, and will not get the time to come round.
     if (frame.frozen && on) network.rotation.y = 0;
     network.updateMatrixWorld();
 
@@ -997,7 +1016,7 @@ const buildScene = ({
     // out for; at rest it is drawn in a little, so the network sits inside
     // the field rather than running off it.
     spreadX = Math.min(aspect, 1.45) * 0.9 * lifting + aspect * reading;
-    spreadZ = 0.82 * lifting + reading;
+    spreadZ = SPREAD_DEPTH * lifting + reading;
 
     // Nodes: where each stands, and how it is drawn.
     const baseSize = live.elementSize * (isNumber ? 0.5 : 0.68);

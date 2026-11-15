@@ -321,6 +321,14 @@ export const createStage = (
     });
     rig.apply(camera, frame.aspect);
 
+    // The canopy comes off when there is no title for it to make room for:
+    // the page's content is hidden and the field has the screen, or the 404
+    // is forming its number across the middle of it.
+    const lift = Math.max(frame.hidden ? 1 : 0, stage.reading);
+    post.canopyLift = frozen
+      ? lift
+      : post.canopyLift + (lift - post.canopyLift) * (1 - Math.exp(-dt * 3.2));
+
     try {
       update(frame);
       post.render(scene, camera, frame.time);

@@ -94,8 +94,7 @@
     // scrim at the window's blur — so the three are one kit. The caps inside
     // the panel keep the solid ground, where a raised key is what they are.
     background: var(--window-scrim);
-    backdrop-filter: blur(var(--window-blur));
-    -webkit-backdrop-filter: blur(var(--window-blur)); // Safari 17 and earlier
+    @include glass;
   }
 }
 
@@ -169,6 +168,17 @@
   // the width of each key group.
   min-width: 3.25rem;
   flex-shrink: 0;
+}
+
+// The second list's caption: what a pointer does on the field, under what
+// the keys do. A rule above it, since it opens a different kind of list.
+.shortcuts-subtitle {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) 0;
+  border-top: 1px solid var(--hairline-interior);
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.04em;
 }
 
 // The word still arrives, it just arrives already there.

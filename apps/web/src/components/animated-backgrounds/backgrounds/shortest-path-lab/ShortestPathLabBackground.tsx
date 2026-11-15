@@ -69,6 +69,8 @@ const RISE_RATE = 5;
 // How close to a node the pointer has to be to have it, in screen heights.
 const REACH = 0.14;
 const FLOOR_OPACITY = 0.13;
+// How far the layout's plane is spread across the bench, front to back.
+const SPREAD_DEPTH = 2.1;
 
 type Vector2 = { x: number; y: number };
 
@@ -201,20 +203,28 @@ function pickGlyphEndpoints(
 
 /**
  * Where the camera rests: above one end of the bench, looking across it, so
- * the bowl the search lifts has a near side and a far one.
+ * the bowl the search lifts has a near side and a far one — and close, so
+ * that the graph is larger than the screen. The page's window covers the
+ * middle of every screen; a graph that fitted the screen sat under it. From
+ * here the near nodes run off the foot of the field, the far rim of the
+ * bowl rises into the band behind the title, and the search crosses under
+ * the glass between them.
  */
 export const restPose = (aspect: number): Pose => ({
-  target: [0, 0.16, 0.16],
-  distance: (aspect < 1 ? 1.16 : 0.84) / TAN_HALF_FOV,
+  target: [0, 0.14, 0.1],
+  distance: (aspect < 1 ? 0.9 : 0.62) / TAN_HALF_FOV,
   azimuth: -0.22,
   elevation: 0.5,
   fov: FOV_DEGREES,
 });
 
-/** With the page out of the way: lower, where the relief reads as relief. */
+/**
+ * With the page out of the way: back to where the whole graph is in view,
+ * and lower, where the relief reads as relief.
+ */
 export const showPose = (aspect: number): Pose => ({
   target: [0, 0.18, 0.08],
-  distance: (aspect < 1 ? 1.2 : 0.82) / TAN_HALF_FOV,
+  distance: (aspect < 1 ? 1.36 : 1.0) / TAN_HALF_FOV,
   azimuth: -0.3,
   elevation: 0.36,
   fov: FOV_DEGREES,
@@ -633,7 +643,7 @@ const buildScene = ({
     const reading = stage.reading;
     const scenic = 1 - reading;
     spreadX = Math.min(aspect, 1.5) * 0.95 * scenic + aspect * reading;
-    spreadZ = 1.5 * scenic + reading;
+    spreadZ = SPREAD_DEPTH * scenic + reading;
     // The number is read flat, and a node in flight is on its way to a new
     // cost: both bring the relief down.
     const relief = live.spRelief * HEIGHT_PER_COST * scenic;
@@ -692,8 +702,11 @@ const buildScene = ({
         halo = 0.5;
       } else {
         rgb = live.colors.background; // Not reached
-        // The number has to read as a shape before the search reaches it.
-        bright = 0.5 + 0.4 * progress;
+        // The graph has to read as a graph before the search reaches it —
+        // for the first seconds of every search it is all there is — and
+        // the number as a shape.
+        bright = 0.8 + 0.3 * progress;
+        halo = 0.22;
       }
       writeColor(sprites.colors, at, rgb, bright);
 

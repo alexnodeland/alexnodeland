@@ -15,8 +15,9 @@ import * as THREE from 'three';
  *             glow effect.
  *   grade   — exposure, a shoulder that rolls the highlights off instead of
  *             clipping them (so a saturated source goes pale at its core, as
- *             a real one does), and a vignette that closes the corners where
- *             the rail's controls sit.
+ *             a real one does), a vignette that closes the corners where the
+ *             rail's controls sit, and a canopy: the top of the picture,
+ *             where the page keeps its title on the bare field, held down.
  *   grain   — a pixel of noise, which is what stops a near-black gradient
  *             from banding on an eight-bit display. Most of every field is a
  *             near-black gradient.
@@ -41,6 +42,8 @@ export interface GradeSettings {
   exposure: number;
   /** 0 → 1: how far the corners close. */
   vignette: number;
+  /** 0 → 1: how far the top of the picture is held down under the title. */
+  canopy: number;
   /** Peak-to-peak noise, in display units. */
   grain: number;
   /** 1 leaves saturation alone. */
@@ -59,6 +62,7 @@ export const DEFAULT_BLOOM: BloomSettings = {
 export const DEFAULT_GRADE: GradeSettings = {
   exposure: 1.0,
   vignette: 0.32,
+  canopy: 0.5,
   grain: 0.018,
   saturation: 1.04,
   contrast: 1.06,
@@ -153,6 +157,7 @@ const GRADE_FRAGMENT = /* glsl */ `
   uniform float uBloom;
   uniform float uExposure;
   uniform float uVignette;
+  uniform float uCanopy;
   uniform float uGrain;
   uniform float uSaturation;
   uniform float uContrast;
@@ -185,6 +190,14 @@ const GRADE_FRAGMENT = /* glsl */ `
     q.x *= mix(1.0, uAspect, 0.35);
     float edge = smoothstep(0.35, 1.05, length(q) * 1.55);
     color *= 1.0 - uVignette * edge;
+
+    // The canopy. The page's title and its tagline sit at the top of the
+    // screen on the bare field, with nothing behind them but this picture,
+    // and a halo on the letters only goes so far against a field that is
+    // allowed to be brighter than white. So the picture itself gives way
+    // there: it dims towards the top, in light, before the shoulder — which
+    // reads as the scene receding rather than as a band laid over it.
+    color *= 1.0 - uCanopy * smoothstep(0.4, 0.97, vUv.y);
 
     // The shoulder. Linear near black, so nothing in the shadows is crushed,
     // and asymptotic to white, per channel — which is what takes a saturated
@@ -238,6 +251,12 @@ const makePass = (
 export class PostChain {
   bloom: BloomSettings;
   grade: GradeSettings;
+  /**
+   * 0 → 1: how much of the canopy is lifted. The stage raises it when there
+   * is no title to make room for — the page's content hidden, the 404's
+   * number forming.
+   */
+  canopyLift = 0;
 
   /** The target scenes are drawn into: linear, half-float, multisampled. */
   readonly sceneTarget: THREE.WebGLRenderTarget;
@@ -327,6 +346,7 @@ export class PostChain {
       uBloom: { value: 0 },
       uExposure: { value: 1 },
       uVignette: { value: 0 },
+      uCanopy: { value: 0 },
       uGrain: { value: 0 },
       uSaturation: { value: 1 },
       uContrast: { value: 1 },
@@ -404,6 +424,8 @@ export class PostChain {
       this.bloomEnabled && this.bloom.strength > 0 ? this.bloom.strength : 0;
     grade.uExposure.value = this.grade.exposure;
     grade.uVignette.value = this.grade.vignette;
+    grade.uCanopy.value =
+      this.grade.canopy * (1 - Math.min(1, Math.max(0, this.canopyLift)));
     grade.uGrain.value = this.grade.grain;
     grade.uSaturation.value = this.grade.saturation;
     grade.uContrast.value = this.grade.contrast;

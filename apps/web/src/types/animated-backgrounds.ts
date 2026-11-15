@@ -32,6 +32,7 @@ export interface BackgroundSettings {
   connectionLineWidth: number;
   diagonalConnectionWeight: number;
   activityIntensity: number;
+  glideSpeed?: number; // cells per second the board drifts under the camera
 
   // Graph topology properties (optional)
   totalNodes?: number;
@@ -79,7 +80,7 @@ export interface BackgroundSettings {
   spectrogramSmoothing?: number;
   frequencyScale?: number;
   timeScale?: number;
-  fftWindowSize?: number;
+  analysisCycles?: number;
   useLogScale?: number;
   minLogFreq?: number;
   maxLogFreq?: number;
@@ -109,6 +110,7 @@ export interface BackgroundSettings {
   spGlowStrength?: number;
   spGlowRadius?: number;
   spGlowThreshold?: number;
+  spRelief?: number; // 0-1: how much of the cost landscape's height is drawn
 }
 
 export interface AnimatedBackgroundConfig {

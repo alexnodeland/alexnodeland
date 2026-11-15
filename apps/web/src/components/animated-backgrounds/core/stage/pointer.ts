@@ -95,6 +95,14 @@ const state: PointerState = {
 
 let taps: FieldTap[] = [];
 let users = 0;
+// `performance.now()` of the last time a press had hold of the field, and
+// zero until one has. The manager reads it before it changes the background:
+// a simulation someone is in the middle of pushing around is not swapped out
+// from under their hand.
+let touchedAt = 0;
+
+/** When the field was last pressed, dragged across or tapped. 0 if never. */
+export const fieldTouchedAt = (): number => touchedAt;
 let pressStart: { x: number; y: number; time: number; id: number } | null =
   null;
 
@@ -129,7 +137,8 @@ const onMove = (event: PointerEvent) => {
   place(event);
   // A held press keeps the field for as long as it is held: dragged across
   // the window's edge, it is still the same gesture.
-  if (!state.pressed) setOverField(isFieldTarget(event.target));
+  if (state.pressed) touchedAt = state.lastMove;
+  else setOverField(isFieldTarget(event.target));
 };
 
 const onDown = (event: PointerEvent) => {
@@ -139,6 +148,7 @@ const onDown = (event: PointerEvent) => {
   setOverField(onField);
   if (!onField) return;
   state.pressed = true;
+  touchedAt = state.lastMove;
   pressStart = {
     x: event.clientX,
     y: event.clientY,
@@ -156,6 +166,7 @@ const endPress = (event: PointerEvent, completed: boolean) => {
   document.documentElement.classList.remove(PRESS_CLASS);
   if (!completed) return;
   const now = performance.now();
+  touchedAt = now;
   const moved = Math.hypot(event.clientX - start.x, event.clientY - start.y);
   if (now - start.time <= TAP_MS && moved <= TAP_SLOP_PX) {
     const { x, y } = toNdc(event.clientX, event.clientY);
