@@ -18,7 +18,11 @@ const renderers = (): StubRenderer[] =>
   (THREE.WebGLRenderer as unknown as { instances: StubRenderer[] }).instances;
 
 type FieldWindow = Window & {
-  __fieldQuality?: { governor?: boolean; pixelRatio?: number };
+  __fieldQuality?: {
+    governor?: boolean;
+    pixelRatio?: number;
+    tier?: 'high' | 'low';
+  };
 };
 
 const base: Pose = {
@@ -265,6 +269,48 @@ describe('the stage', () => {
     expect(container.querySelector('canvas')?.width).toBe(
       window.innerWidth * 2
     );
+  });
+
+  describe('on a machine with no graphics hardware', () => {
+    const stub = THREE.WebGLRenderer as unknown as {
+      rendererName: string | null;
+    };
+
+    beforeEach(() => {
+      stub.rendererName = 'ANGLE (Google, Vulkan (SwiftShader Device))';
+    });
+
+    afterEach(() => {
+      stub.rendererName = null;
+    });
+
+    it('asks for the least picture, from the first frame', async () => {
+      // The governor is what holds the resolution down, so it is left on.
+      delete (window as FieldWindow).__fieldQuality;
+      await begin();
+      step();
+
+      expect(stage?.quality.software).toBe(true);
+      expect(stage?.quality.tier).toBe('low');
+      // About an eighth of the pixels, before a single slow frame.
+      const canvas = container.querySelector('canvas') as HTMLCanvasElement;
+      expect(canvas.width).toBe(Math.floor(window.innerWidth * 0.35));
+      // The scene and the grade: no bloom chain between them.
+      expect(drawn()).toBe(2);
+    });
+
+    it('draws the whole picture for someone who asks for it by name', async () => {
+      (window as FieldWindow).__fieldQuality = {
+        governor: false,
+        tier: 'high',
+      };
+      await begin();
+      step();
+      expect(stage?.quality.software).toBe(false);
+      expect(stage?.quality.tier).toBe('high');
+      expect(container.querySelector('canvas')?.width).toBe(window.innerWidth);
+      expect(drawn()).toBeGreaterThan(2);
+    });
   });
 
   it('tips the camera as the window scrolls', async () => {

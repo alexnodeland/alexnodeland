@@ -425,7 +425,10 @@ const buildScene = ({
 
   // ── The sheet ────────────────────────────────────────────────────────────
   const live0 = settings();
-  const segments = dense ? 420 : 200;
+  // How finely the sheet is cut: fine enough on a desktop that a crest is
+  // round, coarser on a phone, and coarser again where there is no graphics
+  // hardware and every vertex is the processor's.
+  const segments = stage.quality.software ? 120 : dense ? 420 : 200;
   const geometry = new THREE.PlaneGeometry(
     SHEET_WIDTH,
     SHEET_DEPTH,

@@ -2,12 +2,33 @@ import {
   DEFAULT_GOVERNOR,
   Governor,
   governorEnabled,
+  isSoftwareRenderer,
   resolveQuality,
+  SOFTWARE_FLOOR,
 } from '../../../../../../components/animated-backgrounds/core/stage/quality';
 
 type FieldWindow = Window & {
-  __fieldQuality?: { governor?: boolean; pixelRatio?: number };
+  __fieldQuality?: {
+    governor?: boolean;
+    pixelRatio?: number;
+    tier?: 'high' | 'low';
+  };
 };
+
+// A GL context that gives the name of what is drawing, the way a browser
+// does: through the debug extension when it offers one, or plainly.
+const context = (name: unknown, viaExtension = true) => ({
+  RENDERER: 0x1f01,
+  getExtension: (extension: string) =>
+    viaExtension && extension === 'WEBGL_debug_renderer_info'
+      ? { UNMASKED_RENDERER_WEBGL: 0x9246 }
+      : null,
+  getParameter: (parameter: number) =>
+    parameter === (viaExtension ? 0x9246 : 0x1f01) ? name : null,
+});
+
+const SWIFTSHADER =
+  'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)';
 
 // Feed a governor frames of one length for a stretch of time; the last
 // scale it reported, if it reported one.
@@ -67,6 +88,20 @@ describe('the render governor', () => {
   it('reads nothing into one enormous frame', () => {
     const governor = new Governor();
     for (let i = 0; i < 50; i++) expect(governor.sample(900)).toBeNull();
+    expect(governor.scale).toBe(1);
+  });
+
+  it('starts a device known to be slow where it would have ended up', () => {
+    const governor = new Governor({ floor: 0.35 }, true);
+    expect(governor.scale).toBe(0.35);
+    // Still slow: there is nowhere lower to go, so nothing changes.
+    expect(run(governor, 60, 20_000)).toBeNull();
+    expect(governor.scale).toBe(0.35);
+  });
+
+  it('gives such a device its pixels back if it turns out to have the room', () => {
+    const governor = new Governor({ floor: 0.35 }, true);
+    run(governor, 8, 60_000);
     expect(governor.scale).toBe(1);
   });
 
@@ -132,5 +167,81 @@ describe('the quality a device is asked for', () => {
     expect(governorEnabled()).toBe(true);
     fieldWindow.__fieldQuality = { governor: false };
     expect(governorEnabled()).toBe(false);
+  });
+
+  describe('where there is no graphics hardware', () => {
+    it.each([
+      ['Chrome’s', SWIFTSHADER],
+      ['Mesa’s', 'llvmpipe (LLVM 15.0.7, 256 bits)'],
+      ['Mesa’s older one', 'softpipe'],
+      ['Windows’', 'Microsoft Basic Render Driver'],
+      ['one that just says so', 'Generic Software Renderer'],
+    ])('knows %s rasteriser by its name', (_whose, name) => {
+      expect(isSoftwareRenderer(context(name))).toBe(true);
+      // Where the browser gives the name without the extension, too.
+      expect(isSoftwareRenderer(context(name, false))).toBe(true);
+    });
+
+    it.each([
+      'ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)',
+      'ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0, D3D11)',
+      'Mali-G78',
+      'Adreno (TM) 740',
+    ])('takes %s for hardware', name => {
+      expect(isSoftwareRenderer(context(name))).toBe(false);
+    });
+
+    it('assumes hardware when it cannot ask', () => {
+      // No context, a browser that will not say, a context that throws: the
+      // governor finds out the slow way instead.
+      expect(isSoftwareRenderer(null)).toBe(false);
+      expect(isSoftwareRenderer(undefined)).toBe(false);
+      expect(isSoftwareRenderer(context(null))).toBe(false);
+      expect(
+        isSoftwareRenderer({
+          RENDERER: 0x1f01,
+          getExtension: () => {
+            throw new Error('context lost');
+          },
+          getParameter: () => SWIFTSHADER,
+        })
+      ).toBe(false);
+    });
+
+    it('asks for the least picture there is', () => {
+      const quality = resolveQuality(context(SWIFTSHADER));
+      expect(quality.software).toBe(true);
+      expect(quality.tier).toBe('low');
+      expect(quality.samples).toBe(0);
+      // No bloom at all: not a level, not a pass.
+      expect(quality.bloomLevels).toBe(0);
+      // And goes lower than any graphics hardware is asked to.
+      expect(SOFTWARE_FLOOR).toBeLessThan(DEFAULT_GOVERNOR.floor);
+    });
+
+    it('still gives the whole picture to someone who asks for it by name', () => {
+      // How a screenshot is taken on a machine with no graphics hardware.
+      fieldWindow.__fieldQuality = { tier: 'high' };
+      const quality = resolveQuality(context(SWIFTSHADER));
+      expect(quality.software).toBe(false);
+      expect(quality.tier).toBe('high');
+      expect(quality.samples).toBeGreaterThan(0);
+      expect(quality.bloomLevels).toBe(5);
+    });
+
+    it('leaves hardware on the tier it had', () => {
+      const quality = resolveQuality(context('ANGLE (Apple, Apple M2)'));
+      expect(quality.software).toBe(false);
+      expect(quality.tier).toBe('high');
+      expect(quality.bloomLevels).toBe(5);
+    });
+
+    it('lets a tier be asked for on hardware as well', () => {
+      fieldWindow.__fieldQuality = { tier: 'low' };
+      const quality = resolveQuality(context('ANGLE (Apple, Apple M2)'));
+      expect(quality.tier).toBe('low');
+      expect(quality.software).toBe(false);
+      expect(quality.bloomLevels).toBe(4);
+    });
   });
 });

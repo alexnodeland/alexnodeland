@@ -7,7 +7,13 @@ import {
   GradeSettings,
   PostChain,
 } from './post';
-import { Governor, governorEnabled, Quality, resolveQuality } from './quality';
+import {
+  Governor,
+  governorEnabled,
+  Quality,
+  resolveQuality,
+  SOFTWARE_FLOOR,
+} from './quality';
 import { CameraRig, RigConfig } from './rig';
 
 /**
@@ -112,8 +118,6 @@ export const createStage = (
   container: HTMLElement,
   options: StageOptions
 ): Stage => {
-  const quality = resolveQuality();
-
   // The drawing buffer itself is only ever the last pass's destination: the
   // scene has its own multisampled, depth-buffered target (see post.ts), so
   // the canvas needs neither.
@@ -124,6 +128,10 @@ export const createStage = (
     stencil: false,
     powerPreference: 'high-performance',
   });
+  // What the device is asked for depends on what turned out to be drawing.
+  const quality = resolveQuality(
+    typeof renderer.getContext === 'function' ? renderer.getContext() : null
+  );
   renderer.setClearColor(new THREE.Color(STAGE_GROUND), 1);
   const canvas = renderer.domElement;
   // A block, so no line box's worth of descender sits under it. Its size is
@@ -148,11 +156,18 @@ export const createStage = (
     samples: quality.samples,
     levels: quality.bloomLevels,
     bloom:
-      options.bloom === false ? false : { ...DEFAULT_BLOOM, ...options.bloom },
+      options.bloom === false || quality.bloomLevels === 0
+        ? false
+        : { ...DEFAULT_BLOOM, ...options.bloom },
     grade: { ...DEFAULT_GRADE, ...options.grade },
   });
 
-  const governor = governorEnabled() ? new Governor() : null;
+  const governor = governorEnabled()
+    ? new Governor(
+        quality.software ? { floor: SOFTWARE_FLOOR } : {},
+        quality.software
+      )
+    : null;
   const introSeconds = options.introSeconds ?? 1.6;
 
   let width = 1;

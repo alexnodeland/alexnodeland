@@ -182,7 +182,9 @@ const GRADE_FRAGMENT = /* glsl */ `
   void main() {
     vec3 color = texture2D(tScene, vUv).rgb;
     if (any(isnan(color)) || any(isinf(color))) color = vec3(0.0);
-    color += texture2D(tBloom, vUv).rgb * uBloom;
+    #ifdef USE_BLOOM
+      color += texture2D(tBloom, vUv).rgb * uBloom;
+    #endif
 
     // The corners close a little: wider than tall on a wide screen, so the
     // falloff follows the screen's own shape rather than drawing a circle.
@@ -290,8 +292,10 @@ export class PostChain {
     }
   ) {
     this.renderer = renderer;
-    this.levels = options.levels;
-    this.bloomEnabled = options.bloom !== false;
+    // No bloom is no chain: not a level allocated, not a pass drawn, and
+    // not a sample taken for it in the grade.
+    this.bloomEnabled = options.bloom !== false && options.levels > 0;
+    this.levels = this.bloomEnabled ? options.levels : 0;
     this.bloom = options.bloom === false ? DEFAULT_BLOOM : options.bloom;
     this.grade = options.grade;
 
@@ -342,7 +346,7 @@ export class PostChain {
     );
     this.gradePass = makePass(GRADE_FRAGMENT, {
       tScene: { value: this.sceneTarget.texture },
-      tBloom: { value: this.mips[0].texture },
+      tBloom: { value: this.mips[0]?.texture ?? null },
       uBloom: { value: 0 },
       uExposure: { value: 1 },
       uVignette: { value: 0 },
@@ -353,6 +357,8 @@ export class PostChain {
       uTime: { value: 0 },
       uAspect: { value: 1 },
     });
+
+    if (this.bloomEnabled) this.gradePass.defines = { USE_BLOOM: '' };
 
     this.quad = new THREE.Mesh(this.geometry, this.gradePass);
     this.quad.frustumCulled = false;

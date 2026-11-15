@@ -9,9 +9,9 @@ a waterfall, two landscapes — and the page's chrome was re-cut for what is now
 behind it.
 
 **Status.** Built and reviewed by screenshot, on one branch. Verified in a
-headless browser on a software rasteriser; **not yet measured on a real GPU or
-a real phone** (see §9). Where this document reverses something `01` decided,
-it says so.
+headless browser on a software rasteriser, and its cost measured there;
+**not yet measured on a real GPU or a real phone** (see §9). Where this
+document reverses something `01` decided, it says so.
 
 | §   | topic                         | decision                                                               |
 | --- | ----------------------------- | ---------------------------------------------------------------------- |
@@ -70,8 +70,9 @@ answers a frame (`useStageScene`).
   is whatever was hit when nothing was: the document itself, the band the hero
   sits in, or an element marked `data-field-surface`.
 - **`quality.ts`** — a tier chosen once (a phone gets no multisampling, a
-  shorter bloom chain, fewer elements) and a governor that gives resolution
-  back before frame rate when frames run long.
+  shorter bloom chain, fewer elements), a governor that gives resolution
+  back before frame rate when frames run long, and a floor for a machine with
+  no graphics hardware at all (§9).
 - **`telemetry.ts`** — a one-line readout a scene writes a few times a second.
 
 Settings colours are display colours — the swatch in the panel is what is
@@ -233,16 +234,50 @@ nothing about it. The library is real in tests now (the module build, mapped in
 `window.__fieldQuality = { governor: false, pixelRatio: n }` pins the
 resolution for a test or a capture.
 
-## §9 — what this pass did not establish
+## §9 — what was measured, and what was not
 
-- **Performance on real hardware.** Everything was run on a software
-  rasteriser. The tier, the governor and the phone's lighter blur are the
-  design's answer to cost, and none of them has been measured on a phone. The
-  heavier frost in particular is a full-window backdrop filter over a canvas
-  that repaints every frame; if a device struggles, `--window-blur` is the
-  first number to bring down.
-- **Firefox and WebKit.** The end-to-end suite was run here on Chromium,
-  desktop and phone-sized; the other engines run in CI.
+**Measured: a machine with no graphics hardware.** The one renderer available
+to this pass was a software rasteriser, which is also what the end-to-end
+suite runs on in CI, and the first measurement was bad: scrolling a page over
+the new waves took 554ms a frame where the flat field it replaced took 58, and
+a navigation ran up nineteen seconds of long tasks against two. On such a
+machine every pixel of every pass is the processor's, and the page's own work
+waits behind it.
+
+So a software rasteriser is recognised by name (`isSoftwareRenderer`) and
+asked for the least picture there is: the low tier, no bloom chain at all, and
+a resolution floor of 0.35 — about an eighth of the pixels — from the first
+frame rather than after ten seconds of the governor finding out. Frame time
+while scrolling `/cv`, 1280×720, this machine:
+
+| field       | before this pass | after, software tier |
+| ----------- | ---------------- | -------------------- |
+| waves       | 42ms             | 67ms                 |
+| automaton   | 77ms             | 65ms                 |
+| membrane    | 99ms             | 69ms                 |
+| oscillator  | 420ms            | 45ms                 |
+| scheduling  | 37ms             | 43ms                 |
+| pathfinding | 176ms            | 43ms                 |
+
+Four of the six are cheaper there than they were, and the set as a whole costs
+well under half what it did. The waves are the exception: the old one was a
+single flat shader and nothing three-dimensional will match it. The same
+subset of the end-to-end suite takes no longer than it did (92s against 105s).
+
+`window.__fieldQuality = { tier: 'high' }` asks for the whole picture whatever
+is drawing it, which is how the screenshots were taken.
+
+**Not measured:**
+
+- **Real graphics hardware, and real phones.** The tier, the governor and the
+  phone's lighter blur are the design's answer to cost there, and none of it
+  has been timed on a device. The heavier frost in particular is a
+  full-window backdrop filter over a canvas that repaints every frame; if a
+  device struggles, `--window-blur` is the first number to bring down, and
+  the multisample count in `resolveQuality` the second.
+- **Firefox and WebKit.** The end-to-end suite was run on Chromium, desktop
+  and phone-sized, which is what CI runs. The other two engines were not run
+  at all.
 - **The post about the backgrounds** (`250928_interactive-algorithm-
 visualizations.md`) describes the flat pictures in places. Its prose was
   left alone; the sentences that no longer match were listed for the owner.

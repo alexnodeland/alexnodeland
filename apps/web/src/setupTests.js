@@ -308,9 +308,19 @@ jest.mock('three', () => {
       return Promise.resolve();
     }
     initTexture() {}
+    // As much of a GL context as it takes to ask what is drawing: the name
+    // a test set (WebGLRenderer.rendererName), or none.
+    getContext() {
+      return {
+        RENDERER: 0x1f01,
+        getExtension: () => null,
+        getParameter: () => WebGLRenderer.rendererName,
+      };
+    }
   }
   WebGLRenderer.instances = [];
   WebGLRenderer.unavailable = false;
+  WebGLRenderer.rendererName = null;
 
   return { ...actual, WebGLRenderer };
 });

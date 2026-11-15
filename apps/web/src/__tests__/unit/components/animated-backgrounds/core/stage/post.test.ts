@@ -15,6 +15,7 @@ interface StubRenderer {
 interface Pass {
   target: THREE.WebGLRenderTarget | null;
   uniforms: Record<string, { value: unknown }> | null;
+  defines: Record<string, unknown>;
   autoClear: boolean;
 }
 
@@ -38,6 +39,7 @@ const chain = (
             ])
           )
         : null,
+      defines: { ...(material?.defines ?? {}) },
       autoClear: renderer.autoClear,
     });
   });
@@ -118,6 +120,20 @@ describe('what happens to a frame between the scene and the screen', () => {
     const passes = silent.draw();
     expect(passes).toHaveLength(2);
     expect(passes[1].uniforms?.uBloom.value).toBe(0);
+  });
+
+  it('has no chain at all when it is given no levels', () => {
+    // A software rasteriser: not a level allocated, not a pass drawn, and
+    // not a sample taken for the bloom in the grade.
+    const { draw } = chain({ levels: 0 });
+    const passes = draw();
+    expect(passes).toHaveLength(2);
+    expect(passes[1].target).toBeNull();
+    expect(passes[1].uniforms?.uBloom.value).toBe(0);
+    expect(passes[1].uniforms?.tBloom.value).toBeNull();
+    expect(passes[1].defines).toEqual({});
+    // With a chain, the grade is compiled to read it.
+    expect(chain().draw().pop()?.defines).toEqual({ USE_BLOOM: '' });
   });
 
   it('reads its settings every frame, so a scene can move them', () => {

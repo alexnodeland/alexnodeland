@@ -184,8 +184,12 @@ dispose }`. The stage owns everything around the simulation:
 - **the post chain** (`post.ts`) — bloom, an exposure shoulder, vignette,
   grain, and the canopy that dims the picture under the page's title;
 - **quality** (`quality.ts`) — a tier per device and a governor that trades
-  resolution for frame time. `window.__fieldQuality = { governor: false }`
-  pins the resolution for a test or a screenshot; `pixelRatio` overrides it;
+  resolution for frame time. A software rasteriser (a machine with no
+  graphics hardware — and the end-to-end suite, in CI) is recognised by name
+  and given the least picture there is: the low tier, no bloom, an eighth of
+  the pixels. `window.__fieldQuality` overrides all of it for a test or a
+  screenshot: `{ governor: false }` pins the resolution, `pixelRatio` sets
+  it, and `tier: 'high'` asks for the whole picture whatever is drawing it;
 - **the readout** (`telemetry.ts`) — the one line beside the backgrounds' pill.
 
 `deps` are a scene's _structural_ settings only — the ones that change what is
