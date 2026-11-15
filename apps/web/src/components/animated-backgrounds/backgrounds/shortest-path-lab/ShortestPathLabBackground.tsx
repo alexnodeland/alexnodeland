@@ -1,34 +1,74 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { Line2 } from 'three/examples/jsm/lines/Line2.js';
-import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
-import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { glyphGraphFor } from '../../core/glyph';
-import { advanceMorph, beginMorph, Morph, writeLine } from '../../core/lines';
+import { advanceMorph, beginMorph, Morph } from '../../core/lines';
 import {
   NotFoundSequence,
   RESHAPE_SETTLE_MS,
   viewportReshaped,
 } from '../../core/notFoundSequence';
-import { getRenderPixelRatio } from '../../core/renderScale';
+import { createFloor } from '../../core/stage/floor';
+import { createRibbons } from '../../core/stage/ribbons';
+import { Pose } from '../../core/stage/rig';
+import { createSprites } from '../../core/stage/sprites';
+import { StageOptions } from '../../core/stage/stage';
+import { createReadout } from '../../core/stage/telemetry';
+import {
+  SceneContext,
+  SceneHandle,
+  StageSurface,
+  useStageScene,
+} from '../../core/stage/useStageScene';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { ShortestPathLabSettings } from './config';
+
+/**
+ * A shortest-path search, drawn as the landscape it is searching.
+ *
+ * Dijkstra's algorithm and A* both work by settling, for one node after
+ * another, the cost of the cheapest way there from the start. That cost is a
+ * number at every node the search has reached — a field over the graph — and
+ * here it is the node's height. The graph starts flat on the bench. As the
+ * search reaches a node it rises to its cost, so the explored region lifts
+ * into a bowl with the start at the bottom of it, and the shape of that bowl
+ * is the algorithm: a round one for Dijkstra, which explores every direction
+ * alike, and a trough stretched toward the goal as the heuristic's weight
+ * goes up.
+ *
+ * The shortest path is then the one thing it always was on such a surface:
+ * the way down. When the goal is reached the route back is the line a marble
+ * would take from the goal to the start, and the marble is drawn taking it.
+ */
 
 // The 404 sequence. The search runs at least this fast through the number,
 // since two hundred nodes at four steps a second is a minute, and the dot
 // walks the path this much faster than usual.
 const GLYPH_MIN_STEPS_PER_SECOND = 22;
 const GLYPH_WALK_BOOST = 3;
-// Room for either graph the lab draws.
+// Room for either graph the lab draws, and for the marble.
 const NODE_CAPACITY = 320;
+const EDGE_CAPACITY = 3600;
 // How long the nodes take to fly into the number, to re-settle when it is
-// laid out again, and to scatter once the page is left.
+// laid out again, to scatter once the page is left, and to move from one
+// random graph to the next.
 const MORPH_IN_MS = 2200;
 const MORPH_AGAIN_MS = 700;
 const MORPH_OUT_MS = 1600;
+const MORPH_NEXT_MS = 900;
+
+export const FOV_DEGREES = 36;
+const TAN_HALF_FOV = Math.tan((FOV_DEGREES * Math.PI) / 360);
+
+// World height per unit of path cost, at a relief of one. A long path on
+// these graphs costs two or three units, so at the default relief the far
+// rim of the bowl stands about half a unit off the bench: tall enough to
+// read, low enough to stay in the picture.
+const HEIGHT_PER_COST = 0.36;
+// How quickly a node rises to its cost, or settles back, per second.
+const RISE_RATE = 5;
+// How close to a node the pointer has to be to have it, in screen heights.
+const REACH = 0.14;
+const FLOOR_OPACITY = 0.13;
 
 type Vector2 = { x: number; y: number };
 
@@ -52,7 +92,7 @@ function mulberry32(seed: number) {
   };
 }
 
-function generateRandomGraph(
+export function generateRandomGraph(
   totalNodes: number,
   edgeDensity: number,
   rng: () => number
@@ -83,7 +123,10 @@ function generateRandomGraph(
   return { nodes, edges };
 }
 
-function reconstructPath(prev: Map<number, number>, goal: number): number[] {
+export function reconstructPath(
+  prev: Map<number, number>,
+  goal: number
+): number[] {
   const path: number[] = [];
   let current: number | undefined = goal;
   while (current !== undefined) {
@@ -156,755 +199,715 @@ function pickGlyphEndpoints(
   return [start, goal];
 }
 
-const ShortestPathLabBackground: React.FC<
-  AnimatedBackgroundProps<ShortestPathLabSettings>
-> = ({ className, settings, frozen, notFound }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number | null>(null);
+/**
+ * Where the camera rests: above one end of the bench, looking across it, so
+ * the bowl the search lifts has a near side and a far one.
+ */
+export const restPose = (aspect: number): Pose => ({
+  target: [0, 0.16, 0.16],
+  distance: (aspect < 1 ? 1.16 : 0.84) / TAN_HALF_FOV,
+  azimuth: -0.22,
+  elevation: 0.5,
+  fov: FOV_DEGREES,
+});
 
-  // Live view of the settings for the render loop, which outlives the render
-  // that created it.
-  const settingsRef = useRef(settings);
-  settingsRef.current = settings;
+/** With the page out of the way: lower, where the relief reads as relief. */
+export const showPose = (aspect: number): Pose => ({
+  target: [0, 0.18, 0.08],
+  distance: (aspect < 1 ? 1.2 : 0.82) / TAN_HALF_FOV,
+  azimuth: -0.3,
+  elevation: 0.36,
+  fov: FOV_DEGREES,
+});
 
-  // Draw one frame and hold — see AnimatedBackgroundProps.frozen. The loop
-  // reads the ref each frame; the effect restarts it when the hold is lifted.
-  const frozenRef = useRef(Boolean(frozen));
-  frozenRef.current = Boolean(frozen);
-  const resumeRef = useRef<(() => void) | null>(null);
-  useEffect(() => {
-    if (!frozen) resumeRef.current?.();
-  }, [frozen]);
+/**
+ * Squared up for the number: straight overhead, at the height from which
+ * the screen is exactly the plane the number was laid out in.
+ */
+export const readingPose = (): Pose => ({
+  target: [0, 0, 0],
+  distance: 1 / TAN_HALF_FOV,
+  azimuth: 0,
+  elevation: Math.PI / 2,
+  fov: FOV_DEGREES,
+});
 
-  // The 404 sequence — see AnimatedBackgroundProps.notFound. Read off a ref
-  // each frame like the settings; the effect nudges a frozen loop so it draws
-  // the new state once.
-  const notFoundRef = useRef(Boolean(notFound));
-  notFoundRef.current = Boolean(notFound);
-  useEffect(() => {
-    resumeRef.current?.();
-  }, [notFound]);
+const stageOptions = (settings: ShortestPathLabSettings): StageOptions => ({
+  rig: {
+    base: restPose,
+    hidden: showPose,
+    reading: readingPose,
+    minElevation: 0.16,
+    parallax: { azimuth: 0.08, elevation: 0.05, hiddenGain: 4 },
+    drift: { azimuth: 0.11, elevation: 0.02, period: 52 },
+  },
+  bloom:
+    settings.spGlowBloom > 0.5
+      ? { strength: 0.6, threshold: 0.64, knee: 0.6, radius: 0.72 }
+      : { strength: 0 },
+  grade: { vignette: 0.38 },
+});
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+const buildScene = ({
+  stage,
+  settings,
+  notFound,
+}: SceneContext<ShortestPathLabSettings>): SceneHandle => {
+  const initial = settings();
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(getRenderPixelRatio());
-    container.appendChild(renderer.domElement);
+  // Structural parameters — these define the graph and the search, so
+  // changing one has to rebuild.
+  const totalNodes = initial.spTotalNodes;
+  const edgeDensity = Math.min(1, Math.max(0.05, initial.spEdgeDensity));
+  const heuristicWeight = initial.spHeuristicWeight; // 0=Dijkstra, 1=A*
 
-    // Optional bloom composer
-    const useBloom = settings.spGlowBloom > 0.5;
-    let composer: EffectComposer | null = null;
-    if (useBloom) {
-      composer = new EffectComposer(renderer);
-      composer.addPass(new RenderPass(scene, camera));
-      const bloom = new UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth, window.innerHeight),
-        settings.spGlowStrength,
-        settings.spGlowRadius,
-        settings.spGlowThreshold
-      );
-      composer.addPass(bloom);
-    }
-
-    // Structural parameters — these define the graph and the search, so
-    // changing one has to rebuild.
-    const totalNodes = settings.spTotalNodes;
-    const edgeDensity = Math.min(1, Math.max(0.05, settings.spEdgeDensity));
-    const heuristicWeight = settings.spHeuristicWeight; // 0=Dijkstra, 1=A*
-
-    // Everything below is read per frame instead of captured: rebuilding the
-    // scene mid-drag restarted the search on every input event.
-    // Animation Speed is a master multiplier over this background's own rates.
-    const liveStepsPerSecond = () =>
-      Math.max(
-        0.1,
-        settingsRef.current.spAnimationSpeed *
-          settingsRef.current.globalTimeMultiplier
-      );
-
-    let seed = 424242;
-    let rngFunc = mulberry32(seed);
-    let graph = generateRandomGraph(totalNodes, edgeDensity, rngFunc);
-    let nodes = graph.nodes;
-    let edges = graph.edges;
-
-    const settingsStart = Math.min(
-      totalNodes - 1,
-      Math.max(0, settings.spStartNode)
-    );
-    const settingsGoal = Math.min(
-      totalNodes - 1,
-      Math.max(0, settings.spGoalNode)
-    );
-    let startNode = settingsStart;
-    let goalNode = settingsGoal;
-
-    // ── The 404 sequence ───────────────────────────────────────────────────
-    // The lab already throws its graph away and draws a new one after every
-    // search. The 404 is a graph of its own shape: the nodes fly into the
-    // number, joined along its strokes, and the search runs through it —
-    // lighting the digits up as it explores, and walking the path from one
-    // end of the number to the other. Each search done, the number is laid
-    // out again and searched between two new points. Let go, the nodes
-    // scatter back into a random graph and the lab carries on.
-    const sequence = new NotFoundSequence();
-    let progress = 0;
-    // Whether the graph on screen is the number, and which kind was asked
-    // for last — a number that could not be drawn must not be asked for
-    // again every frame.
-    let glyphMode = false;
-    let lastKind: 'random' | 'glyph' = 'random';
-    let glyphRuns = 0;
-    let glyphSize = { width: window.innerWidth, height: window.innerHeight };
-    // Nodes in flight between two layouts.
-    let morph: Morph | null = null;
-
-    // Edge lines (contrasting style vs topology): light dashed base, thick vivid
-    // action colors. These seed the materials; renderFrame refreshes them.
-    const opacity = settings.opacity;
-    const baseAlpha = settings.spBaseEdgeAlpha;
-    const baseThickness = settings.spBaseEdgeThickness;
-    const actionThickness = settings.spActionEdgeThickness;
-    const nodeSize = settings.elementSize * 380;
-    const dotSizePx = settings.spDotSize;
-
-    // Line2/LineMaterial rather than THREE.Line: gl.LINES is stuck at one
-    // device pixel in every browser, so `linewidth` on a LineBasicMaterial is
-    // silently ignored and these three thickness controls did nothing. Line2
-    // draws the line as screen-space quads, which honours the width — at the
-    // cost of needing the viewport resolution kept up to date.
-    const lineResolution = new THREE.Vector2(
-      window.innerWidth,
-      window.innerHeight
+  // Everything below is read per frame instead of captured: rebuilding the
+  // scene mid-drag restarted the search on every input event.
+  // Animation Speed is a master multiplier over this background's own rates.
+  const liveStepsPerSecond = () =>
+    Math.max(
+      0.1,
+      settings().spAnimationSpeed * settings().globalTimeMultiplier
     );
 
-    const baseEdgeMaterial = new LineMaterial({
-      color: new THREE.Color(...settings.colors.background), // Use background color
-      transparent: true,
-      opacity: baseAlpha * opacity,
-      dashed: true,
-      dashSize: 0.04,
-      gapSize: 0.025,
-      linewidth: baseThickness,
-      resolution: lineResolution,
-    });
-    const exploreEdgeMaterial = new LineMaterial({
-      color: new THREE.Color(...settings.colors.secondary), // Use secondary color
-      transparent: true,
-      opacity: 0.9 * opacity,
-      linewidth: actionThickness,
-      resolution: lineResolution,
-    });
-    const finalEdgeMaterial = new LineMaterial({
-      color: new THREE.Color(...settings.colors.primary), // Use primary color
-      transparent: true,
-      opacity: 1.0 * opacity,
-      linewidth: actionThickness,
-      resolution: lineResolution,
-    });
+  let seed = 424242;
+  let rngFunc = mulberry32(seed);
+  let { nodes, edges } = generateRandomGraph(totalNodes, edgeDensity, rngFunc);
 
-    const buildEdgeLine = (e: LabEdge): Line2 => {
-      const a0 = nodes[e.source].position;
-      const b0 = nodes[e.target].position;
-      const geometry = new LineGeometry();
-      geometry.setPositions([a0.x, a0.y, 0, b0.x, b0.y, 0]);
-      const line = new Line2(geometry, baseEdgeMaterial);
-      line.computeLineDistances(); // required for dashed
-      line.userData = { e };
-      return line;
-    };
+  const settingsStart = Math.min(
+    totalNodes - 1,
+    Math.max(0, initial.spStartNode)
+  );
+  const settingsGoal = Math.min(
+    totalNodes - 1,
+    Math.max(0, initial.spGoalNode)
+  );
+  let startNode = settingsStart;
+  let goalNode = settingsGoal;
 
-    const edgeLines: Line2[] = [];
-    for (const e of edges) {
-      const line = buildEdgeLine(e);
-      scene.add(line);
-      edgeLines.push(line);
-    }
+  // ── The 404 sequence ─────────────────────────────────────────────────────
+  // The lab already throws its graph away and draws a new one after every
+  // search. The 404 is a graph of its own shape: the nodes fly into the
+  // number, joined along its strokes, and the search runs through it —
+  // lighting the digits up as it explores, and walking the path from one
+  // end of the number to the other. Each search done, the number is laid
+  // out again and searched between two new points. Let go, the nodes
+  // scatter back into a random graph and the lab carries on.
+  const sequence = new NotFoundSequence();
+  let progress = 0;
+  // Whether the graph on screen is the number, and which kind was asked
+  // for last — a number that could not be drawn must not be asked for
+  // again every frame.
+  let glyphMode = false;
+  let lastKind: 'random' | 'glyph' = 'random';
+  let glyphRuns = 0;
+  let glyphSize = { width: stage.width, height: stage.height };
+  // Nodes in flight between two layouts.
+  let morph: Morph | null = null;
 
-    // Nodes as points with per-vertex color. Sized for the biggest graph the
-    // lab draws and drawn up to the one it has.
-    const nodePositions = new Float32Array(NODE_CAPACITY * 3);
-    const nodeColors = new Float32Array(NODE_CAPACITY * 3);
-    const nodeGeometry = new THREE.BufferGeometry();
-    nodeGeometry.setAttribute(
-      'position',
-      new THREE.BufferAttribute(nodePositions, 3)
-    );
-    nodeGeometry.setAttribute(
-      'color',
-      new THREE.BufferAttribute(nodeColors, 3)
-    );
-    const nodeMaterial = new THREE.PointsMaterial({
-      size: nodeSize,
-      vertexColors: true,
-      transparent: true,
-      opacity,
-      sizeAttenuation: true,
-    });
-    const nodePoints = new THREE.Points(nodeGeometry, nodeMaterial);
-    scene.add(nodePoints);
+  // ── The search ───────────────────────────────────────────────────────────
+  // Priority queue using simple array for clarity (small N)
+  const openSet: number[] = [];
+  const cameFrom = new Map<number, number>();
+  const gScore = new Map<number, number>();
+  const fScore = new Map<number, number>();
+  const inOpen = new Set<number>();
+  const closed = new Set<number>();
+  let foundPath: number[] = [];
+  // The node the search most recently settled: where it is, as far as a
+  // reader can point to.
+  let lastSettled = 0;
 
-    // Initialize positions and base colors using standardized colors
-    for (let i = 0; i < nodes.length; i++) {
-      nodePositions[i * 3 + 0] = nodes[i].position.x;
-      nodePositions[i * 3 + 1] = nodes[i].position.y;
-      nodePositions[i * 3 + 2] = 0;
-      // base color from background
-      nodeColors[i * 3 + 0] = settings.colors.background[0];
-      nodeColors[i * 3 + 1] = settings.colors.background[1];
-      nodeColors[i * 3 + 2] = settings.colors.background[2];
-    }
-    nodeGeometry.setDrawRange(0, nodes.length);
-    (
-      nodeGeometry.getAttribute('position') as THREE.BufferAttribute
-    ).needsUpdate = true;
-    (nodeGeometry.getAttribute('color') as THREE.BufferAttribute).needsUpdate =
-      true;
-
-    // Priority queue using simple array for clarity (small N)
-    const openSet: number[] = [startNode];
-    const cameFrom = new Map<number, number>();
-    const gScore = new Map<number, number>();
-    const fScore = new Map<number, number>();
-    const inOpen = new Set<number>([startNode]);
-    const closed = new Set<number>();
-
+  /** Starts a search on the graph as it stands, from the start to the goal. */
+  const resetSearch = () => {
+    openSet.length = 0;
+    openSet.push(startNode);
+    cameFrom.clear();
+    gScore.clear();
+    fScore.clear();
+    inOpen.clear();
+    closed.clear();
+    inOpen.add(startNode);
     for (const n of nodes) {
       gScore.set(n.id, n.id === startNode ? 0 : Infinity);
       const h = heuristicWeight * heuristic(n, nodes[goalNode]);
       fScore.set(n.id, n.id === startNode ? h : Infinity);
     }
+    foundPath = [];
+    lastSettled = startNode;
+    walking = false;
+    walkFrom = -1;
+    pendingRegenerate = false;
+  };
 
-    let lastStep = 0;
-    let foundPath: number[] = [];
+  // The marble: where along the path it is, once there is a path.
+  let walking = false;
+  let walkFrom = -1;
+  let walkTo = -1;
+  let walkT = 0;
+  let pendingRegenerate = false;
+  let regenerateAt = 0;
+  let sinceStep = 0;
 
-    // Traversal dot state for animating along current edge
-    let traversalActive = true;
-    let traversalEdge: { from: number; to: number } | null = null;
-    let traversalT = 0; // 0..1
-    let lastTraversalTime = 0;
-    let pendingRegenerate = false;
-    let regenerateAt = 0;
+  resetSearch();
 
-    // Create glowing traversal dot (sprite)
-    const dotGeometry = new THREE.SphereGeometry(0.01, 16, 16);
-    const dotMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(...settings.colors.accent),
-    });
-    const dotMesh = new THREE.Mesh(dotGeometry, dotMaterial);
-    dotMesh.scale.setScalar(dotSizePx / 300);
-    scene.add(dotMesh);
+  function neighbors(id: number): LabEdge[] {
+    return edges.filter(e => e.source === id || e.target === id);
+  }
 
-    function neighbors(id: number): LabEdge[] {
-      return edges.filter(e => e.source === id || e.target === id);
+  /** One expansion of the search. */
+  function searchStep() {
+    if (openSet.length === 0 || foundPath.length > 0) return;
+
+    // Pick node with smallest fScore
+    openSet.sort((a, b) => fScore.get(a)! - fScore.get(b)!);
+    const current = openSet.shift()!;
+    inOpen.delete(current);
+    closed.add(current);
+    lastSettled = current;
+
+    if (current === goalNode) {
+      foundPath = reconstructPath(cameFrom, current);
+      // The marble is let go at the goal.
+      walking = foundPath.length > 1;
+      walkFrom = foundPath.length - 1;
+      walkTo = foundPath.length - 2;
+      walkT = 0;
+      return;
     }
 
-    function step(now: number) {
-      // Nodes in flight are not a graph to search yet.
-      if (morph) return;
-      const rate = glyphMode
-        ? Math.max(liveStepsPerSecond(), GLYPH_MIN_STEPS_PER_SECOND)
-        : liveStepsPerSecond();
-      const interval = 1000 / rate;
-      if (now - lastStep < interval) return;
-      lastStep = now;
-      searchStep(now);
-    }
+    // Explore neighbors
+    for (const e of neighbors(current)) {
+      const neighbor = e.source === current ? e.target : e.source;
+      if (closed.has(neighbor)) continue;
 
-    /** One expansion of the search. */
-    function searchStep(now: number) {
-      if (openSet.length === 0 || foundPath.length > 0) return;
-
-      // Pick node with smallest fScore
-      openSet.sort((a, b) => fScore.get(a)! - fScore.get(b)!);
-      const current = openSet.shift()!;
-      inOpen.delete(current);
-      closed.add(current);
-
-      if (current === goalNode) {
-        foundPath = reconstructPath(cameFrom, current);
-        // Start backtracking traversal animation along the final path
-        traversalActive = true;
-        traversalEdge = null; // will be set in render when processing path
-        traversalT = 0;
-        lastTraversalTime = now;
-        return;
+      const tentativeG = gScore.get(current)! + e.weight;
+      if (!inOpen.has(neighbor)) {
+        openSet.push(neighbor);
+        inOpen.add(neighbor);
+      } else if (tentativeG >= gScore.get(neighbor)!) {
+        continue;
       }
 
-      // Explore neighbors
-      for (const e of neighbors(current)) {
-        const neighbor = e.source === current ? e.target : e.source;
-        if (closed.has(neighbor)) continue;
+      cameFrom.set(neighbor, current);
+      gScore.set(neighbor, tentativeG);
+      const h = heuristicWeight * heuristic(nodes[neighbor], nodes[goalNode]);
+      fScore.set(neighbor, tentativeG + h);
+    }
+  }
 
-        const tentativeG = gScore.get(current)! + e.weight;
-        if (!inOpen.has(neighbor)) {
-          openSet.push(neighbor);
-          inOpen.add(neighbor);
-        } else if (tentativeG >= gScore.get(neighbor)!) {
-          continue;
+  /**
+   * Replaces the graph with `built` and starts a search through it from
+   * `start` to `goal`. With a `morphMs`, the new nodes set off from where
+   * the old ones were — each from the old node at its index, wrapping, so
+   * a bigger graph grows out of the smaller one — and fly to their places.
+   */
+  const rebuild = (
+    built: { nodes: LabNode[]; edges: LabEdge[] },
+    start: number,
+    goal: number,
+    now: number,
+    morphMs: number
+  ) => {
+    const previous = nodes;
+    const count = built.nodes.length;
+    nodes = built.nodes;
+    edges = built.edges;
+    startNode = Math.min(count - 1, Math.max(0, start));
+    goalNode = Math.min(count - 1, Math.max(0, goal));
+    morph = beginMorph(previous, nodes, now, morphMs);
+    hovered = -1;
+    resetSearch();
+  };
+
+  /**
+   * A new graph: the number while the 404 is up, a random one otherwise,
+   * with a new seed either way.
+   */
+  const regenerate = (now: number, frozen: boolean) => {
+    const wantGlyph = notFound();
+    lastKind = wantGlyph ? 'glyph' : 'random';
+    seed = (seed * 1664525 + 1013904223) >>> 0; // LCG step for new seed
+    rngFunc = mulberry32(seed);
+
+    const wasGlyph = glyphMode;
+    let built: { nodes: LabNode[]; edges: LabEdge[] } | null = null;
+    if (wantGlyph) {
+      built = generateGlyphGraph(glyphSize.width, glyphSize.height, rngFunc);
+    }
+    glyphMode = built !== null;
+    if (!built) {
+      built = generateRandomGraph(totalNodes, edgeDensity, rngFunc);
+    }
+
+    const [start, goal] = glyphMode
+      ? pickGlyphEndpoints(built.nodes, rngFunc, glyphRuns === 0)
+      : [settingsStart, settingsGoal];
+    glyphRuns = glyphMode ? glyphRuns + 1 : 0;
+
+    const morphMs = frozen
+      ? 0
+      : glyphMode
+        ? wasGlyph
+          ? MORPH_AGAIN_MS
+          : MORPH_IN_MS
+        : wasGlyph
+          ? MORPH_OUT_MS
+          : MORPH_NEXT_MS;
+    rebuild(built, start, goal, now, morphMs);
+
+    // The reduced-motion still shows the search done: the path drawn
+    // through the number, the dot at its start.
+    if (frozen) {
+      while (openSet.length > 0 && foundPath.length === 0) searchStep();
+      walking = false;
+    }
+  };
+
+  // ── What is drawn ────────────────────────────────────────────────────────
+  const sprites = createSprites(NODE_CAPACITY + 1);
+  const ribbons = createRibbons(EDGE_CAPACITY);
+  stage.scene.add(ribbons.mesh);
+  stage.scene.add(sprites.mesh);
+  const floor = createFloor({
+    height: 0,
+    cell: 0.2,
+    major: 5,
+    reach: 2.1,
+    opacity: FLOOR_OPACITY,
+  });
+  stage.scene.add(floor.mesh);
+
+  // How high each node stands right now, eased toward its cost, and each
+  // node's place in the world from the frame it was last drawn in.
+  const rise = new Float32Array(NODE_CAPACITY);
+  const world = new Float32Array((NODE_CAPACITY + 1) * 3);
+  let spreadX = 1;
+  let spreadZ = 1;
+
+  // ── The pointer ──────────────────────────────────────────────────────────
+  let hovered = -1;
+  const projected = new THREE.Vector3();
+
+  /** The node nearest a point on screen, or −1 if none is within reach. */
+  const nearest = (
+    ndcX: number,
+    ndcY: number,
+    aspect: number,
+    reach: number
+  ) => {
+    let best = -1;
+    let bestDistance = reach;
+    for (let i = 0; i < nodes.length; i++) {
+      projected
+        .set(world[i * 3], world[i * 3 + 1], world[i * 3 + 2])
+        .project(stage.camera);
+      if (projected.z > 1) continue;
+      const d = Math.hypot((projected.x - ndcX) * aspect, projected.y - ndcY);
+      if (d < bestDistance) {
+        bestDistance = d;
+        best = i;
+      }
+    }
+    return best;
+  };
+
+  const applyPointer = (aspect: number) => {
+    const pointer = stage.pointer.state;
+    const quiet = progress > 0.5 || morph !== null;
+
+    // A tap names a goal: the search starts over on the graph as it stands,
+    // for the node nearest where the tap landed.
+    for (const tap of stage.pointer.takeTaps()) {
+      if (quiet) continue;
+      const index = nearest(tap.x, tap.y, aspect, Infinity);
+      if (index >= 0 && index !== startNode) {
+        goalNode = index;
+        resetSearch();
+      }
+    }
+
+    hovered =
+      quiet || !pointer.present
+        ? -1
+        : nearest(pointer.x, pointer.y, aspect, REACH);
+  };
+
+  // ── The frame ────────────────────────────────────────────────────────────
+  const readout = createReadout();
+  const color = new THREE.Color();
+  let reshapeTimer = 0;
+  let stillDrawn = false;
+
+  /** A setting's colour in linear light, scaled, into three floats. */
+  const writeColor = (
+    out: Float32Array,
+    at: number,
+    rgb: [number, number, number],
+    scale: number
+  ) => {
+    color.setRGB(rgb[0], rgb[1], rgb[2], THREE.SRGBColorSpace);
+    out[at] = color.r * scale;
+    out[at + 1] = color.g * scale;
+    out[at + 2] = color.b * scale;
+  };
+
+  const update: SceneHandle['update'] = frame => {
+    const live = settings();
+    const on = notFound();
+    const { dt, now, aspect } = frame;
+    const timeMs = frame.time * 1000;
+
+    // The 404 sequence. A frozen frame tells the story at once.
+    progress = frame.frozen ? sequence.settle(on) : sequence.advance(dt, on);
+    stage.reading = glyphMode || on ? progress : 0;
+    // The moment the flag flips, the next graph is the other kind — now,
+    // not after the search in progress.
+    if ((on ? 'glyph' : 'random') !== lastKind && !pendingRegenerate) {
+      pendingRegenerate = true;
+      regenerateAt = now;
+    }
+
+    if (frame.frozen) {
+      // A still shows a search finished: the bowl lifted, the path down it.
+      if (pendingRegenerate) {
+        regenerate(now, true);
+        stillDrawn = true;
+      } else if (!stillDrawn) {
+        while (openSet.length > 0 && foundPath.length === 0) searchStep();
+        walking = false;
+        stillDrawn = true;
+      }
+    } else {
+      stillDrawn = false;
+      applyPointer(aspect);
+
+      // The search, in whole steps at its own rate. Nodes in flight are not
+      // a graph to search yet.
+      if (!morph) {
+        const rate = glyphMode
+          ? Math.max(liveStepsPerSecond(), GLYPH_MIN_STEPS_PER_SECOND)
+          : liveStepsPerSecond();
+        sinceStep += dt;
+        let budget = 6;
+        while (sinceStep >= 1 / rate && budget-- > 0) {
+          sinceStep -= 1 / rate;
+          searchStep();
         }
-
-        cameFrom.set(neighbor, current);
-        gScore.set(neighbor, tentativeG);
-        const h = heuristicWeight * heuristic(nodes[neighbor], nodes[goalNode]);
-        fScore.set(neighbor, tentativeG + h);
-      }
-    }
-
-    /**
-     * Replaces the graph with `built` and starts a search through it from
-     * `start` to `goal`. With a `morphMs`, the new nodes set off from where
-     * the old ones were — each from the old node at its index, wrapping, so
-     * a bigger graph grows out of the smaller one — and fly to their places.
-     */
-    const rebuild = (
-      built: { nodes: LabNode[]; edges: LabEdge[] },
-      start: number,
-      goal: number,
-      now: number,
-      morphMs: number
-    ) => {
-      const live = settingsRef.current;
-      const previous = nodes;
-      const count = built.nodes.length;
-
-      // Geometries are per-line and must go; the three materials are shared
-      // and get re-attached to the rebuilt lines below, so disposing them
-      // here only forces a shader recompile on every regeneration.
-      edgeLines.forEach(l => {
-        scene.remove(l);
-        l.geometry.dispose();
-      });
-      edgeLines.length = 0;
-
-      nodes = built.nodes;
-      edges = built.edges;
-      startNode = Math.min(count - 1, Math.max(0, start));
-      goalNode = Math.min(count - 1, Math.max(0, goal));
-
-      morph = beginMorph(previous, nodes, now, morphMs);
-
-      for (const e of edges) {
-        const line = buildEdgeLine(e);
-        scene.add(line);
-        edgeLines.push(line);
+        if (sinceStep > 1 / rate) sinceStep = 1 / rate;
       }
 
-      // reset astar/dijkstra state
-      openSet.length = 0;
-      openSet.push(startNode);
-      cameFrom.clear();
-      gScore.clear();
-      fScore.clear();
-      inOpen.clear();
-      closed.clear();
-      inOpen.add(startNode);
-      for (const n of nodes) {
-        gScore.set(n.id, n.id === startNode ? 0 : Infinity);
-        const h = heuristicWeight * heuristic(n, nodes[goalNode]);
-        fScore.set(n.id, n.id === startNode ? h : Infinity);
-      }
-
-      // write node positions/colors
-      for (let i = 0; i < nodes.length; i++) {
-        nodePositions[i * 3 + 0] = nodes[i].position.x;
-        nodePositions[i * 3 + 1] = nodes[i].position.y;
-        nodePositions[i * 3 + 2] = 0;
-        nodeColors[i * 3 + 0] = live.colors.background[0];
-        nodeColors[i * 3 + 1] = live.colors.background[1];
-        nodeColors[i * 3 + 2] = live.colors.background[2];
-      }
-      nodeGeometry.setDrawRange(0, nodes.length);
-      (
-        nodeGeometry.getAttribute('position') as THREE.BufferAttribute
-      ).needsUpdate = true;
-      (
-        nodeGeometry.getAttribute('color') as THREE.BufferAttribute
-      ).needsUpdate = true;
-
-      // reset traversal
-      traversalActive = true;
-      traversalEdge = null;
-      traversalT = 0;
-      dotMesh.position.set(
-        nodes[startNode].position.x,
-        nodes[startNode].position.y,
-        0
-      );
-      foundPath = [];
-      pendingRegenerate = false;
-    };
-
-    /**
-     * A new graph: the number while the 404 is up, a random one otherwise,
-     * with a new seed either way.
-     */
-    const regenerate = (now: number) => {
-      const wantGlyph = notFoundRef.current;
-      lastKind = wantGlyph ? 'glyph' : 'random';
-      seed = (seed * 1664525 + 1013904223) >>> 0; // LCG step for new seed
-      rngFunc = mulberry32(seed);
-
-      const wasGlyph = glyphMode;
-      let built: { nodes: LabNode[]; edges: LabEdge[] } | null = null;
-      if (wantGlyph) {
-        built = generateGlyphGraph(glyphSize.width, glyphSize.height, rngFunc);
-      }
-      glyphMode = built !== null;
-      if (!built) {
-        built = generateRandomGraph(totalNodes, edgeDensity, rngFunc);
-      }
-      graph = built;
-
-      const [start, goal] = glyphMode
-        ? pickGlyphEndpoints(built.nodes, rngFunc, glyphRuns === 0)
-        : [settingsStart, settingsGoal];
-      glyphRuns = glyphMode ? glyphRuns + 1 : 0;
-
-      const morphMs = frozenRef.current
-        ? 0
-        : glyphMode
-          ? wasGlyph
-            ? MORPH_AGAIN_MS
-            : MORPH_IN_MS
-          : wasGlyph
-            ? MORPH_OUT_MS
-            : 0;
-      rebuild(built, start, goal, now, morphMs);
-
-      // The reduced-motion still shows the search done: the path drawn
-      // through the number, the dot at its start.
-      if (frozenRef.current && glyphMode) {
-        while (openSet.length > 0 && foundPath.length === 0) searchStep(now);
-      }
-    };
-
-    /** Carries nodes in flight along, and their edges with them. */
-    const carryMorph = (now: number) => {
-      if (!morph) return;
-      const arrived = advanceMorph(morph, nodes, now);
-      for (let i = 0; i < nodes.length; i++) {
-        nodePositions[i * 3] = nodes[i].position.x;
-        nodePositions[i * 3 + 1] = nodes[i].position.y;
-      }
-      (
-        nodeGeometry.getAttribute('position') as THREE.BufferAttribute
-      ).needsUpdate = true;
-      for (const line of edgeLines) {
-        const e = line.userData.e as LabEdge;
-        const a = nodes[e.source].position;
-        const b = nodes[e.target].position;
-        writeLine(line, a.x, a.y, b.x, b.y);
-      }
-      if (arrived) {
-        morph = null;
-        // The dashes are measured along the line, which has just moved.
-        for (const line of edgeLines) line.computeLineDistances();
-      }
-    };
-
-    let lastFrameMs = 0;
-    function render(timeMs: number) {
-      const live = settingsRef.current;
-
-      // The 404 sequence. Real seconds since the last frame, clamped so a tab
-      // coming back from the background plays one long frame rather than
-      // the whole time it was away; a frozen frame tells the story at once.
-      const real = lastFrameMs
-        ? Math.min((timeMs - lastFrameMs) / 1000, 0.1)
-        : 0;
-      lastFrameMs = timeMs;
-      const on = notFoundRef.current;
-      progress = frozenRef.current
-        ? sequence.settle(on)
-        : sequence.advance(real, on);
-      // The moment the flag flips, the next graph is the other kind — now,
-      // not after the search in progress.
-      if ((on ? 'glyph' : 'random') !== lastKind && !pendingRegenerate) {
+      // The marble, rolling down the path it found.
+      if (foundPath.length === 1 && !pendingRegenerate) {
+        // Start node is the goal node — the sliders allow it. There is no
+        // edge to walk, so retire the search rather than sit on it forever.
         pendingRegenerate = true;
-        regenerateAt = timeMs;
-      }
-
-      step(timeMs);
-      if (pendingRegenerate && timeMs >= regenerateAt) regenerate(timeMs);
-      carryMorph(timeMs);
-
-      // Update edges using standardized colors
-      for (const line of edgeLines) {
-        const e = line.userData.e as LabEdge;
-
-        const pathIndexSource = foundPath.indexOf(e.source);
-        const pathIndexTarget = foundPath.indexOf(e.target);
-        const inPath =
-          foundPath.length > 0 &&
-          Math.abs(pathIndexSource - pathIndexTarget) === 1 &&
-          pathIndexSource !== -1 &&
-          pathIndexTarget !== -1;
-        const inFrontier =
-          (inOpen.has(e.source) && !closed.has(e.source)) ||
-          (inOpen.has(e.target) && !closed.has(e.target));
-        const touchesClosed = closed.has(e.source) || closed.has(e.target);
-        if (inPath) {
-          line.material = finalEdgeMaterial;
-        } else if (touchesClosed || inFrontier) {
-          line.material = exploreEdgeMaterial;
-        } else {
-          line.material = baseEdgeMaterial;
-        }
-      }
-
-      // Update nodes using standardized colors
-      const slowPulse = Math.sin(timeMs * 0.002) * 0.5 + 0.5;
-      for (let i = 0; i < nodes.length; i++) {
-        const rIdx = i * 3;
-        const isStart = i === startNode;
-        const isGoal = i === goalNode;
-        const isClosed = closed.has(i);
-        const isOpen = inOpen.has(i);
-        const inPath = foundPath.length > 0 && foundPath.includes(i);
-
-        let r: number, g: number, b: number;
-        let bright = 0.9;
-
-        if (isStart) {
-          [r, g, b] = live.colors.accent; // Use accent color for start
-          bright = 1.6;
-        } else if (isGoal) {
-          [r, g, b] = live.colors.secondary; // Use secondary color for goal
-          bright = 1.6;
-        } else if (inPath) {
-          [r, g, b] = live.colors.primary; // Use primary color for path
-          bright = 1.4;
-        } else if (isClosed || isOpen) {
-          [r, g, b] = live.colors.secondary; // Use secondary for exploratory
-          bright = 1.2 + slowPulse * 0.2;
-        } else {
-          [r, g, b] = live.colors.background; // Use background color
-          // The number has to read as a shape before the search reaches it.
-          bright = 0.4 + 0.45 * progress;
-        }
-
-        nodeColors[rIdx + 0] = r * bright;
-        nodeColors[rIdx + 1] = g * bright;
-        nodeColors[rIdx + 2] = b * bright;
-      }
-      (
-        nodeGeometry.getAttribute('color') as THREE.BufferAttribute
-      ).needsUpdate = true;
-      // The number is a couple of hundred nodes across whatever width there
-      // is; on a phone that is too close for nodes drawn at the usual size.
-      const crowd = Math.min(1, Math.max(0.5, window.innerWidth / 1100));
-      (nodeMaterial as THREE.PointsMaterial).size =
-        live.elementSize * 380 * (1 + (crowd - 1) * progress);
-      (nodeMaterial as THREE.PointsMaterial).opacity = live.opacity;
-      baseEdgeMaterial.opacity = Math.min(
-        1,
-        live.spBaseEdgeAlpha * live.opacity * (1 + progress)
-      );
-      baseEdgeMaterial.linewidth = live.spBaseEdgeThickness;
-      const actionWidth =
-        live.spActionEdgeThickness * (1 + (crowd - 1) * progress);
-      exploreEdgeMaterial.opacity = 0.9 * live.opacity;
-      exploreEdgeMaterial.linewidth = actionWidth;
-      finalEdgeMaterial.opacity = live.opacity;
-      finalEdgeMaterial.linewidth = actionWidth;
-      dotMesh.scale.setScalar(live.spDotSize / 300);
-
-      // Advance traversal dot
-      const updateDotAlong = (from: number, to: number, dt: number) => {
-        const a = nodes[from].position;
-        const b = nodes[to].position;
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const speedPerSecond =
+        regenerateAt = now + 500;
+      } else if (walking) {
+        walkT +=
           live.spTraversalSpeed *
           live.globalTimeMultiplier *
-          (glyphMode ? GLYPH_WALK_BOOST : 1); // edges/sec
-        const tIncrement = speedPerSecond * dt;
-        traversalT += tIncrement;
-        const t = Math.min(1, traversalT);
-        const x = a.x + dx * t;
-        const y = a.y + dy * t;
-        dotMesh.position.set(x, y, 0);
-        const glow = 1.0 + live.spDotGlow * Math.sin(timeMs * 0.01);
-        (dotMaterial as THREE.MeshBasicMaterial).color.setRGB(
-          live.colors.accent[0] * glow,
-          live.colors.accent[1] * glow,
-          live.colors.accent[2] * glow
-        );
-        if (t >= 1) {
-          traversalT = 0;
-          return true; // reached end
-        }
-        return false;
-      };
-
-      const dtSec = Math.min(0.05, (timeMs - lastTraversalTime) / 1000);
-      lastTraversalTime = timeMs;
-
-      if (traversalActive) {
-        if (foundPath.length === 0) {
-          // During search: move along an open or recently closed edge to illustrate exploration
-          const current = inOpen.values().next().value ?? startNode;
-          const nbr = neighbors(current)[0];
-          if (nbr) {
-            const to = nbr.source === current ? nbr.target : nbr.source;
-            if (
-              !traversalEdge ||
-              traversalEdge.from !== current ||
-              traversalEdge.to !== to
-            ) {
-              traversalEdge = { from: current, to };
-              traversalT = 0;
-            }
-            updateDotAlong(traversalEdge.from, traversalEdge.to, dtSec);
-          }
-        } else if (foundPath.length === 1) {
-          // Start node is the goal node — the sliders allow it. There is no
-          // edge to walk, so retire the traversal immediately rather than
-          // sitting on a frozen frame forever.
-          traversalActive = false;
-          pendingRegenerate = true;
-          regenerateAt = timeMs + 500;
-        } else if (foundPath.length > 1) {
-          // Walk full path backwards (goal -> start)
-          if (!traversalEdge) {
-            traversalEdge = {
-              from: foundPath[foundPath.length - 1],
-              to: foundPath[foundPath.length - 2],
-            };
-            traversalT = 0;
-          }
-          const reached = updateDotAlong(
-            traversalEdge.from,
-            traversalEdge.to,
-            dtSec
-          );
-          if (reached) {
-            const idx = foundPath.indexOf(traversalEdge.to);
-            if (idx > 0) {
-              traversalEdge = { from: foundPath[idx], to: foundPath[idx - 1] };
-            } else {
-              traversalActive = false; // completed walk
-              pendingRegenerate = true;
-              regenerateAt = timeMs + 500; // brief pause, then regenerate
-            }
+          (glyphMode ? GLYPH_WALK_BOOST : 1) *
+          dt;
+        while (walking && walkT >= 1) {
+          walkT -= 1;
+          walkFrom = walkTo;
+          walkTo -= 1;
+          if (walkTo < 0) {
+            walking = false;
+            walkT = 0;
+            pendingRegenerate = true;
+            regenerateAt = now + 500; // brief pause, then regenerate
           }
         }
       }
 
-      if (composer) {
-        composer.render();
-      } else {
-        renderer.render(scene, camera);
-      }
-      if (frozenRef.current) {
-        animationRef.current = null;
-        return;
-      }
-      animationRef.current = requestAnimationFrame(render);
+      if (pendingRegenerate && now >= regenerateAt) regenerate(now, false);
+      if (morph && advanceMorph(morph, nodes, now)) morph = null;
     }
 
-    animationRef.current = requestAnimationFrame(render);
-    resumeRef.current = () => {
-      if (animationRef.current === null)
-        animationRef.current = requestAnimationFrame(render);
-    };
+    // The plane the layout is worked out in, laid on the bench. Read from
+    // overhead it is exactly the screen — which is what the number was laid
+    // out for; at rest it is deeper than it is drawn, so the bowl has room
+    // to be a bowl.
+    const reading = stage.reading;
+    const scenic = 1 - reading;
+    spreadX = Math.min(aspect, 1.5) * 0.95 * scenic + aspect * reading;
+    spreadZ = 1.5 * scenic + reading;
+    // The number is read flat, and a node in flight is on its way to a new
+    // cost: both bring the relief down.
+    const relief = live.spRelief * HEIGHT_PER_COST * scenic;
+    const ease = frame.frozen ? 1 : Math.min(1, dt * RISE_RATE);
+    const slowPulse = Math.sin(timeMs * 0.002) * 0.5 + 0.5;
+    const crowd = Math.min(1, Math.max(0.5, stage.width / 1100));
+    const baseSize = live.elementSize * (glyphMode ? 0.5 * crowd : 0.62);
 
-    // Applied at most once per frame — a phone's URL bar fires resize
-    // repeatedly over a single flick, and each raw call reallocates the
-    // drawing buffer (and the bloom pass's render targets) mid-scroll.
-    let resizeFrame: number | null = null;
-    let reshapeTimer = 0;
-    const applyResize = () => {
-      resizeFrame = null;
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      // Line2 widths are in screen space, so the materials need to know how
-      // big the screen is or the edges scale wrong after a resize.
-      lineResolution.set(window.innerWidth, window.innerHeight);
-      if (composer) {
-        composer.setSize(window.innerWidth, window.innerHeight);
-      }
-      // The number is laid out for the viewport's shape. A URL bar sliding
-      // away is not a new shape; a real one gets the number laid out again
-      // once the resize has settled, not on every frame of a drag.
-      const size = { width: window.innerWidth, height: window.innerHeight };
-      if (viewportReshaped(glyphSize, size)) {
-        window.clearTimeout(reshapeTimer);
-        reshapeTimer = window.setTimeout(() => {
-          glyphSize = size;
-          if (glyphMode && !pendingRegenerate) {
-            pendingRegenerate = true;
-            regenerateAt = performance.now();
-          }
-        }, RESHAPE_SETTLE_MS);
-      }
-    };
-    const handleResize = () => {
-      if (resizeFrame === null) {
-        resizeFrame = requestAnimationFrame(applyResize);
-      }
-    };
-    window.addEventListener('resize', handleResize);
+    const onPath = new Set(foundPath);
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      const cost = gScore.get(i) ?? Infinity;
+      const want = Number.isFinite(cost) && !morph ? cost * relief : 0;
+      rise[i] += (want - rise[i]) * ease;
 
-    return () => {
-      resumeRef.current = null;
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      window.removeEventListener('resize', handleResize);
-      if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+      const at = i * 3;
+      world[at] = n.position.x * spreadX;
+      world[at + 1] = 0.04 + rise[i];
+      world[at + 2] = -n.position.y * spreadZ;
+      sprites.positions[at] = world[at];
+      sprites.positions[at + 1] = world[at + 1];
+      sprites.positions[at + 2] = world[at + 2];
+
+      const isStart = i === startNode;
+      const isGoal = i === goalNode;
+      const isClosed = closed.has(i);
+      const isOpen = inOpen.has(i);
+
+      let rgb: [number, number, number];
+      let bright = 0.9;
+      let size = baseSize;
+      let halo = 0.14;
+      if (isStart) {
+        rgb = live.colors.accent; // Use accent color for start
+        bright = 1.6;
+        size *= 1.5;
+        halo = 0.8;
+      } else if (isGoal) {
+        rgb = live.colors.secondary; // Use secondary color for goal
+        bright = 1.6;
+        size *= 1.5;
+        halo = 0.8;
+      } else if (onPath.has(i)) {
+        rgb = live.colors.primary; // Use primary color for path
+        bright = 1.4;
+        size *= 1.2;
+        halo = 0.6;
+      } else if (isClosed) {
+        rgb = live.colors.secondary; // Settled: its cost is known
+        bright = 0.85;
+        halo = 0.3;
+      } else if (isOpen) {
+        rgb = live.colors.secondary; // On the frontier: still being weighed
+        bright = 1.1 + slowPulse * 0.4;
+        size *= 1.1;
+        halo = 0.5;
+      } else {
+        rgb = live.colors.background; // Not reached
+        // The number has to read as a shape before the search reaches it.
+        bright = 0.5 + 0.4 * progress;
+      }
+      writeColor(sprites.colors, at, rgb, bright);
+
+      const marked = i === hovered || isStart || isGoal;
+      const p = i * 4;
+      sprites.params[p] = size * (i === hovered ? 1.2 : 1);
+      sprites.params[p + 1] = 1;
+      sprites.params[p + 2] = halo;
+      sprites.params[p + 3] = marked ? 1 : 0;
+    }
+
+    // The marble: on the node the search is at while it searches, and
+    // rolling down the path once there is one.
+    const marble = nodes.length;
+    let mx = world[lastSettled * 3];
+    let my = world[lastSettled * 3 + 1];
+    let mz = world[lastSettled * 3 + 2];
+    if (foundPath.length > 1 && walkFrom >= 0) {
+      const from = foundPath[Math.min(foundPath.length - 1, walkFrom)] * 3;
+      const to = foundPath[Math.max(0, walkTo)] * 3;
+      const t = walking ? walkT : 1;
+      mx = world[from] + (world[to] - world[from]) * t;
+      my = world[from + 1] + (world[to + 1] - world[from + 1]) * t;
+      mz = world[from + 2] + (world[to + 2] - world[from + 2]) * t;
+    }
+    world[marble * 3] = mx;
+    world[marble * 3 + 1] = my;
+    world[marble * 3 + 2] = mz;
+    sprites.positions[marble * 3] = mx;
+    sprites.positions[marble * 3 + 1] = my;
+    sprites.positions[marble * 3 + 2] = mz;
+    const glow = 1.5 + live.spDotGlow * Math.sin(timeMs * 0.01);
+    writeColor(sprites.colors, marble * 3, live.colors.accent, glow);
+    sprites.params[marble * 4] = (live.spDotSize / 14) * baseSize * 1.25;
+    sprites.params[marble * 4 + 1] = 1.4;
+    sprites.params[marble * 4 + 2] = 1.2;
+    sprites.params[marble * 4 + 3] = 0;
+    sprites.setCount(morph ? nodes.length : nodes.length + 1);
+    sprites.commit();
+
+    // Edges. Untouched ones are the graph, dashed and quiet; an edge the
+    // search has been along is drawn in; the path is the heavy one, with
+    // traffic running down it from the goal to the start.
+    const actionWidth =
+      live.spActionEdgeThickness * (1 + (crowd - 1) * progress);
+    let count = 0;
+    for (const e of edges) {
+      if (count >= EDGE_CAPACITY) break;
+      const pathIndexSource = foundPath.indexOf(e.source);
+      const pathIndexTarget = foundPath.indexOf(e.target);
+      const inPath =
+        foundPath.length > 0 &&
+        Math.abs(pathIndexSource - pathIndexTarget) === 1 &&
+        pathIndexSource !== -1 &&
+        pathIndexTarget !== -1;
+      const inFrontier =
+        (inOpen.has(e.source) && !closed.has(e.source)) ||
+        (inOpen.has(e.target) && !closed.has(e.target));
+      const touchesClosed = closed.has(e.source) || closed.has(e.target);
+
+      // Drawn from the higher end to the lower, so traffic runs downhill.
+      const downhill = pathIndexSource > pathIndexTarget;
+      const a = (inPath && !downhill ? e.target : e.source) * 3;
+      const b = (inPath && !downhill ? e.source : e.target) * 3;
+      const at = count * 3;
+      ribbons.starts[at] = world[a];
+      ribbons.starts[at + 1] = world[a + 1];
+      ribbons.starts[at + 2] = world[a + 2];
+      ribbons.ends[at] = world[b];
+      ribbons.ends[at + 1] = world[b + 1];
+      ribbons.ends[at + 2] = world[b + 2];
+
+      const p = count * 4;
+      const lit = e.source === hovered || e.target === hovered ? 0.3 : 0;
+      if (inPath) {
+        writeColor(ribbons.colors, at, live.colors.primary, 1.3);
+        ribbons.params[p] = actionWidth * 1.25;
+        ribbons.params[p + 1] = 1;
+        ribbons.params[p + 2] = 1.1;
+        ribbons.params[p + 3] = 0;
+      } else if (touchesClosed || inFrontier) {
+        writeColor(ribbons.colors, at, live.colors.secondary, 1);
+        ribbons.params[p] = actionWidth * 0.55;
+        ribbons.params[p + 1] = Math.min(1, 0.22 + lit);
+        ribbons.params[p + 2] = 0;
+        ribbons.params[p + 3] = 0;
+      } else {
+        writeColor(ribbons.colors, at, live.colors.background, 1);
+        ribbons.params[p] = live.spBaseEdgeThickness;
+        ribbons.params[p + 1] = Math.min(
+          1,
+          live.spBaseEdgeAlpha * (1.6 + progress) + lit
+        );
+        ribbons.params[p + 2] = 0;
+        ribbons.params[p + 3] = 1;
+      }
+      count += 1;
+    }
+    // A drop line under every node that has risen: its cost, as a length.
+    for (let i = 0; i < nodes.length && count < EDGE_CAPACITY; i++) {
+      if (rise[i] < 0.04) continue;
+      const a = i * 3;
+      const at = count * 3;
+      ribbons.starts[at] = world[a];
+      ribbons.starts[at + 1] = world[a + 1];
+      ribbons.starts[at + 2] = world[a + 2];
+      ribbons.ends[at] = world[a];
+      ribbons.ends[at + 1] = 0;
+      ribbons.ends[at + 2] = world[a + 2];
+      ribbons.colors[at] = sprites.colors[a] * 0.45;
+      ribbons.colors[at + 1] = sprites.colors[a + 1] * 0.45;
+      ribbons.colors[at + 2] = sprites.colors[a + 2] * 0.45;
+      const p = count * 4;
+      ribbons.params[p] = 1;
+      ribbons.params[p + 1] = 0.45;
+      ribbons.params[p + 2] = 0;
+      ribbons.params[p + 3] = 1;
+      count += 1;
+    }
+    ribbons.setCount(count);
+    ribbons.commit();
+
+    const arrive = frame.intro * frame.intro * (3 - 2 * frame.intro);
+    const pose = stage.rig.pose;
+    const u = ribbons.material.uniforms;
+    u.uResolution.value.set(
+      stage.width * stage.pixelRatio,
+      stage.height * stage.pixelRatio
+    );
+    u.uPixelRatio.value = stage.pixelRatio;
+    u.uTime.value = frame.time * live.globalTimeMultiplier;
+    u.uStrength.value = arrive;
+    u.uFog.value.set(pose.distance + 0.6, pose.distance + 3.4);
+    sprites.material.uniforms.uStrength.value = arrive;
+    sprites.material.uniforms.uFog.value.set(
+      pose.distance + 0.6,
+      pose.distance + 3.4
+    );
+    floor.material.uniforms.uOpacity.value =
+      FLOOR_OPACITY * arrive * (1 - reading);
+
+    // The bloom's three controls are the stage's own bloom, live.
+    if (live.spGlowBloom > 0.5) {
+      stage.post.bloom.strength = live.spGlowStrength * 0.5;
+      stage.post.bloom.radius = Math.min(1, live.spGlowRadius * 3.5);
+      stage.post.bloom.threshold = 0.5 + live.spGlowThreshold * 0.7;
+    }
+
+    readout.write(now, () => {
+      const name =
+        heuristicWeight === 0
+          ? 'dijkstra'
+          : heuristicWeight === 1
+            ? 'a*'
+            : `a* w${heuristicWeight.toFixed(1)}`;
+      if (foundPath.length > 1) {
+        const length = gScore.get(goalNode) ?? 0;
+        return `${name} · path ${length.toFixed(2)} · ${foundPath.length - 1} hops`;
+      }
+      return `${name} · open ${inOpen.size} · settled ${closed.size}`;
+    });
+  };
+
+  const resize = () => {
+    // The number is laid out for the viewport's shape. A URL bar sliding
+    // away is not a new shape; a real one gets the number laid out again
+    // once the resize has settled, not on every frame of a drag.
+    const size = { width: stage.width, height: stage.height };
+    if (viewportReshaped(glyphSize, size)) {
       window.clearTimeout(reshapeTimer);
-      edgeLines.forEach(l => l.geometry.dispose());
-      baseEdgeMaterial.dispose();
-      exploreEdgeMaterial.dispose();
-      finalEdgeMaterial.dispose();
-      nodeGeometry.dispose();
-      (nodeMaterial as THREE.Material).dispose();
-      dotGeometry.dispose();
-      (dotMaterial as THREE.Material).dispose();
-      // The bloom pass carries several full-screen render targets, and this
-      // effect re-runs on every settings change.
-      composer?.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-      if (container && renderer.domElement) {
-        container.removeChild(renderer.domElement);
-      }
-    };
-    // Structural only: the graph and the search. Everything else is read live
-    // off settingsRef inside render().
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
+      reshapeTimer = window.setTimeout(() => {
+        glyphSize = size;
+        if (glyphMode && !pendingRegenerate) {
+          pendingRegenerate = true;
+          regenerateAt = performance.now();
+          stage.requestFrame();
+        }
+      }, RESHAPE_SETTLE_MS);
+    }
+  };
+
+  return {
+    update,
+    resize,
+    dispose() {
+      window.clearTimeout(reshapeTimer);
+      readout.clear();
+      sprites.dispose();
+      ribbons.dispose();
+      floor.dispose();
+    },
+  };
+};
+
+const ShortestPathLabBackground: React.FC<
+  AnimatedBackgroundProps<ShortestPathLabSettings>
+> = props => {
+  const { className, settings } = props;
+  // Structural only: the graph and the search, and whether there is a bloom
+  // at all. Everything else is read live.
+  const containerRef = useStageScene(props, stageOptions, buildScene, [
     settings.spTotalNodes,
     settings.spEdgeDensity,
     settings.spHeuristicWeight,
     settings.spStartNode,
     settings.spGoalNode,
     settings.spGlowBloom,
-    settings.spGlowStrength,
-    settings.spGlowRadius,
-    settings.spGlowThreshold,
   ]);
 
   return (
-    <div
+    <StageSurface
       ref={containerRef}
-      aria-hidden="true"
       className={className}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: -1,
-        pointerEvents: 'none',
-        opacity: settings.opacity,
-      }}
+      opacity={settings.opacity}
     />
   );
 };

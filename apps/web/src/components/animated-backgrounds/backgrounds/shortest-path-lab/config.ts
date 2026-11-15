@@ -24,6 +24,7 @@ export interface ShortestPathLabCustomSettings {
   spTraversalSpeed: number; // Edges per second for dot animation
 
   // Visual properties
+  spRelief: number; // World height per unit of path cost
   spBaseEdgeAlpha: number;
   spBaseEdgeThickness: number;
   spActionEdgeThickness: number;
@@ -63,6 +64,7 @@ const defaultCustomSettings: ShortestPathLabCustomSettings = {
   spTraversalSpeed: 3.0, // Edges per second
 
   // Visual properties
+  spRelief: 0.5,
   spBaseEdgeAlpha: 0.18,
   spBaseEdgeThickness: 0.8,
   spActionEdgeThickness: 1.6,
@@ -75,12 +77,14 @@ const defaultCustomSettings: ShortestPathLabCustomSettings = {
   spGlowRadius: 0.2,
   spGlowThreshold: 0.2,
 
-  // Algorithm visualization color scheme
+  // Read as display colours — the swatches in the panel are what is drawn.
+  // Amber for what the search has reached, an ice blue for the path it
+  // found, and a coral for the two ends, over a graph drawn in slate.
   colors: {
-    primary: [0.0, 0.55, 1.0], // Blue for final path
-    secondary: [1.0, 1.0, 0.0], // Yellow for exploration
-    accent: [0.9, 0.2, 0.2], // Red for start/special nodes
-    background: [0.18, 0.2, 0.26], // Dark gray-blue for background
+    primary: [0.3, 0.72, 1.0], // Ice blue for the final path
+    secondary: [1.0, 0.76, 0.3], // Amber for exploration, and the goal
+    accent: [1.0, 0.42, 0.36], // Coral for the start, and the marble
+    background: [0.42, 0.5, 0.66], // Slate for the graph not yet reached
     grid: [0.2, 0.3, 0.4], // Grid overlay
   },
 };
@@ -173,6 +177,17 @@ const customSettingsSchema: SettingsSchema[] = [
   },
 
   // Visual Properties
+  {
+    key: 'spRelief',
+    label: 'Relief',
+    type: 'slider',
+    min: 0,
+    max: 1,
+    step: 0.02,
+    description:
+      'How high a node stands for each unit of path cost. A reached node rises to the cost of the cheapest way to it, so the explored region lifts into a bowl with the start at the bottom: round under Dijkstra, a trough toward the goal as the heuristic takes over. Zero lays the graph flat again.',
+    category: 'Visual Effects',
+  },
   {
     key: 'spBaseEdgeAlpha',
     label: 'Base Edge Alpha',
@@ -289,14 +304,15 @@ const customSettingsSchema: SettingsSchema[] = [
     key: 'colors.accent',
     label: 'Start/Goal Color',
     type: 'color',
-    description: 'The start and goal nodes.',
+    description: 'The start node, and the marble that rolls back down to it.',
     category: 'Colors',
   },
   {
     key: 'colors.background',
-    label: 'Background Color',
+    label: 'Graph Color',
     type: 'color',
-    description: 'Canvas colour behind the graph.',
+    description:
+      'The graph the search has not reached: its nodes, and its edges drawn dashed.',
     category: 'Colors',
   },
 ];
@@ -309,7 +325,8 @@ export const shortestPathLabConfig = createBackgroundConfig({
   description:
     'Dijkstra, A*, and greedy best-first are one search with one number changed. Heuristic ' +
     'Weight scales w in f = g + w*h: 0 is Dijkstra, 1 is A*, above 1 trades the optimality ' +
-    'guarantee for speed. Watch the explored region change shape — circle, ellipse, corridor.',
+    'guarantee for speed. Each reached node rises to its cost g, so the explored region ' +
+    'lifts into a bowl — round, then stretched, then a trough — and the path is the way down.',
   component: ShortestPathLabBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

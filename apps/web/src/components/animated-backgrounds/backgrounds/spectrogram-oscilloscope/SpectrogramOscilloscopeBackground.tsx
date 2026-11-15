@@ -1,27 +1,83 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { glyphTexture, rasterizeGlyph } from '../../core/glyph';
+import { isShortcutKey } from '../../../../lib/utils/keys';
+import { glyphCoverage, GlyphField, rasterizeGlyph } from '../../core/glyph';
 import {
   NotFoundSequence,
   RESHAPE_SETTLE_MS,
   viewportReshaped,
 } from '../../core/notFoundSequence';
-import { getRenderPixelRatio } from '../../core/renderScale';
+import { Pose } from '../../core/stage/rig';
+import { STAGE_GROUND, StageOptions } from '../../core/stage/stage';
+import { createReadout } from '../../core/stage/telemetry';
+import {
+  SceneContext,
+  SceneHandle,
+  StageSurface,
+  useStageScene,
+} from '../../core/stage/useStageScene';
 import { AnimatedBackgroundProps } from '../../core/types';
 import { SpectrogramOscilloscopeSettings } from './config';
+import {
+  analyse,
+  axisFrequency,
+  levelToDecibels,
+  noteName,
+  SAMPLE_RATE,
+  Synth,
+  toLevel,
+  UNIT_SECONDS,
+} from './synth';
 
-// The oscilloscope takes the top of the screen and the spectrogram the rest.
-const SCOPE_HEIGHT = 0.3;
+/**
+ * A synthesizer, and the two instruments for looking at one.
+ *
+ * The synth is synth.ts: two oscillators, one modulating the other's phase,
+ * through a filter, a delay, distortion and a little reverb, made a sample
+ * at a time into a ring. This file is the looking.
+ *
+ * It was a split screen: an oscilloscope across the top, a spectrogram
+ * under it. It is one picture now, with time as its depth. The spectrum of
+ * the present moment is the ridge along the front edge; every moment before
+ * it is a ridge further back, the whole history receding like a waterfall
+ * display on a bench analyser — which is what it is. In front of it all, at
+ * the viewer's feet, runs the oscilloscope's trace: the same samples, in the
+ * other domain. So a sideband that opens when the FM is pushed is seen
+ * arriving at the front and travelling away, and the sweep of the filter is
+ * a shadow moving across the hills.
+ */
+
+// The oscilloscope's width, the terrain's footprint at rest, how tall a
+// full-scale bin stands, and where the front edge — the present — is.
+const WIDTH = 3.5;
+const DEPTH = 5.2;
+const HEIGHT = 0.6;
+const FRONT = 1.45;
+const SCOPE_AHEAD = 0.34;
+const SCOPE_SWING = 0.15;
+// The trace's centre line, a little under the ground the history stands on.
+const SCOPE_LEVEL = -0.05;
+
+// The modulators' clock runs this many units a second at an animation speed
+// of one: fast enough that the FM's wobble and the filter's sweep are things
+// that happen while you watch.
+const UNITS_PER_SECOND = 1.6;
+// Ridges laid down a second, at a waterfall speed of one.
+const ROWS_PER_SECOND = 26;
+// Never more samples in a frame than this: a tab coming back from the
+// background plays one long frame, not the whole time it was away.
+const MAX_SAMPLES_PER_FRAME = 2400;
 
 // The 404 sequence: the number, played. An additive voice of this many
-// partials, spread across the spectrogram's frequency axis, whose amplitudes
-// follow the number's columns row by row over PHRASE_SECONDS — so the
-// spectrogram, analysing the signal as it always does, shows the number
-// scrolling down its history the way anything played does. The phrase
-// repeats after a rest. While it plays the analyser's time span is widened
-// to the phrase, since at the default it holds half a second of history and
-// a phrase cannot be seen in that; that is the instrument's zoom, not the
-// signal. The number is set to the panel's shape.
+// partials, spread across the frequency axis, whose amplitudes follow the
+// number's columns row by row over PHRASE_SECONDS — so the spectrogram,
+// analysing what it is given as it always does, shows the number travelling
+// back through its history the way anything played does. The top row goes
+// first: it is the furthest away by the time the bottom row plays, and so
+// the highest on the screen — the number lands upright. The phrase repeats
+// after a rest. While it plays the waterfall runs at the speed that lays one
+// phrase across its whole depth, and the terrain widens to the screen: that
+// is the instrument's zoom, not the signal.
 const PARTIALS = 48;
 const PHRASE_SECONDS = 7;
 const PHRASE_REST = 0.35;
@@ -29,8 +85,669 @@ const GLYPH_COLS = 256;
 // How long the fader takes to bring the voice up; it comes down on the
 // shared release.
 const FADER_SECONDS = 1.5;
-// A signal time no phrase has reached: the voice is off.
-const VOICE_OFF = 1e30;
+// How loud the voice's partials are: well up the display's range, short of
+// the peaks, so the number is drawn in the colour of a loud signal and not
+// of a clipped one.
+const SUNG_LEVEL = 0.2;
+
+export const FOV_DEGREES = 40;
+const TAN_HALF_FOV = Math.tan((FOV_DEGREES * Math.PI) / 360);
+
+/**
+ * Where the camera rests: above the front edge, looking down the history.
+ * The present is at the bottom of the screen and the past runs up it into
+ * the dark, which is where the page's title sits.
+ */
+export const restPose = (aspect: number): Pose => ({
+  // Aimed just behind the front edge, so the edge sits a fifth of the way
+  // up the screen and the trace has the strip under it — the strip the
+  // rail's two pills stand at the ends of.
+  target: [0, 0.1, aspect < 1 ? -0.25 : 0.15],
+  distance: aspect < 1 ? 5.2 : 3.9,
+  azimuth: 0,
+  elevation: aspect < 1 ? 0.52 : 0.4,
+  fov: FOV_DEGREES,
+});
+
+/** With the page out of the way: lower and closer, along the ridges. */
+export const showPose = (aspect: number): Pose => ({
+  target: [0, 0.16, 0],
+  distance: aspect < 1 ? 5.4 : 4,
+  azimuth: 0,
+  elevation: aspect < 1 ? 0.46 : 0.3,
+  fov: FOV_DEGREES,
+});
+
+/** Squared up for the number: straight over the middle of the history. */
+export const readingPose = (): Pose => ({
+  target: [0, 0, FRONT - DEPTH / 2],
+  distance: DEPTH / 2 / TAN_HALF_FOV,
+  azimuth: 0,
+  elevation: Math.PI / 2,
+  fov: FOV_DEGREES,
+});
+
+const stageOptions = (): StageOptions => ({
+  rig: {
+    base: restPose,
+    hidden: showPose,
+    reading: readingPose,
+    minElevation: 0.14,
+    parallax: { azimuth: 0.07, elevation: 0.035, hiddenGain: 3.5 },
+  },
+  bloom: { strength: 0.66, threshold: 0.66, knee: 0.6, radius: 0.72 },
+  grade: { vignette: 0.36 },
+});
+
+const TERRAIN_VERTEX = /* glsl */ `
+  uniform sampler2D uSpectrum;
+  uniform float uRows;
+  uniform float uHead;
+  uniform float uFrac;
+  uniform float uFront;
+  uniform vec3 uSize;
+  varying vec3 vWorld;
+  varying float vLevel;
+  varying float vRow;
+  varying float vAcross;
+
+  void main() {
+    // Row 0 is the present, at the front edge; every row behind it is one
+    // ridge older, and the whole history slides back by a fraction of a
+    // ridge between one being laid down and the next.
+    float row = uv.y * (uRows - 1.0);
+    float level = texture2D(uSpectrum, vec2(uv.x, (uHead - row + 0.5) / uRows)).r;
+    float back = max(0.0, row - 1.0 + uFrac) * (uSize.z / (uRows - 1.0));
+
+    vec3 world = vec3((uv.x - 0.5) * uSize.x, level * uSize.y, uFront - back);
+    vWorld = world;
+    vLevel = level;
+    vRow = row;
+    vAcross = uv.x;
+    gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
+  }
+`;
+
+// The history, as a surface. It is solid and nearly black, so a ridge hides
+// the ridges behind it, and what is drawn on it is lines: one along the
+// crest of every row, in the colour its level maps to. That is all a
+// waterfall display is.
+const TERRAIN_FRAGMENT = /* glsl */ `
+  uniform vec3 uLow;
+  uniform vec3 uMid;
+  uniform vec3 uHigh;
+  uniform vec3 uPeak;
+  uniform vec3 uGrid;
+  uniform vec3 uGround;
+  uniform vec3 uSize;
+  uniform float uRows;
+  uniform float uFront;
+  uniform float uBrightness;
+  uniform float uStrength;
+  uniform float uReading;
+  uniform vec4 uAxis;
+  uniform vec3 uProbe;
+  varying vec3 vWorld;
+  varying float vLevel;
+  varying float vRow;
+  varying float vAcross;
+
+  // Colour mapping: near silence, then mid, loud and peak.
+  vec3 levelColor(float value) {
+    if (value < 0.25) return mix(uLow * 0.2, uLow, value * 4.0);
+    if (value < 0.5) return mix(uLow, uMid, (value - 0.25) * 4.0);
+    if (value < 0.75) return mix(uMid, uHigh, (value - 0.5) * 4.0);
+    return mix(uHigh, uPeak, (value - 0.75) * 4.0);
+  }
+
+  float lineOn(float coord, float weight) {
+    float rate = max(fwidth(coord), 1e-5);
+    float crowd = 1.0 - smoothstep(0.35, 0.9, rate);
+    return (1.0 - smoothstep(0.0, weight, abs(fract(coord - 0.5) - 0.5) / rate)) * crowd;
+  }
+
+  void main() {
+    float level = clamp(vLevel, 0.0, 1.0);
+    vec3 hue = levelColor(level);
+
+    // Lit by slope, a little: enough for a ridge to have a near side.
+    vec3 n = normalize(cross(dFdx(vWorld), dFdy(vWorld)));
+    if (n.y < 0.0) n = -n;
+    float diffuse = 0.5 + 0.5 * max(dot(n, normalize(vec3(-0.3, 0.6, 0.74))), 0.0);
+
+    vec3 color = uLow * 0.1 * (0.3 + level) * diffuse;
+
+    // One line a ridge, and the present's a little heavier than the rest.
+    float ridge = lineOn(vRow, 1.15);
+    float present = 1.0 - smoothstep(0.4, 1.4, vRow);
+    color += hue * ridge * (0.1 + 1.7 * pow(level, 1.5)) * (1.0 + 1.4 * present);
+    color += hue * pow(level, 3.2) * 0.7;
+
+    // The octaves, ruled along the history where there is nothing louder:
+    // the A in each one, when the axis is logarithmic.
+    if (uAxis.x > 0.5) {
+      float hertz = exp(mix(uAxis.y, uAxis.z, vAcross));
+      float octave = log2(hertz / 55.0);
+      color += uGrid * lineOn(octave, 1.0) * 0.22 * (1.0 - level);
+    }
+
+    // The probe: the frequency under the pointer, ruled down the whole
+    // history, so one partial can be followed back through time.
+    float fromProbe = abs(vAcross - uProbe.x) * uSize.x;
+    float probe = 1.0 - smoothstep(0.0, 1.4, fromProbe / max(fwidth(fromProbe), 1e-5));
+    float near = exp(-fromProbe * fromProbe / 0.006);
+    color += (vec3(0.85, 0.94, 1.0) * probe * 0.5 + hue * near * 0.5 * level) * uProbe.y;
+
+    color *= uBrightness;
+
+    // The sides and the far end fall away into the ground. Read from
+    // overhead there is no far end: the whole history is the picture.
+    float sides = smoothstep(0.5, 0.42, abs(vAcross - 0.5));
+    float age = (uFront - vWorld.z) / uSize.z;
+    float depth = mix(1.0 - smoothstep(0.35, 1.0, age), 1.0, uReading);
+    color = mix(uGround, color, sides * depth);
+
+    gl_FragColor = vec4(mix(uGround, color, uStrength), 1.0);
+  }
+`;
+
+const TRACE_VERTEX = /* glsl */ `
+  attribute float aSide;
+  varying float vSide;
+  void main() {
+    vSide = aSide;
+    gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const TRACE_FRAGMENT = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uBrightness;
+  varying float vSide;
+  void main() {
+    // A bright core in a soft line: the phosphor, and its glow.
+    float across = abs(vSide);
+    float core = 1.0 - smoothstep(0.0, 0.34, across);
+    float glow = pow(1.0 - across, 2.0);
+    gl_FragColor = vec4(uColor * (core * 2.2 + glow * 0.55) * uBrightness, 1.0);
+  }
+`;
+
+const buildScene = ({
+  stage,
+  settings,
+  notFound,
+}: SceneContext<SpectrogramOscilloscopeSettings>): SceneHandle => {
+  const dense = stage.quality.tier === 'high';
+  const BINS = dense ? 192 : 128;
+  const ROWS = dense ? 150 : 96;
+  const live0 = settings();
+
+  // ── The synth and its history ────────────────────────────────────────────
+  const synth = new Synth(4096);
+  // A full window of samples before anything is measured.
+  synth.render(2048, live0);
+  const magnitudes = new Float32Array(BINS);
+  const levels = new Float32Array(BINS);
+  const history = new Uint8Array(BINS * ROWS);
+  const spectrum = new THREE.DataTexture(
+    history,
+    BINS,
+    ROWS,
+    THREE.RedFormat,
+    THREE.UnsignedByteType
+  );
+  spectrum.unpackAlignment = 1;
+  spectrum.minFilter = THREE.LinearFilter;
+  spectrum.magFilter = THREE.LinearFilter;
+  spectrum.wrapS = THREE.ClampToEdgeWrapping;
+  // The history is a ring: the row after the last is the first.
+  spectrum.wrapT = THREE.RepeatWrapping;
+  spectrum.needsUpdate = true;
+
+  let head = 0;
+  let frac = 0;
+  let sampleBank = 0;
+  let clock = 0;
+
+  // ── The 404's voice ──────────────────────────────────────────────────────
+  // The number, at the shape the terrain is read at from overhead. Rebuilt
+  // only when the viewport changes shape.
+  let glyphSize = { width: stage.width, height: stage.height };
+  const buildGlyph = (): GlyphField =>
+    rasterizeGlyph(
+      GLYPH_COLS,
+      Math.max(
+        32,
+        Math.round((GLYPH_COLS * glyphSize.height) / glyphSize.width)
+      )
+    );
+  let glyph = buildGlyph();
+  // The fader on the voice: up in a moment, since the phrase starts the
+  // moment the flag goes up and should be heard from its first row; down on
+  // the sequence's own release.
+  const sequence = new NotFoundSequence({ formSeconds: FADER_SECONDS });
+  // When the phrase started, on the scene's clock; null while it is silent.
+  let voiceStart: number | null = null;
+  // How much of the terrain's depth one phrase is laid across.
+  const PHRASE_ROWS = Math.round(ROWS * 0.86);
+
+  /** Which row of the number is playing at a moment, top first: 0 → 1, or −1 in the rest. */
+  const phraseAt = (at: number): number => {
+    if (voiceStart === null || at < voiceStart) return -1;
+    const p =
+      ((at - voiceStart) % (PHRASE_SECONDS * (1 + PHRASE_REST))) /
+      PHRASE_SECONDS;
+    return p > 1 ? -1 : p;
+  };
+
+  /** The voice's level at a place along the frequency axis, on a row of the number. */
+  const voiceLevel = (across: number, row: number): number => {
+    if (row < 0) return 0;
+    const col = Math.min(
+      glyph.cols - 1,
+      Math.max(0, Math.floor(across * glyph.cols))
+    );
+    const line = Math.min(
+      glyph.rows - 1,
+      Math.max(0, Math.floor(row * glyph.rows))
+    );
+    return glyphCoverage(glyph, line * glyph.cols + col);
+  };
+
+  // The partials' frequencies and phases: each at the place on the axis its
+  // column sits at, staggered so they do not all cross zero together.
+  const partialHertz = new Float32Array(PARTIALS);
+  const partialLevel = new Float32Array(PARTIALS);
+  let voiceRow = -1;
+  const voice = (seconds: number): number => {
+    if (voiceRow < 0) return 0;
+    let sum = 0;
+    for (let k = 0; k < PARTIALS; k++) {
+      if (partialLevel[k] > 0) {
+        sum +=
+          partialLevel[k] *
+          Math.sin(Math.PI * 2 * partialHertz[k] * seconds + k * 1.7);
+      }
+    }
+    return sum / (PARTIALS * 0.3);
+  };
+
+  // ── The terrain ──────────────────────────────────────────────────────────
+  const asColor = (rgb: [number, number, number]) =>
+    new THREE.Color().setRGB(rgb[0], rgb[1], rgb[2], THREE.SRGBColorSpace);
+  const terrainGeometry = new THREE.PlaneGeometry(1, 1, BINS - 1, ROWS - 1);
+  const terrainMaterial = new THREE.ShaderMaterial({
+    vertexShader: TERRAIN_VERTEX,
+    fragmentShader: TERRAIN_FRAGMENT,
+    uniforms: {
+      uSpectrum: { value: spectrum },
+      uRows: { value: ROWS },
+      uHead: { value: 0 },
+      uFrac: { value: 0 },
+      uFront: { value: FRONT },
+      uSize: { value: new THREE.Vector3(WIDTH, HEIGHT, DEPTH) },
+      uLow: { value: asColor(live0.colors.background) },
+      uMid: { value: asColor(live0.colors.primary) },
+      uHigh: { value: asColor(live0.colors.secondary) },
+      uPeak: { value: asColor(live0.colors.accent) },
+      uGrid: { value: asColor(live0.colors.grid) },
+      uGround: { value: new THREE.Color(STAGE_GROUND) },
+      uBrightness: { value: 1 },
+      uStrength: { value: 0 },
+      uReading: { value: 0 },
+      // x: logarithmic or not. y, z: the logs of the axis's two ends.
+      uAxis: { value: new THREE.Vector4(1, 0, 1, 0) },
+      // x: where along the axis the probe is. y: how present it is.
+      uProbe: { value: new THREE.Vector3(0.5, 0, 0) },
+    },
+    side: THREE.DoubleSide,
+  });
+  const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+  terrain.frustumCulled = false;
+  stage.scene.add(terrain);
+
+  // ── The oscilloscope's trace ─────────────────────────────────────────────
+  // A ribbon: two vertices a sample, pushed apart across the line's own
+  // direction, so the trace has a width that perspective can act on.
+  const POINTS = dense ? 420 : 260;
+  const tracePositions = new Float32Array(POINTS * 2 * 3);
+  const traceSides = new Float32Array(POINTS * 2);
+  const traceIndex: number[] = [];
+  for (let i = 0; i < POINTS; i++) {
+    traceSides[i * 2] = -1;
+    traceSides[i * 2 + 1] = 1;
+    if (i < POINTS - 1) {
+      const a = i * 2;
+      traceIndex.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+  }
+  const traceGeometry = new THREE.BufferGeometry();
+  const tracePositionAttribute = new THREE.BufferAttribute(tracePositions, 3);
+  tracePositionAttribute.setUsage(THREE.DynamicDrawUsage);
+  traceGeometry.setAttribute('position', tracePositionAttribute);
+  traceGeometry.setAttribute('aSide', new THREE.BufferAttribute(traceSides, 1));
+  traceGeometry.setIndex(traceIndex);
+  const traceMaterial = new THREE.ShaderMaterial({
+    vertexShader: TRACE_VERTEX,
+    fragmentShader: TRACE_FRAGMENT,
+    uniforms: {
+      uColor: { value: terrainMaterial.uniforms.uMid.value },
+      uBrightness: { value: 1 },
+    },
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const trace = new THREE.Mesh(traceGeometry, traceMaterial);
+  trace.frustumCulled = false;
+  stage.scene.add(trace);
+  const traceY = new Float32Array(POINTS);
+
+  /** Lay the trace along the most recent samples. */
+  const writeTrace = (live: SpectrogramOscilloscopeSettings, width: number) => {
+    // A couple of periods of the first oscillator, ending on the start of
+    // one of its cycles — a scope's trigger, which is what holds a waveform
+    // still enough to be looked at.
+    const period = SAMPLE_RATE / Math.max(20, live.vco1Frequency);
+    const span = Math.max(160, Math.min(3000, period * 2.5));
+    const sinceTrigger = (synth.carrierPhase % 1) * period;
+    const thickness = 0.011 * live.waveformThickness;
+
+    for (let i = 0; i < POINTS; i++) {
+      const back = sinceTrigger + (1 - i / (POINTS - 1)) * span;
+      const whole = Math.floor(back);
+      const t = back - whole;
+      const sample = synth.at(whole) * (1 - t) + synth.at(whole + 1) * t;
+      traceY[i] = Math.max(-1.6, Math.min(1.6, sample)) * SCOPE_SWING;
+    }
+    const step = width / (POINTS - 1);
+    for (let i = 0; i < POINTS; i++) {
+      const x = -width / 2 + i * step;
+      const y = SCOPE_LEVEL + traceY[i];
+      // Across the line: the direction to the next sample, turned a quarter.
+      const before = traceY[Math.max(0, i - 1)];
+      const after = traceY[Math.min(POINTS - 1, i + 1)];
+      const dx = step * 2;
+      const dy = after - before;
+      const length = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / length) * thickness;
+      const ny = (dx / length) * thickness;
+      const at = i * 6;
+      tracePositions[at] = x - nx;
+      tracePositions[at + 1] = y - ny;
+      tracePositions[at + 2] = FRONT + SCOPE_AHEAD;
+      tracePositions[at + 3] = x + nx;
+      tracePositions[at + 4] = y + ny;
+      tracePositions[at + 5] = FRONT + SCOPE_AHEAD;
+    }
+    tracePositionAttribute.needsUpdate = true;
+  };
+
+  // ── Measuring ────────────────────────────────────────────────────────────
+  /** Measure the present and write it to the history's front row. */
+  const measure = (
+    live: SpectrogramOscilloscopeSettings,
+    voicing: number
+  ): void => {
+    analyse(
+      synth,
+      live,
+      magnitudes,
+      live.analysisCycles,
+      live.spectrogramSmoothing
+    );
+    const row = head * BINS;
+    for (let b = 0; b < BINS; b++) {
+      let magnitude = magnitudes[b];
+      // The 404 sequence: the voice's partial at this frequency has the
+      // amplitude the number gives it at this moment — which is what the
+      // transform of an additive voice measures — and the synth is ducked
+      // under it, as it is on the trace.
+      if (voicing > 0) {
+        const sung = voiceLevel((b + 0.5) / BINS, voiceRow) * SUNG_LEVEL;
+        magnitude += (magnitude * 0.3 + sung - magnitude) * voicing;
+      }
+      const level = toLevel(magnitude);
+      levels[b] = level;
+      history[row + b] = Math.round(level * 255);
+    }
+  };
+
+  /**
+   * Fill the whole history at once: every ridge measured a ridge's worth of
+   * signal after the one behind it. What a still is drawn from, since a
+   * still has no time to fill one in.
+   */
+  const fillHistory = (
+    live: SpectrogramOscilloscopeSettings,
+    voicing: number
+  ) => {
+    const perRow = Math.max(
+      1,
+      Math.round(
+        (UNITS_PER_SECOND * UNIT_SECONDS * SAMPLE_RATE) / ROWS_PER_SECOND
+      )
+    );
+    for (let j = 0; j < ROWS; j++) {
+      head = (head + 1) % ROWS;
+      // The phrase, laid across the history as it would have been played:
+      // its top row furthest back.
+      voiceRow =
+        voicing > 0
+          ? (() => {
+              const p = 1 - (ROWS - 1 - j) / PHRASE_ROWS;
+              return p < 0 || p > 1 ? -1 : p;
+            })()
+          : -1;
+      synth.render(perRow, live);
+      measure(live, voicing);
+    }
+    spectrum.needsUpdate = true;
+  };
+
+  // ── The pointer ──────────────────────────────────────────────────────────
+  const hit = new THREE.Vector3();
+  let probeHertz = 0;
+  let probeLevel = 0;
+
+  /** Where along the frequency axis a point on screen falls, or null. */
+  const acrossAt = (ndcX: number, ndcY: number, width: number) => {
+    if (!stage.groundPoint(ndcX, ndcY, 0, hit)) return null;
+    const across = hit.x / width + 0.5;
+    if (across < 0.02 || across > 0.98) return null;
+    if (hit.z > FRONT + 0.6 || hit.z < FRONT - DEPTH) return null;
+    return across;
+  };
+
+  // ── The frame ────────────────────────────────────────────────────────────
+  const readout = createReadout();
+  let reshapeTimer = 0;
+  let stillDrawn: 'none' | 'plain' | 'number' = 'none';
+
+  const update: SceneHandle['update'] = frame => {
+    const live = settings();
+    const on = notFound();
+    const { dt } = frame;
+    clock += dt;
+
+    // The 404 sequence: the fader on the voice.
+    const voicing = frame.frozen
+      ? sequence.settle(on)
+      : sequence.advance(dt, on);
+    stage.reading = voicing;
+    if (on && voiceStart === null) voiceStart = clock;
+    else if (!on && !sequence.active) voiceStart = null;
+
+    // The terrain is as wide as the screen when it is read from overhead,
+    // and its own width otherwise.
+    const width = WIDTH + (DEPTH * frame.aspect - WIDTH) * voicing;
+
+    // The axis: where each partial of the voice sits, and what the shader
+    // rules its octaves by.
+    for (let k = 0; k < PARTIALS; k++) {
+      partialHertz[k] = axisFrequency((k + 0.5) / PARTIALS, live);
+    }
+
+    if (frame.frozen) {
+      // A still is the whole history, drawn once for whichever state it is
+      // a still of.
+      const want = on ? 'number' : 'plain';
+      if (stillDrawn !== want) {
+        fillHistory(live, voicing);
+        stillDrawn = want;
+      }
+      frac = 0;
+    } else {
+      stillDrawn = 'none';
+
+      // Samples are whole, so the fraction is banked: that is what makes a
+      // speed below one slow the synth down instead of stopping it.
+      sampleBank +=
+        dt *
+        live.globalTimeMultiplier *
+        UNITS_PER_SECOND *
+        UNIT_SECONDS *
+        SAMPLE_RATE;
+      const samples = Math.min(MAX_SAMPLES_PER_FRAME, Math.floor(sampleBank));
+      sampleBank -= samples;
+
+      voiceRow = voicing > 0 ? phraseAt(clock) : -1;
+      if (voiceRow >= 0) {
+        for (let k = 0; k < PARTIALS; k++) {
+          partialLevel[k] = voiceLevel((k + 0.5) / PARTIALS, voiceRow);
+        }
+      }
+      synth.render(
+        samples,
+        live,
+        voicing > 0 ? voice : undefined,
+        voicing * 0.7
+      );
+
+      // The waterfall. The present is always being measured into the front
+      // row; when a ridge's worth of time has passed, the front row is left
+      // where it is as history and the next one becomes the present.
+      const rate =
+        ROWS_PER_SECOND * live.timeScale * live.globalTimeMultiplier +
+        (PHRASE_ROWS / PHRASE_SECONDS -
+          ROWS_PER_SECOND * live.timeScale * live.globalTimeMultiplier) *
+          voicing;
+      frac += dt * rate;
+      while (frac >= 1) {
+        frac -= 1;
+        const from = head * BINS;
+        head = (head + 1) % ROWS;
+        history.copyWithin(head * BINS, from, from + BINS);
+      }
+      measure(live, voicing);
+      spectrum.needsUpdate = true;
+
+      // The pointer: a frequency, ruled back through the history, and a
+      // note put in by hand where it is tapped.
+      const pointer = stage.pointer.state;
+      const quiet = voicing > 0.5;
+      for (const tap of stage.pointer.takeTaps()) {
+        const across = quiet ? null : acrossAt(tap.x, tap.y, width);
+        if (across !== null) synth.pluck(axisFrequency(across, live), 0.55);
+      }
+      const across =
+        !quiet && pointer.present
+          ? acrossAt(pointer.x, pointer.y, width)
+          : null;
+      const probe = terrainMaterial.uniforms.uProbe.value as THREE.Vector3;
+      probe.y += ((across !== null ? 1 : 0) - probe.y) * 0.2;
+      if (across !== null) {
+        probe.x = across;
+        probeHertz = axisFrequency(across, live);
+        probeLevel = levels[Math.min(BINS - 1, Math.floor(across * BINS))];
+      } else {
+        probeHertz = 0;
+      }
+    }
+
+    writeTrace(live, WIDTH);
+
+    const arrive = frame.intro * frame.intro * (3 - 2 * frame.intro);
+    const u = terrainMaterial.uniforms;
+    u.uHead.value = head;
+    u.uFrac.value = frac;
+    u.uSize.value.set(width, HEIGHT * (0.2 + 0.8 * arrive), DEPTH);
+    u.uBrightness.value = live.spectrogramBrightness;
+    u.uStrength.value = arrive;
+    u.uReading.value = voicing;
+    const logarithmic = live.useLogScale > 0.5;
+    u.uAxis.value.set(
+      logarithmic ? 1 : 0,
+      Math.log(Math.max(1, live.minLogFreq)),
+      Math.log(Math.max(live.minLogFreq + 1, live.maxLogFreq)),
+      0
+    );
+    (u.uLow.value as THREE.Color).setRGB(
+      ...live.colors.background,
+      THREE.SRGBColorSpace
+    );
+    (u.uMid.value as THREE.Color).setRGB(
+      ...live.colors.primary,
+      THREE.SRGBColorSpace
+    );
+    (u.uHigh.value as THREE.Color).setRGB(
+      ...live.colors.secondary,
+      THREE.SRGBColorSpace
+    );
+    (u.uPeak.value as THREE.Color).setRGB(
+      ...live.colors.accent,
+      THREE.SRGBColorSpace
+    );
+    (u.uGrid.value as THREE.Color).setRGB(
+      ...live.colors.grid,
+      THREE.SRGBColorSpace
+    );
+    // The trace is the present, and from overhead the present is an edge:
+    // it stands down while the number is read.
+    traceMaterial.uniforms.uBrightness.value =
+      live.waveformBrightness * arrive * (1 - voicing);
+
+    readout.write(frame.now, () => {
+      if (probeHertz > 0) {
+        const decibels = levelToDecibels(probeLevel);
+        return `${Math.round(probeHertz)} hz · ${noteName(probeHertz)} · ${decibels.toFixed(0)} db`;
+      }
+      return `${Math.round(live.vco1Frequency)} hz · ${noteName(live.vco1Frequency)} · fm ${live.vco1FMAmount.toFixed(2)}`;
+    });
+  };
+
+  const resize = () => {
+    // The number is set to the screen's shape. A URL bar sliding away is
+    // not a new shape, and rebuilding for it would make the number jump; a
+    // real one is rebuilt for once it has settled.
+    const size = { width: stage.width, height: stage.height };
+    if (viewportReshaped(glyphSize, size)) {
+      window.clearTimeout(reshapeTimer);
+      reshapeTimer = window.setTimeout(() => {
+        glyphSize = size;
+        glyph = buildGlyph();
+        stillDrawn = 'none';
+        stage.requestFrame();
+      }, RESHAPE_SETTLE_MS);
+    }
+  };
+
+  return {
+    update,
+    resize,
+    dispose() {
+      window.clearTimeout(reshapeTimer);
+      readout.clear();
+      spectrum.dispose();
+      terrainGeometry.dispose();
+      terrainMaterial.dispose();
+      traceGeometry.dispose();
+      traceMaterial.dispose();
+    },
+  };
+};
 
 interface SpectrogramOscilloscopeBackgroundProps extends AnimatedBackgroundProps<SpectrogramOscilloscopeSettings> {
   onAudioControlsReady?: (
@@ -40,96 +757,19 @@ interface SpectrogramOscilloscopeBackgroundProps extends AnimatedBackgroundProps
   ) => void;
 }
 
-// Uniform name -> settings key. Kept as data so the per-frame refresh below
-// cannot drift out of step with the declarations, and so a new synth parameter
-// is live the moment it is declared.
-const SCALAR_UNIFORMS: Record<string, keyof SpectrogramOscilloscopeSettings> = {
-  uVCO1Frequency: 'vco1Frequency',
-  uVCO1Amplitude: 'vco1Amplitude',
-  uVCO1WaveformType: 'vco1WaveformType',
-  uVCO1Phase: 'vco1Phase',
-  uVCO1FMAmount: 'vco1FMAmount',
-  uVCO1FMFrequency: 'vco1FMFrequency',
-  uVCO2Frequency: 'vco2Frequency',
-  uVCO2Amplitude: 'vco2Amplitude',
-  uVCO2WaveformType: 'vco2WaveformType',
-  uVCO2Phase: 'vco2Phase',
-  uVCO2FMAmount: 'vco2FMAmount',
-  uVCO2FMFrequency: 'vco2FMFrequency',
-  uMixRatio: 'mixRatio',
-  uDetune: 'detune',
-  uDelayTime: 'delayTime',
-  uDelayFeedback: 'delayFeedback',
-  uDelayMix: 'delayMix',
-  uFilterType: 'filterType',
-  uFilterCutoff: 'filterCutoff',
-  uFilterResonance: 'filterResonance',
-  uFilterLFOAmount: 'filterLFOAmount',
-  uFilterLFOSpeed: 'filterLFOSpeed',
-  uDistortionAmount: 'distortionAmount',
-  uDistortionType: 'distortionType',
-  uRingModFrequency: 'ringModFrequency',
-  uRingModAmount: 'ringModAmount',
-  uNoiseAmount: 'noiseAmount',
-  uNoiseType: 'noiseType',
-  uReverbAmount: 'reverbAmount',
-  uReverbDecay: 'reverbDecay',
-  uReverbPredelay: 'reverbPredelay',
-  uWaveformBrightness: 'waveformBrightness',
-  uSpectrogramBrightness: 'spectrogramBrightness',
-  uWaveformThickness: 'waveformThickness',
-  uSpectrogramSmoothing: 'spectrogramSmoothing',
-  uFrequencyScale: 'frequencyScale',
-  uTimeScale: 'timeScale',
-  uFFTWindowSize: 'fftWindowSize',
-  uUseLogScale: 'useLogScale',
-  uMinLogFreq: 'minLogFreq',
-  uMaxLogFreq: 'maxLogFreq',
-};
-
-const COLOR_UNIFORMS: Record<
-  string,
-  keyof SpectrogramOscilloscopeSettings['colors']
-> = {
-  uColorLow: 'background',
-  uColorMid: 'primary',
-  uColorHigh: 'secondary',
-  uColorPeak: 'accent',
-  uColorGrid: 'grid',
-  uWaveformColor: 'primary',
-};
-
 const SpectrogramOscilloscopeBackground: React.FC<
   SpectrogramOscilloscopeBackgroundProps
-> = ({ className, settings, frozen, notFound, onAudioControlsReady }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+> = props => {
+  const { className, settings, onAudioControlsReady } = props;
 
-  // Live view of the settings for the animation loop and the audio graph, both
-  // of which outlive the render that created them.
+  // Live view of the settings for the audio graph, which outlives the render
+  // that created it.
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
-  // Draw one frame and hold — see AnimatedBackgroundProps.frozen. The loop
-  // reads the ref each frame; the effect restarts it when the hold is lifted.
-  const frozenRef = useRef(Boolean(frozen));
-  frozenRef.current = Boolean(frozen);
-  const resumeRef = useRef<(() => void) | null>(null);
-  useEffect(() => {
-    if (!frozen) resumeRef.current?.();
-  }, [frozen]);
-
-  // The 404 sequence — see AnimatedBackgroundProps.notFound. Read off a ref
-  // each frame like the settings; the effect nudges a frozen loop so it draws
-  // the new state once.
-  const notFoundRef = useRef(Boolean(notFound));
-  notFoundRef.current = Boolean(notFound);
-  useEffect(() => {
-    resumeRef.current?.();
-  }, [notFound]);
+  // Nothing here is structural: every setting is read by the loop each
+  // frame, so no control rebuilds the scene.
+  const containerRef = useStageScene(props, stageOptions, buildScene, []);
 
   // Web Audio API references
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -137,9 +777,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
   const vco2Ref = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const filterNodeRef = useRef<BiquadFilterNode | null>(null);
-  const delayNodeRef = useRef<DelayNode | null>(null);
-  const distortionNodeRef = useRef<WaveShaperNode | null>(null);
-  const convolverNodeRef = useRef<ConvolverNode | null>(null);
   const isPlayingRef = useRef<boolean>(false);
 
   // Create stable audio control functions using useCallback
@@ -148,13 +785,15 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
     // Read through the ref so the audio graph is built from whatever the
     // controls say right now, without this callback's identity changing on
-    // every edit and remounting the visualisation with it.
+    // every edit.
     const settings = settingsRef.current;
 
     try {
       // Create audio context
       audioContextRef.current = new (
-        window.AudioContext || (window as any).webkitAudioContext
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext
       )();
 
       // Resume context if suspended (browser security)
@@ -208,7 +847,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
       vco1Gain.connect(mixer);
       vco2Gain.connect(mixer);
 
-      // Apply effects chain - simplified for debugging
       let currentNode: AudioNode = mixer;
 
       // Filter
@@ -217,7 +855,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
         currentNode = filterNodeRef.current;
       }
 
-      // Connect directly to output for now
       currentNode.connect(gainNodeRef.current);
       gainNodeRef.current.connect(audioContextRef.current.destination);
 
@@ -272,10 +909,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
       // Audio playback failed - silently continue
       isPlayingRef.current = false;
     }
-    // Reads settingsRef at call time, so the identity of this callback does not
-    // need to change when a setting does — which is what kept the effect above
-    // rebuilding.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stableStopAudio = useCallback(() => {
@@ -314,9 +947,6 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
           gainNodeRef.current = null;
           filterNodeRef.current = null;
-          delayNodeRef.current = null;
-          distortionNodeRef.current = null;
-          convolverNodeRef.current = null;
           isPlayingRef.current = false;
         }, 150);
       }
@@ -325,839 +955,28 @@ const SpectrogramOscilloscopeBackground: React.FC<
     }
   }, []);
 
+  // Hold P to hear it. A key typed into a field is text, and one with a
+  // modifier held is the browser's: neither is this.
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // Scene setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-    const renderer = new THREE.WebGLRenderer({ alpha: true });
-    renderer.setPixelRatio(getRenderPixelRatio());
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    container.appendChild(renderer.domElement);
-
-    // Store references
-    sceneRef.current = scene;
-    rendererRef.current = renderer;
-
-    // The spectrogram is computed per fragment in the shader, so there is no
-    // history texture to maintain. An earlier texture-based approach left a
-    // 512x256 RGBA float buffer and a 1024-sample waveform buffer allocated
-    // and uploaded here; neither was ever sampled.
-
-    // Vertex shader
-    const vertexShader = `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `;
-
-    // The number, for the 404 sequence, at the spectrogram panel's aspect.
-    // Rebuilt only when the viewport changes shape.
-    let glyphSize = { width: window.innerWidth, height: window.innerHeight };
-    const buildGlyph = () => {
-      const rows = Math.max(
-        32,
-        Math.round(
-          (GLYPH_COLS * glyphSize.height * (1 - SCOPE_HEIGHT)) / glyphSize.width
-        )
-      );
-      return glyphTexture(rasterizeGlyph(GLYPH_COLS, rows));
-    };
-    let glyph = buildGlyph();
-    // The fader on the voice: up in a moment, since the phrase starts the
-    // moment the flag goes up and should be heard from its first row; down
-    // on the sequence's own release.
-    const sequence = new NotFoundSequence({ formSeconds: FADER_SECONDS });
-    // The signal time at which the phrase started; the voice is silent
-    // before it.
-    let voiceStart = VOICE_OFF;
-
-    // Fragment shader for spectrogram and oscilloscope visualization
-    const fragmentShader = `
-      const float TWO_PI = 6.283185307179586;
-      const float SCOPE_HEIGHT = ${SCOPE_HEIGHT.toFixed(2)};
-      const int PARTIALS = ${PARTIALS};
-      const float PHRASE_REST = ${PHRASE_REST.toFixed(2)};
-      // FM amount sliders run 0-1; scale them into a usable modulation index.
-      const float FM_INDEX_SCALE = 8.0;
-      // Upper bound for the analysis loop. Each step evaluates the full
-      // synthesis chain per fragment, so this is a framerate ceiling as much
-      // as a resolution one; the slider is capped to match.
-      const float MAX_FFT_WINDOW = 128.0;
-
-      uniform float uTime;
-      uniform vec2 uResolution;
-      uniform vec2 uMouse;
-
-      // VCO 1 Parameters
-      uniform float uVCO1Frequency;
-      uniform float uVCO1Amplitude;
-      uniform float uVCO1WaveformType; // 0: sine, 1: square, 2: triangle, 3: sawtooth
-      uniform float uVCO1Phase;
-      uniform float uVCO1FMAmount;
-      uniform float uVCO1FMFrequency;
-
-      // VCO 2 Parameters
-      uniform float uVCO2Frequency;
-      uniform float uVCO2Amplitude;
-      uniform float uVCO2WaveformType;
-      uniform float uVCO2Phase;
-      uniform float uVCO2FMAmount;
-      uniform float uVCO2FMFrequency;
-
-      // Mixer Parameters
-      uniform float uMixRatio;
-      uniform float uDetune;
-
-      // Delay/Echo Parameters
-      uniform float uDelayTime;
-      uniform float uDelayFeedback;
-      uniform float uDelayMix;
-
-      // Filter Parameters
-      uniform float uFilterType; // 0: bypass, 1: lowpass, 2: highpass, 3: bandpass
-      uniform float uFilterCutoff;
-      uniform float uFilterResonance;
-      uniform float uFilterLFOAmount;
-      uniform float uFilterLFOSpeed;
-
-      // Distortion Parameters
-      uniform float uDistortionAmount;
-      uniform float uDistortionType; // 0: soft clip, 1: hard clip, 2: foldback, 3: bitcrush
-
-      // Ring Modulator Parameters
-      uniform float uRingModFrequency;
-      uniform float uRingModAmount;
-
-      // Noise Generator Parameters
-      uniform float uNoiseAmount;
-      uniform float uNoiseType; // 0: white, 1: pink, 2: brown
-
-      // Reverb Parameters
-      uniform float uReverbAmount;
-      uniform float uReverbDecay;
-      uniform float uReverbPredelay;
-
-      // Visual Parameters using standardized colors
-      uniform float uWaveformBrightness;
-      uniform float uSpectrogramBrightness;
-      uniform vec3 uColorLow;
-      uniform vec3 uColorMid;
-      uniform vec3 uColorHigh;
-      uniform vec3 uColorPeak;
-      uniform vec3 uColorGrid;
-      uniform vec3 uWaveformColor;
-      uniform float uWaveformThickness;
-      uniform float uSpectrogramSmoothing;
-      uniform float uFrequencyScale;
-      uniform float uTimeScale;
-      uniform float uFFTWindowSize;
-      uniform float uUseLogScale;
-      uniform float uMinLogFreq;
-      uniform float uMaxLogFreq;
-
-      // The 404 sequence: the number's columns by row, the fader on its
-      // voice, when the phrase started, and how long it runs (all in signal
-      // time).
-      uniform sampler2D uGlyph;
-      uniform float uNotFound;
-      uniform float uVoiceStart;
-      uniform float uPhrase;
-
-      varying vec2 vUv;
-
-      // The frequency the spectrogram shows at a horizontal position, in the
-      // analysis's own units — log or linear, as configured.
-      float displayFrequency(float x) {
-        if (uUseLogScale > 0.5) {
-          float logFreq = mix(log(uMinLogFreq), log(uMaxLogFreq), x);
-          return exp(logFreq) / 100.0;
-        }
-        return x * uFrequencyScale * 20.0;
-      }
-
-      // Which row of the number the voice is playing at signal time t, 0 at
-      // the bottom row → 1 at the top, or below zero during the rest. The
-      // bottom row goes first: it is the oldest by the time the top row
-      // plays, and so the lowest on the panel — the number lands upright.
-      float voiceRow(float t) {
-        float p = mod(t - uVoiceStart, uPhrase * (1.0 + PHRASE_REST)) / uPhrase;
-        return t < uVoiceStart || p > 1.0 ? -1.0 : p;
-      }
-
-      // The amplitude of the voice's partial at horizontal position x at
-      // signal time t: the number's coverage there.
-      float voiceLevel(float x, float t) {
-        float row = voiceRow(t);
-        if (row < 0.0) return 0.0;
-        return texture2D(uGlyph, vec2(x, row)).g;
-      }
-
-      // The voice itself: its partials summed, each at the frequency its
-      // column sits at on the panel, with staggered phases so they do not
-      // all cross zero together. Normalised to about the synth's own level.
-      float voiceSignal(float t) {
-        float sum = 0.0;
-        for (int k = 0; k < PARTIALS; k++) {
-          float x = (float(k) + 0.5) / float(PARTIALS);
-          float level = voiceLevel(x, t);
-          if (level > 0.0) {
-            sum += level * sin(displayFrequency(x) * t + float(k) * 1.7);
-          }
-        }
-        return sum / (float(PARTIALS) * 0.3);
-      }
-
-      // Generate waveform based on type
-      float generateWaveform(float phase, float waveformType) {
-        float p = fract(phase);
-
-        if (waveformType < 0.5) {
-          // Sine wave
-          return sin(phase * 6.28318530718);
-        } else if (waveformType < 1.5) {
-          // Square wave
-          return p < 0.5 ? 1.0 : -1.0;
-        } else if (waveformType < 2.5) {
-          // Triangle wave
-          return 4.0 * abs(p - 0.5) - 1.0;
-        } else {
-          // Sawtooth wave
-          return 2.0 * p - 1.0;
-        }
-      }
-
-      // Pseudo-random number generator
-      float hash(float n) {
-        return fract(sin(n) * 43758.5453);
-      }
-
-      // Generate noise
-      float generateNoise(float t, float noiseType) {
-        if (noiseType < 0.5) {
-          // White noise
-          return hash(t * 100.0) * 2.0 - 1.0;
-        } else if (noiseType < 1.5) {
-          // Pink noise approximation
-          float n = hash(t * 100.0) * 2.0 - 1.0;
-          n += hash(t * 50.0) * 2.0 - 1.0;
-          n += hash(t * 25.0) * 2.0 - 1.0;
-          return n / 3.0;
-        } else {
-          // Brown noise approximation
-          float prev = hash(floor(t * 100.0)) * 2.0 - 1.0;
-          float next = hash(floor(t * 100.0) + 1.0) * 2.0 - 1.0;
-          return mix(prev, next, fract(t * 100.0)) * 0.5;
-        }
-      }
-
-      // Apply distortion
-      float applyDistortion(float signal, float amount, float distType) {
-        if (amount < 0.01) return signal;
-
-        if (distType < 0.5) {
-          // Soft clipping (tanh-like)
-          float drive = 1.0 + amount * 10.0;
-          return tanh(signal * drive) / drive;
-        } else if (distType < 1.5) {
-          // Hard clipping
-          float threshold = 1.0 - amount;
-          return clamp(signal, -threshold, threshold) / threshold;
-        } else if (distType < 2.5) {
-          // Foldback distortion
-          float fold = 1.0 - amount * 0.9;
-          float s = abs(signal);
-          while (s > fold) {
-            s = 2.0 * fold - s;
-          }
-          return sign(signal) * s;
-        } else {
-          // Bit crusher
-          float bits = mix(16.0, 2.0, amount);
-          float levels = pow(2.0, bits);
-          return floor(signal * levels) / levels;
-        }
-      }
-
-      // Simple filter implementation
-      float applyFilter(float signal, float cutoff, float resonance, float filterType, float t) {
-        // LFO for filter modulation
-        float lfo = sin(t * uFilterLFOSpeed) * uFilterLFOAmount;
-        float fc = cutoff + lfo;
-        fc = clamp(fc, 0.01, 0.99);
-
-        // Simple approximation of filters using frequency-dependent attenuation
-        if (filterType < 0.5) {
-          // Bypass
-          return signal;
-        } else if (filterType < 1.5) {
-          // Lowpass - attenuate high frequencies
-          float smoothing = 1.0 - fc;
-          return signal * (1.0 - smoothing) + sin(t * 100.0) * smoothing * resonance * 0.1;
-        } else if (filterType < 2.5) {
-          // Highpass - attenuate low frequencies
-          float edge = fc;
-          return signal * edge + cos(t * 1000.0) * (1.0 - edge) * resonance * 0.1;
-        } else {
-          // Bandpass - combination
-          float width = 0.1;
-          float low = max(0.0, fc - width);
-          float high = min(1.0, fc + width);
-          return signal * (high - low) * 2.0 + sin(t * fc * 1000.0) * resonance * 0.1;
-        }
-      }
-
-      // Generate signal at specific time with effects chain
-      float generateSignal(float t) {
-        // === VCO GENERATION ===
-        // Frequency modulation, Chowning form: the modulator is added to the
-        // carrier's PHASE, not to its frequency before multiplying by t.
-        // Multiplying (fc + fm) by t makes the modulation depth grow without
-        // bound as t advances, which smears the sidebands instead of producing
-        // the fixed Bessel-series spectrum that defines FM synthesis.
-        // The amount sliders run 0-1 and are scaled to a useful modulation index.
-        float fm1 = sin(t * uVCO1FMFrequency) * uVCO1FMAmount * FM_INDEX_SCALE;
-        float vco1Phase = t * uVCO1Frequency * 0.01 + fm1 + uVCO1Phase;
-
-        float fm2 = sin(t * uVCO2FMFrequency) * uVCO2FMAmount * FM_INDEX_SCALE;
-        float vco2Phase = t * uVCO2Frequency * 0.01 * (1.0 + uDetune) + fm2 + uVCO2Phase;
-
-        // Generate VCO signals
-        float vco1 = generateWaveform(vco1Phase, uVCO1WaveformType) * uVCO1Amplitude;
-        float vco2 = generateWaveform(vco2Phase, uVCO2WaveformType) * uVCO2Amplitude;
-
-        // Mix VCO signals
-        float signal = mix(vco1, vco2, uMixRatio);
-
-        // === EFFECTS CHAIN ===
-
-        // Add noise
-        if (uNoiseAmount > 0.01) {
-          float noise = generateNoise(t, uNoiseType);
-          signal = mix(signal, signal + noise, uNoiseAmount);
-        }
-
-        // Ring modulation
-        if (uRingModAmount > 0.01) {
-          float ringMod = sin(t * uRingModFrequency * 0.1);
-          signal = mix(signal, signal * ringMod, uRingModAmount);
-        }
-
-        // Apply filter
-        if (uFilterType > 0.5) {
-          signal = applyFilter(signal, uFilterCutoff, uFilterResonance, uFilterType, t);
-        }
-
-        // Apply distortion
-        if (uDistortionAmount > 0.01) {
-          signal = applyDistortion(signal, uDistortionAmount, uDistortionType);
-        }
-
-        // Delay/Echo effect (simplified - adds previous signal)
-        if (uDelayMix > 0.01 && uDelayTime > 0.01) {
-          float delayedT = t - uDelayTime * 0.1;
-          if (delayedT > 0.0) {
-            // Approximate delay with phase-shifted signal
-            float delayPhase1 = delayedT * (uVCO1Frequency * 0.01 + sin(delayedT * uVCO1FMFrequency) * uVCO1FMAmount);
-            float delayPhase2 = delayedT * (uVCO2Frequency * 0.01 * (1.0 + uDetune));
-            float delaySignal = generateWaveform(delayPhase1, uVCO1WaveformType) * uVCO1Amplitude * 0.5;
-            delaySignal += generateWaveform(delayPhase2, uVCO2WaveformType) * uVCO2Amplitude * 0.5;
-            delaySignal *= uDelayFeedback;
-
-            signal = mix(signal, signal + delaySignal, uDelayMix);
-          }
-        }
-
-        // Simple reverb approximation (multiple delays with decay)
-        if (uReverbAmount > 0.01) {
-          float reverb = 0.0;
-          for(float i = 1.0; i <= 4.0; i += 1.0) {
-            float revTime = t - (uReverbPredelay + i * 0.02) * 0.1;
-            if (revTime > 0.0) {
-              float revPhase = revTime * uVCO1Frequency * 0.01;
-              float revSignal = sin(revPhase) * exp(-i * uReverbDecay);
-              reverb += revSignal * 0.25;
-            }
-          }
-          signal = mix(signal, signal + reverb * 0.3, uReverbAmount);
-        }
-
-        return signal;
-      }
-
-      // Discrete Fourier transform of the actual generated signal at a single
-      // frequency bin.
-      //
-      // This deliberately measures rather than draws. The previous version
-      // correlated a few samples and then ADDED an idealised harmonic series,
-      // subharmonics, ring-mod sidebands and a noise floor on top -- so the
-      // spectrogram showed what the spectrum was assumed to look like, not what
-      // the signal contained. Every one of those features falls out of a
-      // correct transform anyway, because generateSignal genuinely produces
-      // them.
-      float getFrequencyMagnitude(float freq, float time) {
-        float dt = 0.1; // Sample spacing; Nyquist is pi/dt in these units.
-
-        // Window length trades frequency resolution against time resolution:
-        // a longer window resolves closely spaced partials but smears events
-        // that move. GLSL ES 1.0 requires a constant loop bound, so the loop
-        // is fixed at the maximum and exits early at the requested length.
-        float n = clamp(uFFTWindowSize, 16.0, MAX_FFT_WINDOW);
-
-        float re = 0.0;
-        float im = 0.0;
-        float windowSum = 0.0;
-
-        for (float i = 0.0; i < MAX_FFT_WINDOW; i += 1.0) {
-          if (i >= n) break;
-
-          // The analysis window is blended from rectangular to Hann. A
-          // rectangular window gives the sharpest main lobe and the worst
-          // spectral leakage; Hann trades a wider main lobe for far lower
-          // sidelobes, which reads as a smoother spectrum. That blend *is*
-          // the smoothing control -- no post-hoc blurring involved.
-          float hann = 0.5 - 0.5 * cos(TWO_PI * i / (n - 1.0));
-          float w = mix(1.0, hann, uSpectrogramSmoothing);
-
-          // 'sample' is a reserved word in GLSL.
-          float s = generateSignal(time + i * dt) * w;
-          float phase = freq * i * dt;
-          re += s * cos(phase);
-          im += s * sin(phase);
-          windowSum += w;
-        }
-
-        // Normalise by the window's DC gain so that changing window length or
-        // shape does not change the height of a peak. The factor of two
-        // accounts for the negative-frequency image of a real-valued signal.
-        return 2.0 * sqrt(re * re + im * im) / max(1.0, windowSum);
-      }
-
-      // Color mapping for spectrogram using standardized colors
-      vec3 spectrogramColor(float value) {
-        // Enhance contrast
-        value = pow(value * 2.0, 1.5);
-        value = clamp(value, 0.0, 1.0);
-
-        if (value < 0.25) {
-          return mix(uColorLow * 0.1, uColorLow, value * 4.0);
-        } else if (value < 0.5) {
-          return mix(uColorLow, uColorMid, (value - 0.25) * 4.0);
-        } else if (value < 0.75) {
-          return mix(uColorMid, uColorHigh, (value - 0.5) * 4.0);
-        } else {
-          return mix(uColorHigh, uColorPeak, (value - 0.75) * 4.0);
-        }
-      }
-
-      void main() {
-        vec2 uv = gl_FragCoord.xy / uResolution.xy;
-        vec3 finalColor = vec3(0.0);
-
-        // Layout: oscilloscope on top 30%, spectrogram below
-        float scopeHeight = SCOPE_HEIGHT;
-        float scopeEnd = 1.0 - scopeHeight;
-
-        if (uv.y > scopeEnd) {
-          // === OSCILLOSCOPE SECTION ===
-          float scopeY = (uv.y - scopeEnd) / scopeHeight;
-
-          // Generate current signal for display
-          float timeOffset = uv.x * 4.0; // Show 4 periods
-          float displayTime = uTime + timeOffset;
-          float signal = generateSignal(displayTime);
-
-          // The 404 sequence: the voice comes up on the mixer and the synth
-          // ducks under it. What the scope draws is the sum.
-          if (uNotFound > 0.0) {
-            float voice = voiceSignal(displayTime);
-            signal = mix(signal, signal * 0.3 + voice, uNotFound);
-          }
-
-          // Map signal to scope Y position
-          float waveY = signal * 0.4 + 0.5;
-
-          // Draw waveform with glow
-          float dist = abs(scopeY - waveY);
-          float waveIntensity = exp(-dist * 100.0 / uWaveformThickness);
-          float glowIntensity = exp(-dist * 10.0 / uWaveformThickness) * 0.3;
-
-          vec3 waveColor = uWaveformColor * (waveIntensity + glowIntensity) * uWaveformBrightness;
-          finalColor += waveColor;
-
-          // Grid overlay for oscilloscope
-          float gridX = smoothstep(0.003, 0.001, abs(fract(uv.x * 8.0) - 0.5));
-          float gridY = smoothstep(0.003, 0.001, abs(fract(scopeY * 4.0) - 0.5));
-          finalColor += uColorGrid * max(gridX, gridY) * 0.25;
-
-        } else {
-          // === SPECTROGRAM SECTION ===
-          float spectrogramY = 1.0 - (uv.y / scopeEnd); // Inverted so newest is at top
-
-          // Calculate time offset for this row. The history the panel holds
-          // is the configured span, widened to the phrase while the number
-          // plays.
-          float history = mix(5.0 * uTimeScale, uPhrase, uNotFound);
-          float timeOffset = spectrogramY * history;
-          float analysisTime = uTime - timeOffset;
-
-          // Map horizontal position to frequency (linear or logarithmic)
-          float frequency = displayFrequency(uv.x);
-          if (uUseLogScale > 0.5) {
-            float logMin = log(uMinLogFreq);
-            float logMax = log(uMaxLogFreq);
-
-            // Draw logarithmic frequency grid
-            float octave = log(frequency * 100.0) / log(2.0);
-            float octaveGrid = smoothstep(0.01, 0.001, abs(fract(octave) - 0.5));
-            finalColor += uColorGrid * octaveGrid * 0.4;
-
-            // Add markers at musical frequencies (A notes across octaves)
-            for (float octaveA = 55.0; octaveA <= 3520.0; octaveA *= 2.0) {
-              float markerPos = (log(octaveA) - logMin) / (logMax - logMin);
-              if (abs(uv.x - markerPos) < 0.002) {
-                finalColor += uColorGrid * 1.4 * 0.5;
-              }
-            }
-          } else {
-            // Frequency grid lines
-            float freqGrid = smoothstep(0.003, 0.001, abs(fract(uv.x * 10.0) - 0.5));
-            finalColor += uColorGrid * 0.5 * freqGrid * 0.3;
-          }
-
-          // Get magnitude at this frequency and time
-          float magnitude = getFrequencyMagnitude(frequency, analysisTime);
-
-          // The 404 sequence: the voice's partial at this frequency has the
-          // amplitude the number gives it at this time — which is what the
-          // transform of an additive voice measures — and the synth is
-          // ducked under it, as on the scope. The phrase scrolls down the
-          // history like anything played, and repeats.
-          if (uNotFound > 0.0) {
-            float voice = voiceLevel(uv.x, analysisTime) * 0.7;
-            magnitude = mix(magnitude, magnitude * 0.3 + voice, uNotFound);
-          }
-
-          // Apply fade with distance (older = dimmer)
-          float ageFade = 1.0 - spectrogramY * 0.7;
-          magnitude *= ageFade;
-
-          // Color based on magnitude
-          vec3 spectroColor = spectrogramColor(magnitude);
-          finalColor += spectroColor * uSpectrogramBrightness;
-
-          // Time grid lines
-          float timeGrid = smoothstep(0.003, 0.001, abs(fract(spectrogramY * 10.0) - 0.5));
-          finalColor += uColorGrid * 0.5 * timeGrid * 0.2;
-        }
-
-        // Separator line between sections
-        float separatorDist = abs(uv.y - scopeEnd);
-        float separator = smoothstep(0.004, 0.001, separatorDist);
-        finalColor += uWaveformColor * separator * 0.4;
-
-        // Mouse frequency analyzer
-        vec2 mouseUV = uMouse / uResolution;
-        if (length(uv - mouseUV) < 0.05 && uv.y < scopeEnd) {
-          float mouseFreq = displayFrequency(mouseUV.x);
-          float mouseMag = getFrequencyMagnitude(mouseFreq, uTime);
-          float intensity = exp(-length(uv - mouseUV) * 40.0) * mouseMag;
-          finalColor += vec3(1.0, 0.8, 0.0) * intensity;
-        }
-
-        gl_FragColor = vec4(finalColor, 1.0);
-      }
-    `;
-
-    // Create shader material with VCO and spectrogram parameters
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0.0 },
-        uResolution: {
-          value: new THREE.Vector2(
-            renderer.domElement.width,
-            renderer.domElement.height
-          ),
-        },
-        uMouse: {
-          value: new THREE.Vector2(
-            renderer.domElement.width / 2,
-            renderer.domElement.height / 2
-          ),
-        },
-
-        // VCO 1 Parameters
-        uVCO1Frequency: { value: settings.vco1Frequency },
-        uVCO1Amplitude: { value: settings.vco1Amplitude },
-        uVCO1WaveformType: { value: settings.vco1WaveformType },
-        uVCO1Phase: { value: settings.vco1Phase },
-        uVCO1FMAmount: { value: settings.vco1FMAmount },
-        uVCO1FMFrequency: { value: settings.vco1FMFrequency },
-
-        // VCO 2 Parameters
-        uVCO2Frequency: { value: settings.vco2Frequency },
-        uVCO2Amplitude: { value: settings.vco2Amplitude },
-        uVCO2WaveformType: { value: settings.vco2WaveformType },
-        uVCO2Phase: { value: settings.vco2Phase },
-        uVCO2FMAmount: { value: settings.vco2FMAmount },
-        uVCO2FMFrequency: { value: settings.vco2FMFrequency },
-
-        // Mixer Parameters
-        uMixRatio: { value: settings.mixRatio },
-        uDetune: { value: settings.detune },
-
-        // Delay/Echo Parameters
-        uDelayTime: { value: settings.delayTime },
-        uDelayFeedback: { value: settings.delayFeedback },
-        uDelayMix: { value: settings.delayMix },
-
-        // Filter Parameters
-        uFilterType: { value: settings.filterType },
-        uFilterCutoff: { value: settings.filterCutoff },
-        uFilterResonance: { value: settings.filterResonance },
-        uFilterLFOAmount: { value: settings.filterLFOAmount },
-        uFilterLFOSpeed: { value: settings.filterLFOSpeed },
-
-        // Distortion Parameters
-        uDistortionAmount: { value: settings.distortionAmount },
-        uDistortionType: { value: settings.distortionType },
-
-        // Ring Modulator Parameters
-        uRingModFrequency: { value: settings.ringModFrequency },
-        uRingModAmount: { value: settings.ringModAmount },
-
-        // Noise Generator Parameters
-        uNoiseAmount: { value: settings.noiseAmount },
-        uNoiseType: { value: settings.noiseType },
-
-        // Reverb Parameters
-        uReverbAmount: { value: settings.reverbAmount },
-        uReverbDecay: { value: settings.reverbDecay },
-        uReverbPredelay: { value: settings.reverbPredelay },
-
-        // Visual Parameters using standardized colors
-        uWaveformBrightness: { value: settings.waveformBrightness },
-        uSpectrogramBrightness: { value: settings.spectrogramBrightness },
-        uColorLow: { value: new THREE.Vector3(...settings.colors.background) },
-        uColorMid: { value: new THREE.Vector3(...settings.colors.primary) },
-        uColorHigh: { value: new THREE.Vector3(...settings.colors.secondary) },
-        uColorPeak: { value: new THREE.Vector3(...settings.colors.accent) },
-        uColorGrid: { value: new THREE.Vector3(...settings.colors.grid) },
-        uWaveformColor: {
-          value: new THREE.Vector3(...settings.colors.primary),
-        },
-        uWaveformThickness: { value: settings.waveformThickness },
-        uSpectrogramSmoothing: { value: settings.spectrogramSmoothing },
-        uFrequencyScale: { value: settings.frequencyScale },
-        uTimeScale: { value: settings.timeScale },
-        uFFTWindowSize: { value: settings.fftWindowSize },
-        uUseLogScale: { value: settings.useLogScale },
-        uMinLogFreq: { value: settings.minLogFreq },
-        uMaxLogFreq: { value: settings.maxLogFreq },
-        uGlyph: { value: glyph },
-        uNotFound: { value: 0 },
-        uVoiceStart: { value: VOICE_OFF },
-        uPhrase: { value: PHRASE_SECONDS },
-      },
-      vertexShader,
-      fragmentShader,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-    });
-
-    // Create a plane geometry
-    const geometry = new THREE.PlaneGeometry(2, 2);
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
-
-    // Mouse tracking
-    const handleMouseMove = (event: MouseEvent) => {
-      const pixelRatio = renderer.getPixelRatio();
-      mouseRef.current.x = event.clientX * pixelRatio;
-      mouseRef.current.y = event.clientY * pixelRatio;
-    };
-
-    // Passive: the handler only records coordinates for the next frame's
-    // uniform, so the browser never has to wait on it before scrolling.
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-
-    // Web Audio API functions - now using stable callbacks
-
-    // Keyboard event handlers
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === 'p' && !event.repeat) {
-        stableStartAudio();
-      }
+      if (!isShortcutKey(event)) return;
+      if (event.key.toLowerCase() === 'p' && !event.repeat) stableStartAudio();
     };
-
     const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === 'p') {
-        stableStopAudio();
-      }
+      if (event.key.toLowerCase() === 'p') stableStopAudio();
     };
-
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-
-    // Store audio functions in ref for access across effects
-    audioFunctionsRef.current = {
-      startAudio: stableStartAudio,
-      stopAudio: stableStopAudio,
-    };
-
-    // Animation loop. Every synth parameter is a uniform, so they are refreshed
-    // per frame from settingsRef and this effect never rebuilds the scene —
-    // dragging a filter cutoff used to tear down the WebGL context and restart
-    // the visualisation on every input event.
-    //
-    // Phase is integrated rather than time × speed, so changing the master
-    // speed changes the rate from here on instead of jumping the waveform.
-    let phase = 0;
-    let lastTime = 0;
-    const animate = (time: number) => {
-      const live = settingsRef.current;
-      const deltaSec = lastTime === 0 ? 0 : (time - lastTime) / 1000;
-      lastTime = time;
-      phase += deltaSec * live.globalTimeMultiplier;
-
-      // The 404 sequence: the fader on the voice, and, for a still, the
-      // phrase started one phrase ago, so the whole number is on the panel
-      // in the one frame there is.
-      const on = notFoundRef.current;
-      const progress = frozenRef.current
-        ? sequence.settle(on)
-        : sequence.advance(Math.min(deltaSec, 0.1), on);
-      // The phrase is PHRASE_SECONDS of wall time; signal time runs at the
-      // master speed, so in the shader's units it is that many times the
-      // speed.
-      const phrase = PHRASE_SECONDS * live.globalTimeMultiplier;
-      if (on && voiceStart === VOICE_OFF) {
-        voiceStart = frozenRef.current ? phase - phrase : phase;
-      } else if (!on && !sequence.active) {
-        voiceStart = VOICE_OFF;
-      }
-
-      const u = material.uniforms;
-      u.uTime.value = phase;
-      u.uNotFound.value = progress;
-      u.uVoiceStart.value = voiceStart;
-      u.uPhrase.value = phrase;
-
-      for (const [name, key] of Object.entries(SCALAR_UNIFORMS)) {
-        if (u[name]) u[name].value = live[key];
-      }
-      for (const [name, key] of Object.entries(COLOR_UNIFORMS)) {
-        if (u[name]) u[name].value.set(...live.colors[key]);
-      }
-
-      // Update mouse uniform
-      if (material.uniforms.uMouse) {
-        material.uniforms.uMouse.value.x = mouseRef.current.x;
-        material.uniforms.uMouse.value.y = mouseRef.current.y;
-      }
-
-      // Update spectrogram texture row counter
-
-      renderer.render(scene, camera);
-      if (frozenRef.current) {
-        animationFrameRef.current = null;
-        return;
-      }
-      animationFrameRef.current = requestAnimationFrame(animate);
-    };
-
-    animate(0);
-    resumeRef.current = () => {
-      if (animationFrameRef.current === null)
-        animationFrameRef.current = requestAnimationFrame(animate);
-    };
-
-    // Handle window resize, at most once per frame — a phone's URL bar fires
-    // resize repeatedly over a single flick, and each raw call reallocates the
-    // drawing buffer mid-scroll.
-    let resizeFrame: number | null = null;
-    let reshapeTimer = 0;
-    const applyResize = () => {
-      resizeFrame = null;
-      if (renderer && material.uniforms.uResolution) {
-        renderer.setPixelRatio(getRenderPixelRatio());
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        material.uniforms.uResolution.value.set(
-          renderer.domElement.width,
-          renderer.domElement.height
-        );
-      }
-      // The number is set to the panel's shape. A URL bar sliding away is
-      // not a new shape, and rebuilding for it would make the number jump;
-      // a real one is rebuilt for once it has settled.
-      const size = { width: window.innerWidth, height: window.innerHeight };
-      if (viewportReshaped(glyphSize, size)) {
-        window.clearTimeout(reshapeTimer);
-        reshapeTimer = window.setTimeout(() => {
-          glyphSize = size;
-          glyph.dispose();
-          glyph = buildGlyph();
-          material.uniforms.uGlyph.value = glyph;
-        }, RESHAPE_SETTLE_MS);
-      }
-    };
-    const handleResize = () => {
-      if (resizeFrame === null) {
-        resizeFrame = requestAnimationFrame(applyResize);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // Cleanup function
     return () => {
-      resumeRef.current = null;
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-
-      // Stop audio if playing
-      stableStopAudio();
-
-      window.removeEventListener('resize', handleResize);
-      if (resizeFrame !== null) {
-        cancelAnimationFrame(resizeFrame);
-      }
-      window.clearTimeout(reshapeTimer);
-      window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-
-      if (container && renderer.domElement) {
-        container.removeChild(renderer.domElement);
-      }
-
-      // Clean up Three.js resources
-      glyph.dispose();
-      geometry.dispose();
-      material.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
+      // Whatever is sounding stops with the background that was making it.
+      stableStopAudio();
     };
-    // Nothing structural: every setting is a uniform the loop refreshes from
-    // settingsRef each frame.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stableStartAudio, stableStopAudio]);
 
   // State for showing audio playback indicator
   const [isPlaying, setIsPlaying] = React.useState(false);
-
-  // Refs to store audio functions so they can be accessed across effects
-  const audioFunctionsRef = useRef<{
-    startAudio: (() => void) | null;
-    stopAudio: (() => void) | null;
-  }>({ startAudio: null, stopAudio: null });
 
   // Store the callback in a ref to avoid dependency issues
   const onAudioControlsReadyRef = useRef(onAudioControlsReady);
@@ -1199,20 +1018,10 @@ const SpectrogramOscilloscopeBackground: React.FC<
 
   return (
     <>
-      <div
+      <StageSurface
         ref={containerRef}
-        aria-hidden="true"
         className={className}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: -1,
-          pointerEvents: 'none',
-          opacity: settings.opacity,
-        }}
+        opacity={settings.opacity}
       />
       {/* Bottom-centre of the field, above the `?` hint's line: the corners
           belong to the two pills. Styled with the rest of the backgrounds'

@@ -44,12 +44,14 @@ const defaultCustomSettings: GraphTopologyCustomSettings = {
   edgeThickness: 1.2, // Pixels for an ordinary edge, now that width is real
   updateAnimationSpeed: 2.0, // Proposals per second — the rate this shipped at
 
-  // Network/topology color scheme
+  // Read as display colours — the swatches in the panel are what is drawn.
+  // Cyan for the best found, gold for what is being tried, and a rose where
+  // the two agree, over a network drawn in slate.
   colors: {
-    primary: [0.2, 0.8, 1.0], // Bright cyan - optimal subgraph
-    secondary: [1.0, 0.7, 0.0], // Gold - current search
-    accent: [1.0, 0.2, 0.8], // Magenta - overlap/convergence
-    background: [0.15, 0.15, 0.2], // Dark background
+    primary: [0.24, 0.82, 1.0], // Cyan - best subgraph so far
+    secondary: [1.0, 0.74, 0.26], // Gold - current candidate
+    accent: [1.0, 0.4, 0.74], // Rose - where the two agree
+    background: [0.42, 0.5, 0.66], // Slate - the rest of the network
     grid: [0.25, 0.3, 0.35], // Grid overlay
   },
 };
@@ -168,9 +170,10 @@ const customSettingsSchema: SettingsSchema[] = [
   },
   {
     key: 'colors.background',
-    label: 'Background Color',
+    label: 'Network Color',
     type: 'color',
-    description: 'Canvas colour behind the graph.',
+    description:
+      'The rest of the network: machines and links the search is not holding.',
     category: 'Colors',
   },
 ];
@@ -184,7 +187,7 @@ export const graphTopologyConfig = createBackgroundConfig({
     'Simulated annealing over a graph built like a datacenter: dense links inside each ' +
     'cluster, sparse ones between. It hunts the best-connected subgraph of the size you ask ' +
     'for, taking worse swaps less often as the temperature drops. Gold is the current ' +
-    'candidate, cyan the best so far.',
+    'candidate, cyan the best so far, and both stand off the bench: the higher, the surer.',
   component: GraphTopologyBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

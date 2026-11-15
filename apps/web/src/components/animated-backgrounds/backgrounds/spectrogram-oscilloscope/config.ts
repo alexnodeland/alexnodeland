@@ -68,7 +68,7 @@ export interface SpectrogramOscilloscopeCustomSettings {
   spectrogramSmoothing: number;
   frequencyScale: number;
   timeScale: number;
-  fftWindowSize: number;
+  analysisCycles: number;
   useLogScale: number;
   minLogFreq: number;
   maxLogFreq: number;
@@ -138,31 +138,33 @@ const defaultCustomSettings: SpectrogramOscilloscopeCustomSettings = {
   reverbPredelay: 0.05,
 
   // Visual Parameters
-  waveformBrightness: 1.8,
-  spectrogramBrightness: 2.2, // Brighter for better visibility
-  waveformThickness: 2.0, // Thicker waveform
-  spectrogramSmoothing: 0.7,
+  waveformBrightness: 1.2,
+  spectrogramBrightness: 1.0,
+  waveformThickness: 1.6,
+  spectrogramSmoothing: 0.85,
   frequencyScale: 3.0,
-  timeScale: 0.1, // Slower scrolling for better observation
-  fftWindowSize: 64.0,
+  timeScale: 1.0,
+  analysisCycles: 16,
   useLogScale: 1.0, // Use logarithmic by default
-  minLogFreq: 20.0, // 20Hz minimum (bass)
+  minLogFreq: 40.0, // Below the lowest fundamental the controls reach
   maxLogFreq: 5000.0, // 5kHz is enough for most musical content
 
-  // Vibrant spectrum color scheme
+  // Read as display colours — the swatches in the panel are what is drawn.
+  // A phosphor scale: deep blue near silence, cyan through the body of the
+  // spectrum, violet where it is loud, and a pale gold at the peaks.
   colors: {
-    primary: [0.0, 0.8, 1.0], // Bright cyan for mid amplitude
-    secondary: [1.0, 0.4, 0.8], // Hot magenta for high amplitude
-    accent: [1.0, 1.0, 0.0], // Bright yellow for peak amplitude
-    background: [0.0, 0.1, 0.4], // Deep blue for low amplitude
-    grid: [0.2, 0.3, 0.4], // Grid overlay
+    primary: [0.1, 0.8, 1.0], // Cyan: mid amplitude, and the trace
+    secondary: [0.74, 0.5, 1.0], // Violet: high amplitude
+    accent: [1.0, 0.9, 0.56], // Pale gold: peaks
+    background: [0.04, 0.16, 0.5], // Deep blue: near silence
+    grid: [0.22, 0.34, 0.5], // The octave rules
   },
 };
 
 // Standard settings overrides for spectrogram oscilloscope
 const standardOverrides: Partial<StandardSettings> = {
   opacity: 0.9,
-  globalTimeMultiplier: 0.1, // Slower default for more hypnotic effect
+  globalTimeMultiplier: 1.0,
 };
 
 // Settings schema for custom spectrogram oscilloscope settings
@@ -537,7 +539,8 @@ const customSettingsSchema: SettingsSchema[] = [
     min: 0.5,
     max: 2.0,
     step: 0.1,
-    description: 'Brightness of the oscilloscope trace along the top.',
+    description:
+      'Brightness of the oscilloscope trace — the line across the front, at the present.',
     category: 'Visualization',
   },
   {
@@ -548,7 +551,7 @@ const customSettingsSchema: SettingsSchema[] = [
     max: 2.0,
     step: 0.1,
     description:
-      'Brightness of the spectrogram below. Raise it to bring out quiet partials, at the cost of washing out the loud ones.',
+      'Brightness of the spectrogram behind it. Raise it to bring out quiet partials, at the cost of washing out the loud ones.',
     category: 'Visualization',
   },
   {
@@ -585,24 +588,24 @@ const customSettingsSchema: SettingsSchema[] = [
   },
   {
     key: 'timeScale',
-    label: 'Spectrogram Speed',
+    label: 'Waterfall Speed',
     type: 'slider',
-    min: 0.001,
-    max: 1.0,
-    step: 0.001,
+    min: 0.1,
+    max: 3.0,
+    step: 0.1,
     description:
-      'How fast the spectrogram scrolls, which sets how much history is on screen.',
+      'How fast the history travels away from the front edge, which sets how much of the past is on screen: a slow waterfall holds more of it, more closely packed.',
     category: 'Visualization',
   },
   {
-    key: 'fftWindowSize',
-    label: 'FFT Window Size',
+    key: 'analysisCycles',
+    label: 'Analysis Window (cycles)',
     type: 'slider',
-    min: 16,
-    max: 128,
-    step: 16,
+    min: 4,
+    max: 32,
+    step: 2,
     description:
-      'How many samples each analysis window covers. Longer windows resolve closely spaced partials but smear anything that moves — the time-versus-frequency tradeoff that every spectrogram has to pick a point on. Each sample evaluates the full synthesis chain, so this is also the main performance dial here.',
+      'How many cycles of each frequency its analysis window covers, so every bin resolves the same musical interval. Longer windows separate closely spaced partials but smear anything that moves — the time-versus-frequency tradeoff that every spectrogram has to pick a point on. Turn it down and watch neighbouring harmonics merge into one ridge.',
     category: 'Visualization',
   },
   {
@@ -632,7 +635,7 @@ const customSettingsSchema: SettingsSchema[] = [
     label: 'Max Frequency (Hz)',
     type: 'slider',
     min: 2000,
-    max: 20000,
+    max: 10000,
     step: 500,
     description:
       'Highest frequency shown. Most musical content sits below 5 kHz; above that you are mostly looking at the harmonics of the distortion.',
@@ -673,7 +676,7 @@ const customSettingsSchema: SettingsSchema[] = [
     label: 'Grid Color',
     type: 'color',
     description:
-      "The frequency, time and octave gridlines, and the oscilloscope's graticule.",
+      'The octave rules: a line down the history at each A, when the frequency axis is logarithmic.',
     category: 'Colors',
   },
 ];
@@ -685,8 +688,9 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
   shortName: 'oscillator',
   description:
     "A working FM synthesizer: two oscillators, one modulating the other's phase, then " +
-    'filter, delay, distortion and reverb. Above, an oscilloscope; below, a spectrogram of ' +
-    'the same samples. Hold the speaker button to hear it.',
+    'filter, delay, distortion and reverb. The line at the front is an oscilloscope; behind ' +
+    'it, a spectrogram of the same samples, its history travelling away. Hold the speaker ' +
+    'button to hear it.',
   component: SpectrogramOscilloscopeBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,
