@@ -272,9 +272,9 @@
   // and the air below it, and it is the gap between the stacked items of every
   // list page — so a page reads as an even column rather than as bands of
   // different depths. One value at every width on purpose: a rhythm that
-  // changes at a breakpoint is not a rhythm. Tight: the cards are outlines,
-  // and an outline needs far less air around it than a filled slab does to
-  // read as its own object.
+  // changes at a breakpoint is not a rhythm. Tight: a card is an edge around
+  // the faintest of washes, and that needs far less air around it than a
+  // filled slab does to read as its own object.
   --stack-gap: var(--space-2);
 
   // The coat of air inside a card — a timeline entry, a project, a cv entry,
