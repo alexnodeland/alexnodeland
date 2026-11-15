@@ -941,6 +941,14 @@
       var(--space-3);
   }
 
+  // The window's shadow is a desktop's. Here the window is nearly the whole
+  // screen: there are a few pixels of field around it for a shadow to fall
+  // on, and the edge that carries it is repainted on every frame of the
+  // fold. The line of light inside the top edge stays.
+  .window-edge {
+    box-shadow: var(--edge-light);
+  }
+
   .main {
     --main-pad-top: var(--space-4);
   }

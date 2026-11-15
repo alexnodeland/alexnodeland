@@ -187,7 +187,7 @@ export const graphTopologyConfig = createBackgroundConfig({
     'Simulated annealing over a graph built like a datacenter: dense links inside each ' +
     'cluster, sparse ones between. It hunts the best-connected subgraph of the size you ask ' +
     'for, taking worse swaps less often as the temperature drops. Gold is the current ' +
-    'candidate, cyan the best so far, and both stand off the bench: the higher, the surer.',
+    'candidate, cyan the best so far.',
   component: GraphTopologyBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

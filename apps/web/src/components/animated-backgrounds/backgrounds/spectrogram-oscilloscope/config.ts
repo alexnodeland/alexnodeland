@@ -688,9 +688,8 @@ export const spectrogramOscilloscopeConfig = createBackgroundConfig({
   shortName: 'oscillator',
   description:
     "A working FM synthesizer: two oscillators, one modulating the other's phase, then " +
-    'filter, delay, distortion and reverb. The line at the front is an oscilloscope; behind ' +
-    'it, a spectrogram of the same samples, its history travelling away. Hold the speaker ' +
-    'button to hear it.',
+    'filter, delay, distortion and reverb. Front, an oscilloscope; back, a spectrogram of ' +
+    'the same samples. Hold the speaker button to hear it.',
   component: SpectrogramOscilloscopeBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

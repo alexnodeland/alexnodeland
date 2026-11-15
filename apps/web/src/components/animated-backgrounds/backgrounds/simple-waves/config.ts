@@ -112,8 +112,8 @@ export const simpleWaveConfig = createBackgroundConfig({
   shortName: 'waves',
   description:
     'Three sine waves summed: one along x, one along y at 0.8x the frequency, one diagonal at ' +
-    '0.6x, each drifting at its own rate. Colour maps the amplitude — bright where they ' +
-    'reinforce, dark where they cancel. Nothing but superposition.',
+    '0.6x, each drifting at its own rate. Height maps the amplitude — crests where they ' +
+    'reinforce, flat where they cancel. Nothing but superposition.',
   component: SimpleWaveBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

@@ -325,8 +325,7 @@ export const shortestPathLabConfig = createBackgroundConfig({
   description:
     'Dijkstra, A*, and greedy best-first are one search with one number changed. Heuristic ' +
     'Weight scales w in f = g + w*h: 0 is Dijkstra, 1 is A*, above 1 trades the optimality ' +
-    'guarantee for speed. Each reached node rises to its cost g, so the explored region ' +
-    'lifts into a bowl — round, then stretched, then a trough — and the path is the way down.',
+    'guarantee for speed. Height is cost: watch the bowl go round, stretched, then a trough.',
   component: ShortestPathLabBackground,
   customSettings: defaultCustomSettings,
   customSettingsSchema,

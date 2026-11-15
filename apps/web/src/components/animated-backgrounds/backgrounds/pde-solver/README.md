@@ -246,17 +246,62 @@ pde-solver/
 ├── types.ts              # TypeScript type definitions
 ├── pde-solver.ts         # Core numerical solver
 ├── config.ts             # Background configuration
-├── PDESolverBackground.tsx  # Three.js visualization
-├── __tests__/
-│   └── pde-solver.test.ts   # Mathematical correctness tests
+├── PDESolverBackground.tsx  # The drawing, the framing, and the pointer
 └── README.md             # This file
 ```
+
+Its tests are with the rest of the suite, under
+`src/__tests__/unit/components/animated-backgrounds/backgrounds/pde-solver/`:
+the solver's mathematics (`pde-solver.test.ts`), the surface normals, the
+colour table, and the camera's framing checked against the real projection.
+
+### The Drawing
+
+The solution is drawn as the thing it describes: a square membrane, lit, seen
+from above the bench it floats over. Height is `u`; colour is `u` on the chosen
+scale, read from a table the shader samples; contour lines are drawn at even
+steps of `u`, so a steep region reads as a crowd of them. The plate turns
+slowly, and the bench under it gives a faint reflection back.
+
+It draws through the shared stage (`core/stage/`), which owns the renderer,
+the camera's behaviour and the post-processing. On a wide screen the plate is
+an object with its edges in view; on a tall one the camera closes in until the
+plate's inscribed circle covers the screen at every angle of its spin
+(`coverDistance`).
+
+### The Pointer
+
+The reader's pointer is one more term in the equation, and the only thing here
+that is not the solver's own.
+
+- **Wave equation:** a stroke across the plate is laid down as a row of
+  Gaussian marks a fixed distance apart, so its depth does not depend on how
+  fast it was drawn. Each is added to both the current and the previous field,
+  which is a displacement with no velocity: the membrane is pushed, and let go.
+- **Heat equation:** the pointer is a probe held at a temperature.
+- **A tap** drops a pulse.
+
+The wave equation at zero damping conserves whatever it is given, so a pointer
+that only ever adds would end with a plate of noise. Above 1.8× the initial
+condition's own energy the field is bled back a little each frame. That is a
+ceiling on the pointer, not a term in the physics: left alone, the plate never
+reaches it.
+
+An initial condition need not respect a fixed edge — the interference pattern
+does not — so under Dirichlet boundaries it is eased down to the held value
+over the outer 7% of the plate (`attachToFrame`): initial data that satisfies
+its own boundary conditions. Without that there is a cliff one cell wide at
+the frame, which is a torn edge as relief and, to the wave equation, a shock
+that rings at the grid's own wavelength for the rest of the run. Free and
+periodic edges are left as they were.
 
 ### Performance Optimization
 
 1. **Float32Array**: Uses typed arrays for efficient memory access
 2. **GPU Rendering**: Three.js uses WebGL for visualization
-3. **Multiple Steps Per Frame**: Runs 5 solver steps per visual frame
+3. **Multiple Steps Per Frame**: 300 solver steps a second at an animation
+   speed of 1 — five a frame at 60fps — capped at 40 in any one frame, so a
+   long frame cannot come back and run thousands at once
 4. **Adaptive Grid**: Configurable resolution for performance tuning
 
 ### Numerical Accuracy

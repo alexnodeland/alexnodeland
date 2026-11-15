@@ -420,12 +420,16 @@ test.describe('structural performance guards', () => {
         return cs.backdropFilter || cs.webkitBackdropFilter || '';
       });
 
-    // Parked, the sheet wears the window's frosted glass — poll for the
+    // Parked, the sheet wears the window's frosted glass — the phone's cut
+    // of it, a 12px blur with the colour put back (--glass-window, with
+    // --window-blur as the compact breakpoint sets it). Poll for the
     // *settled* value, not the first interpolated frame of the settle fade.
     // The timeout is generous because the fade advances with the page's
     // animation clock, and under parallel software-GL load a 220ms fade can
     // take seconds of wall time to paint its final frame.
-    await expect.poll(readFilter, { timeout: 20_000 }).toBe('blur(5px)');
+    await expect
+      .poll(readFilter, { timeout: 20_000 })
+      .toBe('blur(12px) saturate(1.5)');
 
     // The moving states take the filter off: a full-screen backdrop filter
     // re-resolved on every frame of a 300ms slide is the most expensive
@@ -482,12 +486,19 @@ test.describe('structural performance guards', () => {
     );
 
     // Pin the cheapest background so the test never depends on the random
-    // pick, then wait for its canvas.
+    // pick, then wait for its canvas. And pin the resolution: the stage
+    // gives pixels back when frames run long (core/stage/quality.ts), and a
+    // software rasteriser's frames always run long — what is being asked
+    // here is where the device ratio is capped, not what a slow machine is
+    // then spared.
     await page.addInitScript(() => {
       localStorage.setItem(
         'animatedBackgroundSettings',
         JSON.stringify({ currentBackgroundId: 'simple-waves' })
       );
+      (
+        window as unknown as { __fieldQuality?: { governor: boolean } }
+      ).__fieldQuality = { governor: false };
     });
     await page.goto('/');
     await settle(page, 2500);

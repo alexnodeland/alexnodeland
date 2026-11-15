@@ -14,6 +14,7 @@ const pointer = (
     y?: number;
     pointerType?: string;
     button?: number;
+    buttons?: number;
     pointerId?: number;
     isPrimary?: boolean;
   } = {}
@@ -23,6 +24,7 @@ const pointer = (
     clientX: init.x ?? 0,
     clientY: init.y ?? 0,
     button: init.button ?? 0,
+    buttons: init.buttons ?? 0,
   });
   Object.defineProperties(event, {
     pointerType: { value: init.pointerType ?? 'mouse' },
@@ -157,7 +159,8 @@ describe('the pointer, as the field sees it', () => {
   it('does not call a drag a tap', () => {
     const handle = acquirePointer();
     pointer('pointerdown', root(), { x: 100, y: 100 });
-    pointer('pointermove', root(), { x: 300, y: 100 });
+    pointer('pointermove', root(), { x: 300, y: 100, buttons: 1 });
+    expect(handle.state.pressed).toBe(true);
     pointer('pointerup', root(), { x: 300, y: 100 });
     expect(handle.takeTaps()).toHaveLength(0);
     handle.release();
@@ -169,7 +172,7 @@ describe('the pointer, as the field sees it', () => {
     document.body.appendChild(card);
 
     pointer('pointerdown', root(), { x: 10, y: 10 });
-    pointer('pointermove', card, { x: 500, y: 250 });
+    pointer('pointermove', card, { x: 500, y: 250, buttons: 1 });
     // Still the same gesture.
     expect(handle.state.pressed).toBe(true);
     expect(handle.state.overField).toBe(true);
@@ -208,6 +211,42 @@ describe('the pointer, as the field sees it', () => {
     expect(handle.takeTaps()).toHaveLength(0);
     // A finger that has lifted is not hovering anywhere.
     expect(handle.state.present).toBe(false);
+    handle.release();
+  });
+
+  it('lets go of a press whose release was never delivered', () => {
+    // The button let go over another window: the next the page hears is the
+    // mouse moving with nothing held.
+    const handle = acquirePointer();
+    const card = document.createElement('article');
+    document.body.appendChild(card);
+    pointer('pointerdown', root(), { x: 10, y: 10 });
+    pointer('pointermove', card, { x: 500, y: 250, buttons: 0 });
+    expect(handle.state.pressed).toBe(false);
+    expect(root().classList.contains('field-pressing')).toBe(false);
+    // Not a tap, and no longer the field's: it is over the page.
+    expect(handle.takeTaps()).toHaveLength(0);
+    expect(handle.state.overField).toBe(false);
+    handle.release();
+  });
+
+  it("keeps a finger's press through a move, whatever its buttons say", () => {
+    const handle = acquirePointer();
+    pointer('pointerdown', root(), { x: 10, y: 10, pointerType: 'touch' });
+    pointer('pointermove', root(), { x: 60, y: 60, pointerType: 'touch' });
+    expect(handle.state.pressed).toBe(true);
+    pointer('pointerup', root(), { x: 60, y: 60, pointerType: 'touch' });
+    handle.release();
+  });
+
+  it('lets go of everything when the window loses focus', () => {
+    const handle = acquirePointer();
+    pointer('pointerdown', root(), { x: 10, y: 10 });
+    window.dispatchEvent(new Event('blur'));
+    expect(handle.state.pressed).toBe(false);
+    expect(handle.state.present).toBe(false);
+    expect(root().classList.contains('field-pressing')).toBe(false);
+    expect(handle.takeTaps()).toHaveLength(0);
     handle.release();
   });
 

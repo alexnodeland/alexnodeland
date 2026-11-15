@@ -133,8 +133,22 @@ const place = (event: PointerEvent) => {
   state.pointerType = event.pointerType || 'mouse';
 };
 
+// Let go of a press without calling it anything: no tap comes of it.
+const dropPress = () => {
+  if (!pressStart) return;
+  pressStart = null;
+  state.pressed = false;
+  document.documentElement.classList.remove(PRESS_CLASS);
+};
+
 const onMove = (event: PointerEvent) => {
   place(event);
+  // A release is not always delivered — the button let go over another
+  // window, a context menu taking the gesture — and a press that never ends
+  // would have the pointer painting wherever it went from then on. A mouse
+  // that is moving with no button down is not pressing.
+  if (state.pressed && event.pointerType === 'mouse' && event.buttons === 0)
+    dropPress();
   // A held press keeps the field for as long as it is held: dragged across
   // the window's edge, it is still the same gesture.
   if (state.pressed) touchedAt = state.lastMove;
@@ -199,13 +213,19 @@ const onLeave = () => {
   setOverField(false);
 };
 
+// The window losing focus mid-press: whatever was held is let go.
+const onBlur = () => {
+  dropPress();
+  onLeave();
+};
+
 const attach = () => {
   window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('pointerdown', onDown, { passive: true });
   window.addEventListener('pointerup', onUp, { passive: true });
   window.addEventListener('pointercancel', onCancel, { passive: true });
   document.documentElement.addEventListener('pointerleave', onLeave);
-  window.addEventListener('blur', onLeave);
+  window.addEventListener('blur', onBlur);
 };
 
 const detach = () => {
@@ -214,7 +234,7 @@ const detach = () => {
   window.removeEventListener('pointerup', onUp);
   window.removeEventListener('pointercancel', onCancel);
   document.documentElement.removeEventListener('pointerleave', onLeave);
-  window.removeEventListener('blur', onLeave);
+  window.removeEventListener('blur', onBlur);
   document.documentElement.classList.remove(OVER_CLASS, PRESS_CLASS);
   state.present = false;
   state.overField = false;
