@@ -322,10 +322,10 @@ const FRAGMENT = /* glsl */ `
     // the sheet with the relief half up behind it, and in from the rim with
     // the relief half gone. Where each vertex is half way is a radius (see
     // the vertex shader), and off the plate altogether once either is done.
-    float away = length(vUv - 0.5) * 1.41421356;
+    float outward = length(vUv - 0.5) * 1.41421356;
     float swellAt = (uSwell - ${(SWELL_SPAN / 2).toFixed(3)}) / ${(1 - SWELL_SPAN).toFixed(3)};
     float slackAt = 1.0 - (uSlack - ${(SLACK_SPAN / 2).toFixed(3)}) / ${(1 - SLACK_SPAN).toFixed(3)};
-    vec2 off = (vec2(away) - vec2(swellAt, slackAt)) / 0.028;
+    vec2 off = (vec2(outward) - vec2(swellAt, slackAt)) / 0.028;
     float tension = exp(-off.x * off.x) * step(uSwell, 0.999)
       + exp(-off.y * off.y) * step(0.001, uSlack);
     color += vec3(0.72, 0.82, 1.0) * tension * 0.2;
