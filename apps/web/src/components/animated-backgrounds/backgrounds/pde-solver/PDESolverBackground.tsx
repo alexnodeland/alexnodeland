@@ -180,14 +180,15 @@ export const readingPose = (aspect: number): Pose => ({
 });
 
 // The passage's timetable, as fractions of the arrival and of the leaving.
-// Arriving (two seconds): the sheet is up and lit in the first half, the
-// relief starts through it a quarter of the way in, and the bench follows.
+// Arriving (two seconds): the sheet is lit almost at once and up by half
+// way, the relief starts through it a sixth of the way in, and the bench
+// follows.
 const INTRO_SECONDS = 2;
 const RISE_FROM = -0.24;
-const RISE_UNTIL = 0.6;
-const LIT_UNTIL = 0.3;
-const SWELL_FROM = 0.22;
-const BENCH_FROM = 0.3;
+const RISE_UNTIL = 0.5;
+const LIT_UNTIL = 0.18;
+const SWELL_FROM = 0.16;
+const BENCH_FROM = 0.24;
 // Leaving (0.65 s asked for, 1.1 s on the cycle): slack by three fifths of
 // the way, sinking from a third, dark over the last quarter.
 const SLACK_UNTIL = 0.62;
@@ -217,6 +218,8 @@ const stageOptions = (): StageOptions => ({
 // in the queue — so the whole of it is two uniforms.
 const SWELL_SPAN = 0.5;
 const SLACK_SPAN = 0.55;
+// How far into its own change a vertex is when the ring passes over it.
+const RING_LEAD = 0.12;
 
 const VERTEX = /* glsl */ `
   attribute float aValue;
@@ -318,17 +321,18 @@ const FRAGMENT = /* glsl */ `
     color += mix(vec3(1.0), tint, 0.75) * highlight * (0.025 + 0.3 * magnitude);
     color += tint * rim * 0.4 * lift;
     color += vec3(0.72, 0.82, 1.0) * frame * 0.42;
-    // The line the change is passing through: a ring running out through
-    // the sheet with the relief half up behind it, and in from the rim with
-    // the relief half gone. Where each vertex is half way is a radius (see
-    // the vertex shader), and off the plate altogether once either is done.
+    // The line the change arrives behind: a thin ring running out through
+    // the sheet just ahead of the relief, as if it were what excites it, and
+    // in from the rim just ahead of the slack. Where a vertex is that little
+    // way into its own change is a radius (see the vertex shader), and that
+    // radius is off the plate altogether once either is done.
     float outward = length(vUv - 0.5) * 1.41421356;
-    float swellAt = (uSwell - ${(SWELL_SPAN / 2).toFixed(3)}) / ${(1 - SWELL_SPAN).toFixed(3)};
-    float slackAt = 1.0 - (uSlack - ${(SLACK_SPAN / 2).toFixed(3)}) / ${(1 - SLACK_SPAN).toFixed(3)};
-    vec2 off = (vec2(outward) - vec2(swellAt, slackAt)) / 0.028;
+    float swellAt = (uSwell - ${(SWELL_SPAN * RING_LEAD).toFixed(4)}) / ${(1 - SWELL_SPAN).toFixed(3)};
+    float slackAt = 1.0 - (uSlack - ${(SLACK_SPAN * RING_LEAD).toFixed(4)}) / ${(1 - SLACK_SPAN).toFixed(3)};
+    vec2 off = (vec2(outward) - vec2(swellAt, slackAt)) / 0.016;
     float tension = exp(-off.x * off.x) * step(uSwell, 0.999)
       + exp(-off.y * off.y) * step(0.001, uSlack);
-    color += vec3(0.72, 0.82, 1.0) * tension * 0.2;
+    color += vec3(0.72, 0.82, 1.0) * tension * 0.16;
 
     // The pointer's mark on the plate: a ring where its ray lands.
     vec2 fromProbe = (vUv - uProbe.xy) * 2.0;

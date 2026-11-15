@@ -118,6 +118,9 @@ const WATER_BY = 0.24;
 // viewer, and a front that crossed it at its average speed would be gone in
 // a few frames.
 const FRONT_PACE = 2.1;
+// The calm is less patient: a leaving can be as short as two thirds of a
+// second, and has to be seen to have begun.
+const CALM_PACE = 1.8;
 
 export const INTRO_SECONDS = 2.2;
 
@@ -154,7 +157,7 @@ export const passageOf = (intro: number, outro: number): WavePassage => {
   const calm =
     going <= 0
       ? -EVERYWHERE
-      : (FRONT_REACH + CALM_FALL) * Math.pow(crossing, FRONT_PACE);
+      : (FRONT_REACH + CALM_FALL) * Math.pow(crossing, CALM_PACE);
 
   // One wave, on whichever front is moving. It gathers as the front sets
   // out and is spent before the front has finished, so that neither end of

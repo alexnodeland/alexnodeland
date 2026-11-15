@@ -13,7 +13,8 @@ import { setReadout } from '../../../../../../components/animated-backgrounds/co
  * arithmetic the picture hangs on: that a settled plate is showing all of
  * its relief at full strength, that one which has left is showing none and
  * emitting nothing — the plate, its reflection and the bench alike — and
- * that a leave taken back puts everything where it was.
+ * that a leave taken back puts everything where it was. A still is never
+ * asked to leave: the stage holds it whole until it is taken away.
  */
 
 interface StubRenderer {
@@ -118,77 +119,86 @@ describe('the membrane, coming on and going off', () => {
 
   it('arrives flat and unlit, and the relief comes up through it afterwards', async () => {
     const { unmount } = render(<PDESolverBackground settings={settings} />);
-    await until(() => parts().surface.uStrength.value > 0);
-    const early = parts();
-    const startedAt = early.plate.position.y;
-    // Lit and rising before there is any relief worth the name, and the
-    // bench not yet there to stand over.
-    expect(early.surface.uStrength.value).toBeLessThan(1);
-    expect(early.surface.uSwell.value).toBe(0);
-    expect(startedAt).toBeLessThan(0);
-    expect(early.bench.uOpacity.value).toBe(0);
+    // Watched all the way in, a sample at a time. Which moments get sampled
+    // is the machine's business, so what is asked is what holds at every
+    // one of them: the order things arrive in.
+    const samples: Array<{
+      lit: number;
+      swell: number;
+      bench: number;
+      height: number;
+    }> = [];
+    await until(() => {
+      const now = parts();
+      samples.push({
+        lit: now.surface.uStrength.value,
+        swell: now.surface.uSwell.value,
+        bench: now.bench.uOpacity.value / 0.2,
+        height: now.plate.position.y,
+      });
+      return (
+        now.surface.uSwell.value === 1 && now.bench.uOpacity.value > 0.1999
+      );
+    });
 
-    await until(() => parts().surface.uSwell.value > 0.2);
-    const later = parts();
-    expect(later.surface.uSwell.value).toBeLessThan(1);
-    expect(later.plate.position.y).toBeGreaterThan(startedAt);
-    expect(later.bench.uOpacity.value).toBeGreaterThan(0);
+    // The arrival was seen, not just its end.
+    expect(samples[0].swell).toBeLessThan(1);
+    samples.forEach((sample, index) => {
+      // The sheet is lit before it has relief, and has relief before the
+      // bench is there to stand over.
+      expect(sample.lit).toBeGreaterThanOrEqual(sample.swell);
+      if (sample.bench > 0) expect(sample.swell).toBeGreaterThan(0);
+      // It rises into place and never past it.
+      expect(sample.height).toBeLessThanOrEqual(1e-9);
+      if (index > 0)
+        expect(sample.height).toBeGreaterThanOrEqual(samples[index - 1].height);
+    });
+    const settled = samples[samples.length - 1];
+    expect(settled.lit).toBe(1);
+    expect(settled.height).toBeCloseTo(0);
     unmount();
   });
 
-  it('goes slack, sinks to the bench and leaves no light behind', async () => {
-    const view = render(<PDESolverBackground settings={settings} frozen />);
-    await frames();
-
-    // A still has no movement to leave by, so asked to go it is simply gone:
-    // the end of the leaving in one frame.
-    view.rerender(
-      <PDESolverBackground settings={settings} frozen leaving leaveMs={650} />
+  it('goes slack, sinks to the bench and leaves no light behind — and comes back if asked', async () => {
+    const view = render(<PDESolverBackground settings={settings} />);
+    // Past the arrival, so what is seen leaving is a settled plate.
+    await until(
+      () =>
+        parts().surface.uSwell.value === 1 &&
+        parts().bench.uOpacity.value > 0.1999
     );
-    await frames();
+    expect(parts().surface.uStrength.value).toBe(1);
+
+    view.rerender(
+      <PDESolverBackground settings={settings} leaving leaveMs={1500} />
+    );
+    // The relief goes before the light does: at no moment on the way out is
+    // a sheet that still has some of its shape any dimmer than it was.
+    await until(() => {
+      const now = parts();
+      if (now.surface.uSlack.value < 1)
+        expect(now.surface.uStrength.value).toBe(1);
+      expect(now.plate.position.y).toBeLessThanOrEqual(0);
+      return now.surface.uStrength.value === 0;
+    });
     const gone = parts();
     expect(gone.surface.uSlack.value).toBe(1);
-    expect(gone.surface.uStrength.value).toBe(0);
+    expect(gone.mirror.uSlack.value).toBe(1);
     expect(gone.mirror.uStrength.value).toBe(0);
     expect(gone.bench.uOpacity.value).toBe(0);
     // Down on the bench, where the plate and its reflection are one thing.
     expect(gone.plate.position.y).toBeCloseTo(gone.reflection.position.y);
     expect(gone.plate.position.y).toBeLessThan(-0.4);
 
-    // Taken back, it is where it was.
-    view.rerender(<PDESolverBackground settings={settings} frozen />);
-    await frames();
+    // Taken back, it returns to where it was.
+    view.rerender(<PDESolverBackground settings={settings} />);
+    await until(() => parts().surface.uSlack.value === 0);
     const back = parts();
-    expect(back.surface.uSlack.value).toBe(0);
+    expect(back.surface.uSwell.value).toBe(1);
     expect(back.surface.uStrength.value).toBe(1);
     expect(back.mirror.uStrength.value).toBeCloseTo(0.3);
     expect(back.bench.uOpacity.value).toBeCloseTo(0.2);
     expect(back.plate.position.y).toBeCloseTo(0);
-    view.unmount();
-  });
-
-  it('lets the relief go before the light, on the way out', async () => {
-    const view = render(<PDESolverBackground settings={settings} />);
-    // Past the arrival, so what is seen leaving is a settled plate.
-    await until(() => parts().surface.uSwell.value === 1);
-    await until(() => parts().bench.uOpacity.value > 0.1999);
-    expect(parts().surface.uStrength.value).toBe(1);
-
-    view.rerender(
-      <PDESolverBackground settings={settings} leaving leaveMs={4000} />
-    );
-    await until(() => parts().surface.uSlack.value > 0.3);
-    const midway = parts();
-    expect(midway.surface.uSlack.value).toBeLessThan(1);
-    expect(midway.surface.uStrength.value).toBeGreaterThan(0.9);
-    expect(midway.plate.position.y).toBeLessThanOrEqual(0);
-
-    await until(() => parts().surface.uStrength.value === 0);
-    const gone = parts();
-    expect(gone.surface.uSlack.value).toBe(1);
-    expect(gone.mirror.uStrength.value).toBe(0);
-    expect(gone.bench.uOpacity.value).toBe(0);
-    expect(gone.plate.position.y).toBeCloseTo(gone.reflection.position.y);
     view.unmount();
   });
 });
