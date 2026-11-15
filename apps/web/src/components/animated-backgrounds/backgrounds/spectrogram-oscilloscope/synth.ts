@@ -105,11 +105,17 @@ export const distort = (
   }
   if (type < 2.5) {
     const fold = 1 - amount * 0.9;
-    let s = Math.abs(signal);
-    // Reflected back off the ceiling until it is under it. Bounded: a
-    // signal this far out of range has other problems.
-    for (let i = 0; i < 16 && s > fold; i++) s = 2 * fold - s;
-    return Math.sign(signal) * s;
+    let s = signal;
+    // Reflected back off the ceiling, and then off the floor, until it is
+    // between them: a signal far enough over folds more than once. Bounded,
+    // and clamped after the last fold — a signal that far out of range has
+    // other problems, and must not leave here as one.
+    for (let i = 0; i < 16; i++) {
+      if (s > fold) s = 2 * fold - s;
+      else if (s < -fold) s = -2 * fold - s;
+      else break;
+    }
+    return Math.max(-fold, Math.min(fold, s));
   }
   const levels = Math.pow(2, 16 + (2 - 16) * amount);
   return Math.floor(signal * levels) / levels;

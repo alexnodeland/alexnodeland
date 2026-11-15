@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import type * as THREE from 'three';
 import {
   COLOR_STEPS,
   colorTableFor,
@@ -11,18 +11,6 @@ import type { PDESolverSettings } from '../../../../../../components/animated-ba
  * the scale is changed under it.
  */
 describe('PDE solver colour table', () => {
-  beforeEach(() => {
-    // The shared setup's stand-in for a colour has nowhere to keep one.
-    (THREE.Color as unknown as jest.Mock).mockImplementation(() => ({
-      r: 0,
-      g: 0,
-      b: 0,
-      setRGB(r: number, g: number, b: number) {
-        Object.assign(this, { r, g, b });
-      },
-    }));
-  });
-
   // The scale and what it runs between are all the table reads.
   const settingsWith = (over: Partial<PDESolverSettings> = {}) =>
     ({

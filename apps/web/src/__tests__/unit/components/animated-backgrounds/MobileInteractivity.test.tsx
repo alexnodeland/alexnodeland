@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
+import { isFieldTarget } from '../../../../components/animated-backgrounds/core/stage/pointer';
 import MobileInteractivity from '../../../../components/animated-backgrounds/MobileInteractivity';
 
 const mockSetContentHidden = jest.fn();
@@ -106,6 +107,23 @@ describe('MobileInteractivity', () => {
         screen.getByRole('button', { name: /show background controls/i })
       );
       expect(root).toHaveClass('chrome-visible');
+    });
+
+    it('offers the exposed background to a finger as the field itself', () => {
+      render(<MobileInteractivity />);
+      const surface = screen.getByRole('button', {
+        name: /hide background controls/i,
+      });
+      // The pointer tracker asks exactly this of a press's target, so a drag
+      // across the surface reaches the simulation — and none of the controls
+      // drawn over it are field.
+      expect(isFieldTarget(surface)).toBe(true);
+      expect(
+        isFieldTarget(screen.getByRole('button', { name: 'Next background' }))
+      ).toBe(false);
+      expect(isFieldTarget(screen.getByRole('button', { name: 'Close' }))).toBe(
+        false
+      );
     });
 
     it('stands the chrome down while the settings panel owns the screen', () => {

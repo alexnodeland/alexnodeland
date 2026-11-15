@@ -239,168 +239,82 @@ Object.getOwnPropertyNames(OriginalURL).forEach(name => {
   }
 });
 
-// Keep default document.createElement behavior; anchor elements must be real Nodes
+// three, with the one part of it that needs a GPU stood in for.
+//
+// The library itself is real here (jest.config.js points `three` at its
+// module build): its maths, its geometries, its materials and its scene
+// graph all run as written, so a scene under test builds real objects and a
+// test can ask real questions of them. Only the renderer is a stand-in —
+// jsdom has no WebGL — and it keeps just enough state to answer what the
+// stage asks of it: how large the drawing buffer is, which target is bound,
+// and whether a frame was drawn.
+jest.mock('three', () => {
+  const actual = jest.requireActual('three');
 
-const createCanvasElement = () => {
-  if (typeof document !== 'undefined' && document.createElement) {
-    return document.createElement('canvas');
+  class WebGLRenderer {
+    constructor() {
+      // A browser with no WebGL: three's own constructor throws.
+      if (WebGLRenderer.unavailable) {
+        throw new Error('Error creating WebGL context.');
+      }
+      this.domElement = global.document.createElement('canvas');
+      this.autoClear = true;
+      this.extensions = { has: () => true, get: () => null };
+      this.capabilities = { isWebGL2: true, maxTextureSize: 4096 };
+      this.info = { render: { calls: 0, frame: 0 }, memory: {} };
+      this.render = jest.fn();
+      this.dispose = jest.fn();
+      this.forceContextLoss = jest.fn();
+      this.pixelRatio = 1;
+      this.width = 300;
+      this.height = 150;
+      this.target = null;
+      // Every renderer made, newest last, for a test that wants to ask one
+      // what it was told (WebGLRenderer.instances; clear it between tests).
+      WebGLRenderer.instances.push(this);
+    }
+
+    setClearColor() {}
+    setPixelRatio(ratio) {
+      this.pixelRatio = ratio;
+    }
+    getPixelRatio() {
+      return this.pixelRatio;
+    }
+    setSize(width, height) {
+      this.width = width;
+      this.height = height;
+      this.domElement.width = Math.floor(width * this.pixelRatio);
+      this.domElement.height = Math.floor(height * this.pixelRatio);
+    }
+    getSize(target) {
+      return target.set(this.width, this.height);
+    }
+    getDrawingBufferSize(target) {
+      return target.set(
+        Math.floor(this.width * this.pixelRatio),
+        Math.floor(this.height * this.pixelRatio)
+      );
+    }
+    setRenderTarget(target) {
+      this.target = target;
+    }
+    getRenderTarget() {
+      return this.target;
+    }
+    clear() {}
+    compile() {}
+    compileAsync() {
+      return Promise.resolve();
+    }
+    initTexture() {}
   }
-  return {
-    nodeType: 1,
-    width: 300,
-    height: 150,
-    getContext: jest.fn(),
-    style: {},
-  };
-};
+  WebGLRenderer.instances = [];
+  WebGLRenderer.unavailable = false;
 
-// Mock Three.js
-jest.mock('three', () => ({
-  Scene: jest.fn(() => {
-    const objects = [];
-    return {
-      add: jest.fn(obj => objects.push(obj)),
-      remove: jest.fn(obj => {
-        const idx = objects.indexOf(obj);
-        if (idx !== -1) objects.splice(idx, 1);
-      }),
-      objects,
-    };
-  }),
-  PerspectiveCamera: jest.fn(() => ({
-    position: { set: jest.fn() },
-    lookAt: jest.fn(),
-  })),
-  OrthographicCamera: jest.fn(() => ({
-    position: { set: jest.fn() },
-    lookAt: jest.fn(),
-  })),
-  WebGLRenderer: jest.fn(() => ({
-    setSize: jest.fn(),
-    render: jest.fn(),
-    domElement: createCanvasElement(),
-    setPixelRatio: jest.fn(),
-    setRenderTarget: jest.fn(),
-    dispose: jest.fn(),
-    forceContextLoss: jest.fn(),
-  })),
-  WebGLRenderTarget: jest.fn(() => ({
-    texture: {},
-    setSize: jest.fn(),
-    dispose: jest.fn(),
-  })),
-  Color: jest.fn(() => ({ setRGB: jest.fn() })),
-  Vector3: jest.fn(() => ({ set: jest.fn(), toArray: jest.fn() })),
-  Vector2: jest.fn(() => ({ set: jest.fn() })),
-  BufferGeometry: jest.fn(() => {
-    const attributes = new Map();
-    return {
-      setAttribute: jest.fn((name, attr) => attributes.set(name, attr)),
-      getAttribute: jest.fn(name => attributes.get(name)),
-      setDrawRange: jest.fn(),
-      dispose: jest.fn(),
-    };
-  }),
-  BufferAttribute: jest.fn(() => ({
-    setXYZ: jest.fn(),
-    setXY: jest.fn(),
-    needsUpdate: false,
-  })),
-  LineDashedMaterial: jest.fn(() => ({
-    color: { setRGB: jest.fn() },
-    opacity: 1,
-    linewidth: 1,
-    transparent: true,
-    dashSize: 1,
-    gapSize: 1,
-    dispose: jest.fn(),
-  })),
-  LineBasicMaterial: jest.fn(() => ({
-    color: { setRGB: jest.fn() },
-    opacity: 1,
-    linewidth: 1,
-    transparent: true,
-    dispose: jest.fn(),
-  })),
-  Line: jest.fn((geometry, material) => ({
-    geometry,
-    material,
-    userData: {},
-    computeLineDistances: jest.fn(),
-  })),
-  PointsMaterial: jest.fn(() => ({
-    size: 1,
-    transparent: true,
-    opacity: 1,
-    vertexColors: true,
-    dispose: jest.fn(),
-  })),
-  Points: jest.fn((geometry, material) => ({
-    geometry,
-    material,
-  })),
-  MeshBasicMaterial: jest.fn(() => ({ dispose: jest.fn() })),
-  Mesh: jest.fn((geometry, material) => ({
-    geometry,
-    material,
-    position: { set: jest.fn() },
-    scale: { setScalar: jest.fn() },
-  })),
-  ShaderMaterial: jest.fn(config => ({ ...config, dispose: jest.fn() })),
-  PlaneGeometry: jest.fn(() => ({ dispose: jest.fn() })),
-  SphereGeometry: jest.fn(() => ({ dispose: jest.fn() })),
-  // Carries its image the way the real one does, so a texture packed by hand
-  // (the 404 glyph) can be read back.
-  DataTexture: jest.fn((data, width, height) => ({
-    image: { data, width, height },
-    needsUpdate: false,
-    dispose: jest.fn(),
-  })),
-  AdditiveBlending: 1,
-}));
+  return { ...actual, WebGLRenderer };
+});
 
-// Mock three/examples postprocessing modules
-jest.mock('three/examples/jsm/postprocessing/EffectComposer.js', () => ({
-  EffectComposer: jest.fn(() => ({
-    addPass: jest.fn(),
-    setSize: jest.fn(),
-    render: jest.fn(),
-  })),
-}));
-jest.mock('three/examples/jsm/postprocessing/RenderPass.js', () => ({
-  RenderPass: jest.fn(),
-}));
-jest.mock('three/examples/jsm/postprocessing/UnrealBloomPass.js', () => ({
-  UnrealBloomPass: jest.fn(),
-}));
-
-// Mock three/examples wide-line modules. These are what actually honour an
-// edge thickness, since gl.LINES is stuck at one pixel.
-jest.mock('three/examples/jsm/lines/LineGeometry.js', () => ({
-  LineGeometry: jest.fn(() => ({
-    setPositions: jest.fn(),
-    dispose: jest.fn(),
-  })),
-}));
-jest.mock('three/examples/jsm/lines/LineMaterial.js', () => ({
-  LineMaterial: jest.fn(() => ({
-    color: { setRGB: jest.fn() },
-    opacity: 1,
-    linewidth: 1,
-    transparent: true,
-    dashed: false,
-    resolution: { set: jest.fn() },
-    dispose: jest.fn(),
-  })),
-}));
-jest.mock('three/examples/jsm/lines/Line2.js', () => ({
-  Line2: jest.fn((geometry, material) => ({
-    geometry,
-    material,
-    userData: {},
-    computeLineDistances: jest.fn(),
-  })),
-}));
 // Mock console methods to reduce noise in tests
 global.console = {
   ...console,

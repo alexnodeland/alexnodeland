@@ -79,8 +79,9 @@ describe('CellularAutomatonBackground', () => {
         <CellularAutomatonBackground className="bg" settings={settings} />
       );
 
-      // A full reseed of this grid — jsdom's 1024x768 viewport at cellSize 24
-      // — is upwards of 1200 calls. Three's own texture UUIDs account for the
+      // A full reseed of this board — jsdom's 1024x768 viewport at cellSize
+      // 24, and the ground around it that the camera looks across — is
+      // upwards of 3500 calls. Three's own texture UUIDs account for the
       // handful the thresholds below leave room for.
       const random = jest.spyOn(Math, 'random');
 
@@ -89,10 +90,12 @@ describe('CellularAutomatonBackground', () => {
       await resizeTo(originalHeight - 80);
       expect(random.mock.calls.length).toBeLessThan(10);
 
-      // Growing back exposes only the strip that was hidden: a few rows.
+      // Growing back exposes only the strip that was hidden: a few rows of
+      // the view, which is half a dozen of the board's — a tenth of it.
       random.mockClear();
       await resizeTo(originalHeight);
-      expect(random.mock.calls.length).toBeLessThan(200);
+      expect(random.mock.calls.length).toBeGreaterThan(0);
+      expect(random.mock.calls.length).toBeLessThan(600);
 
       random.mockRestore();
       unmount();
